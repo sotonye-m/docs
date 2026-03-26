@@ -1,0 +1,279 @@
+---
+title: "Webhooks"
+description: "Receive real-time event notifications via HTTP callbacks"
+---
+
+Webhooks let Yativo push event data to your server the moment something happens, instead of you polling the API. When an event fires, Yativo sends an HTTP POST to your configured endpoint with a signed JSON payload.
+
+---
+
+## Create a Webhook
+
+**POST** `/webhook/create`
+
+<ParamField body="url" type="string" required>
+  The HTTPS URL Yativo will POST events to.
+</ParamField>
+
+<ParamField body="events" type="array" required>
+  Array of event types to subscribe to. Use `["*"]` to subscribe to all events.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional human-readable description.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/webhook/create \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-server.com/webhooks/yativo",
+    "events": ["deposit.confirmed", "withdrawal.completed", "transaction.failed"],
+    "description": "Production webhook"
+  }'
+```
+
+```json Response
+{
+  "id": "wh_01abc123",
+  "url": "https://your-server.com/webhooks/yativo",
+  "events": ["deposit.confirmed", "withdrawal.completed", "transaction.failed"],
+  "secret": "whsec_abc123xyz...",
+  "status": "active",
+  "created_at": "2026-03-26T10:00:00Z"
+}
+```
+
+<Warning>
+  Store the `secret` immediately. You'll use it to verify webhook signatures. It cannot be retrieved later.
+</Warning>
+
+---
+
+## List Webhooks
+
+**GET** `/webhook/list`
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/webhook/list \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Get a Webhook
+
+**GET** `/webhook/{id}`
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/webhook/wh_01abc123 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Update a Webhook
+
+**PUT** `/webhook/{id}`
+
+Update the URL, events, or description. Any field omitted retains its current value.
+
+```bash cURL
+curl -X PUT https://crypto-api.yativo.com/api/webhook/wh_01abc123 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": ["*"],
+    "description": "Updated to all events"
+  }'
+```
+
+---
+
+## Delete a Webhook
+
+**DELETE** `/webhook/{id}`
+
+```bash cURL
+curl -X DELETE https://crypto-api.yativo.com/api/webhook/wh_01abc123 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Activate / Deactivate
+
+Temporarily pause a webhook without deleting it.
+
+**POST** `/webhook/{id}/activate`
+
+**POST** `/webhook/{id}/deactivate`
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/webhook/wh_01abc123/deactivate \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## View Webhook Events
+
+**GET** `/webhook/{id}/events`
+
+Returns a paginated log of all events delivered to this webhook, including status and response codes.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/webhook/wh_01abc123/events \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Retry a Failed Event
+
+**POST** `/webhook/events/{id}/retry`
+
+Re-delivers a specific event that previously failed or was not acknowledged.
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/webhook/events/evt_01def456/retry \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Test a Webhook
+
+**POST** `/webhook/{id}/test`
+
+Sends a test payload to your endpoint so you can verify your handler is working.
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/webhook/wh_01abc123/test \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Signature Verification
+
+Every webhook request includes an `X-Webhook-Signature` header. This is an HMAC-SHA256 signature of the raw request body, computed using your webhook secret.
+
+**Always verify the signature** before processing webhook events. This confirms the request came from Yativo and was not tampered with.
+
+<Tabs>
+  <Tab title="TypeScript / Node.js">
+    ```typescript
+    import crypto from 'crypto';
+    import { Request, Response } from 'express';
+
+    const WEBHOOK_SECRET = process.env.YATIVO_WEBHOOK_SECRET!;
+
+    export function verifyWebhook(req: Request, res: Response, next: Function) {
+      const signature = req.headers['x-webhook-signature'] as string;
+      const rawBody = (req as any).rawBody as Buffer; // ensure body parser preserves raw bytes
+
+      if (!signature || !rawBody) {
+        return res.status(400).json({ error: 'Missing signature or body' });
+      }
+
+      const expected = crypto
+        .createHmac('sha256', WEBHOOK_SECRET)
+        .update(rawBody)
+        .digest('hex');
+
+      const isValid = crypto.timingSafeEqual(
+        Buffer.from(signature, 'hex'),
+        Buffer.from(expected, 'hex')
+      );
+
+      if (!isValid) {
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+
+      next();
+    }
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import hmac
+    import hashlib
+    from flask import request, abort
+
+    WEBHOOK_SECRET = os.environ['YATIVO_WEBHOOK_SECRET']
+
+    def verify_webhook():
+        signature = request.headers.get('X-Webhook-Signature', '')
+        raw_body = request.get_data()
+
+        expected = hmac.new(
+            WEBHOOK_SECRET.encode('utf-8'),
+            raw_body,
+            hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(signature, expected):
+            abort(401, 'Invalid signature')
+    ```
+  </Tab>
+  <Tab title="PHP">
+    ```php
+    <?php
+    function verifyWebhook(string $rawBody, string $secret): bool {
+        $signature = $_SERVER['HTTP_X_WEBHOOK_SIGNATURE'] ?? '';
+        $expected = hash_hmac('sha256', $rawBody, $secret);
+        return hash_equals($expected, $signature);
+    }
+
+    $rawBody = file_get_contents('php://input');
+    $secret = getenv('YATIVO_WEBHOOK_SECRET');
+
+    if (!verifyWebhook($rawBody, $secret)) {
+        http_response_code(401);
+        exit('Invalid signature');
+    }
+
+    $event = json_decode($rawBody, true);
+    // process $event...
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Webhook Payload Structure
+
+All webhook payloads share the same envelope:
+
+```json
+{
+  "id": "evt_01abc123",
+  "type": "deposit.confirmed",
+  "created_at": "2026-03-26T10:05:00Z",
+  "data": {
+    // event-specific fields
+  }
+}
+```
+
+---
+
+## Best Practices
+
+<Accordion title="Respond with 2xx quickly">
+  Your endpoint should return a `200` status within a few seconds. Do your heavy processing in the background. If Yativo does not receive a `2xx` response, it will retry the event with exponential backoff.
+</Accordion>
+
+<Accordion title="Handle duplicates idempotently">
+  Webhooks can be delivered more than once (e.g., after retries). Use the `id` field to deduplicate events in your database before processing.
+</Accordion>
+
+<Accordion title="Use HTTPS">
+  Yativo only delivers webhooks to HTTPS endpoints. HTTP endpoints will be rejected at configuration time.
+</Accordion>
+
+<Accordion title="Monitor the event log">
+  Check `/webhook/{id}/events` regularly to spot delivery failures before they become business problems.
+</Accordion>

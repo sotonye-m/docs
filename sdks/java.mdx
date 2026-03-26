@@ -1,0 +1,596 @@
+---
+title: "Java / Spring Boot SDK"
+description: "Complete guide for yativo-crypto-spring-boot-starter — auto-configuration, service injection, webhook events, and error handling"
+---
+
+# Java / Spring Boot SDK
+
+The `yativo-crypto-spring-boot-starter` is a Spring Boot auto-configuration library that wires up all Yativo service beans automatically from your `application.yml`. Just add the dependency, set your credentials, and `@Autowired` the service you need.
+
+## Installation
+
+<Tabs>
+  <Tab title="Maven">
+    ```xml
+    <dependency>
+      <groupId>com.yativo</groupId>
+      <artifactId>yativo-crypto-spring-boot-starter</artifactId>
+      <version>LATEST</version>
+    </dependency>
+    ```
+  </Tab>
+  <Tab title="Gradle (Kotlin DSL)">
+    ```kotlin
+    implementation("com.yativo:yativo-crypto-spring-boot-starter:LATEST")
+    ```
+  </Tab>
+  <Tab title="Gradle (Groovy DSL)">
+    ```groovy
+    implementation 'com.yativo:yativo-crypto-spring-boot-starter:LATEST'
+    ```
+  </Tab>
+</Tabs>
+
+**Requirements:** Java 11+, Spring Boot 2.7+ or 3.x.
+
+---
+
+## Configuration
+
+Add the following to your `application.yml`:
+
+```yaml
+yativo:
+  crypto:
+    api-key: ${YATIVO_API_KEY}
+    api-secret: ${YATIVO_API_SECRET}
+    base-url: https://crypto-api.yativo.com/api/   # optional, this is the default
+    timeout: 30000                                   # ms, optional
+    webhook:
+      enabled: true
+      path: /webhooks/yativo
+      secret: ${YATIVO_WEBHOOK_SECRET}
+```
+
+Or in `application.properties`:
+
+```properties
+yativo.crypto.api-key=${YATIVO_API_KEY}
+yativo.crypto.api-secret=${YATIVO_API_SECRET}
+yativo.crypto.base-url=https://crypto-api.yativo.com/api/
+yativo.crypto.webhook.enabled=true
+yativo.crypto.webhook.path=/webhooks/yativo
+yativo.crypto.webhook.secret=${YATIVO_WEBHOOK_SECRET}
+```
+
+<Note>
+  All beans are registered as Spring-managed singletons. The starter handles HTTP client setup, token storage, and automatic 401 token refresh for you.
+</Note>
+
+---
+
+## Available Services
+
+| Bean / Service | Purpose |
+|---|---|
+| `CustomerService` | Manage end-customers |
+| `WalletService` | Create and query wallets |
+| `DepositService` | Monitor and retrieve deposits |
+| `WithdrawalService` | Send funds (withdrawals) |
+| `TransactionService` | Query transaction history |
+| `CardService` | Virtual card issuance and management |
+| `SwapService` | Quote and execute swaps |
+| `StandaloneIbanService` | Dedicated IBAN accounts |
+| `AutoForwardingService` | Configure auto-forwarding rules |
+| `GasStationService` | Manage gas station sponsorships |
+
+---
+
+## CustomerService
+
+```java
+import com.yativo.service.CustomerService;
+import com.yativo.model.Customer;
+import com.yativo.model.CreateCustomerRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@Service
+public class OnboardingService {
+
+    @Autowired
+    private CustomerService customerService;
+
+    public Customer createCustomer(String externalId, String email,
+                                    String firstName, String lastName) {
+        CreateCustomerRequest request = CreateCustomerRequest.builder()
+            .externalId(externalId)
+            .email(email)
+            .firstName(firstName)
+            .lastName(lastName)
+            .kycLevel("BASIC")
+            .build();
+
+        return customerService.create(request);
+    }
+
+    public Customer getCustomer(String customerId) {
+        return customerService.get(customerId);
+    }
+
+    public Page<Customer> listCustomers(int page, int limit) {
+        return customerService.list(page, limit);
+    }
+}
+```
+
+---
+
+## WalletService
+
+```java
+import com.yativo.service.WalletService;
+import com.yativo.model.Wallet;
+import com.yativo.model.CreateWalletRequest;
+import com.yativo.model.BatchCreateWalletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class WalletManagementService {
+
+    @Autowired
+    private WalletService walletService;
+
+    public Wallet createWallet(String accountId, String asset, String network) {
+        CreateWalletRequest request = CreateWalletRequest.builder()
+            .accountId(accountId)
+            .asset(asset)
+            .network(network)
+            .build();
+
+        return walletService.create(request);
+    }
+
+    public List<Wallet> batchCreateWallets(String accountId) {
+        BatchCreateWalletRequest request = BatchCreateWalletRequest.builder()
+            .accountId(accountId)
+            .assets(List.of(
+                new AssetNetworkPair("USDC", "SOLANA"),
+                new AssetNetworkPair("XDC",  "XDC"),
+                new AssetNetworkPair("ETH",  "ETHEREUM")
+            ))
+            .build();
+
+        return walletService.batchCreate(request);
+    }
+
+    public WalletBalance getBalance(String walletId) {
+        return walletService.getBalance(walletId);
+    }
+
+    public List<Wallet> listWallets(String accountId) {
+        return walletService.list(accountId);
+    }
+}
+```
+
+---
+
+## DepositService
+
+```java
+import com.yativo.service.DepositService;
+import com.yativo.model.Deposit;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class DepositManagementService {
+
+    @Autowired
+    private DepositService depositService;
+
+    public List<Deposit> getPendingDeposits(String accountId) {
+        return depositService.list(accountId, "PENDING");
+    }
+
+    public Deposit getDeposit(String depositId) {
+        return depositService.get(depositId);
+    }
+}
+```
+
+---
+
+## WithdrawalService
+
+```java
+import com.yativo.service.WithdrawalService;
+import com.yativo.model.Transaction;
+import com.yativo.model.SendFundsRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.UUID;
+
+@Service
+public class PaymentService {
+
+    @Autowired
+    private WithdrawalService withdrawalService;
+
+    public Transaction sendFunds(String fromWalletId, String toAddress,
+                                  String amount, String asset, String network) {
+        SendFundsRequest request = SendFundsRequest.builder()
+            .fromWalletId(fromWalletId)
+            .toAddress(toAddress)
+            .amount(amount)
+            .asset(asset)
+            .network(network)
+            .idempotencyKey(UUID.randomUUID().toString())
+            .memo("Payment from app")
+            .build();
+
+        return withdrawalService.send(request);
+    }
+
+    public GasFeeEstimate estimateGas(String fromWalletId, String toAddress,
+                                       String amount, String asset, String network) {
+        return withdrawalService.estimateGas(
+            fromWalletId, toAddress, amount, asset, network
+        );
+    }
+}
+```
+
+---
+
+## TransactionService
+
+```java
+import com.yativo.service.TransactionService;
+import com.yativo.model.Transaction;
+import com.yativo.model.TransactionListRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class TransactionHistoryService {
+
+    @Autowired
+    private TransactionService transactionService;
+
+    public Page<Transaction> listTransactions(String accountId) {
+        TransactionListRequest request = TransactionListRequest.builder()
+            .accountId(accountId)
+            .page(1)
+            .limit(25)
+            .status("COMPLETED")
+            .startDate("2026-01-01")
+            .endDate("2026-03-31")
+            .build();
+
+        return transactionService.list(request);
+    }
+
+    public Transaction getTransaction(String transactionId) {
+        return transactionService.get(transactionId);
+    }
+}
+```
+
+---
+
+## CardService
+
+```java
+import com.yativo.service.CardService;
+import com.yativo.model.Card;
+import com.yativo.model.CardholderRequest;
+import com.yativo.model.CreateCardRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class CardManagementService {
+
+    @Autowired
+    private CardService cardService;
+
+    public Cardholder onboardCardholder(String customerId) {
+        CardholderRequest request = CardholderRequest.builder()
+            .customerId(customerId)
+            .firstName("Ada")
+            .lastName("Lovelace")
+            .dateOfBirth("1990-05-15")
+            .address(Address.builder()
+                .line1("1 Infinite Loop")
+                .city("Cupertino")
+                .state("CA")
+                .zip("95014")
+                .country("US")
+                .build())
+            .build();
+
+        return cardService.onboard(request);
+    }
+
+    public Card createCard(String cardholderId) {
+        CreateCardRequest request = CreateCardRequest.builder()
+            .cardholderId(cardholderId)
+            .currency("USD")
+            .label("Engineering expenses")
+            .build();
+
+        return cardService.create(request);
+    }
+
+    public CardFundingAddress getFundingAddress(String cardId) {
+        return cardService.getFundingAddress(cardId);
+    }
+
+    public Page<CardTransaction> getCardTransactions(String cardId, int page, int limit) {
+        return cardService.getTransactions(cardId, page, limit);
+    }
+}
+```
+
+---
+
+## SwapService
+
+```java
+import com.yativo.service.SwapService;
+import com.yativo.model.SwapQuote;
+import com.yativo.model.SwapResult;
+import com.yativo.model.SwapQuoteRequest;
+import com.yativo.model.ExecuteSwapRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class SwapManagementService {
+
+    @Autowired
+    private SwapService swapService;
+
+    public SwapQuote getQuote(String fromAsset, String toAsset,
+                               String amount, String network) {
+        SwapQuoteRequest request = SwapQuoteRequest.builder()
+            .fromAsset(fromAsset)
+            .toAsset(toAsset)
+            .amount(amount)
+            .network(network)
+            .build();
+
+        return swapService.getQuote(request);
+    }
+
+    public SwapResult executeSwap(String quoteId,
+                                   String fromWalletId, String toWalletId) {
+        ExecuteSwapRequest request = ExecuteSwapRequest.builder()
+            .quoteId(quoteId)
+            .fromWalletId(fromWalletId)
+            .toWalletId(toWalletId)
+            .build();
+
+        return swapService.execute(request);
+    }
+}
+```
+
+---
+
+## StandaloneIbanService
+
+```java
+import com.yativo.service.StandaloneIbanService;
+import com.yativo.model.StandaloneIban;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class IbanService {
+
+    @Autowired
+    private StandaloneIbanService standaloneIbanService;
+
+    public StandaloneIban createIban(String customerId, String currency, String label) {
+        return standaloneIbanService.create(
+            CreateIbanRequest.builder()
+                .customerId(customerId)
+                .currency(currency)
+                .label(label)
+                .build()
+        );
+    }
+}
+```
+
+---
+
+## AutoForwardingService
+
+```java
+import com.yativo.service.AutoForwardingService;
+import com.yativo.model.AutoForwardingRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ForwardingConfigService {
+
+    @Autowired
+    private AutoForwardingService autoForwardingService;
+
+    public AutoForwardingRule createRule(String walletId, String destinationAddress,
+                                          String asset, String percentage) {
+        return autoForwardingService.create(
+            CreateAutoForwardingRequest.builder()
+                .sourceWalletId(walletId)
+                .destinationAddress(destinationAddress)
+                .asset(asset)
+                .percentage(percentage)  // e.g. "100" for 100%
+                .build()
+        );
+    }
+
+    public java.util.List<AutoForwardingRule> listRules(String walletId) {
+        return autoForwardingService.list(walletId);
+    }
+}
+```
+
+---
+
+## Webhook Event Handling
+
+When `yativo.crypto.webhook.enabled=true`, the starter registers an HTTP endpoint at `yativo.crypto.webhook.path` that verifies incoming signatures and publishes `YativoWebhookEvent` instances to the Spring application context.
+
+Listen to these events with `@EventListener`:
+
+```java
+import com.yativo.event.YativoWebhookEvent;
+import com.yativo.event.TransactionCompletedEvent;
+import com.yativo.event.DepositReceivedEvent;
+import com.yativo.event.CardTransactionEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@Component
+public class YativoEventHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(YativoEventHandler.class);
+
+    @EventListener
+    public void onTransactionCompleted(TransactionCompletedEvent event) {
+        log.info("Transaction completed: id={}, amount={} {}",
+            event.getTransactionId(),
+            event.getAmount(),
+            event.getAsset());
+        // Trigger your business logic here
+    }
+
+    @EventListener
+    public void onDepositReceived(DepositReceivedEvent event) {
+        log.info("Deposit received: wallet={}, amount={} {}",
+            event.getWalletId(),
+            event.getAmount(),
+            event.getAsset());
+    }
+
+    @EventListener
+    public void onCardTransaction(CardTransactionEvent event) {
+        log.info("Card transaction: card={}, amount={}, merchant={}",
+            event.getCardId(),
+            event.getAmount(),
+            event.getMerchantName());
+    }
+
+    // Catch-all for any Yativo webhook event
+    @EventListener
+    public void onAnyYativoEvent(YativoWebhookEvent event) {
+        log.debug("Yativo event received: type={}", event.getType());
+    }
+}
+```
+
+### Available Event Types
+
+| Event Class | Webhook Event Type |
+|---|---|
+| `TransactionCompletedEvent` | `transaction.completed` |
+| `TransactionFailedEvent` | `transaction.failed` |
+| `DepositReceivedEvent` | `deposit.received` |
+| `CardTransactionEvent` | `card.transaction` |
+| `SwapCompletedEvent` | `swap.completed` |
+| `CardCreatedEvent` | `card.created` |
+
+---
+
+## Error Handling
+
+```java
+import com.yativo.exception.YativoApiException;
+import com.yativo.exception.AuthenticationException;
+import com.yativo.exception.ValidationException;
+import com.yativo.exception.RateLimitException;
+import com.yativo.exception.NotFoundException;
+
+@Service
+public class PaymentService {
+
+    @Autowired
+    private WithdrawalService withdrawalService;
+
+    public Transaction sendFundsSafely(SendFundsRequest request) {
+        try {
+            return withdrawalService.send(request);
+        } catch (AuthenticationException e) {
+            log.error("Authentication failed: {}", e.getMessage());
+            throw new RuntimeException("Yativo auth error", e);
+        } catch (ValidationException e) {
+            log.error("Validation failed: {}", e.getErrors());
+            throw new IllegalArgumentException("Invalid payment data: " + e.getErrors());
+        } catch (RateLimitException e) {
+            log.warn("Rate limited. Retry after {}s", e.getRetryAfter());
+            // Schedule retry via Spring's @Scheduled or a task queue
+            throw new RuntimeException("Rate limited, please retry shortly");
+        } catch (NotFoundException e) {
+            log.error("Resource not found: {}", e.getResourceId());
+            throw new RuntimeException("Wallet or address not found");
+        } catch (YativoApiException e) {
+            log.error("Yativo API error {}: {}", e.getStatusCode(), e.getMessage());
+            throw new RuntimeException("Yativo API error", e);
+        }
+    }
+}
+```
+
+---
+
+## Full Spring Boot Application Example
+
+```java
+@SpringBootApplication
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+
+@RestController
+@RequestMapping("/payments")
+public class PaymentController {
+
+    @Autowired
+    private WithdrawalService withdrawalService;
+
+    @Autowired
+    private WalletService walletService;
+
+    @PostMapping("/send")
+    public ResponseEntity<Transaction> sendPayment(@RequestBody SendPaymentDto dto) {
+        Transaction tx = withdrawalService.send(
+            SendFundsRequest.builder()
+                .fromWalletId(dto.getWalletId())
+                .toAddress(dto.getToAddress())
+                .amount(dto.getAmount())
+                .asset(dto.getAsset())
+                .network(dto.getNetwork())
+                .idempotencyKey(UUID.randomUUID().toString())
+                .build()
+        );
+        return ResponseEntity.ok(tx);
+    }
+
+    @GetMapping("/wallets/{accountId}")
+    public ResponseEntity<List<Wallet>> getWallets(@PathVariable String accountId) {
+        return ResponseEntity.ok(walletService.list(accountId));
+    }
+}
+```

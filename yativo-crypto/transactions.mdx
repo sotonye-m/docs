@@ -1,0 +1,292 @@
+---
+title: "Transactions"
+description: "Send crypto, check gas prices, and track transaction status"
+---
+
+The Transactions API handles all outbound fund movements. You can estimate fees before sending, initiate transfers, and track status through to on-chain confirmation.
+
+---
+
+## Get Gas Price Estimate
+
+**POST** `/transactions/get-gas-price`
+
+Returns an estimated network fee for a transaction before committing to it.
+
+<ParamField body="chain_type" type="string" required>
+  The blockchain to estimate fees for.
+</ParamField>
+
+<ParamField body="priority" type="string">
+  Fee priority: `slow`, `medium`, or `fast`. Defaults to `medium`.
+</ParamField>
+
+<ParamField body="amount_usd" type="string">
+  Estimated transaction value in USD. Used to calculate proportional fees on some chains.
+</ParamField>
+
+<ParamField body="asset_id" type="string">
+  Asset ID to use for context-aware fee estimation.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/transactions/get-gas-price \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chain_type": "ethereum",
+    "priority": "medium",
+    "amount_usd": "500"
+  }'
+```
+
+```json Response
+{
+  "chain": "ethereum",
+  "priority": "medium",
+  "gas_price_gwei": "25.5",
+  "estimated_fee_eth": "0.00127",
+  "estimated_fee_usd": "3.18",
+  "estimated_time_seconds": 30
+}
+```
+
+---
+
+## Send Funds
+
+**POST** `/transactions/send-funds`
+
+Initiates an outbound crypto transfer. An idempotency key is automatically generated to prevent duplicate transactions.
+
+<ParamField body="from_asset_id" type="string" required>
+  The ID of the wallet to send from.
+</ParamField>
+
+<ParamField body="to_address" type="string" required>
+  The recipient's blockchain address.
+</ParamField>
+
+<ParamField body="amount" type="string" required>
+  Amount to send, as a decimal string (e.g., `"10.50"`).
+</ParamField>
+
+<ParamField body="chain" type="string" required>
+  The blockchain to send on.
+</ParamField>
+
+<ParamField body="ticker" type="string" required>
+  The token to send.
+</ParamField>
+
+<ParamField body="priority" type="string">
+  Transaction speed. One of `slow`, `medium`, `fast`. Defaults to `medium`.
+</ParamField>
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/transactions/send-funds \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from_asset_id": "asset_01xyz789",
+    "to_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "amount": "100.00",
+    "chain": "ethereum",
+    "ticker": "USDC",
+    "priority": "medium"
+  }'
+```
+
+```typescript TypeScript
+const tx = await client.transactions.send({
+  from_asset_id: 'asset_01xyz789',
+  to_address: '0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4',
+  amount: '100.00',
+  chain: 'ethereum',
+  ticker: 'USDC',
+  priority: 'medium',
+});
+```
+
+```python Python
+tx = client.transactions.send(
+    from_asset_id='asset_01xyz789',
+    to_address='0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4',
+    amount='100.00',
+    chain='ethereum',
+    ticker='USDC',
+    priority='medium',
+)
+```
+</CodeGroup>
+
+```json Response
+{
+  "transaction_id": "txn_01pqr456",
+  "idempotency_key": "idem_7f3a9b2c1e4d",
+  "status": "pending",
+  "from_address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
+  "to_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+  "amount": "100.00",
+  "ticker": "USDC",
+  "chain": "ethereum",
+  "fee_eth": "0.00127",
+  "fee_usd": "3.18",
+  "priority": "medium",
+  "created_at": "2026-03-26T10:06:00Z"
+}
+```
+
+### Idempotency
+
+Each send-funds call automatically generates a unique idempotency key. If the same request is submitted twice (e.g., due to a network retry), the second call returns the original transaction rather than creating a duplicate.
+
+If you need to supply your own idempotency key, include it in the request body as `idempotency_key`.
+
+<Warning>
+  Double-check the `to_address` before sending. Blockchain transactions are irreversible. Funds sent to the wrong address cannot be recovered.
+</Warning>
+
+---
+
+## Get a Transaction
+
+**POST** `/transactions/get-transaction`
+
+<ParamField body="transaction_id" type="string" required>
+  The transaction ID returned by `send-funds`.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/transactions/get-transaction \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"transaction_id": "txn_01pqr456"}'
+```
+
+```json Response
+{
+  "transaction_id": "txn_01pqr456",
+  "status": "completed",
+  "from_address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
+  "to_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+  "amount": "100.00",
+  "ticker": "USDC",
+  "chain": "ethereum",
+  "tx_hash": "0xabc123def456...",
+  "block_number": 19500000,
+  "confirmations": 12,
+  "fee_usd": "3.18",
+  "created_at": "2026-03-26T10:06:00Z",
+  "completed_at": "2026-03-26T10:07:30Z"
+}
+```
+
+---
+
+## List Transactions
+
+**POST** `/transactions/list`
+
+<ParamField body="page" type="number">
+  Page number. Defaults to 1.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to 20.
+</ParamField>
+
+<ParamField body="status" type="string">
+  Filter by status: `pending`, `processing`, `completed`, `failed`, `cancelled`.
+</ParamField>
+
+<ParamField body="chain" type="string">
+  Filter by blockchain.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/transactions/list \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "page": 1,
+    "limit": 20,
+    "status": "completed",
+    "chain": "ethereum"
+  }'
+```
+
+---
+
+## Asset Transaction History
+
+**POST** `/transactions/asset-history`
+
+Returns all transactions for a specific wallet asset.
+
+<ParamField body="asset_id" type="string" required>
+  The asset to retrieve history for.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number. Defaults to 1.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to 20.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/transactions/asset-history \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "asset_id": "asset_01xyz789",
+    "page": 1,
+    "limit": 50
+  }'
+```
+
+---
+
+## Cancel a Transaction
+
+**POST** `/transactions/cancel`
+
+Attempts to cancel a transaction that is still in `pending` status. Once a transaction is `processing` (broadcast to the network), it cannot be cancelled.
+
+<ParamField body="transaction_id" type="string" required>
+  The ID of the transaction to cancel.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/transactions/cancel \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"transaction_id": "txn_01pqr456"}'
+```
+
+---
+
+## Transaction Statuses
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Transaction created, waiting to be broadcast to the network |
+| `processing` | Broadcast to the network, waiting for confirmations |
+| `completed` | Confirmed on-chain with sufficient block confirmations |
+| `failed` | Transaction failed (insufficient funds, invalid address, network error) |
+| `cancelled` | Cancelled before broadcast |
+
+## Priority Levels
+
+| Priority | Speed | Fee |
+|----------|-------|-----|
+| `slow` | Slower confirmation, may take several minutes | Lowest |
+| `medium` | Standard confirmation time | Standard |
+| `fast` | Prioritized for faster inclusion | Highest |
+
+<Tip>
+  Use webhooks to track transaction status changes in real time instead of polling the get-transaction endpoint. See [Webhooks](/yativo-crypto/webhooks) for event types.
+</Tip>

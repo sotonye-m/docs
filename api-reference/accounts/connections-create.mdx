@@ -1,0 +1,59 @@
+---
+title: "Create Connections"
+api: "POST https://crypto-sandbox.yativo.com/api/accounts/create-connections"
+description: "Connect an account to one or more blockchain networks"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="account_id" type="string" required>
+  The ID of the account to connect to blockchain networks.
+</ParamField>
+
+<ParamField body="chains" type="array" required>
+  Array of blockchain network identifiers to connect. Supported values: `ethereum`, `solana`, `bitcoin`, `polygon`, `bsc`, `base`, `arbitrum`, `optimism`, `xdc`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/accounts/create-connections' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "chains": ["ethereum", "solana", "polygon"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Connections created successfully",
+  "data": {
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "connections": [
+      {
+        "connection_id": "con_01HX9KZMB3F7VNQP8R2WDGT4E7",
+        "chain": "ethereum",
+        "status": "active"
+      },
+      {
+        "connection_id": "con_01HX9KZMB3F7VNQP8R2WDGT4E8",
+        "chain": "solana",
+        "status": "active"
+      },
+      {
+        "connection_id": "con_01HX9KZMB3F7VNQP8R2WDGT4E9",
+        "chain": "polygon",
+        "status": "active"
+      }
+    ]
+  }
+}
+```
+</ResponseExample>

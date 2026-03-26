@@ -1,0 +1,544 @@
+---
+title: "SDK Quickstart"
+description: "Get up and running with the Yativo Crypto SDK in minutes"
+sidebarTitle: "SDK Quickstart"
+---
+
+This guide takes you from zero to your first successful API call in each of the official Yativo Crypto SDKs. Each example shows install, initialization, authentication, and creating your first wallet.
+
+<Note>
+  All examples connect to the Sandbox at `https://crypto-sandbox.yativo.com/api/` by default. Switch to `https://crypto-api.yativo.com/api/` when you're ready for production.
+</Note>
+
+## Prerequisites
+
+1. Sign up at [crypto.yativo.com](https://crypto.yativo.com/sign-up)
+2. Create an API key in the Dashboard under **Settings → API Keys**
+3. Copy the key — it starts with `yvk_`
+
+<Tabs>
+
+<Tab title="TypeScript / Node.js">
+
+### Install
+
+```bash
+npm install @yativo/crypto-sdk
+# or
+yarn add @yativo/crypto-sdk
+# or
+pnpm add @yativo/crypto-sdk
+```
+
+### Initialize
+
+```typescript TypeScript
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!, // yvk_sandbox_...
+  baseUrl: "https://crypto-sandbox.yativo.com/api/", // switch to crypto-api for production
+});
+```
+
+### Authenticate and make your first call
+
+```typescript TypeScript
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: "https://crypto-sandbox.yativo.com/api/",
+});
+
+async function main() {
+  // 1. Verify credentials
+  const me = await client.auth.me();
+  console.log(`Authenticated as: ${me.email}`);
+  console.log(`Organization: ${me.organizationName}`);
+
+  // 2. Create an account
+  const account = await client.accounts.create({
+    label: "my_first_account",
+    metadata: { purpose: "quickstart" },
+  });
+  console.log(`Account created: ${account.accountId}`);
+
+  // 3. Add a USDC wallet on Polygon
+  const wallet = await client.assets.addAsset({
+    accountId: account.accountId,
+    chain: "polygon",
+    asset: "USDC",
+  });
+  console.log(`Wallet address: ${wallet.address}`);
+  // 0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD
+}
+
+main().catch(console.error);
+```
+
+### TypeScript types
+
+The SDK ships with full TypeScript types. No additional `@types` package is needed.
+
+```typescript TypeScript
+import type { Account, Asset, Transaction } from "@yativo/crypto-sdk";
+
+async function getAccountWallets(accountId: string): Promise<Asset[]> {
+  return client.assets.listByAccount(accountId);
+}
+```
+
+### Environment setup
+
+```bash .env
+YATIVO_API_KEY=yvk_sandbox_01J2K9MNPQ3R4S5T6U7VAPIKEY
+```
+
+```typescript TypeScript
+// Use dotenv in Node.js
+import "dotenv/config";
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: process.env.YATIVO_BASE_URL ?? "https://crypto-sandbox.yativo.com/api/",
+});
+```
+
+</Tab>
+
+<Tab title="Python">
+
+### Install
+
+```bash
+pip install yativo-crypto
+# or with poetry
+poetry add yativo-crypto
+# or with uv
+uv add yativo-crypto
+```
+
+### Initialize
+
+```python Python
+import os
+from yativo_crypto import YativoCrypto
+
+client = YativoCrypto(
+    api_key=os.environ["YATIVO_API_KEY"],
+    base_url="https://crypto-sandbox.yativo.com/api/",
+)
+```
+
+### Authenticate and make your first call
+
+```python Python
+import os
+from yativo_crypto import YativoCrypto
+
+client = YativoCrypto(
+    api_key=os.environ["YATIVO_API_KEY"],
+    base_url="https://crypto-sandbox.yativo.com/api/",
+)
+
+def main():
+    # 1. Verify credentials
+    me = client.auth.me()
+    print(f"Authenticated as: {me.email}")
+    print(f"Organization: {me.organization_name}")
+
+    # 2. Create an account
+    account = client.accounts.create(
+        label="my_first_account",
+        metadata={"purpose": "quickstart"},
+    )
+    print(f"Account created: {account.account_id}")
+
+    # 3. Add a USDC wallet on Polygon
+    wallet = client.assets.add_asset(
+        account_id=account.account_id,
+        chain="polygon",
+        asset="USDC",
+    )
+    print(f"Wallet address: {wallet.address}")
+    # 0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD
+
+if __name__ == "__main__":
+    main()
+```
+
+### Async support
+
+The SDK also supports `asyncio`:
+
+```python Python
+import asyncio
+from yativo_crypto.async_client import AsyncYativoCrypto
+
+async def main():
+    async with AsyncYativoCrypto(api_key=os.environ["YATIVO_API_KEY"]) as client:
+        account = await client.accounts.create(label="async_account")
+        print(account.account_id)
+
+asyncio.run(main())
+```
+
+### Environment setup
+
+```bash .env
+YATIVO_API_KEY=yvk_sandbox_01J2K9MNPQ3R4S5T6U7VAPIKEY
+YATIVO_BASE_URL=https://crypto-sandbox.yativo.com/api/
+```
+
+```python Python
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+from yativo_crypto import YativoCrypto
+
+client = YativoCrypto(
+    api_key=os.environ["YATIVO_API_KEY"],
+    base_url=os.getenv("YATIVO_BASE_URL", "https://crypto-sandbox.yativo.com/api/"),
+)
+```
+
+</Tab>
+
+<Tab title="PHP">
+
+### Install
+
+```bash
+composer require yativo/crypto-sdk
+```
+
+Requires PHP 8.1+ and the `ext-curl` extension.
+
+### Initialize
+
+```php PHP
+<?php
+
+require_once __DIR__ . "/vendor/autoload.php";
+
+use Yativo\Crypto\YativoCrypto;
+
+$client = new YativoCrypto(
+    apiKey: getenv("YATIVO_API_KEY"),
+    baseUrl: "https://crypto-sandbox.yativo.com/api/",
+);
+```
+
+### Authenticate and make your first call
+
+```php PHP
+<?php
+
+require_once __DIR__ . "/vendor/autoload.php";
+
+use Yativo\Crypto\YativoCrypto;
+
+$client = new YativoCrypto(
+    apiKey: getenv("YATIVO_API_KEY"),
+    baseUrl: "https://crypto-sandbox.yativo.com/api/",
+);
+
+// 1. Verify credentials
+$me = $client->auth()->me();
+echo "Authenticated as: " . $me->email . PHP_EOL;
+echo "Organization: " . $me->organizationName . PHP_EOL;
+
+// 2. Create an account
+$account = $client->accounts()->create([
+    "label" => "my_first_account",
+    "metadata" => ["purpose" => "quickstart"],
+]);
+echo "Account created: " . $account->accountId . PHP_EOL;
+
+// 3. Add a USDC wallet on Polygon
+$wallet = $client->assets()->addAsset([
+    "accountId" => $account->accountId,
+    "chain" => "polygon",
+    "asset" => "USDC",
+]);
+echo "Wallet address: " . $wallet->address . PHP_EOL;
+```
+
+### Laravel integration
+
+```php PHP
+// config/services.php
+"yativo" => [
+    "api_key" => env("YATIVO_API_KEY"),
+    "base_url" => env("YATIVO_BASE_URL", "https://crypto-sandbox.yativo.com/api/"),
+],
+
+// AppServiceProvider.php
+use Yativo\Crypto\YativoCrypto;
+
+$this->app->singleton(YativoCrypto::class, function ($app) {
+    return new YativoCrypto(
+        apiKey: config("services.yativo.api_key"),
+        baseUrl: config("services.yativo.base_url"),
+    );
+});
+
+// In a controller
+public function __construct(private YativoCrypto $yativo) {}
+
+public function createWallet(Request $request): JsonResponse
+{
+    $account = $this->yativo->accounts()->create([
+        "label" => "user_" . $request->user()->id,
+    ]);
+
+    return response()->json(["accountId" => $account->accountId]);
+}
+```
+
+</Tab>
+
+<Tab title="Java (Spring Boot)">
+
+### Install
+
+Add to your `pom.xml`:
+
+```xml Maven (pom.xml)
+<dependency>
+    <groupId>com.yativo</groupId>
+    <artifactId>crypto-sdk</artifactId>
+    <version>1.4.0</version>
+</dependency>
+```
+
+Or with Gradle:
+
+```groovy Gradle (build.gradle)
+implementation 'com.yativo:crypto-sdk:1.4.0'
+```
+
+### Initialize
+
+```java Java
+import com.yativo.crypto.YativoCrypto;
+import com.yativo.crypto.YativoCryptoConfig;
+
+YativoCrypto client = YativoCrypto.builder()
+    .apiKey(System.getenv("YATIVO_API_KEY"))
+    .baseUrl("https://crypto-sandbox.yativo.com/api/")
+    .build();
+```
+
+### Authenticate and make your first call
+
+```java Java
+import com.yativo.crypto.YativoCrypto;
+import com.yativo.crypto.models.*;
+
+public class QuickstartExample {
+
+    public static void main(String[] args) {
+        YativoCrypto client = YativoCrypto.builder()
+            .apiKey(System.getenv("YATIVO_API_KEY"))
+            .baseUrl("https://crypto-sandbox.yativo.com/api/")
+            .build();
+
+        // 1. Verify credentials
+        AuthMe me = client.auth().me();
+        System.out.println("Authenticated as: " + me.getEmail());
+        System.out.println("Organization: " + me.getOrganizationName());
+
+        // 2. Create an account
+        CreateAccountRequest accountRequest = CreateAccountRequest.builder()
+            .label("my_first_account")
+            .metadata(Map.of("purpose", "quickstart"))
+            .build();
+
+        Account account = client.accounts().create(accountRequest);
+        System.out.println("Account created: " + account.getAccountId());
+
+        // 3. Add a USDC wallet on Polygon
+        AddAssetRequest assetRequest = AddAssetRequest.builder()
+            .accountId(account.getAccountId())
+            .chain("polygon")
+            .asset("USDC")
+            .build();
+
+        Asset wallet = client.assets().addAsset(assetRequest);
+        System.out.println("Wallet address: " + wallet.getAddress());
+    }
+}
+```
+
+### Spring Boot bean configuration
+
+```java Java
+// YativoConfig.java
+@Configuration
+public class YativoConfig {
+
+    @Value("${yativo.api-key}")
+    private String apiKey;
+
+    @Value("${yativo.base-url:https://crypto-sandbox.yativo.com/api/}")
+    private String baseUrl;
+
+    @Bean
+    public YativoCrypto yativoCrypto() {
+        return YativoCrypto.builder()
+            .apiKey(apiKey)
+            .baseUrl(baseUrl)
+            .build();
+    }
+}
+
+// application.properties
+// yativo.api-key=${YATIVO_API_KEY}
+// yativo.base-url=https://crypto-sandbox.yativo.com/api/
+```
+
+</Tab>
+
+<Tab title="React">
+
+### Install
+
+```bash
+npm install @yativo/crypto-react
+```
+
+The React SDK wraps the TypeScript SDK with hooks and context for use in browser-based applications.
+
+<Warning>
+  Never expose your API key in client-side code. The React SDK is designed for use with **ephemeral tokens** or a proxy pattern — your server generates a short-lived session token that the frontend uses for read-only operations like displaying balances and addresses.
+</Warning>
+
+### Set up the provider
+
+```tsx React
+// src/main.tsx
+import { YativoProvider } from "@yativo/crypto-react";
+import App from "./App";
+
+export default function Root() {
+  return (
+    <YativoProvider
+      // Your server endpoint that returns a session token
+      tokenEndpoint="/api/yativo-token"
+      baseUrl="https://crypto-sandbox.yativo.com/api/"
+    >
+      <App />
+    </YativoProvider>
+  );
+}
+```
+
+### Backend: generate a session token
+
+```typescript TypeScript (Express server-side)
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: "https://crypto-sandbox.yativo.com/api/",
+});
+
+app.post("/api/yativo-token", requireAuth, async (req, res) => {
+  const token = await client.auth.createSessionToken({
+    userId: req.user.id,
+    accountId: req.user.yativoAccountId,
+    scopes: ["balances:read", "addresses:read"],
+    ttlSeconds: 3600,
+  });
+
+  res.json({ token: token.value, expiresAt: token.expiresAt });
+});
+```
+
+### Use hooks in components
+
+```tsx React
+import {
+  useAccount,
+  useAssets,
+  useTransactions,
+} from "@yativo/crypto-react";
+
+function WalletDashboard({ accountId }: { accountId: string }) {
+  const { data: assets, isLoading } = useAssets(accountId);
+  const { data: transactions } = useTransactions(accountId, { limit: 10 });
+
+  if (isLoading) return <div>Loading wallets...</div>;
+
+  return (
+    <div>
+      <h2>Your Wallets</h2>
+      {assets?.map((asset) => (
+        <div key={asset.assetId}>
+          <strong>{asset.asset}</strong> on {asset.chain}
+          <br />
+          Address: <code>{asset.address}</code>
+          <br />
+          Balance: {asset.balance} {asset.asset}
+        </div>
+      ))}
+
+      <h2>Recent Transactions</h2>
+      {transactions?.items.map((txn) => (
+        <div key={txn.transactionId}>
+          {txn.type} — {txn.amount} {txn.asset} — {txn.status}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Display a deposit address with QR code
+
+```tsx React
+import { useDepositAddress } from "@yativo/crypto-react";
+import QRCode from "react-qr-code";
+
+function DepositAddress({ accountId, chain, asset }: Props) {
+  const { data: wallet } = useDepositAddress(accountId, chain, asset);
+
+  if (!wallet) return null;
+
+  return (
+    <div>
+      <QRCode value={wallet.address} size={180} />
+      <p>
+        Send <strong>{asset}</strong> on{" "}
+        <strong>{chain}</strong> to:
+      </p>
+      <code>{wallet.address}</code>
+    </div>
+  );
+}
+```
+
+</Tab>
+
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Accept Crypto Payments" icon="wallet" href="/guides/accept-crypto-payments">
+    Create accounts, generate deposit addresses, and handle webhook notifications.
+  </Card>
+  <Card title="Send Crypto" icon="paper-plane" href="/guides/send-crypto">
+    Programmatically send funds to external wallets with idempotency.
+  </Card>
+  <Card title="Webhook Integration" icon="webhook" href="/guides/webhook-integration">
+    Set up real-time event notifications with signature verification.
+  </Card>
+  <Card title="Issue Cards" icon="credit-card" href="/guides/issue-crypto-cards">
+    Issue crypto-funded virtual and physical cards to users.
+  </Card>
+</CardGroup>

@@ -1,0 +1,82 @@
+---
+title: "Send Funds"
+api: "POST https://crypto-sandbox.yativo.com/api/transactions/send-funds"
+description: "Send cryptocurrency from a wallet to an external address"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional unique key to prevent duplicate transactions. If not provided, one is auto-generated. Use the same key to safely retry failed requests without creating duplicate sends.
+</ParamField>
+
+<ParamField body="from_asset_id" type="string" required>
+  The ID of the source wallet asset to send funds from.
+</ParamField>
+
+<ParamField body="to_address" type="string" required>
+  The destination blockchain address to send funds to.
+</ParamField>
+
+<ParamField body="amount" type="string" required>
+  The amount to send, denominated in the token's native units (e.g. `"100.00"` for 100 USDC).
+</ParamField>
+
+<ParamField body="chain" type="string" required>
+  The blockchain network of the transaction, e.g. `solana`, `ethereum`.
+</ParamField>
+
+<ParamField body="ticker" type="string" required>
+  The token ticker symbol, e.g. `USDC_SOL`, `ETH`, `BTC`.
+</ParamField>
+
+<ParamField body="priority" type="string">
+  Transaction speed priority. One of: `slow`, `medium`, `fast`. Defaults to `medium`.
+</ParamField>
+
+<ParamField body="idempotency_key" type="string">
+  Idempotency key in the request body (alternative to the header). Auto-generated if not provided.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/transactions/send-funds' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: idem_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -d '{
+    "from_asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA",
+    "to_address": "9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
+    "amount": "100.00",
+    "chain": "solana",
+    "ticker": "USDC_SOL",
+    "priority": "medium"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Transaction submitted successfully",
+  "data": {
+    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4EF",
+    "from_asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA",
+    "to_address": "9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
+    "amount": "100.00",
+    "chain": "solana",
+    "ticker": "USDC_SOL",
+    "status": "pending",
+    "tx_hash": "5KgF7hJ2mN4pQ8rT9vX1yC3bA6wD0eG2jL5nP8sU1z4",
+    "fee": "0.000005",
+    "fee_ticker": "SOL",
+    "idempotency_key": "idem_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,172 @@
+---
+title: "SDK Overview"
+description: "Official Yativo Crypto SDKs for TypeScript/Node.js, Python, PHP, Java/Spring Boot, and React"
+---
+
+# Yativo Crypto SDKs
+
+Yativo provides official SDKs for the most popular languages and frameworks. Every SDK wraps the same underlying [Yativo Crypto API](https://crypto-api.yativo.com/api/) and provides a consistent, idiomatic interface for your platform.
+
+<CardGroup cols={3}>
+  <Card title="TypeScript / Node.js" icon="js" href="/sdks/typescript">
+    Full-featured SDK for Node.js and browser environments, including a card embed widget.
+  </Card>
+  <Card title="Python" icon="python" href="/sdks/python">
+    Pythonic SDK with snake_case methods and structured exception hierarchy.
+  </Card>
+  <Card title="PHP" icon="php" href="/sdks/php">
+    Composer package with static webhook verification helpers.
+  </Card>
+  <Card title="Java / Spring Boot" icon="java" href="/sdks/java">
+    Spring Boot starter with auto-configuration, DI-ready services, and event-driven webhooks.
+  </Card>
+  <Card title="React" icon="react" href="/sdks/react">
+    Hooks and pre-built components built on top of the TypeScript SDK.
+  </Card>
+</CardGroup>
+
+---
+
+## Quick Comparison
+
+| Feature | TypeScript | Python | PHP | Java | React |
+|---|---|---|---|---|---|
+| Package manager | npm | pip | Composer | Maven / Gradle | npm |
+| Package name | `@yativo/crypto-sdk` | `yativo-crypto-sdk` | `yativo/crypto-sdk` | `yativo-crypto-spring-boot-starter` | `@yativo/crypto-sdk-react` |
+| Min runtime | Node 16 / modern browser | Python 3.8 | PHP 7.4 | Java 11 / Spring Boot 2.7+ | React 17+ |
+| Auto token refresh | Yes | Yes | Yes | Yes | Yes |
+| Webhook verification | Yes | Yes | Yes (static) | Yes (@EventListener) | Via TypeScript SDK |
+| Card widget / embed | YativoCardEmbed | — | — | — | YativoCardWidget |
+| UI components | — | — | — | — | Yes |
+
+---
+
+## Choosing the Right SDK
+
+<Tabs>
+  <Tab title="TypeScript / Node.js">
+    Use the TypeScript SDK when:
+    - Building a **Node.js** backend (Express, Fastify, NestJS, etc.)
+    - Writing a **serverless function** (Vercel, AWS Lambda, Cloudflare Workers)
+    - Embedding the Yativo Card widget directly in a **non-React** frontend
+    - You want full TypeScript type safety across all API resources
+
+    ```bash
+    npm install @yativo/crypto-sdk
+    ```
+  </Tab>
+  <Tab title="Python">
+    Use the Python SDK when:
+    - Building a **Django**, **Flask**, or **FastAPI** backend
+    - Running **data pipelines** or **automation scripts**
+    - Integrating Yativo into a **Jupyter notebook** or analytics workflow
+
+    ```bash
+    pip install yativo-crypto-sdk
+    ```
+  </Tab>
+  <Tab title="PHP">
+    Use the PHP SDK when:
+    - Building a **Laravel**, **Symfony**, or plain PHP application
+    - Your existing stack is PHP and you need a drop-in Composer package
+
+    ```bash
+    composer require yativo/crypto-sdk
+    ```
+  </Tab>
+  <Tab title="Java / Spring Boot">
+    Use the Java SDK when:
+    - Your application is built on **Spring Boot**
+    - You want **auto-configuration** via `application.yml` with zero boilerplate
+    - You prefer dependency injection and `@Autowired` service beans
+    - You want to handle webhook events via Spring's `@EventListener`
+
+    ```xml
+    <!-- Maven -->
+    <dependency>
+      <groupId>com.yativo</groupId>
+      <artifactId>yativo-crypto-spring-boot-starter</artifactId>
+      <version>LATEST</version>
+    </dependency>
+    ```
+  </Tab>
+  <Tab title="React">
+    Use the React SDK when:
+    - Building a **React** single-page application or Next.js app
+    - You want ready-made hooks (`useWallets`, `useBalance`, `useSwap`, etc.)
+    - You need pre-built UI components (`DepositWidget`, `YativoCardWidget`, etc.)
+    - You want authentication state managed for you via `YativoProvider`
+
+    ```bash
+    npm install @yativo/crypto-sdk-react
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Common Concepts Across All SDKs
+
+All SDKs expose the same logical resources:
+
+| Resource | Description |
+|---|---|
+| `auth` | Register, login, OTP, 2FA |
+| `accounts` | Manage business accounts |
+| `assets` | Wallets and supported assets |
+| `transactions` | Send / receive funds |
+| `webhooks` | Create and verify webhooks |
+| `apiKeys` | Programmatic API key management |
+| `customers` | End-customer management |
+| `analytics` | Volume, fees, and reporting |
+| `cards` | Virtual card issuance and management |
+| `swap` | Quote and execute asset swaps |
+| `standaloneIban` | Dedicated IBAN accounts |
+
+### Authentication Modes
+
+Every SDK supports two authentication flows:
+
+1. **Email / password** — call `auth.login()` to obtain a JWT; the SDK stores it and refreshes it automatically on 401 responses.
+2. **API key + secret** — pass `apiKey` and `apiSecret` to the constructor. The SDK signs requests directly; no manual token management required.
+
+### Rate Limiting
+
+The Yativo Crypto API enforces **60 requests per minute per endpoint**. All SDKs surface rate-limit errors as dedicated exception types so you can implement back-off logic.
+
+---
+
+## Base URL
+
+All SDKs default to the production base URL:
+
+```
+https://crypto-api.yativo.com/api/
+```
+
+You can override this in the constructor for staging or local development environments.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="TypeScript SDK" href="/sdks/typescript" icon="js">
+    Complete guide with code examples for every resource.
+  </Card>
+  <Card title="Python SDK" href="/sdks/python" icon="python">
+    Python-idiomatic examples and exception handling.
+  </Card>
+  <Card title="PHP SDK" href="/sdks/php" icon="php">
+    Composer setup, try/catch patterns, and webhook verification.
+  </Card>
+  <Card title="Java SDK" href="/sdks/java" icon="java">
+    Spring Boot auto-configuration and service injection.
+  </Card>
+  <Card title="React SDK" href="/sdks/react" icon="react">
+    Hooks, components, widgets, and theme customization.
+  </Card>
+  <Card title="Browser Extensions" href="/extensions/overview" icon="puzzle-piece">
+    Chrome and Firefox extensions for wallet monitoring and notifications.
+  </Card>
+</CardGroup>

@@ -1,0 +1,136 @@
+---
+title: "Supported Chains"
+description: "Blockchains and tokens supported by the Yativo Crypto API"
+---
+
+Yativo Crypto supports 9 blockchains. Each chain has a set of native and token assets you can use when creating wallets and initiating transactions.
+
+---
+
+## Supported Networks
+
+| Chain | Network | Chain ID / Identifier | Native Gas Token |
+|-------|---------|----------------------|-----------------|
+| Ethereum | Mainnet | `ethereum` | ETH |
+| Solana | Mainnet | `solana` | SOL |
+| Bitcoin | Mainnet | `bitcoin` | BTC |
+| Polygon | Mainnet | `polygon` | POL (MATIC) |
+| BNB Smart Chain | Mainnet | `bsc` | BNB |
+| Base | Mainnet | `base` | ETH |
+| Arbitrum One | Mainnet | `arbitrum` | ETH |
+| Optimism | Mainnet | `optimism` | ETH |
+| XDC Network | Mainnet | `xdc` | XDC |
+
+---
+
+## Supported Tokens by Chain
+
+### Ethereum
+
+| Ticker | Token | Type |
+|--------|-------|------|
+| `ETH` | Ether | Native |
+| `USDC` | USD Coin | ERC-20 |
+| `USDT` | Tether | ERC-20 |
+| `DAI` | Dai | ERC-20 |
+
+### Solana
+
+| Ticker | Token | Type |
+|--------|-------|------|
+| `SOL` | Solana | Native |
+| `USDC_SOL` | USD Coin (Solana) | SPL Token |
+| `USDT_SOL` | Tether (Solana) | SPL Token |
+
+### Bitcoin
+
+| Ticker | Token | Type |
+|--------|-------|------|
+| `BTC` | Bitcoin | Native |
+
+### Polygon
+
+| Ticker | Token | Type |
+|--------|-------|------|
+| `POL` | Polygon (MATIC) | Native |
+| `USDC_POLYGON` | USD Coin (Polygon) | ERC-20 |
+| `USDT_POLYGON` | Tether (Polygon) | ERC-20 |
+
+### BNB Smart Chain
+
+| Ticker | Token | Type |
+|--------|-------|------|
+| `BNB` | BNB | Native |
+| `USDC_BSC` | USD Coin (BSC) | BEP-20 |
+| `USDT_BSC` | Tether (BSC) | BEP-20 |
+
+### Base
+
+| Ticker | Token | Type |
+|--------|-------|------|
+| `ETH_BASE` | Ether (Base) | Native |
+| `USDC_BASE` | USD Coin (Base) | ERC-20 |
+
+### Arbitrum One
+
+| Ticker | Token | Type |
+|--------|-------|------|
+| `ETH_ARBITRUM` | Ether (Arbitrum) | Native |
+| `USDC_ARBITRUM` | USD Coin (Arbitrum) | ERC-20 |
+| `USDT_ARBITRUM` | Tether (Arbitrum) | ERC-20 |
+
+### Optimism
+
+| Ticker | Token | Type |
+|--------|-------|------|
+| `ETH_OPTIMISM` | Ether (Optimism) | Native |
+| `USDC_OPTIMISM` | USD Coin (Optimism) | ERC-20 |
+| `USDT_OPTIMISM` | Tether (Optimism) | ERC-20 |
+
+### XDC Network
+
+| Ticker | Token | Type |
+|--------|-------|------|
+| `XDC` | XDC | Native |
+| `USDC_XDC` | USD Coin (XDC) | XRC-20 |
+| `USDT_XDC` | Tether (XDC) | XRC-20 |
+
+---
+
+## Gas Tokens
+
+Every transaction on an EVM-compatible chain requires the native gas token to pay for network fees. Make sure your wallets (or your [Gas Station](/yativo-crypto/gas-station)) hold sufficient native token for the chain you're using.
+
+| Chain | Gas Token | Notes |
+|-------|-----------|-------|
+| Ethereum | ETH | Gas costs vary significantly with network congestion |
+| Polygon | POL | Low gas costs, fast finality |
+| BSC | BNB | Low gas costs |
+| Base | ETH | L2 — gas costs are a fraction of Ethereum mainnet |
+| Arbitrum | ETH | L2 — significantly cheaper than Ethereum mainnet |
+| Optimism | ETH | L2 — significantly cheaper than Ethereum mainnet |
+| XDC | XDC | Very low gas costs |
+| Solana | SOL | Flat, very low fees per transaction |
+| Bitcoin | BTC | Fee is included in the transaction amount; set priority accordingly |
+
+<Tip>
+  Use the [Gas Station](/yativo-crypto/gas-station) to pre-fund native token reserves. This lets the platform cover gas fees on behalf of your users so they only need to hold the token they want to transfer.
+</Tip>
+
+---
+
+## Fetching Supported Assets via API
+
+You can also retrieve the current list of supported chains and assets programmatically:
+
+```bash
+# Get all supported assets
+curl -X GET https://crypto-api.yativo.com/api/assets/get-all-assets \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+
+# Get supported chains
+curl -X GET https://crypto-api.yativo.com/api/assets/get-chains \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+Use these endpoints to dynamically populate chain and token selectors in your UI rather than hardcoding values.

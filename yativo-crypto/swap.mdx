@@ -1,0 +1,263 @@
+---
+title: "Token Swap"
+description: "Cross-chain and same-chain token swaps with real-time quotes"
+---
+
+The Swap API lets your users exchange tokens within and across chains. Get a quote, review the rate and fees, then execute when ready. Quotes are time-limited, so execute promptly after receiving one.
+
+---
+
+## Get Swappable Assets
+
+**GET** `/swap/assets`
+
+Returns all tokens that can be used as swap sources or destinations.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/swap/assets \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "assets": [
+    { "chain": "ethereum", "ticker": "USDC", "name": "USD Coin" },
+    { "chain": "solana", "ticker": "USDC_SOL", "name": "USD Coin (Solana)" },
+    { "chain": "ethereum", "ticker": "ETH", "name": "Ether" },
+    { "chain": "solana", "ticker": "SOL", "name": "Solana" }
+  ]
+}
+```
+
+---
+
+## Get Available Routes
+
+**GET** `/swap/routes`
+
+Returns all valid swap routes — which chain/token pairs can be swapped into which other pairs.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/swap/routes \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Get a Quote
+
+**POST** `/swap/quote`
+
+Request a swap quote. Returns the expected output amount, exchange rate, slippage, and fees.
+
+<ParamField body="from_chain" type="string" required>
+  The source chain (e.g., `ethereum`).
+</ParamField>
+
+<ParamField body="from_ticker" type="string" required>
+  The token to swap from (e.g., `USDC`).
+</ParamField>
+
+<ParamField body="to_chain" type="string" required>
+  The destination chain (e.g., `solana`).
+</ParamField>
+
+<ParamField body="to_ticker" type="string" required>
+  The token to swap to (e.g., `USDC_SOL`).
+</ParamField>
+
+<ParamField body="amount" type="string" required>
+  Amount to swap, as a decimal string.
+</ParamField>
+
+<ParamField body="from_address" type="string" required>
+  The sender's address on the source chain.
+</ParamField>
+
+<ParamField body="to_address" type="string" required>
+  The recipient's address on the destination chain.
+</ParamField>
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/swap/quote \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from_chain": "ethereum",
+    "from_ticker": "USDC",
+    "to_chain": "solana",
+    "to_ticker": "USDC_SOL",
+    "amount": "500",
+    "from_address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
+    "to_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+  }'
+```
+
+```typescript TypeScript
+const quote = await client.swap.quote({
+  from_chain: 'ethereum',
+  from_ticker: 'USDC',
+  to_chain: 'solana',
+  to_ticker: 'USDC_SOL',
+  amount: '500',
+  from_address: '0x742d35Cc...',
+  to_address: '7xKXtg2CW87d...',
+});
+console.log('Quote ID:', quote.quote_id);
+console.log('You receive:', quote.to_amount, quote.to_ticker);
+```
+
+```python Python
+quote = client.swap.quote(
+    from_chain='ethereum',
+    from_ticker='USDC',
+    to_chain='solana',
+    to_ticker='USDC_SOL',
+    amount='500',
+    from_address='0x742d35Cc...',
+    to_address='7xKXtg2CW87d...',
+)
+print(f"You receive: {quote['to_amount']} {quote['to_ticker']}")
+```
+</CodeGroup>
+
+```json Response
+{
+  "quote_id": "quote_01abc123",
+  "from_chain": "ethereum",
+  "from_ticker": "USDC",
+  "from_amount": "500",
+  "to_chain": "solana",
+  "to_ticker": "USDC_SOL",
+  "to_amount": "498.75",
+  "exchange_rate": "0.9975",
+  "price_impact": "0.05%",
+  "fee_usd": "1.25",
+  "estimated_time_seconds": 120,
+  "expires_at": "2026-03-26T10:11:00Z"
+}
+```
+
+<Note>
+  Quotes expire after a short window (typically a few minutes). Execute the swap before `expires_at`.
+</Note>
+
+---
+
+## Execute a Swap
+
+**POST** `/swap/execute`
+
+Executes a previously quoted swap.
+
+<ParamField body="quote_id" type="string" required>
+  The quote ID from the `/swap/quote` response.
+</ParamField>
+
+<ParamField body="from_asset_id" type="string" required>
+  The asset (wallet) ID to debit the source tokens from.
+</ParamField>
+
+<ParamField body="to_address" type="string" required>
+  The destination address to receive the swapped tokens.
+</ParamField>
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/swap/execute \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quote_id": "quote_01abc123",
+    "from_asset_id": "asset_01xyz789",
+    "to_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+  }'
+```
+
+```typescript TypeScript
+const swap = await client.swap.execute({
+  quote_id: quote.quote_id,
+  from_asset_id: 'asset_01xyz789',
+  to_address: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
+});
+console.log('Swap ID:', swap.swap_id);
+console.log('Status:', swap.status);
+```
+</CodeGroup>
+
+```json Response
+{
+  "swap_id": "swap_01def456",
+  "quote_id": "quote_01abc123",
+  "status": "processing",
+  "from_chain": "ethereum",
+  "from_ticker": "USDC",
+  "from_amount": "500",
+  "to_chain": "solana",
+  "to_ticker": "USDC_SOL",
+  "expected_to_amount": "498.75",
+  "from_tx_hash": "0xabc123...",
+  "created_at": "2026-03-26T10:06:00Z"
+}
+```
+
+---
+
+## Swap History
+
+**GET** `/swap/history`
+
+Returns a list of past swaps.
+
+<ParamField query="limit" type="number">
+  Number of results to return. Defaults to 20.
+</ParamField>
+
+<ParamField query="offset" type="number">
+  Offset for pagination. Defaults to 0.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status: `processing`, `completed`, `failed`.
+</ParamField>
+
+```bash cURL
+curl -X GET "https://crypto-api.yativo.com/api/swap/history?limit=20&offset=0&status=completed" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "swaps": [
+    {
+      "swap_id": "swap_01def456",
+      "status": "completed",
+      "from_chain": "ethereum",
+      "from_ticker": "USDC",
+      "from_amount": "500",
+      "to_chain": "solana",
+      "to_ticker": "USDC_SOL",
+      "to_amount": "498.71",
+      "completed_at": "2026-03-26T10:08:20Z"
+    }
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+---
+
+## Swap Statuses
+
+| Status | Description |
+|--------|-------------|
+| `processing` | Swap initiated, source transaction broadcast |
+| `completed` | Swap fully settled, destination tokens delivered |
+| `failed` | Swap failed; source funds are returned |
+
+<Tip>
+  Subscribe to the `swap.completed` and `swap.failed` webhook events to get real-time notifications instead of polling the history endpoint.
+</Tip>

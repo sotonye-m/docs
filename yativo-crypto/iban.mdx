@@ -1,0 +1,391 @@
+---
+title: "IBAN Account"
+description: "Get a dedicated IBAN for receiving EUR bank transfers that settle directly to your crypto wallet"
+---
+
+## Overview
+
+The Yativo Crypto IBAN service provides a dedicated European bank account number (IBAN) that automatically converts incoming EUR bank transfers to cryptocurrency. Designed for users and businesses that want to receive EUR via SEPA and have it settled directly to a crypto wallet.
+
+**Key benefits:**
+- Receive SEPA bank transfers from any European bank
+- Automatic EUR-to-crypto conversion on receipt
+- Independent of the Yativo Card — no card account required
+- Suitable for freelancers, remote workers, and businesses receiving EUR payments
+
+<Accordion title="Type Definitions">
+```typescript
+interface IBANOnboardingStatus {
+  status: "not_started" | "pending_kyc" | "kyc_submitted" | "kyc_approved" | "iban_requested" | "active" | "rejected";
+  iban?: string;
+  bic?: string;
+  customer_id?: string;
+}
+
+interface IBANOptions {
+  supported_currencies: string[];
+  kyc_methods: string[];
+  min_transfer_amount: number;
+}
+
+interface InitIBANRequest {
+  email: string;
+  customer_id?: string;
+}
+```
+</Accordion>
+
+---
+
+## Onboarding Flow
+
+```
+1. Get Options          →  Learn about available IBAN types and requirements
+         │
+         ▼
+2. Init Onboarding      →  Register email and get an applicant record
+         │
+         ▼
+3. Submit KYC           →  Verify identity to comply with banking regulations
+         │
+         ▼
+4. Request IBAN         →  Trigger IBAN provisioning after KYC approval
+         │
+         ▼
+5. Check Status         →  Poll until IBAN is active and ready to use
+```
+
+---
+
+## Step 1 — Get IBAN Options
+
+Retrieve available IBAN configurations, supported currencies, and requirements.
+
+```
+GET /standalone-iban/options
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/standalone-iban/options' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "supported_currencies": ["EUR"],
+    "supported_networks": ["SEPA", "SEPA_INSTANT"],
+    "kyc_required": true,
+    "kyc_methods": ["sumsub", "direct_docs"],
+    "minimum_transfer_amount": 1.00,
+    "supported_payout_tokens": ["USDC", "USDT", "DAI"],
+    "supported_payout_chains": ["ethereum", "polygon", "solana"],
+    "fees": {
+      "incoming_transfer_fee": "0.5%",
+      "monthly_fee": 0.00
+    }
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Step 2 — Initialize Onboarding
+
+Create an onboarding record to begin the IBAN application.
+
+```
+POST /standalone-iban/onboarding/init
+```
+
+<ParamField body="email" type="string" required>
+  The applicant's email address.
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Optional. Your internal customer identifier. Use this to link the IBAN record to your own customer database.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/init' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "user@example.com",
+    "customer_id": "your_internal_customer_id_001"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "onboarding_id": "iban_onb_01HX9KZMB3F7VNQP8R2WDGTAAA",
+    "email": "user@example.com",
+    "customer_id": "your_internal_customer_id_001",
+    "status": "pending_kyc",
+    "created_at": "2026-03-25T21:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Step 3 — Submit KYC
+
+Submit identity verification information for the IBAN applicant.
+
+```
+POST /standalone-iban/onboarding/kyc
+```
+
+<ParamField body="kyc" type="object" required>
+  KYC information for the applicant.
+</ParamField>
+
+<ParamField body="kyc.method" type="string" required>
+  KYC method: `sumsub` (using a KYC applicant token) or `direct_docs` (manual document review).
+</ParamField>
+
+<ParamField body="kyc.sumsub_token" type="string">
+  Required if `kyc.method` is `sumsub`. The KYC applicant token for the user.
+</ParamField>
+
+<ParamField body="kyc.first_name" type="string">
+  Required for `direct_docs` method. Legal first name.
+</ParamField>
+
+<ParamField body="kyc.last_name" type="string">
+  Required for `direct_docs` method. Legal last name.
+</ParamField>
+
+<ParamField body="kyc.date_of_birth" type="string">
+  Date of birth in ISO 8601 format (YYYY-MM-DD). Required for `direct_docs`.
+</ParamField>
+
+<ParamField body="kyc.nationality" type="string">
+  ISO 3166-1 alpha-2 country code for nationality. Required for `direct_docs`.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Email address (if not already provided during init, or to override).
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Your internal customer identifier. Must match the value used during init if provided.
+</ParamField>
+
+<CodeGroup>
+```bash Sumsub KYC
+curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/kyc' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_id": "your_internal_customer_id_001",
+    "kyc": {
+      "method": "sumsub",
+      "sumsub_token": "sumsub_applicant_token_def456ghi"
+    }
+  }'
+```
+
+```bash Direct Docs KYC
+curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/kyc' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_id": "your_internal_customer_id_001",
+    "kyc": {
+      "method": "direct_docs",
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "date_of_birth": "1990-06-15",
+      "nationality": "DE"
+    }
+  }'
+```
+</CodeGroup>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "customer_id": "your_internal_customer_id_001",
+    "kyc_status": "pending",
+    "submitted_at": "2026-03-25T21:05:00Z",
+    "estimated_review_time": "1-2 business days (direct_docs) or minutes (sumsub)"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Step 4 — Request IBAN
+
+Once KYC is approved, request IBAN provisioning.
+
+```
+POST /standalone-iban/iban/request
+```
+
+<ParamField body="customer_id" type="string">
+  Your internal customer identifier. Required if not authenticated with a user-specific token.
+</ParamField>
+
+<ParamField body="payout_token" type="string">
+  The crypto token to receive converted funds in. Example: `"USDC"`.
+</ParamField>
+
+<ParamField body="payout_chain" type="string">
+  The chain to receive payouts on. Example: `"solana"`.
+</ParamField>
+
+<ParamField body="payout_address" type="string">
+  The crypto wallet address to send converted funds to.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/iban/request' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_id": "your_internal_customer_id_001",
+    "payout_token": "USDC",
+    "payout_chain": "solana",
+    "payout_address": "7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "customer_id": "your_internal_customer_id_001",
+    "iban_request_id": "ibanreq_01HX9KZMB3F7VNQP8R2WDGTBBB",
+    "status": "provisioning",
+    "estimated_provisioning_time": "1-24 hours"
+  }
+}
+```
+</ResponseExample>
+
+<Note>
+  IBAN provisioning is only available after KYC is fully approved. If KYC is still pending, you will receive an error response indicating the KYC requirement.
+</Note>
+
+---
+
+## Step 5 — Check Status
+
+Poll the status endpoint to track the onboarding progress and retrieve IBAN details once active.
+
+```
+GET /standalone-iban/status
+```
+
+<ParamField query="customer_id" type="string">
+  Your internal customer identifier. Required unless using a user-specific bearer token.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/standalone-iban/status?customer_id=your_internal_customer_id_001' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json IBAN Active
+{
+  "status": "success",
+  "data": {
+    "customer_id": "your_internal_customer_id_001",
+    "overall_status": "active",
+    "kyc_status": "approved",
+    "iban_status": "active",
+    "iban": "DE89370400440532013001",
+    "bic": "SSKMDEMMXXX",
+    "account_holder_name": "Jane Doe",
+    "currency": "EUR",
+    "payout_token": "USDC",
+    "payout_chain": "solana",
+    "payout_address": "7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+    "activated_at": "2026-03-26T08:00:00Z"
+  }
+}
+```
+
+```json KYC Pending
+{
+  "status": "success",
+  "data": {
+    "customer_id": "your_internal_customer_id_001",
+    "overall_status": "pending_kyc",
+    "kyc_status": "pending",
+    "iban_status": "not_requested",
+    "message": "KYC review is in progress."
+  }
+}
+```
+</ResponseExample>
+
+### IBAN Status Values
+
+| Status | Description |
+|---|---|
+| `not_requested` | IBAN has not been requested yet. Complete KYC first. |
+| `pending_kyc` | Waiting for KYC approval before IBAN can be provisioned. |
+| `provisioning` | KYC approved, IBAN is being assigned. |
+| `active` | IBAN is live and can receive transfers. |
+| `suspended` | IBAN has been temporarily suspended. Contact support. |
+| `closed` | IBAN has been permanently closed. |
+
+---
+
+## KYC Requirements
+
+Identity verification is mandatory for IBAN issuance due to European banking regulations (AML/KYC directives).
+
+**Accepted documents (direct_docs method):**
+- Valid passport
+- National identity card
+- Driver's license (in supported countries)
+- Proof of address (bank statement, utility bill — must be less than 3 months old)
+
+**Sumsub method:**
+- Faster processing (often minutes)
+- Requires your platform to integrate with Sumsub
+- All document types supported by your Sumsub configuration are accepted
+
+---
+
+## Receiving Transfers
+
+Once your IBAN is active:
+
+1. Share your IBAN and BIC with the sender.
+2. Sender initiates a SEPA transfer to your IBAN.
+3. Funds are received and automatically converted to your selected crypto token.
+4. Converted crypto is sent to your configured payout address.
+
+**SEPA settlement times:**
+- Standard SEPA: 1 business day
+- SEPA Instant: Seconds to minutes (availability depends on sender bank)
+
+<Tip>
+  You can update your payout address and token preferences at any time by contacting Yativo support or via the account management API. Transfers in transit will use the configuration at the time they are processed.
+</Tip>

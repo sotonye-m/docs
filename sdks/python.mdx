@@ -1,0 +1,544 @@
+---
+title: "Python SDK"
+description: "Complete guide for yativo-crypto-sdk — installation, authentication, all resources, and exception handling"
+---
+
+# Python SDK
+
+The `yativo-crypto-sdk` package provides a Pythonic interface to the Yativo Crypto API with snake_case methods, a structured exception hierarchy, and automatic token refresh on `401` responses.
+
+## Installation
+
+```bash
+pip install yativo-crypto-sdk
+# or with poetry
+poetry add yativo-crypto-sdk
+# or with uv
+uv add yativo-crypto-sdk
+```
+
+**Requirements:** Python 3.8 or higher.
+
+---
+
+## Quick Start
+
+<Tabs>
+  <Tab title="Email / Password Auth">
+    ```python
+    from yativo import YativoSDK
+
+    sdk = YativoSDK(
+        base_url="https://crypto-api.yativo.com/api/"
+    )
+
+    # Register
+    sdk.auth.register(
+        email="user@example.com",
+        password="SecurePass123!",
+        first_name="Ada",
+        last_name="Lovelace",
+    )
+
+    # Login — token is stored and refreshed automatically
+    session = sdk.auth.login(
+        email="user@example.com",
+        password="SecurePass123!",
+    )
+    print("Logged in as:", session["user"]["email"])
+    ```
+  </Tab>
+  <Tab title="API Key Auth">
+    ```python
+    import os
+    from yativo import YativoSDK
+
+    sdk = YativoSDK(
+        api_key=os.environ["YATIVO_API_KEY"],
+        api_secret=os.environ["YATIVO_API_SECRET"],
+        base_url="https://crypto-api.yativo.com/api/",
+    )
+
+    # No login needed — every request is signed automatically
+    wallets = sdk.assets.list()
+    print("Wallets:", wallets)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Constructor Parameters
+
+```python
+YativoSDK(
+    api_key: str | None = None,
+    api_secret: str | None = None,
+    base_url: str = "https://crypto-api.yativo.com/api/",
+    timeout: int = 30,                    # seconds
+    standalone_iban_enabled: bool = False,
+)
+```
+
+---
+
+## Authentication (`sdk.auth`)
+
+### Register
+
+```python
+user = sdk.auth.register(
+    email="user@example.com",
+    password="SecurePass123!",
+    first_name="Ada",
+    last_name="Lovelace",
+    phone_number="+14155552671",  # optional
+)
+```
+
+### Login
+
+```python
+session = sdk.auth.login(
+    email="user@example.com",
+    password="SecurePass123!",
+)
+```
+
+### OTP Verification
+
+```python
+# Request an OTP
+sdk.auth.request_otp(email="user@example.com")
+
+# Verify the OTP
+sdk.auth.verify_otp(email="user@example.com", otp="123456")
+```
+
+### Two-Factor Authentication (2FA)
+
+```python
+# Enable 2FA
+setup = sdk.auth.enable_2fa()
+print("Scan QR:", setup["qr_code_url"])
+
+# Confirm setup
+sdk.auth.confirm_2fa(code="654321")
+
+# Login with 2FA
+session = sdk.auth.login(email="user@example.com", password="SecurePass123!")
+if session.get("requires_2fa"):
+    sdk.auth.verify_2fa(code="654321")
+```
+
+---
+
+## Accounts (`sdk.accounts`)
+
+```python
+# Create an account
+account = sdk.accounts.create(name="Main Treasury", currency="USD")
+
+# List accounts
+result = sdk.accounts.list(page=1, limit=20)
+print(f"Total: {result['total']}, Accounts: {result['accounts']}")
+
+# Get a single account
+account = sdk.accounts.get("acct_abc123")
+```
+
+---
+
+## Assets / Wallets (`sdk.assets`)
+
+### Create a Wallet
+
+```python
+wallet = sdk.assets.create_wallet(
+    account_id="acct_abc123",
+    asset="USDC",
+    network="SOLANA",
+)
+print("Deposit address:", wallet["address"])
+```
+
+### Batch Create Wallets
+
+```python
+wallets = sdk.assets.batch_create(
+    account_id="acct_abc123",
+    assets=[
+        {"asset": "USDC", "network": "SOLANA"},
+        {"asset": "XDC",  "network": "XDC"},
+        {"asset": "ETH",  "network": "ETHEREUM"},
+    ],
+)
+```
+
+### List Wallets
+
+```python
+wallets = sdk.assets.list(account_id="acct_abc123")
+```
+
+### Check Balance
+
+```python
+balance = sdk.assets.get_balance(wallet_id="wallet_xyz789")
+print(f"Balance: {balance['amount']} {balance['asset']}")
+```
+
+---
+
+## Transactions (`sdk.transactions`)
+
+### Send Funds (with Idempotency)
+
+```python
+import uuid
+
+tx = sdk.transactions.send(
+    from_wallet_id="wallet_xyz789",
+    to_address="BjhiXKt...",
+    amount="100.00",
+    asset="USDC",
+    network="SOLANA",
+    idempotency_key=str(uuid.uuid4()),  # prevents double-sends on retry
+    memo="Invoice #INV-2026-001",
+)
+print(f"Transaction ID: {tx['id']}, Status: {tx['status']}")
+```
+
+### Estimate Gas Fee
+
+```python
+fee = sdk.transactions.estimate_gas(
+    from_wallet_id="wallet_xyz789",
+    to_address="BjhiXKt...",
+    amount="100.00",
+    asset="USDC",
+    network="SOLANA",
+)
+print(f"Estimated fee: {fee['fee']} {fee['fee_asset']}")
+```
+
+### List Transactions
+
+```python
+result = sdk.transactions.list(
+    account_id="acct_abc123",
+    page=1,
+    limit=25,
+    status="COMPLETED",       # optional
+    start_date="2026-01-01",  # optional
+    end_date="2026-03-31",    # optional
+)
+for tx in result["transactions"]:
+    print(tx["id"], tx["status"], tx["amount"])
+```
+
+### Get a Transaction
+
+```python
+tx = sdk.transactions.get("txn_def456")
+```
+
+---
+
+## Swap (`sdk.swap`)
+
+```python
+# Get a swap quote
+quote = sdk.swap.get_quote(
+    from_asset="USDC",
+    to_asset="XDC",
+    amount="500.00",
+    network="SOLANA",
+)
+print(f"You receive: {quote['to_amount']} XDC at rate {quote['rate']}")
+
+# Execute the swap (quote expires after ~30 seconds)
+result = sdk.swap.execute(
+    quote_id=quote["id"],
+    from_wallet_id="wallet_xyz789",
+    to_wallet_id="wallet_xdc001",
+)
+print("Swap status:", result["status"])
+```
+
+---
+
+## Cards (`sdk.cards`)
+
+### Onboard a Cardholder
+
+```python
+cardholder = sdk.cards.onboard(
+    customer_id="cust_111",
+    first_name="Ada",
+    last_name="Lovelace",
+    date_of_birth="1990-05-15",
+    address={
+        "line1":   "1 Infinite Loop",
+        "city":    "Cupertino",
+        "state":   "CA",
+        "zip":     "95014",
+        "country": "US",
+    },
+)
+```
+
+### Create a Virtual Card
+
+```python
+card = sdk.cards.create(
+    cardholder_id=cardholder["id"],
+    currency="USD",
+    label="Engineering expenses",
+)
+print(f"Card {card['id']}, last 4: {card['last4']}")
+```
+
+### Get Card Funding Address
+
+```python
+funding = sdk.cards.get_funding_address(card_id=card["id"])
+print(f"Fund this card at: {funding['address']} on {funding['network']}")
+```
+
+### Get Card Transactions
+
+```python
+result = sdk.cards.get_transactions(card_id=card["id"], page=1, limit=20)
+for t in result["transactions"]:
+    print(t["amount"], t["merchant"], t["status"])
+```
+
+---
+
+## Webhooks (`sdk.webhooks`)
+
+### Create a Webhook
+
+```python
+webhook = sdk.webhooks.create(
+    url="https://your-app.com/webhooks/yativo",
+    events=["transaction.completed", "deposit.received", "card.transaction"],
+    secret="whsec_your_generated_secret",
+)
+print("Webhook ID:", webhook["id"])
+```
+
+### Verify a Webhook Signature
+
+```python
+from yativo import Webhooks
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+
+@app.post("/webhooks/yativo")
+def handle_webhook():
+    signature = request.headers.get("X-Yativo-Signature", "")
+    raw_body  = request.get_data()
+
+    if not Webhooks.verify_signature(raw_body, signature, "whsec_your_secret"):
+        abort(401)
+
+    event = request.get_json(force=True)
+    print("Event:", event["type"], event["data"])
+    return "", 200
+```
+
+### List / Delete Webhooks
+
+```python
+webhooks = sdk.webhooks.list()
+sdk.webhooks.delete("wh_ghi789")
+```
+
+---
+
+## API Keys (`sdk.api_keys`)
+
+```python
+# Create an API key (requires 2FA code if 2FA is enabled)
+key = sdk.api_keys.create(
+    name="Production Server",
+    permissions=["transactions:read", "transactions:write", "wallets:read"],
+    two_fa_code="123456",
+)
+# Store key["secret"] securely — shown only once
+print("API Key:", key["key"])
+print("API Secret:", key["secret"])
+
+# List API keys
+result = sdk.api_keys.list()
+
+# Revoke a key
+sdk.api_keys.revoke("key_jkl012")
+```
+
+---
+
+## Customers (`sdk.customers`)
+
+```python
+customer = sdk.customers.create(
+    external_id="usr_from_your_db",
+    email="customer@example.com",
+    first_name="Charles",
+    last_name="Babbage",
+    kyc_level="BASIC",
+)
+
+result = sdk.customers.list(page=1, limit=50)
+customer = sdk.customers.get("cust_abc")
+sdk.customers.update("cust_abc", kyc_level="FULL")
+```
+
+---
+
+## Analytics (`sdk.analytics`)
+
+```python
+report = sdk.analytics.get_summary(
+    account_id="acct_abc123",
+    start_date="2026-01-01",
+    end_date="2026-03-31",
+)
+print("Total volume:", report["total_volume"])
+print("Total fees:",   report["total_fees"])
+```
+
+---
+
+## IBAN (`sdk.standalone_iban`)
+
+<Warning>
+  You must pass `standalone_iban_enabled=True` to the constructor to use this resource.
+</Warning>
+
+```python
+sdk = YativoSDK(
+    api_key=os.environ["YATIVO_API_KEY"],
+    api_secret=os.environ["YATIVO_API_SECRET"],
+    standalone_iban_enabled=True,
+)
+
+iban = sdk.standalone_iban.create(
+    customer_id="cust_111",
+    currency="EUR",
+    label="EU Collections",
+)
+print(f"IBAN: {iban['iban']}, BIC: {iban['bic']}")
+
+ibans = sdk.standalone_iban.list(customer_id="cust_111")
+```
+
+---
+
+## Exception Handling
+
+```python
+from yativo.exceptions import (
+    YativoError,
+    AuthenticationError,
+    ValidationError,
+    RateLimitError,
+    NotFoundError,
+)
+
+try:
+    tx = sdk.transactions.send(
+        from_wallet_id="wallet_xyz789",
+        to_address="BjhiXKt...",
+        amount="100.00",
+        asset="USDC",
+        network="SOLANA",
+        idempotency_key=str(uuid.uuid4()),
+    )
+except AuthenticationError as e:
+    # Token expired and could not be refreshed, or invalid API key
+    print(f"Auth failed: {e}")
+except ValidationError as e:
+    # Request body failed server-side validation
+    print(f"Validation errors: {e.errors}")
+except RateLimitError as e:
+    # 60 req/min per endpoint exceeded
+    print(f"Rate limited. Retry after {e.retry_after}s")
+except NotFoundError as e:
+    print(f"Resource not found: {e.resource_id}")
+except YativoError as e:
+    print(f"API error {e.status_code}: {e}")
+```
+
+### Exception Hierarchy
+
+```
+YativoError
+├── AuthenticationError    (HTTP 401)
+├── AuthorizationError     (HTTP 403)
+├── ValidationError        (HTTP 422)  — has .errors: list[dict]
+├── NotFoundError          (HTTP 404)  — has .resource_id: str
+├── RateLimitError         (HTTP 429)  — has .retry_after: int
+└── ServerError            (HTTP 5xx)
+```
+
+---
+
+## Async Support
+
+<Note>
+  The synchronous client is recommended for most use cases. An async variant is available for high-throughput applications running on an event loop (FastAPI, asyncio).
+</Note>
+
+```python
+import asyncio
+from yativo.async_client import AsyncYativoSDK
+
+async def main():
+    sdk = AsyncYativoSDK(
+        api_key=os.environ["YATIVO_API_KEY"],
+        api_secret=os.environ["YATIVO_API_SECRET"],
+    )
+    wallets = await sdk.assets.list()
+    print(wallets)
+
+asyncio.run(main())
+```
+
+---
+
+## Django / Flask Integration Example
+
+```python
+# settings.py (Django) or app config (Flask)
+YATIVO_API_KEY    = os.environ["YATIVO_API_KEY"]
+YATIVO_API_SECRET = os.environ["YATIVO_API_SECRET"]
+
+# views.py
+from django.http import JsonResponse
+from yativo import YativoSDK
+from yativo.exceptions import YativoError
+import uuid
+
+sdk = YativoSDK(
+    api_key=settings.YATIVO_API_KEY,
+    api_secret=settings.YATIVO_API_SECRET,
+)
+
+def send_payment(request):
+    try:
+        tx = sdk.transactions.send(
+            from_wallet_id=request.POST["wallet_id"],
+            to_address=request.POST["to_address"],
+            amount=request.POST["amount"],
+            asset="USDC",
+            network="SOLANA",
+            idempotency_key=str(uuid.uuid4()),
+        )
+        return JsonResponse({"transaction_id": tx["id"], "status": tx["status"]})
+    except YativoError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+```

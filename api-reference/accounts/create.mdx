@@ -1,0 +1,45 @@
+---
+title: "Create Account"
+api: "POST https://crypto-sandbox.yativo.com/api/accounts/create-account"
+description: "Create a new account to organize wallets and assets"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="account_name" type="string" required>
+  A human-readable name for the account.
+</ParamField>
+
+<ParamField body="account_type" type="string">
+  Optional type classification for the account, e.g. `personal`, `business`, `customer`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/accounts/create-account' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_name": "Main Treasury",
+    "account_type": "business"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Account created successfully",
+  "data": {
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "account_name": "Main Treasury",
+    "account_type": "business",
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

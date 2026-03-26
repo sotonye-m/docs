@@ -1,0 +1,98 @@
+---
+title: "Transaction Analytics"
+api: "GET https://crypto-sandbox.yativo.com/api/analytics/transactions"
+description: "Retrieve detailed transaction analytics broken down by time, asset, and status"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField query="from" type="string" required>
+  Start date. ISO 8601 format: `2026-03-01`
+</ParamField>
+
+<ParamField query="to" type="string" required>
+  End date. ISO 8601 format: `2026-03-31`
+</ParamField>
+
+<ParamField query="granularity" type="string">
+  Time bucket size. Accepted values: `hour`, `day`, `week`, `month`. Default: `day`
+</ParamField>
+
+<ParamField query="asset" type="string">
+  Filter by asset symbol (e.g. `USDC`, `ETH`).
+</ParamField>
+
+<ParamField query="network" type="string">
+  Filter by network (e.g. `polygon`, `ethereum`, `solana`).
+</ParamField>
+
+<Accordion title="Response Type Definitions">
+```typescript
+interface TransactionAnalyticsResponse {
+  status: "success";
+  data: {
+    period: { from: string; to: string; granularity: string };
+    buckets: Array<{
+      timestamp: string;
+      count: number;
+      volume_usd: string;
+      successful: number;
+      failed: number;
+    }>;
+    summary: {
+      total_count: number;
+      total_volume_usd: string;
+      avg_transaction_usd: string;
+      success_rate: number;
+    };
+  };
+}
+```
+</Accordion>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/analytics/transactions?from=2026-03-01&to=2026-03-31&granularity=day' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "period": {
+      "from": "2026-03-01",
+      "to": "2026-03-31",
+      "granularity": "day"
+    },
+    "buckets": [
+      {
+        "timestamp": "2026-03-01T00:00:00Z",
+        "count": 42,
+        "volume_usd": "14200.00",
+        "successful": 40,
+        "failed": 2
+      },
+      {
+        "timestamp": "2026-03-02T00:00:00Z",
+        "count": 38,
+        "volume_usd": "12800.00",
+        "successful": 37,
+        "failed": 1
+      }
+    ],
+    "summary": {
+      "total_count": 1284,
+      "total_volume_usd": "428950.00",
+      "avg_transaction_usd": "334.07",
+      "success_rate": 97.4
+    }
+  }
+}
+```
+</ResponseExample>

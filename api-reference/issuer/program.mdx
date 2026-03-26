@@ -1,0 +1,36 @@
+---
+title: "Get Issuer Program"
+api: "GET https://crypto-sandbox.yativo.com/api/card-issuer/my-program"
+description: "Retrieve details of your card issuer program"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/card-issuer/my-program' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Issuer program retrieved successfully",
+  "data": {
+    "program_id": "prg_01HX9KZMB3F7VNQP8R2WDGT4EO",
+    "name": "Acme Financial",
+    "funding_structure": "pre_funded",
+    "iban_enabled": true,
+    "status": "active",
+    "total_customers": 1250,
+    "total_cards_issued": 2340,
+    "created_at": "2026-01-15T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

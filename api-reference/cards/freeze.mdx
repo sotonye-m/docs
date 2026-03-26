@@ -1,0 +1,36 @@
+---
+title: "Freeze Card"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/cards/{cardId}/freeze"
+description: "Temporarily freeze a card to prevent any new transactions"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The ID of the card to freeze.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/crd_01HX9KZMB3F7VNQP8R2WDGT4EJ/freeze' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Card frozen successfully",
+  "data": {
+    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
+    "status": "frozen",
+    "frozen_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

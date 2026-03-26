@@ -1,0 +1,80 @@
+---
+title: "Yativo Crypto"
+description: "Multi-chain crypto infrastructure for businesses — wallets, cards, IBAN, and more"
+---
+
+Yativo Crypto is the crypto infrastructure division of Yativo. It gives businesses and developers a complete stack for building crypto-powered financial products: multi-chain wallet management, crypto-funded debit cards, IBAN accounts, cross-chain token swaps, and a B2B customer layer for managing your own users.
+
+Everything is accessible via a single REST API with SDK support for TypeScript, Python, PHP, Java, and React.
+
+---
+
+## What You Can Build
+
+- **Crypto wallets as a service** — Generate deposit addresses on multiple chains for your users, track balances, and move funds programmatically
+- **Crypto-funded payment cards** — Issue virtual and physical debit cards that spend directly from crypto balances
+- **IBAN accounts** — Assign European bank account numbers to crypto wallets for fiat on/off-ramp flows
+- **Token swap** — Let users swap between tokens and chains without leaving your product
+- **B2B sub-accounts** — Manage wallets and cards for your own business customers under a single Yativo account
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Multi-Chain Wallets" icon="wallet" href="/yativo-crypto/assets">
+    Generate and manage wallet addresses across 9+ blockchains from a single API. Automatic deposit detection with webhook notifications.
+  </Card>
+  <Card title="Yativo Card" icon="credit-card" href="/yativo-crypto/cards/overview">
+    Issue virtual and physical Visa debit cards funded from crypto balances. Full KYC onboarding, spending limits, and dispute management.
+  </Card>
+  <Card title="IBAN" icon="building-columns" href="/yativo-crypto/iban">
+    European IBAN accounts linked to crypto wallets. Receive EUR transfers directly into a wallet-backed bank account.
+  </Card>
+  <Card title="Token Swap" icon="arrows-rotate" href="/yativo-crypto/swap">
+    Cross-chain and same-chain token swaps with real-time quotes and slippage control.
+  </Card>
+  <Card title="Gas Station" icon="gas-pump" href="/yativo-crypto/gas-station">
+    Pre-fund a gas station to cover network fees on behalf of your users. Eliminates the UX friction of requiring users to hold native tokens.
+  </Card>
+  <Card title="B2B Customers" icon="users" href="/yativo-crypto/customers">
+    Create and manage sub-accounts for your business customers. Each customer gets their own wallets and cards under your platform.
+  </Card>
+  <Card title="Real-Time Webhooks" icon="bell" href="/yativo-crypto/webhooks">
+    Get notified instantly on deposits, withdrawals, swaps, card transactions, and more.
+  </Card>
+  <Card title="Sandbox" icon="flask" href="/sandbox/overview">
+    A full-featured sandbox environment for testing your integration without touching real funds.
+  </Card>
+</CardGroup>
+
+---
+
+## Supported Chains
+
+Yativo Crypto supports 9 blockchains at launch, including Ethereum, Solana, Bitcoin, Polygon, BSC, Base, Arbitrum, Optimism, and XDC. See the [Supported Chains](/yativo-crypto/supported-chains) page for the full list of networks and tokens.
+
+---
+
+## API Base URL
+
+| Environment | Base URL |
+|-------------|----------|
+| Production | `https://crypto-api.yativo.com/api/` |
+| Sandbox | `https://crypto-sandbox.yativo.com/api/` |
+
+---
+
+## Getting Started
+
+<Steps>
+  <Step title="Follow the Quickstart">
+    The [Quickstart](/yativo-crypto/quickstart) walks you through account creation, API key generation, and your first wallet and transaction in under 10 minutes.
+  </Step>
+  <Step title="Explore the SDK">
+    Install one of the official SDKs for faster integration. The [TypeScript SDK](/sdks/typescript) and [Python SDK](/sdks/python) are the most feature-complete.
+  </Step>
+  <Step title="Test in the Sandbox">
+    Use the [Sandbox environment](/sandbox/overview) to simulate the full transaction lifecycle before going live.
+  </Step>
+</Steps>

@@ -1,0 +1,350 @@
+---
+title: "Cards in Sandbox"
+description: "Mock responses for Yativo Card endpoints — card features are not available in the sandbox environment"
+---
+
+## Important Notice
+
+<Warning>
+  **The Yativo Card feature does NOT have a sandbox environment.**
+
+  Card endpoints (`/yativo-card/...` and `/card-issuer/...`) are not available at `https://crypto-sandbox.yativo.com/api/`. Calls to card endpoints using the sandbox URL will return an error.
+
+  To integrate and test card features, you must use the **production environment** (`https://crypto-api.yativo.com/api/`) with real KYC-verified accounts.
+</Warning>
+
+---
+
+## Why No Card Sandbox?
+
+The Yativo Card operates on live payment infrastructure that cannot be replicated in a testnet environment. Card transactions go through regulated payment networks that require real-world identity verification and live authorization flows.
+
+**What this means for your integration:**
+- You must complete real KYC onboarding to test card endpoints
+- Use test amounts (e.g., $0.01 or $1.00 top-ups) for initial integration testing in production
+- Review the mock response examples below to understand the expected data shapes before coding against production
+
+---
+
+## How to Test Cards
+
+<Steps>
+  <Step title="Review mock responses">
+    Study the mock responses in this document to understand the structure of each endpoint response. Write your data models and parsers against these shapes.
+  </Step>
+  <Step title="Implement your integration">
+    Build your card integration logic using the mock data as a reference. Your code should be fully written and tested against mocks before going to production.
+  </Step>
+  <Step title="Complete KYC onboarding in production">
+    Use the production API to complete card account onboarding with real identity documents.
+  </Step>
+  <Step title="Use small amounts for live testing">
+    Fund your card wallet with a small amount (e.g., $5–$10 USDC) and verify the full flow works end-to-end.
+  </Step>
+</Steps>
+
+---
+
+## Mock Responses
+
+The following are representative mock responses for each card endpoint. Use these to build and test your integration logic.
+
+---
+
+### POST /yativo-card/onboard — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "email": "user@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "kyc_status": "pending",
+    "created_at": "2026-03-25T10:00:00Z"
+  }
+}
+```
+
+---
+
+### GET /yativo-card/kyc-status — Mock Responses
+
+```json KYC Pending
+{
+  "status": "success",
+  "data": {
+    "kyc_status": "pending",
+    "kyc_verified_at": null,
+    "rejection_reason": null
+  }
+}
+```
+
+```json KYC Approved
+{
+  "status": "success",
+  "data": {
+    "kyc_status": "approved",
+    "kyc_verified_at": "2026-03-25T10:15:00Z",
+    "rejection_reason": null
+  }
+}
+```
+
+```json KYC Rejected
+{
+  "status": "success",
+  "data": {
+    "kyc_status": "rejected",
+    "kyc_verified_at": null,
+    "rejection_reason": "Document quality too low. Please resubmit a clearer image."
+  }
+}
+```
+
+---
+
+### POST /yativo-card/create-card — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "display_name": "Online Shopping",
+    "card_type": "virtual",
+    "status": "active",
+    "last_four": "4242",
+    "spending_limit_amount": 500.00,
+    "spending_limit_frequency": "monthly",
+    "created_at": "2026-03-25T10:30:00Z"
+  }
+}
+```
+
+---
+
+### GET /yativo-card/list-cards — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "display_name": "Online Shopping",
+      "card_type": "virtual",
+      "status": "active",
+      "last_four": "4242",
+      "spending_limit_amount": 500.00,
+      "spending_limit_frequency": "monthly",
+      "created_at": "2026-03-25T10:30:00Z"
+    },
+    {
+      "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4F1",
+      "display_name": "Subscriptions",
+      "card_type": "virtual",
+      "status": "frozen",
+      "last_four": "7891",
+      "spending_limit_amount": 100.00,
+      "spending_limit_frequency": "monthly",
+      "created_at": "2026-03-20T08:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### GET /yativo-card/{yativoCardId}/wallet — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "wallet_id": "wlt_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "balance": 250.75,
+    "currency": "USD",
+    "wallet_address": "0x4a9d2f8b3c1e6a7d0f5b8c2e9a4d7f1b3c8e0a2d",
+    "status": "active",
+    "updated_at": "2026-03-25T14:00:00Z"
+  }
+}
+```
+
+---
+
+### GET /yativo-card/{yativoCardId}/wallet/funding-address — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "funding_address": "7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+    "chain": "solana",
+    "token": "USDC",
+    "token_contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "minimum_deposit": 5.00,
+    "memo_required": false
+  }
+}
+```
+
+---
+
+### GET /yativo-card/{yativoCardId}/cards/{cardId}/transactions — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "transactions": [
+      {
+        "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT901",
+        "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "amount": 42.50,
+        "currency": "USD",
+        "merchant_name": "Amazon",
+        "merchant_category": "Online Retail",
+        "status": "completed",
+        "type": "purchase",
+        "created_at": "2026-03-20T15:30:00Z",
+        "settled_at": "2026-03-21T10:00:00Z"
+      },
+      {
+        "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT902",
+        "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "amount": 12.99,
+        "currency": "USD",
+        "merchant_name": "Netflix",
+        "merchant_category": "Streaming",
+        "status": "completed",
+        "type": "purchase",
+        "created_at": "2026-03-15T08:00:00Z",
+        "settled_at": "2026-03-16T09:00:00Z"
+      },
+      {
+        "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT903",
+        "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "amount": 150.00,
+        "currency": "USD",
+        "merchant_name": "Unknown Merchant",
+        "merchant_category": "Other",
+        "status": "failed",
+        "type": "purchase",
+        "failure_reason": "Spending limit exceeded",
+        "created_at": "2026-03-10T12:00:00Z",
+        "settled_at": null
+      }
+    ],
+    "total": 3,
+    "limit": 20,
+    "offset": 0
+  }
+}
+```
+
+---
+
+### POST /yativo-card/cards/{cardId}/freeze — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "frozen",
+    "frozen_at": "2026-03-25T11:00:00Z"
+  }
+}
+```
+
+---
+
+### POST /yativo-card/cards/{cardId}/void — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "voided",
+    "voided_at": "2026-03-25T11:10:00Z"
+  }
+}
+```
+
+---
+
+### POST /yativo-card/{yativoCardId}/cards/{cardId}/ephemeral-token — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "ephemeral_token": "eph_token_7f3k9d2m1p8q4r5t6y7u8i9o0p1a2b3c4d5e6f7g8h",
+    "expires_at": "2026-03-25T10:35:00Z",
+    "pse_url": "https://secure.yativo.com/card-details?token=eph_token_7f3k9d2m1p8q4r5t6y7u8i9o0p1a2b3c4d5e6f7g8h"
+  }
+}
+```
+
+---
+
+### GET /yativo-card/{yativoCardId}/bridges — Mock Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "bridges": [
+      {
+        "bridge_id": "brg_01HX9KZMB3F7VNQP8R2WDGT555",
+        "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "source_token": "USDC",
+        "source_chain": "solana",
+        "source_amount": 100.00,
+        "destination_amount": 99.75,
+        "destination_currency": "USD",
+        "deposit_tx_hash": "4xKp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5CxABCDEFGHIJKL",
+        "status": "completed",
+        "created_at": "2026-03-25T14:05:00Z",
+        "completed_at": "2026-03-25T14:07:30Z"
+      }
+    ],
+    "total": 1,
+    "limit": 20,
+    "offset": 0
+  }
+}
+```
+
+---
+
+## Error Response for Sandbox Calls
+
+If you accidentally call a card endpoint against the sandbox URL, you will receive:
+
+```json
+{
+  "status": "error",
+  "message": "Card services are not available in the sandbox environment. Please use the production API at https://crypto-api.yativo.com/api/",
+  "error_code": "FEATURE_NOT_AVAILABLE_IN_SANDBOX"
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Card Onboarding (Production)" icon="rocket" href="/yativo-crypto/cards/onboarding">
+    Complete real KYC onboarding in the production environment.
+  </Card>
+  <Card title="Card Overview" icon="credit-card" href="/yativo-crypto/cards/overview">
+    Review the full card feature set before building.
+  </Card>
+</CardGroup>

@@ -1,0 +1,459 @@
+---
+title: "Card Issuer Program"
+description: "Issue Yativo Cards to your own customers under your platform — B2B card issuer documentation"
+---
+
+<Accordion title="TypeScript Type Definitions">
+```typescript
+interface IssuerProgram {
+  program_id: string;
+  status: "pending" | "approved" | "active" | "suspended";
+  funding_structure: "crypto" | "fiat";
+  iban_enabled: boolean;
+  created_at: string;
+}
+```
+</Accordion>
+
+## Overview
+
+The Yativo Card Issuer Program allows businesses to issue virtual and physical payment cards to their own customers. As an issuer, you manage the full card lifecycle for your users — from KYC onboarding to card creation, funding, and transaction monitoring — all through a single API.
+
+**Typical use cases:**
+- Fintech apps offering crypto-funded debit cards to users
+- Corporate expense management platforms
+- Digital banking services for underserved markets
+- Wallets that want to add a card spending layer
+
+---
+
+## Apply for the Issuer Program
+
+Submit an application to become a Yativo Card Issuer.
+
+```
+POST /card-issuer/apply
+```
+
+<ParamField body="funding_structure" type="string" required>
+  How your program will be funded. Accepted values: `pre_funded` (you fund the issuer wallet and distribute to customers), `customer_funded` (customers fund their own wallets directly).
+</ParamField>
+
+<ParamField body="iban_enabled" type="boolean">
+  Whether you want IBAN functionality enabled for your customers. Defaults to `false`. IBAN enablement may require additional regulatory review.
+</ParamField>
+
+<ParamField body="business_name" type="string" required>
+  Your legal business name.
+</ParamField>
+
+<ParamField body="business_email" type="string" required>
+  Business contact email for program communications.
+</ParamField>
+
+<ParamField body="expected_monthly_cards" type="integer">
+  Estimated number of cards you plan to issue per month. Helps with capacity planning.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/apply' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "funding_structure": "pre_funded",
+    "iban_enabled": true,
+    "business_name": "Acme Payments Ltd",
+    "business_email": "cards@acme.example.com",
+    "expected_monthly_cards": 500
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "application_id": "iss_app_01HX9KZMB3F7VNQP8R2WDGT111",
+    "status": "under_review",
+    "submitted_at": "2026-03-25T19:00:00Z",
+    "estimated_review_days": 5
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get Program Status
+
+Check the status of your issuer program application and view program details once approved.
+
+```
+GET /card-issuer/my-program
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/card-issuer/my-program' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Approved Program
+{
+  "status": "success",
+  "data": {
+    "issuer_id": "iss_01HX9KZMB3F7VNQP8R2WDGT222",
+    "business_name": "Acme Payments Ltd",
+    "program_status": "active",
+    "funding_structure": "pre_funded",
+    "iban_enabled": true,
+    "approved_at": "2026-03-30T10:00:00Z",
+    "total_customers": 127,
+    "total_cards_issued": 134
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get Issuer Wallets
+
+Retrieve the funding wallets associated with your issuer account. Use these wallets to pre-fund your program.
+
+```
+GET /card-issuer/wallets
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/card-issuer/wallets' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "issuer_id": "iss_01HX9KZMB3F7VNQP8R2WDGT222",
+    "wallets": [
+      {
+        "wallet_id": "isswlt_01HX9KZMB3F7VNQP8R2WDGT333",
+        "chain": "solana",
+        "token": "USDC",
+        "address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+        "balance": 5000.00,
+        "currency": "USD"
+      }
+    ]
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## List Issuer Customers
+
+Retrieve a paginated list of all customers enrolled under your issuer program.
+
+```
+GET /card-issuer/customers
+```
+
+<ParamField query="page" type="integer">
+  Page number (1-indexed). Default: `1`.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Customers per page. Default: `20`. Max: `100`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/card-issuer/customers?page=1&limit=20' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "customers": [
+      {
+        "customer_id": "yc_customer_01HX9KZMB3F7",
+        "email": "customer@example.com",
+        "first_name": "John",
+        "last_name": "Smith",
+        "kyc_status": "approved",
+        "cards_issued": 2,
+        "created_at": "2026-03-10T09:00:00Z"
+      }
+    ],
+    "total": 127,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Fund a Customer's Card Wallet
+
+Transfer funds from your issuer wallet to a customer's card wallet.
+
+```
+POST /card-issuer/customers/{customerId}/fund
+```
+
+<ParamField path="customerId" type="string" required>
+  The customer's Yativo Card account ID.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to transfer in USD.
+</ParamField>
+
+<ParamField body="source_chain" type="string" required>
+  The chain from which to source the funds. Accepted values: `solana`.
+</ParamField>
+
+<ParamField body="pricing_mode" type="string">
+  How the transfer amount is interpreted. Accepted values: `exact` (transfer exactly this amount), `net` (customer receives this amount after fees). Default: `exact`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/customers/yc_customer_01HX9KZMB3F7/fund' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "amount": 100.00,
+    "source_chain": "solana",
+    "pricing_mode": "net"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "funding_id": "fund_01HX9KZMB3F7VNQP8R2WDGT444",
+    "customer_id": "yc_customer_01HX9KZMB3F7",
+    "amount_sent": 100.25,
+    "amount_received": 100.00,
+    "fee": 0.25,
+    "currency": "USD",
+    "status": "completed",
+    "funded_at": "2026-03-25T20:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Customer Card Operations
+
+### List Customer Cards
+
+```
+GET /yativo-card/customers/{customerId}/cards
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/cards' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+### Create a Card for a Customer
+
+```
+POST /yativo-card/customers/{customerId}/create-card
+```
+
+<ParamField path="customerId" type="string" required>
+  The customer's Yativo Card account ID.
+</ParamField>
+
+<ParamField body="card_type" type="string" required>
+  Card type: `"virtual"` or `"physical"`.
+</ParamField>
+
+<ParamField body="display_name" type="string" required>
+  A label for the card.
+</ParamField>
+
+<ParamField body="spending_limit_amount" type="number">
+  Optional spending limit for this card.
+</ParamField>
+
+<ParamField body="spending_limit_frequency" type="string">
+  Limit frequency: `daily`, `weekly`, `monthly`, `per_authorization`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/create-card' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "card_type": "virtual",
+    "display_name": "Customer Virtual Card",
+    "spending_limit_amount": 250.00,
+    "spending_limit_frequency": "monthly"
+  }'
+```
+</RequestExample>
+
+### Get Customer Card Sensitive Details (Ephemeral Token)
+
+```
+POST /yativo-card/customers/{yativoCardId}/cards/{cardId}/ephemeral-token
+```
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/ephemeral-token' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</RequestExample>
+
+### Get Customer Profile
+
+```
+GET /yativo-card/customers/{yativoCardId}/profile
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/profile' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+---
+
+## Customer Webhooks
+
+Subscribe to real-time events for a specific customer account. This allows you to react instantly to card transactions, balance changes, and other events without polling.
+
+### Subscribe to Webhooks
+
+```
+POST /yativo-card/{yativoCardId}/webhooks/subscribe
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's Yativo Card account ID.
+</ParamField>
+
+<ParamField body="url" type="string" required>
+  The HTTPS URL that will receive webhook events.
+</ParamField>
+
+<ParamField body="events" type="array" required>
+  An array of event types to subscribe to. Example: `["transaction.completed", "card.frozen", "balance.updated"]`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_customer_01HX9KZMB3F7/webhooks/subscribe' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://your-platform.example.com/webhooks/card-events",
+    "events": ["transaction.completed", "transaction.failed", "card.frozen", "balance.updated", "deposit.credited"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "subscription_id": "wsub_01HX9KZMB3F7VNQP8R2WDGT666",
+    "yativo_card_id": "yc_customer_01HX9KZMB3F7",
+    "url": "https://your-platform.example.com/webhooks/card-events",
+    "events": ["transaction.completed", "transaction.failed", "card.frozen", "balance.updated", "deposit.credited"],
+    "created_at": "2026-03-25T20:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Unsubscribe from Webhooks
+
+```
+DELETE /yativo-card/{yativoCardId}/webhooks/subscribe/{subscriptionId}
+```
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://crypto-api.yativo.com/api/yativo-card/yc_customer_01HX9KZMB3F7/webhooks/subscribe/wsub_01HX9KZMB3F7VNQP8R2WDGT666' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+---
+
+## Available Webhook Events
+
+| Event | Description |
+|---|---|
+| `transaction.completed` | A card transaction has settled successfully. |
+| `transaction.failed` | A card transaction was declined or failed. |
+| `transaction.reversed` | A transaction has been reversed or refunded. |
+| `card.created` | A new card has been issued. |
+| `card.frozen` | A card has been frozen. |
+| `card.unfrozen` | A card has been unfrozen. |
+| `card.voided` | A card has been permanently cancelled. |
+| `balance.updated` | The card wallet balance has changed. |
+| `deposit.credited` | A crypto deposit has been processed and credited. |
+| `deposit.failed` | A deposit could not be processed. |
+| `kyc.approved` | A customer's KYC has been approved. |
+| `kyc.rejected` | A customer's KYC has been rejected. |
+
+---
+
+## Issuer Program Summary
+
+<CardGroup cols={2}>
+  <Card title="Apply for Program" icon="file-signature">
+    `POST /card-issuer/apply`
+    Submit your issuer application.
+  </Card>
+  <Card title="Check Program Status" icon="circle-info">
+    `GET /card-issuer/my-program`
+    View approval status and program details.
+  </Card>
+  <Card title="Fund Customers" icon="money-bill-transfer">
+    `POST /card-issuer/customers/{id}/fund`
+    Transfer funds to customer card wallets.
+  </Card>
+  <Card title="Manage Customer Cards" icon="credit-card">
+    `POST /yativo-card/customers/{id}/create-card`
+    Create and manage cards for your customers.
+  </Card>
+</CardGroup>
+
+<Note>
+  Issuer program approval typically takes 3–7 business days. You will be notified by email when your application is reviewed. Contact [partners@yativo.com](mailto:partners@yativo.com) for expedited review.
+</Note>

@@ -1,0 +1,37 @@
+---
+title: "Initialize Card Wallet"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/deploy-safe"
+description: "Initialize the card wallet to enable funding and card creation"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<Note>
+  The card wallet must be initialized before you can fund it or create cards. This is a one-time setup step that activates the on-chain wallet infrastructure for the card account.
+</Note>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/deploy-safe' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Card wallet initialized successfully",
+  "data": {
+    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
+    "wallet_status": "active",
+    "wallet_address": "0x3f4e5d6c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e",
+    "initialized_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

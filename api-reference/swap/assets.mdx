@@ -1,0 +1,56 @@
+---
+title: "List Swap Assets"
+api: "GET https://crypto-sandbox.yativo.com/api/swap/assets"
+description: "Retrieve all assets available for swapping"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/swap/assets' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Swap assets retrieved successfully",
+  "data": [
+    {
+      "ticker": "USDC_SOL",
+      "name": "USD Coin",
+      "chain": "solana",
+      "decimals": 6,
+      "logo_url": "https://assets.yativo.com/tokens/usdc.png"
+    },
+    {
+      "ticker": "USDC_ETH",
+      "name": "USD Coin",
+      "chain": "ethereum",
+      "decimals": 6,
+      "logo_url": "https://assets.yativo.com/tokens/usdc.png"
+    },
+    {
+      "ticker": "ETH",
+      "name": "Ethereum",
+      "chain": "ethereum",
+      "decimals": 18,
+      "logo_url": "https://assets.yativo.com/tokens/eth.png"
+    },
+    {
+      "ticker": "SOL",
+      "name": "Solana",
+      "chain": "solana",
+      "decimals": 9,
+      "logo_url": "https://assets.yativo.com/tokens/sol.png"
+    }
+  ]
+}
+```
+</ResponseExample>

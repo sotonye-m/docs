@@ -1,0 +1,131 @@
+---
+title: "Quickstart"
+description: "Create your account, generate an API key, and make your first API call in minutes"
+---
+
+This guide walks you through the minimum steps needed to start using Yativo's API.
+
+<Steps>
+  <Step title="Create and verify your account">
+    Go to [crypto.yativo.com/sign-up](https://crypto.yativo.com/sign-up) and register with your email address and password.
+
+    After registration, you'll receive a verification email. Confirm your address before proceeding — unverified accounts cannot generate API keys.
+
+    You can also register via the API:
+
+    ```bash
+    curl -X POST https://crypto-api.yativo.com/api/authentication/registration \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "you@example.com",
+        "password": "your-secure-password",
+        "first_name": "Jane",
+        "last_name": "Doe"
+      }'
+    ```
+  </Step>
+
+  <Step title="Enable two-factor authentication">
+    API key creation requires 2FA to be active on your account. Set it up in the dashboard under **Security > Two-Factor Authentication**, or via the API:
+
+    ```bash
+    curl -X POST https://crypto-api.yativo.com/api/auth/2fa/setup \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+    ```
+
+    Scan the returned QR code with Google Authenticator or any TOTP app, then verify:
+
+    ```bash
+    curl -X POST https://crypto-api.yativo.com/api/auth/2fa/verify \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"code": "123456"}'
+    ```
+
+    <Note>
+      2FA is required before you can create API keys. Keep your backup codes in a safe place.
+    </Note>
+  </Step>
+
+  <Step title="Generate an API key">
+    With 2FA enabled, create your first API key. You'll need your current TOTP code in the `X-2FA-Token` header:
+
+    ```bash
+    curl -X POST https://crypto-api.yativo.com/api/apikey/create \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+      -H "X-2FA-Token: 123456" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "My First Key",
+        "permissions": ["read", "write", "transactions"]
+      }'
+    ```
+
+    The response includes your `api_key` and `api_secret`. **Store the secret immediately** — it is only shown once.
+
+    ```json
+    {
+      "id": "key_01abc...",
+      "name": "My First Key",
+      "api_key": "yvk_live_...",
+      "api_secret": "yvs_live_...",
+      "permissions": ["read", "write", "transactions"],
+      "created_at": "2026-03-26T10:00:00Z"
+    }
+    ```
+  </Step>
+
+  <Step title="Make your first API call">
+    Use your API key and secret directly as headers, or exchange them for a Bearer token first.
+
+    **Option A: Use headers directly**
+
+    ```bash
+    curl -X GET https://crypto-api.yativo.com/api/apikey/list \
+      -H "X-API-Key: yvk_live_..." \
+      -H "X-API-Secret: yvs_live_..."
+    ```
+
+    **Option B: Exchange for a Bearer token (recommended for server-to-server)**
+
+    ```bash
+    curl -X POST https://crypto-api.yativo.com/api/apikey/token \
+      -H "Content-Type: application/json" \
+      -d '{
+        "api_key": "yvk_live_...",
+        "api_secret": "yvs_live_..."
+      }'
+    ```
+
+    ```json
+    {
+      "access_token": "eyJhbGci...",
+      "expires_in": 3600
+    }
+    ```
+
+    Then use the token:
+
+    ```bash
+    curl -X GET https://crypto-api.yativo.com/api/apikey/list \
+      -H "Authorization: Bearer eyJhbGci..."
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Yativo Crypto Quickstart" icon="rocket" href="/yativo-crypto/quickstart">
+    Set up a crypto wallet and send your first on-chain transaction.
+  </Card>
+  <Card title="API Keys" icon="key" href="/yativo/api-keys">
+    Manage permissions, rotate secrets, and understand key scopes.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/yativo/webhooks">
+    Get notified in real time when events happen on your account.
+  </Card>
+  <Card title="Authentication" icon="lock" href="/yativo/authentication">
+    Full reference for all authentication endpoints.
+  </Card>
+</CardGroup>

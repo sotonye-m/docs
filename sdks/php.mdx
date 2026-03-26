@@ -1,0 +1,556 @@
+---
+title: "PHP SDK"
+description: "Complete guide for yativo/crypto-sdk — Composer installation, all resources, exception handling, and static webhook verification"
+---
+
+# PHP SDK
+
+The `yativo/crypto-sdk` Composer package provides a clean, object-oriented PHP interface to the Yativo Crypto API with automatic token refresh and static webhook signature verification.
+
+## Installation
+
+```bash
+composer require yativo/crypto-sdk
+```
+
+**Requirements:** PHP 7.4 or higher, `ext-json`, `ext-curl` (or any PSR-18 compatible HTTP client).
+
+---
+
+## Quick Start
+
+<Tabs>
+  <Tab title="Email / Password Auth">
+    ```php
+    <?php
+    require __DIR__ . '/vendor/autoload.php';
+
+    use Yativo\YativoSDK;
+
+    $sdk = new YativoSDK([
+        'base_url' => 'https://crypto-api.yativo.com/api/',
+    ]);
+
+    // Register
+    $sdk->auth->register([
+        'email'      => 'user@example.com',
+        'password'   => 'SecurePass123!',
+        'first_name' => 'Ada',
+        'last_name'  => 'Lovelace',
+    ]);
+
+    // Login — token is stored and auto-refreshed on 401
+    $session = $sdk->auth->login([
+        'email'    => 'user@example.com',
+        'password' => 'SecurePass123!',
+    ]);
+
+    echo 'Logged in as: ' . $session['user']['email'] . PHP_EOL;
+    ```
+  </Tab>
+  <Tab title="API Key Auth">
+    ```php
+    <?php
+    require __DIR__ . '/vendor/autoload.php';
+
+    use Yativo\YativoSDK;
+
+    $sdk = new YativoSDK([
+        'api_key'    => getenv('YATIVO_API_KEY'),
+        'api_secret' => getenv('YATIVO_API_SECRET'),
+        'base_url'   => 'https://crypto-api.yativo.com/api/',
+    ]);
+
+    // No login needed — requests are signed automatically
+    $wallets = $sdk->assets->list();
+    print_r($wallets);
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Constructor Options
+
+```php
+new \Yativo\YativoSDK([
+    'api_key'                 => 'your_api_key',       // optional
+    'api_secret'              => 'your_api_secret',    // optional
+    'base_url'                => 'https://crypto-api.yativo.com/api/',
+    'timeout'                 => 30,                   // seconds, default 30
+    'standalone_iban_enabled' => false,                // default false
+]);
+```
+
+---
+
+## Authentication (`$sdk->auth`)
+
+### Register
+
+```php
+$user = $sdk->auth->register([
+    'email'        => 'user@example.com',
+    'password'     => 'SecurePass123!',
+    'first_name'   => 'Ada',
+    'last_name'    => 'Lovelace',
+    'phone_number' => '+14155552671', // optional
+]);
+```
+
+### Login
+
+```php
+$session = $sdk->auth->login([
+    'email'    => 'user@example.com',
+    'password' => 'SecurePass123!',
+]);
+```
+
+### OTP Verification
+
+```php
+$sdk->auth->requestOtp(['email' => 'user@example.com']);
+
+$sdk->auth->verifyOtp([
+    'email' => 'user@example.com',
+    'otp'   => '123456',
+]);
+```
+
+### Two-Factor Authentication (2FA)
+
+```php
+// Enable 2FA
+$setup = $sdk->auth->enable2fa();
+echo 'Scan QR: ' . $setup['qr_code_url'];
+
+// Confirm setup
+$sdk->auth->confirm2fa(['code' => '654321']);
+
+// Login with 2FA
+$session = $sdk->auth->login([
+    'email'    => 'user@example.com',
+    'password' => 'SecurePass123!',
+]);
+if (!empty($session['requires_2fa'])) {
+    $sdk->auth->verify2fa(['code' => '654321']);
+}
+```
+
+---
+
+## Accounts (`$sdk->accounts`)
+
+```php
+// Create an account
+$account = $sdk->accounts->create([
+    'name'     => 'Main Treasury',
+    'currency' => 'USD',
+]);
+
+// List accounts
+$result = $sdk->accounts->list(['page' => 1, 'limit' => 20]);
+echo 'Total: ' . $result['total'] . PHP_EOL;
+
+// Get a single account
+$account = $sdk->accounts->get('acct_abc123');
+```
+
+---
+
+## Assets / Wallets (`$sdk->assets`)
+
+### Create a Wallet
+
+```php
+$wallet = $sdk->assets->createWallet([
+    'account_id' => 'acct_abc123',
+    'asset'      => 'USDC',
+    'network'    => 'SOLANA',
+]);
+echo 'Deposit address: ' . $wallet['address'] . PHP_EOL;
+```
+
+### Batch Create Wallets
+
+```php
+$wallets = $sdk->assets->batchCreate([
+    'account_id' => 'acct_abc123',
+    'assets'     => [
+        ['asset' => 'USDC', 'network' => 'SOLANA'],
+        ['asset' => 'XDC',  'network' => 'XDC'],
+        ['asset' => 'ETH',  'network' => 'ETHEREUM'],
+    ],
+]);
+```
+
+### List Wallets
+
+```php
+$wallets = $sdk->assets->list(['account_id' => 'acct_abc123']);
+```
+
+### Check Balance
+
+```php
+$balance = $sdk->assets->getBalance(['wallet_id' => 'wallet_xyz789']);
+echo "Balance: {$balance['amount']} {$balance['asset']}" . PHP_EOL;
+```
+
+---
+
+## Transactions (`$sdk->transactions`)
+
+### Send Funds (with Idempotency)
+
+```php
+$tx = $sdk->transactions->send([
+    'from_wallet_id'  => 'wallet_xyz789',
+    'to_address'      => 'BjhiXKt...',
+    'amount'          => '100.00',
+    'asset'           => 'USDC',
+    'network'         => 'SOLANA',
+    'idempotency_key' => bin2hex(random_bytes(16)), // prevents double-sends
+    'memo'            => 'Invoice #INV-2026-001',
+]);
+echo "Transaction ID: {$tx['id']}, Status: {$tx['status']}" . PHP_EOL;
+```
+
+### Estimate Gas Fee
+
+```php
+$fee = $sdk->transactions->estimateGas([
+    'from_wallet_id' => 'wallet_xyz789',
+    'to_address'     => 'BjhiXKt...',
+    'amount'         => '100.00',
+    'asset'          => 'USDC',
+    'network'        => 'SOLANA',
+]);
+echo "Estimated fee: {$fee['fee']} {$fee['fee_asset']}" . PHP_EOL;
+```
+
+### List Transactions
+
+```php
+$result = $sdk->transactions->list([
+    'account_id' => 'acct_abc123',
+    'page'       => 1,
+    'limit'      => 25,
+    'status'     => 'COMPLETED',      // optional
+    'start_date' => '2026-01-01',     // optional
+    'end_date'   => '2026-03-31',     // optional
+]);
+foreach ($result['transactions'] as $t) {
+    echo "{$t['id']} | {$t['status']} | {$t['amount']}" . PHP_EOL;
+}
+```
+
+### Get a Transaction
+
+```php
+$tx = $sdk->transactions->get('txn_def456');
+```
+
+---
+
+## Swap (`$sdk->swap`)
+
+```php
+// Get a swap quote
+$quote = $sdk->swap->getQuote([
+    'from_asset' => 'USDC',
+    'to_asset'   => 'XDC',
+    'amount'     => '500.00',
+    'network'    => 'SOLANA',
+]);
+echo "You receive: {$quote['to_amount']} XDC at rate {$quote['rate']}" . PHP_EOL;
+
+// Execute the swap (quote expires after ~30 seconds)
+$result = $sdk->swap->execute([
+    'quote_id'       => $quote['id'],
+    'from_wallet_id' => 'wallet_xyz789',
+    'to_wallet_id'   => 'wallet_xdc001',
+]);
+echo 'Swap status: ' . $result['status'] . PHP_EOL;
+```
+
+---
+
+## Cards (`$sdk->cards`)
+
+### Onboard a Cardholder
+
+```php
+$cardholder = $sdk->cards->onboard([
+    'customer_id'   => 'cust_111',
+    'first_name'    => 'Ada',
+    'last_name'     => 'Lovelace',
+    'date_of_birth' => '1990-05-15',
+    'address'       => [
+        'line1'   => '1 Infinite Loop',
+        'city'    => 'Cupertino',
+        'state'   => 'CA',
+        'zip'     => '95014',
+        'country' => 'US',
+    ],
+]);
+```
+
+### Create a Virtual Card
+
+```php
+$card = $sdk->cards->create([
+    'cardholder_id' => $cardholder['id'],
+    'currency'      => 'USD',
+    'label'         => 'Engineering expenses',
+]);
+echo "Card {$card['id']}, last 4: {$card['last4']}" . PHP_EOL;
+```
+
+### Get Card Funding Address
+
+```php
+$funding = $sdk->cards->getFundingAddress(['card_id' => $card['id']]);
+echo "Fund at: {$funding['address']} on {$funding['network']}" . PHP_EOL;
+```
+
+### Get Card Transactions
+
+```php
+$result = $sdk->cards->getTransactions([
+    'card_id' => $card['id'],
+    'page'    => 1,
+    'limit'   => 20,
+]);
+```
+
+---
+
+## Webhooks (`$sdk->webhooks`)
+
+### Create a Webhook
+
+```php
+$webhook = $sdk->webhooks->create([
+    'url'    => 'https://your-app.com/webhooks/yativo',
+    'events' => ['transaction.completed', 'deposit.received', 'card.transaction'],
+    'secret' => 'whsec_your_generated_secret',
+]);
+echo 'Webhook ID: ' . $webhook['id'] . PHP_EOL;
+```
+
+### Verify a Webhook Signature (Static Method)
+
+```php
+use Yativo\Auth;
+
+// In your webhook controller (Laravel example):
+public function handle(Request $request): Response
+{
+    $payload   = $request->getContent();
+    $signature = $request->header('X-Yativo-Signature', '');
+
+    if (!Auth::verifySignature($payload, $signature, config('yativo.webhook_secret'))) {
+        abort(401, 'Invalid webhook signature');
+    }
+
+    $event = json_decode($payload, true);
+    // Handle event...
+    Log::info('Yativo event', ['type' => $event['type']]);
+
+    return response()->noContent();
+}
+```
+
+<Note>
+  `Auth::verifySignature()` is a static helper — you do not need an SDK instance to call it. This makes it easy to use in lightweight webhook endpoints that do not initialise the full SDK.
+</Note>
+
+### List / Delete Webhooks
+
+```php
+$webhooks = $sdk->webhooks->list();
+$sdk->webhooks->delete('wh_ghi789');
+```
+
+---
+
+## API Keys (`$sdk->apiKeys`)
+
+```php
+// Create an API key (requires 2FA code if 2FA is enabled on the account)
+$key = $sdk->apiKeys->create([
+    'name'        => 'Production Server',
+    'permissions' => ['transactions:read', 'transactions:write', 'wallets:read'],
+    'two_fa_code' => '123456',
+]);
+// Store $key['secret'] securely — shown only once
+echo 'API Key: '    . $key['key']    . PHP_EOL;
+echo 'API Secret: ' . $key['secret'] . PHP_EOL;
+
+// List API keys
+$result = $sdk->apiKeys->list();
+
+// Revoke a key
+$sdk->apiKeys->revoke('key_jkl012');
+```
+
+---
+
+## Customers (`$sdk->customers`)
+
+```php
+$customer = $sdk->customers->create([
+    'external_id' => 'usr_from_your_db',
+    'email'       => 'customer@example.com',
+    'first_name'  => 'Charles',
+    'last_name'   => 'Babbage',
+    'kyc_level'   => 'BASIC',
+]);
+
+$result   = $sdk->customers->list(['page' => 1, 'limit' => 50]);
+$customer = $sdk->customers->get('cust_abc');
+$sdk->customers->update('cust_abc', ['kyc_level' => 'FULL']);
+```
+
+---
+
+## Analytics (`$sdk->analytics`)
+
+```php
+$report = $sdk->analytics->getSummary([
+    'account_id' => 'acct_abc123',
+    'start_date' => '2026-01-01',
+    'end_date'   => '2026-03-31',
+]);
+echo 'Total volume: ' . $report['total_volume'] . PHP_EOL;
+echo 'Total fees: '   . $report['total_fees']   . PHP_EOL;
+```
+
+---
+
+## IBAN (`$sdk->standaloneIban`)
+
+<Warning>
+  Pass `'standalone_iban_enabled' => true` in the constructor options to unlock this resource.
+</Warning>
+
+```php
+$sdk = new YativoSDK([
+    'api_key'                 => getenv('YATIVO_API_KEY'),
+    'api_secret'              => getenv('YATIVO_API_SECRET'),
+    'standalone_iban_enabled' => true,
+]);
+
+$iban = $sdk->standaloneIban->create([
+    'customer_id' => 'cust_111',
+    'currency'    => 'EUR',
+    'label'       => 'EU Collections',
+]);
+echo "IBAN: {$iban['iban']}, BIC: {$iban['bic']}" . PHP_EOL;
+
+$ibans = $sdk->standaloneIban->list(['customer_id' => 'cust_111']);
+```
+
+---
+
+## Exception Handling
+
+```php
+use Yativo\Exceptions\YativoException;
+use Yativo\Exceptions\AuthenticationException;
+use Yativo\Exceptions\ValidationException;
+use Yativo\Exceptions\RateLimitException;
+use Yativo\Exceptions\NotFoundException;
+
+try {
+    $tx = $sdk->transactions->send([
+        'from_wallet_id'  => 'wallet_xyz789',
+        'to_address'      => 'BjhiXKt...',
+        'amount'          => '100.00',
+        'asset'           => 'USDC',
+        'network'         => 'SOLANA',
+        'idempotency_key' => bin2hex(random_bytes(16)),
+    ]);
+} catch (AuthenticationException $e) {
+    // Invalid or expired credentials
+    error_log('Auth failed: ' . $e->getMessage());
+} catch (ValidationException $e) {
+    // Server-side validation failed
+    error_log('Validation: ' . json_encode($e->getErrors()));
+} catch (RateLimitException $e) {
+    // 60 req/min per endpoint exceeded
+    $retryAfter = $e->getRetryAfter(); // seconds
+    error_log("Rate limited. Retry after {$retryAfter}s");
+} catch (NotFoundException $e) {
+    error_log('Not found: ' . $e->getResourceId());
+} catch (YativoException $e) {
+    error_log("API error {$e->getStatusCode()}: {$e->getMessage()}");
+}
+```
+
+### Exception Hierarchy
+
+```
+\Yativo\Exceptions\YativoException
+├── AuthenticationException   (HTTP 401)
+├── AuthorizationException    (HTTP 403)
+├── ValidationException       (HTTP 422)  — getErrors(): array
+├── NotFoundException         (HTTP 404)  — getResourceId(): string
+├── RateLimitException        (HTTP 429)  — getRetryAfter(): int
+└── ServerException           (HTTP 5xx)
+```
+
+---
+
+## Laravel Service Provider Example
+
+```php
+// config/yativo.php
+return [
+    'api_key'        => env('YATIVO_API_KEY'),
+    'api_secret'     => env('YATIVO_API_SECRET'),
+    'base_url'       => env('YATIVO_BASE_URL', 'https://crypto-api.yativo.com/api/'),
+    'webhook_secret' => env('YATIVO_WEBHOOK_SECRET'),
+];
+
+// app/Providers/YativoServiceProvider.php
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Yativo\YativoSDK;
+
+class YativoServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->singleton(YativoSDK::class, fn() => new YativoSDK([
+            'api_key'    => config('yativo.api_key'),
+            'api_secret' => config('yativo.api_secret'),
+            'base_url'   => config('yativo.base_url'),
+        ]));
+    }
+}
+
+// Usage in a controller
+use Yativo\YativoSDK;
+
+class PaymentController extends Controller
+{
+    public function __construct(private YativoSDK $yativo) {}
+
+    public function send(Request $request)
+    {
+        $tx = $this->yativo->transactions->send([
+            'from_wallet_id'  => $request->wallet_id,
+            'to_address'      => $request->to_address,
+            'amount'          => $request->amount,
+            'asset'           => 'USDC',
+            'network'         => 'SOLANA',
+            'idempotency_key' => (string) \Str::uuid(),
+        ]);
+        return response()->json($tx);
+    }
+}
+```

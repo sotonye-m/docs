@@ -1,0 +1,205 @@
+---
+title: "Authentication"
+description: "Authenticate with the Yativo Crypto API using JWT tokens or API keys"
+---
+
+The Yativo Crypto API uses the same authentication system as the core Yativo platform. You can authenticate using short-lived JWT tokens (for user-session flows) or API keys (recommended for server-to-server integrations).
+
+## Base URLs
+
+| Environment | Base URL |
+|-------------|----------|
+| Production | `https://crypto-api.yativo.com/api/` |
+| Sandbox | `https://crypto-sandbox.yativo.com/api/` |
+
+---
+
+## Recommended: Server-to-Server with API Keys
+
+For backend integrations, use the API key + secret flow. It does not require a user session and tokens can be programmatically refreshed.
+
+<Steps>
+  <Step title="Generate an API key">
+    Create an API key from the dashboard or via the API (requires 2FA). See [API Keys](/yativo-crypto/api-keys) for full details.
+  </Step>
+  <Step title="Exchange for a Bearer token">
+    ```bash
+    curl -X POST https://crypto-api.yativo.com/api/apikey/token \
+      -H "Content-Type: application/json" \
+      -d '{
+        "api_key": "yvk_live_...",
+        "api_secret": "yvs_live_..."
+      }'
+    ```
+
+    ```json Response
+    {
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "expires_in": 3600,
+      "token_type": "Bearer"
+    }
+    ```
+  </Step>
+  <Step title="Use the token">
+    ```bash
+    curl -X GET https://crypto-api.yativo.com/api/accounts/get-accounts \
+      -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    ```
+  </Step>
+</Steps>
+
+### Auto-Refresh Pattern
+
+Implement automatic token refresh to avoid 401 errors in long-running processes:
+
+```typescript
+class YativoAuth {
+  private token: string | null = null;
+  private expiresAt: number = 0;
+
+  constructor(
+    private readonly apiKey: string,
+    private readonly apiSecret: string
+  ) {}
+
+  async getToken(): Promise<string> {
+    if (this.token && Date.now() < this.expiresAt - 60_000) {
+      return this.token; // still valid with 60s buffer
+    }
+    return this.refresh();
+  }
+
+  private async refresh(): Promise<string> {
+    const res = await fetch('https://crypto-api.yativo.com/api/apikey/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: this.apiKey, api_secret: this.apiSecret }),
+    });
+    const { access_token, expires_in } = await res.json();
+    this.token = access_token;
+    this.expiresAt = Date.now() + expires_in * 1000;
+    return access_token;
+  }
+}
+```
+
+---
+
+## User Session Flow
+
+For flows where a user logs in directly, use the standard authentication endpoints.
+
+### Register
+
+**POST** `/authentication/registration`
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/authentication/registration \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword123",
+    "first_name": "Jane",
+    "last_name": "Doe"
+  }'
+```
+
+### Log In
+
+**POST** `/authentication/login`
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/authentication/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword123"
+  }'
+```
+
+```json Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 3600
+}
+```
+
+### Verify OTP
+
+If login requires email OTP verification:
+
+**POST** `/authentication/otp_verification`
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/authentication/otp_verification \
+  -H "Content-Type: application/json" \
+  -d '{"otp": "482931", "email": "user@example.com"}'
+```
+
+### Verify Google Authenticator Code
+
+**POST** `/authentication/google_auth_verification`
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/authentication/google_auth_verification \
+  -H "Content-Type: application/json" \
+  -d '{"code": "123456", "email": "user@example.com"}'
+```
+
+### Resend OTP
+
+**POST** `/authentication/resend_otp`
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/authentication/resend_otp \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com"}'
+```
+
+### Refresh Access Token
+
+**GET** `/authentication/refresh-token`
+
+Pass the **refresh token** (not the access token) in the Authorization header:
+
+```bash
+curl -X GET https://crypto-api.yativo.com/api/authentication/refresh-token \
+  -H "Authorization: Bearer YOUR_REFRESH_TOKEN"
+```
+
+```json Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 3600
+}
+```
+
+---
+
+## Authentication Methods at a Glance
+
+| Method | Header | Best For |
+|--------|--------|----------|
+| API Key headers | `X-API-Key` + `X-API-Secret` | Quick testing, simple integrations |
+| API Key Bearer token | `Authorization: Bearer {token}` | Production server-to-server |
+| User JWT | `Authorization: Bearer {token}` | User session flows |
+
+---
+
+## Sandbox Authentication
+
+When testing in the sandbox, use the sandbox base URL with the same authentication endpoints:
+
+```
+https://crypto-sandbox.yativo.com/api/authentication/login
+https://crypto-sandbox.yativo.com/api/apikey/token
+```
+
+Create a separate API key for sandbox use to keep test and production credentials separate. See the [Sandbox docs](/sandbox/authentication) for details.
+
+---
+
+<Warning>
+  Never share your API secret or access tokens in client-side code, public repositories, or logs. Rotate compromised credentials immediately using the `/apikey/{id}/rotate` endpoint.
+</Warning>

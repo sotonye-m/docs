@@ -1,0 +1,370 @@
+---
+title: "Test: Transactions"
+description: "Test sending funds, estimating gas fees, and querying transaction history in the sandbox"
+---
+
+## Overview
+
+This guide covers testing crypto transactions in the Yativo Crypto sandbox. You can test sending testnet tokens, estimating gas fees, and querying transaction history — all without spending real funds.
+
+**Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/`
+
+<Warning>
+  The sandbox uses testnet blockchains. Never send real mainnet tokens to sandbox wallet addresses. All sandbox transactions use valueless testnet tokens.
+</Warning>
+
+---
+
+## Get Gas Fee Estimate
+
+Before sending a transaction, estimate the gas fee required.
+
+```
+GET https://crypto-sandbox.yativo.com/api/transactions/fee-estimate
+```
+
+<ParamField query="chain" type="string" required>
+  Blockchain network. Example: `solana`, `ethereum`, `polygon`.
+</ParamField>
+
+<ParamField query="token" type="string" required>
+  Token to be sent. Example: `USDC`, `ETH`, `SOL`.
+</ParamField>
+
+<ParamField query="amount" type="number" required>
+  Amount to be sent (used for accurate fee estimation on some chains).
+</ParamField>
+
+<RequestExample>
+```bash Solana USDC fee estimate
+curl -X GET 'https://crypto-sandbox.yativo.com/api/transactions/fee-estimate?chain=solana&token=USDC&amount=50' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+
+```bash Ethereum ETH fee estimate
+curl -X GET 'https://crypto-sandbox.yativo.com/api/transactions/fee-estimate?chain=ethereum&token=ETH&amount=0.1' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Solana (low fees)
+{
+  "status": "success",
+  "data": {
+    "chain": "solana",
+    "token": "USDC",
+    "network": "devnet",
+    "estimated_fee": 0.000025,
+    "fee_token": "SOL",
+    "fee_usd_equivalent": 0.004,
+    "estimated_confirmation_time_seconds": 15
+  }
+}
+```
+
+```json Ethereum (higher fees)
+{
+  "status": "success",
+  "data": {
+    "chain": "ethereum",
+    "token": "ETH",
+    "network": "sepolia",
+    "estimated_fee": 0.00042,
+    "fee_token": "ETH",
+    "fee_usd_equivalent": 1.48,
+    "gas_limit": 21000,
+    "gas_price_gwei": 20,
+    "estimated_confirmation_time_seconds": 30
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Send a Transaction
+
+Send testnet tokens from your sandbox wallet to another address.
+
+```
+POST https://crypto-sandbox.yativo.com/api/transactions/send
+```
+
+<ParamField body="from_wallet_id" type="string" required>
+  The wallet ID to send funds from.
+</ParamField>
+
+<ParamField body="to_address" type="string" required>
+  The destination wallet address (must be a valid testnet address for the specified chain).
+</ParamField>
+
+<ParamField body="chain" type="string" required>
+  The blockchain to use for the transaction.
+</ParamField>
+
+<ParamField body="token" type="string" required>
+  The token to send.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  The amount to send.
+</ParamField>
+
+<ParamField body="memo" type="string">
+  Optional memo or note attached to the transaction.
+</ParamField>
+
+<CodeGroup>
+```bash Send USDC on Solana Devnet
+curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/send' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
+    "to_address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+    "chain": "solana",
+    "token": "USDC",
+    "amount": 25.00,
+    "memo": "Test payment"
+  }'
+```
+
+```bash Send ETH on Sepolia
+curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/send' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT011",
+    "to_address": "0x8b5d42Dd7745C1643B36e4F8C5E2b5A8E9f1c456",
+    "chain": "ethereum",
+    "token": "ETH",
+    "amount": 0.001
+  }'
+```
+</CodeGroup>
+
+<ResponseExample>
+```json Transaction Submitted
+{
+  "status": "success",
+  "data": {
+    "transaction_id": "txn_sandbox_01HX9KZMB3F7VNQP8R2WDGT100",
+    "from_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
+    "to_address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+    "chain": "solana",
+    "token": "USDC",
+    "amount": 25.00,
+    "fee": 0.000025,
+    "fee_token": "SOL",
+    "status": "pending",
+    "tx_hash": "4xKp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5CxABCDEFGHIJKL",
+    "network": "devnet",
+    "created_at": "2026-03-25T11:00:00Z",
+    "block_explorer_url": "https://explorer.solana.com/tx/4xKp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5CxABCDEFGHIJKL?cluster=devnet"
+  }
+}
+```
+
+```json Insufficient Balance
+{
+  "status": "error",
+  "message": "Insufficient balance. Available: 10.00 USDC, requested: 25.00 USDC.",
+  "error_code": "INSUFFICIENT_BALANCE"
+}
+```
+</ResponseExample>
+
+---
+
+## Get a Single Transaction
+
+Retrieve the status and details of a specific transaction.
+
+```
+GET https://crypto-sandbox.yativo.com/api/transactions/{transactionId}
+```
+
+<ParamField path="transactionId" type="string" required>
+  The transaction ID returned when the transaction was submitted.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-sandbox.yativo.com/api/transactions/txn_sandbox_01HX9KZMB3F7VNQP8R2WDGT100' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Confirmed Transaction
+{
+  "status": "success",
+  "data": {
+    "transaction_id": "txn_sandbox_01HX9KZMB3F7VNQP8R2WDGT100",
+    "type": "send",
+    "from_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
+    "to_address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+    "chain": "solana",
+    "token": "USDC",
+    "amount": 25.00,
+    "fee": 0.000025,
+    "fee_token": "SOL",
+    "status": "completed",
+    "tx_hash": "4xKp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5CxABCDEFGHIJKL",
+    "block_number": 289547123,
+    "network": "devnet",
+    "created_at": "2026-03-25T11:00:00Z",
+    "confirmed_at": "2026-03-25T11:00:18Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## List Transactions
+
+Retrieve a paginated list of all transactions for your sandbox account.
+
+```
+GET https://crypto-sandbox.yativo.com/api/transactions
+```
+
+<ParamField query="limit" type="integer">
+  Results per page. Default: `20`. Max: `100`.
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Pagination offset. Default: `0`.
+</ParamField>
+
+<ParamField query="chain" type="string">
+  Filter by blockchain. Example: `solana`, `ethereum`.
+</ParamField>
+
+<ParamField query="token" type="string">
+  Filter by token symbol. Example: `USDC`, `ETH`.
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by transaction type: `send`, `receive`, `swap`, `fee`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status: `pending`, `completed`, `failed`.
+</ParamField>
+
+<RequestExample>
+```bash List recent completed transactions
+curl -X GET 'https://crypto-sandbox.yativo.com/api/transactions?limit=10&status=completed' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+
+```bash Filter by chain and token
+curl -X GET 'https://crypto-sandbox.yativo.com/api/transactions?chain=solana&token=USDC&limit=20' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "transactions": [
+      {
+        "transaction_id": "txn_sandbox_01HX9KZMB3F7VNQP8R2WDGT100",
+        "type": "send",
+        "chain": "solana",
+        "token": "USDC",
+        "amount": 25.00,
+        "status": "completed",
+        "to_address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+        "tx_hash": "4xKp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5CxABCDEFGHIJKL",
+        "created_at": "2026-03-25T11:00:00Z"
+      },
+      {
+        "transaction_id": "txn_sandbox_01HX9KZMB3F7VNQP8R2WDGT099",
+        "type": "receive",
+        "chain": "solana",
+        "token": "USDC",
+        "amount": 100.00,
+        "status": "completed",
+        "from_address": "3mBc4qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+        "tx_hash": "8yLp5qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5CxMNOPQRSTUVWX",
+        "created_at": "2026-03-25T10:30:00Z"
+      }
+    ],
+    "total": 2,
+    "limit": 10,
+    "offset": 0
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Transaction Status Values
+
+| Status | Description |
+|---|---|
+| `pending` | Transaction has been submitted to the blockchain and is awaiting confirmation. |
+| `completed` | Transaction has been confirmed on the blockchain. |
+| `failed` | Transaction failed — could be due to insufficient gas, network error, or rejected. |
+
+---
+
+## Testing Tips
+
+<Accordion title="Testing insufficient balance errors">
+  Try sending more than your wallet balance to verify your application handles the `INSUFFICIENT_BALANCE` error gracefully.
+
+  ```bash
+  curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/send' \
+    -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+    -H 'Content-Type: application/json' \
+    -d '{
+      "from_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
+      "to_address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+      "chain": "solana",
+      "token": "USDC",
+      "amount": 99999999.00
+    }'
+  ```
+</Accordion>
+
+<Accordion title="Testing with invalid addresses">
+  Submit a transaction to a malformed address to verify validation error handling:
+
+  ```bash
+  curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/send' \
+    -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+    -H 'Content-Type: application/json' \
+    -d '{
+      "from_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
+      "to_address": "invalid_address_format",
+      "chain": "solana",
+      "token": "USDC",
+      "amount": 1.00
+    }'
+  ```
+</Accordion>
+
+<Accordion title="Polling for confirmation">
+  After submitting a transaction, poll the transaction status until it confirms:
+
+  ```bash
+  # Poll every 10 seconds until status == "completed"
+  while true; do
+    STATUS=$(curl -s -X GET "https://crypto-sandbox.yativo.com/api/transactions/txn_sandbox_01HX9KZMB3F7VNQP8R2WDGT100" \
+      -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' | jq -r '.data.status')
+    echo "Status: $STATUS"
+    if [ "$STATUS" = "completed" ] || [ "$STATUS" = "failed" ]; then
+      break
+    fi
+    sleep 10
+  done
+  ```
+</Accordion>

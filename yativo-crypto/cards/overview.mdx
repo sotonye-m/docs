@@ -1,0 +1,150 @@
+---
+title: "Yativo Card Overview"
+description: "Crypto-funded virtual and physical payment cards for individuals and businesses"
+---
+
+<Accordion title="TypeScript Type Definitions">
+```typescript
+interface YativoCard {
+  card_id: string;
+  display_name: string;
+  type: "virtual" | "physical";
+  status: "active" | "frozen" | "voided";
+  last_four: string;
+  spending_limit_amount: number;
+  spending_limit_frequency: "daily" | "weekly" | "monthly";
+  created_at: string;
+}
+```
+</Accordion>
+
+## What is the Yativo Card?
+
+The Yativo Card is a crypto-powered payment card that bridges the gap between your digital assets and everyday spending. Fund your card directly from a crypto wallet — your balance is automatically converted and made available for purchases wherever major payment networks are accepted.
+
+Whether you need a virtual card for online purchases or a physical card for in-store transactions, the Yativo Card gives you the flexibility to spend your crypto anywhere in the real world without friction.
+
+<CardGroup cols={2}>
+  <Card title="Virtual Cards" icon="credit-card" href="/yativo-crypto/cards/virtual-cards">
+    Instant-issue virtual cards for online and contactless payments. Create, freeze, unfreeze, and void cards programmatically.
+  </Card>
+  <Card title="Physical Cards" icon="id-card" href="/yativo-crypto/cards/physical-cards">
+    Order a physical card delivered to your door. Ideal for in-store purchases and ATM withdrawals.
+  </Card>
+  <Card title="Crypto Funding" icon="wallet" href="/yativo-crypto/cards/funding">
+    Fund your card with USDC on Solana. Deposits are automatically processed and credited to your card balance.
+  </Card>
+  <Card title="IBAN Integration" icon="building-columns" href="/yativo-crypto/cards/iban">
+    Activate a dedicated IBAN to receive EUR bank transfers directly to your card account.
+  </Card>
+  <Card title="Spending Limits" icon="gauge" href="/yativo-crypto/cards/spending-limits">
+    Set daily and per-transaction spending limits for your card or your customers' cards.
+  </Card>
+  <Card title="Transaction History" icon="list" href="/yativo-crypto/cards/transactions">
+    Query full transaction history with filtering by status, date, and card.
+  </Card>
+  <Card title="Dispute Management" icon="flag" href="/yativo-crypto/cards/disputes">
+    File disputes for unauthorized or erroneous charges with structured reason codes.
+  </Card>
+  <Card title="B2B Issuer Program" icon="building" href="/yativo-crypto/cards/issuer-program">
+    Issue cards to your own customers under your brand. Fund customer wallets and manage cards at scale.
+  </Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+```
+Crypto Wallet (USDC on Solana)
+         │
+         ▼
+ Yativo Card Wallet
+         │
+         ▼
+  Card Balance (spendable)
+         │
+         ▼
+ Virtual / Physical Card
+         │
+         ▼
+ Payment Network (online & in-store)
+```
+
+1. **Deposit crypto** — Send USDC on Solana to your Yativo Card funding address.
+2. **Auto-convert** — Funds are automatically detected, processed, and credited to your card wallet.
+3. **Spend anywhere** — Use your virtual or physical card for purchases worldwide.
+4. **Track transactions** — Monitor every transaction in real time via the API.
+
+---
+
+## Key Features
+
+<CardGroup cols={3}>
+  <Card title="Instant Virtual Cards" icon="bolt">
+    Create virtual cards in seconds via API. No waiting, no manual approval.
+  </Card>
+  <Card title="Programmable Controls" icon="sliders">
+    Freeze, unfreeze, void cards, and set spending limits programmatically.
+  </Card>
+  <Card title="Secure Card Details" icon="shield-halved">
+    Sensitive card data (PAN, CVV) is accessed through ephemeral tokens, never exposed in plaintext API responses.
+  </Card>
+  <Card title="EUR IBAN Support" icon="euro-sign">
+    Accept EUR bank transfers via a dedicated IBAN linked to your card account.
+  </Card>
+  <Card title="Automatic Conversion" icon="arrows-left-right">
+    Deposit crypto and our automatic conversion layer handles the conversion seamlessly.
+  </Card>
+  <Card title="Dispute Resolution" icon="scale-balanced">
+    Structured dispute workflow with reason codes and tracking.
+  </Card>
+</CardGroup>
+
+---
+
+## B2B Card Issuer Program
+
+The Yativo Card Issuer Program allows businesses to issue cards to their own customers under a white-label arrangement. As an issuer, you can:
+
+- **Onboard customers** — Manage KYC and card creation on behalf of your users.
+- **Fund customer wallets** — Transfer funds from your issuer wallet to customer card accounts.
+- **Manage cards at scale** — Create, freeze, and void customer cards via API.
+- **Custom spending controls** — Set per-customer spending limits and restrictions.
+- **Webhooks** — Subscribe to real-time events for each customer account.
+
+<Note>
+  The Issuer Program requires separate enrollment. See the [Issuer Program documentation](/yativo-crypto/cards/issuer-program) for how to apply.
+</Note>
+
+---
+
+## Onboarding Requirement
+
+Before issuing cards, all users must complete a one-time onboarding flow:
+
+1. Register your card account (name, email)
+2. Complete KYC verification
+3. Accept the cardholder terms and conditions
+4. Initialize your card wallet
+
+See the [Onboarding Guide](/yativo-crypto/cards/onboarding) for the complete step-by-step flow.
+
+---
+
+## Supported Regions
+
+The Yativo Card is available in supported jurisdictions. Contact [support@yativo.com](mailto:support@yativo.com) for the latest list of supported countries and any regional restrictions that may apply.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Start Onboarding" icon="rocket" href="/yativo-crypto/cards/onboarding">
+    Complete the card account onboarding flow to get started.
+  </Card>
+  <Card title="Sandbox Testing" icon="flask" href="/sandbox/cards">
+    Review mock responses and understand the card API before going live.
+  </Card>
+</CardGroup>

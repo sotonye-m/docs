@@ -1,0 +1,234 @@
+---
+title: "Chrome Extension"
+description: "Install and use the Yativo Crypto Chrome extension — wallet monitoring, deposit notifications, card management, price alerts, and swap"
+---
+
+# Chrome Extension
+
+The Yativo Crypto Chrome extension adds a persistent toolbar button that gives you instant access to your wallets, cards, swap, and deposit notifications — powered by Manifest v3 and a background service worker.
+
+## Installation
+
+1. Open the [Chrome Web Store](https://chrome.google.com/webstore) and search for **"Yativo Crypto"**, or follow the direct link provided in your Yativo dashboard.
+2. Click **"Add to Chrome"**.
+3. When prompted, click **"Add extension"** to confirm.
+4. The Yativo icon appears in your Chrome toolbar. If it is hidden, click the **puzzle piece** icon and pin Yativo.
+
+<Note>
+  The extension is compatible with Chrome 88+ and all Chromium-based browsers including Brave, Edge, and Arc.
+</Note>
+
+---
+
+## Initial Setup
+
+1. Click the Yativo toolbar icon to open the popup.
+2. You will see the **Setup** screen on first launch.
+3. Enter your **API Key** and **API Secret** from the Yativo dashboard.
+4. Click **Save & Connect**.
+
+The extension verifies your credentials against the Yativo API. If valid, the popup switches to the main dashboard view.
+
+<Tip>
+  Generate a dedicated API key for the extension with limited permissions (e.g. `wallets:read`, `transactions:read`, `cards:read`, `swap:write`). This reduces risk if the credentials are ever exposed.
+</Tip>
+
+---
+
+## Features
+
+### 1. Wallet Monitoring
+
+Once connected, the popup's **Wallets** tab lists all wallets associated with your Yativo account, including:
+
+- Asset type and network
+- Current balance
+- Deposit address (click to copy)
+
+Balances are refreshed each time the popup is opened. Use the **Refresh** button to force an immediate update.
+
+---
+
+### 2. Real-Time Deposit Notifications
+
+The extension registers a **service worker** (Manifest v3) that polls the Yativo API every **30 seconds** using Chrome's `chrome.alarms` API.
+
+When a new deposit is detected:
+
+1. A **browser notification** fires immediately with the deposit amount, asset, and destination wallet.
+2. Clicking the notification opens the Yativo popup focused on the relevant wallet.
+
+#### Notification Settings
+
+Open the popup → **Settings** tab to configure:
+
+| Setting | Description |
+|---|---|
+| Enable notifications | Toggle deposit polling on/off |
+| Poll interval | 30 seconds (fixed; respects Chrome alarm minimum) |
+| Minimum deposit threshold | Only notify for deposits above a set amount |
+| Sound alerts | Play a chime when a notification fires |
+
+<Note>
+  Chrome may throttle service workers for inactive tabs. Deposit detection typically occurs within 30–60 seconds of the on-chain confirmation.
+</Note>
+
+---
+
+### 3. Auto-Forwarding Management
+
+The **Auto-Forward** tab lets you view, create, and delete auto-forwarding rules without opening the full dashboard.
+
+**Creating a rule:**
+
+1. Click **+ New Rule**.
+2. Select the source wallet.
+3. Enter a destination address.
+4. Set the forwarding percentage (1–100%).
+5. Click **Save Rule**.
+
+**Disabling a rule:**
+
+Toggle the switch next to any existing rule, or click **Delete** to remove it permanently.
+
+---
+
+### 4. Yativo Card Management
+
+The **Cards** tab displays your virtual cards. For each card you can:
+
+- View the card label, last 4 digits, and expiry
+- Check the current card balance
+- See recent card transactions (last 10)
+- **Freeze** or **Unfreeze** a card with one click
+- Copy the card funding address to top up the card balance
+
+---
+
+### 5. Price Alerts (SOL and XDC)
+
+The **Alerts** tab lets you set price thresholds for SOL and XDC:
+
+1. Select the asset (SOL or XDC).
+2. Choose **Above** or **Below**.
+3. Enter the price target in USD.
+4. Click **Set Alert**.
+
+The background service worker checks prices on each polling cycle. When the threshold is crossed, a browser notification fires and the alert is automatically cleared.
+
+You can have multiple active alerts per asset. Alerts are stored in `chrome.storage.local`.
+
+---
+
+### 6. Swap Functionality
+
+The **Swap** tab provides a quick-access swap interface:
+
+1. Select **From** asset and **To** asset.
+2. Enter the amount.
+3. Click **Get Quote** — the extension calls the Yativo Swap API and displays the estimated output and fee.
+4. Click **Execute** to confirm. The transaction is submitted immediately.
+
+<Warning>
+  Swap quotes expire after approximately 30 seconds. If the quote expires before you click Execute, fetch a new one.
+</Warning>
+
+---
+
+### 7. Standalone IBAN Management
+
+The **IBAN** tab lists all standalone IBAN accounts linked to your Yativo account:
+
+- IBAN number (click to copy)
+- BIC/SWIFT code
+- Currency and label
+
+---
+
+## How Notifications Work
+
+```
+Background Service Worker
+    │
+    ├─ chrome.alarms.create("yativo-poll", { periodInMinutes: 0.5 })
+    │
+    └─ Every 30 seconds:
+         ├─ Fetch latest deposits via Yativo API
+         ├─ Compare against last-seen deposit IDs in chrome.storage.local
+         ├─ For each new deposit → chrome.notifications.create(...)
+         └─ Update stored deposit IDs
+```
+
+Notifications require the `notifications` permission (declared in manifest.json). Chrome will prompt for this permission on first use.
+
+---
+
+## Security
+
+| Concern | How it is handled |
+|---|---|
+| Credential storage | Stored in `chrome.storage.local` — isolated to the extension's sandbox |
+| Data in transit | All API calls use HTTPS to `https://crypto-api.yativo.com/api/` |
+| No third parties | The extension communicates only with `crypto-api.yativo.com` |
+| Minimal permissions | `storage`, `notifications`, `alarms` — no broad host permissions |
+| Manifest v3 | Uses service workers instead of persistent background pages for better security and performance |
+
+---
+
+## Troubleshooting
+
+<Tabs>
+  <Tab title="Extension not connecting">
+    **Symptoms:** "Invalid credentials" or spinner never stops.
+
+    **Steps:**
+    1. Verify your API key and secret in the Yativo dashboard — make sure they have not been revoked.
+    2. Check that the key has at least `wallets:read` permission.
+    3. Open `chrome://extensions`, find Yativo, and click **Details → Extension errors** to see any console errors.
+    4. Re-enter your credentials in the extension settings.
+  </Tab>
+  <Tab title="No deposit notifications">
+    **Symptoms:** Deposits arrive but no browser notifications appear.
+
+    **Steps:**
+    1. Click the popup → Settings → confirm "Enable notifications" is toggled on.
+    2. Open Chrome Settings → Privacy and security → Notifications → ensure Yativo is not blocked.
+    3. Check that Chrome is not in **Do Not Disturb** mode (macOS Focus / Windows Quiet Hours).
+    4. Navigate to `chrome://extensions` → Yativo → **Service Worker** → click to inspect. Look for errors in the console.
+  </Tab>
+  <Tab title="Stale balances">
+    **Symptoms:** Balances shown in the popup are out of date.
+
+    **Steps:**
+    1. Click the **Refresh** button in the Wallets tab.
+    2. If still stale, close and reopen the popup — it fetches fresh data on open.
+    3. Rate limits (60 req/min) may throttle requests if the popup is opened very rapidly. Wait 60 seconds and try again.
+  </Tab>
+  <Tab title="Swap fails">
+    **Symptoms:** "Swap failed" or "Quote expired" error.
+
+    **Steps:**
+    1. Ensure you clicked **Execute** within ~30 seconds of receiving the quote.
+    2. Verify the source wallet has sufficient balance including fees.
+    3. Check the Yativo status page for any ongoing API incidents.
+  </Tab>
+</Tabs>
+
+---
+
+## Updating the Extension
+
+Chrome updates extensions automatically. To force an update:
+
+1. Navigate to `chrome://extensions`.
+2. Enable **Developer mode** (top-right toggle).
+3. Click **Update** in the toolbar.
+
+---
+
+## Uninstalling
+
+1. Right-click the Yativo icon in the toolbar.
+2. Select **Remove from Chrome**.
+
+All locally stored credentials and settings are deleted automatically when the extension is removed.

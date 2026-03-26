@@ -1,0 +1,222 @@
+---
+title: "Notifications & Support"
+description: "Manage in-app notifications and submit support tickets"
+---
+
+Yativo provides two related systems: **notifications** for in-platform alerts (transaction events, account changes, system messages), and **support tickets** for reaching the Yativo team.
+
+---
+
+## Notifications
+
+### List Notifications
+
+**GET** `/notifications`
+
+<ParamField query="page" type="number">
+  Page number for pagination. Defaults to 1.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page. Defaults to 20.
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by notification type (e.g., `transaction`, `system`, `security`).
+</ParamField>
+
+<ParamField query="read" type="boolean">
+  Filter by read status. `true` for read, `false` for unread.
+</ParamField>
+
+```bash cURL
+curl -X GET "https://crypto-api.yativo.com/api/notifications?page=1&limit=20&read=false" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "notifications": [
+    {
+      "id": "notif_01abc",
+      "type": "transaction",
+      "title": "Transaction Completed",
+      "message": "Your withdrawal of 0.5 ETH has been confirmed.",
+      "read": false,
+      "created_at": "2026-03-26T09:45:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1
+  }
+}
+```
+
+---
+
+### Get Unread Count
+
+**GET** `/notifications/unread-count`
+
+Quick check for badge counts in your UI.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/notifications/unread-count \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "unread_count": 3
+}
+```
+
+---
+
+### Get a Notification
+
+**GET** `/notifications/{id}`
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/notifications/notif_01abc \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+### Mark a Notification as Read
+
+**POST** `/notifications/{id}/read`
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/notifications/notif_01abc/read \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+### Mark All as Read
+
+**POST** `/notifications/mark-all-read`
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/notifications/mark-all-read \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Support Tickets
+
+### List Tickets
+
+**GET** `/notifications/tickets/list`
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/notifications/tickets/list \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "tickets": [
+    {
+      "id": "ticket_01abc",
+      "subject": "Transaction stuck in pending",
+      "category": "transactions",
+      "status": "open",
+      "created_at": "2026-03-25T14:00:00Z",
+      "updated_at": "2026-03-26T08:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### Create a Ticket
+
+**POST** `/notifications/tickets`
+
+<ParamField body="subject" type="string" required>
+  Brief description of the issue.
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  Full description of the issue, including any relevant transaction IDs, timestamps, or error messages.
+</ParamField>
+
+<ParamField body="category" type="string" required>
+  Issue category. Examples: `transactions`, `account`, `billing`, `technical`, `other`.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/notifications/tickets \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": "Transaction stuck in pending",
+    "message": "Transaction ID txn_01xyz has been in pending status for 2 hours. Chain: Ethereum. Amount: 0.1 ETH.",
+    "category": "transactions"
+  }'
+```
+
+```json Response
+{
+  "id": "ticket_01abc",
+  "subject": "Transaction stuck in pending",
+  "status": "open",
+  "created_at": "2026-03-26T10:00:00Z"
+}
+```
+
+---
+
+### Get a Ticket
+
+**GET** `/notifications/tickets/{id}`
+
+Returns the ticket details and the full conversation history.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/notifications/tickets/ticket_01abc \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+### Reply to a Ticket
+
+**POST** `/notifications/tickets/{id}/messages`
+
+<ParamField body="message" type="string" required>
+  Your reply message.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/notifications/tickets/ticket_01abc/messages \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "The transaction ID is txn_01xyz and the wallet address is 0xABC..."}'
+```
+
+---
+
+### Close a Ticket
+
+**POST** `/notifications/tickets/{id}/close`
+
+Marks the ticket as resolved. You can reopen it by submitting a new message.
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/notifications/tickets/ticket_01abc/close \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+<Tip>
+  When submitting a ticket about a transaction issue, always include the transaction ID, the relevant blockchain, and the exact time the issue occurred. This significantly speeds up resolution.
+</Tip>

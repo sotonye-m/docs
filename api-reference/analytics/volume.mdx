@@ -1,0 +1,87 @@
+---
+title: "Volume Analytics"
+api: "GET https://crypto-sandbox.yativo.com/api/analytics/volume"
+description: "Retrieve transaction volume broken down by asset and network"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField query="from" type="string" required>
+  Start date. ISO 8601 format: `2026-03-01`
+</ParamField>
+
+<ParamField query="to" type="string" required>
+  End date. ISO 8601 format: `2026-03-31`
+</ParamField>
+
+<ParamField query="group_by" type="string">
+  Dimension to group by. Accepted values: `asset`, `network`, `asset_network`. Default: `asset`
+</ParamField>
+
+<Accordion title="Response Type Definitions">
+```typescript
+interface VolumeAnalyticsResponse {
+  status: "success";
+  data: {
+    period: { from: string; to: string };
+    breakdown: Array<{
+      asset?: string;
+      network?: string;
+      volume_usd: string;
+      volume_native: string;
+      count: number;
+      percentage: number;
+    }>;
+    total_volume_usd: string;
+  };
+}
+```
+</Accordion>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/analytics/volume?from=2026-03-01&to=2026-03-31&group_by=asset' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "period": {
+      "from": "2026-03-01",
+      "to": "2026-03-31"
+    },
+    "breakdown": [
+      {
+        "asset": "USDC",
+        "volume_usd": "312400.00",
+        "volume_native": "312400.00",
+        "count": 842,
+        "percentage": 72.8
+      },
+      {
+        "asset": "ETH",
+        "volume_usd": "88200.00",
+        "volume_native": "29.4",
+        "count": 210,
+        "percentage": 20.6
+      },
+      {
+        "asset": "SOL",
+        "volume_usd": "28350.00",
+        "volume_native": "283.5",
+        "count": 232,
+        "percentage": 6.6
+      }
+    ],
+    "total_volume_usd": "428950.00"
+  }
+}
+```
+</ResponseExample>

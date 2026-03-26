@@ -1,0 +1,59 @@
+---
+title: "Update Customer"
+api: "PUT https://crypto-sandbox.yativo.com/api/customers/{customerId}"
+description: "Update a customer's profile information"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="customerId" type="string" required>
+  The unique customer ID to update.
+</ParamField>
+
+<ParamField body="first_name" type="string">
+  Updated first name.
+</ParamField>
+
+<ParamField body="last_name" type="string">
+  Updated last name.
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Updated phone number in E.164 format.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated metadata key-value pairs. Merges with existing metadata.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://crypto-api.yativo.com/api/customers/cust_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "phone": "+14155559999",
+    "metadata": { "plan": "enterprise" }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "id": "cust_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "email": "jane@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "phone": "+14155559999",
+    "metadata": { "plan": "enterprise" },
+    "updated_at": "2026-03-26T11:00:00Z"
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,506 @@
+---
+title: "Webhook Integration"
+description: "Receive real-time events from Yativo Crypto"
+sidebarTitle: "Webhooks"
+---
+
+Webhooks let Yativo push real-time event notifications to your server the moment something happens — a deposit confirms, a card transaction clears, a swap completes. This guide covers registering webhooks, verifying signatures, handling events correctly, and understanding the retry policy.
+
+<Note>
+  Test webhooks against the Sandbox at `https://crypto-sandbox.yativo.com/api/`. Use a tool like [ngrok](https://ngrok.com) or [Hookdeck](https://hookdeck.com) to expose your local server during development.
+</Note>
+
+<Steps>
+
+<Step title="Create a webhook endpoint in your app">
+
+Your webhook handler must:
+- Accept `POST` requests at a public HTTPS URL
+- Read the raw request body (before JSON parsing) for signature verification
+- Return `HTTP 200` within **5 seconds**
+- Process event logic asynchronously after returning 200
+
+<Tabs>
+
+<Tab title="TypeScript (Express)">
+
+```typescript TypeScript
+import express from "express";
+import crypto from "crypto";
+
+const app = express();
+
+// IMPORTANT: Use raw body middleware — not json() — for the webhook route
+app.post(
+  "/webhooks/yativo",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    // Verify signature (see Step 3)
+    const signature = req.headers["x-webhook-signature"] as string;
+    const isValid = verifySignature(req.body, signature, process.env.YATIVO_WEBHOOK_SECRET!);
+
+    if (!isValid) {
+      return res.status(401).json({ error: "Invalid signature" });
+    }
+
+    // Respond immediately
+    res.sendStatus(200);
+
+    // Process asynchronously
+    const event = JSON.parse(req.body.toString());
+    setImmediate(() => handleEvent(event).catch(console.error));
+  }
+);
+```
+
+</Tab>
+
+<Tab title="Python (Flask)">
+
+```python Python
+from flask import Flask, request, jsonify
+import hmac
+import hashlib
+import threading
+
+app = Flask(__name__)
+
+@app.route("/webhooks/yativo", methods=["POST"])
+def webhook():
+    raw_body = request.get_data()
+    signature = request.headers.get("X-Webhook-Signature", "")
+
+    if not verify_signature(raw_body, signature, os.environ["YATIVO_WEBHOOK_SECRET"]):
+        return jsonify({"error": "Invalid signature"}), 401
+
+    event = request.get_json(force=True)
+
+    # Respond immediately, process in background
+    thread = threading.Thread(target=handle_event, args=(event,))
+    thread.daemon = True
+    thread.start()
+
+    return "", 200
+```
+
+</Tab>
+
+<Tab title="PHP">
+
+```php PHP
+<?php
+
+$rawBody = file_get_contents("php://input");
+$signature = $_SERVER["HTTP_X_WEBHOOK_SIGNATURE"] ?? "";
+$secret = getenv("YATIVO_WEBHOOK_SECRET");
+
+if (!verifySignature($rawBody, $signature, $secret)) {
+    http_response_code(401);
+    echo json_encode(["error" => "Invalid signature"]);
+    exit;
+}
+
+// Acknowledge immediately
+http_response_code(200);
+echo "OK";
+
+// Flush output and continue processing
+if (function_exists("fastcgi_finish_request")) {
+    fastcgi_finish_request();
+}
+
+$event = json_decode($rawBody, true);
+handleEvent($event);
+```
+
+</Tab>
+
+</Tabs>
+
+</Step>
+
+<Step title="Register the webhook with Yativo">
+
+Register your endpoint and select which event types you want to receive.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/webhook/create \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://api.yourapp.com/webhooks/yativo",
+    "events": [
+      "deposit.detected",
+      "deposit.confirmed",
+      "transaction.confirmed",
+      "transaction.failed",
+      "swap.completed",
+      "swap.failed"
+    ],
+    "description": "Production webhook"
+  }'
+```
+
+```typescript TypeScript
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: "https://crypto-api.yativo.com/api/",
+});
+
+const webhook = await client.webhooks.create({
+  url: "https://api.yourapp.com/webhooks/yativo",
+  events: [
+    "deposit.detected",
+    "deposit.confirmed",
+    "transaction.confirmed",
+    "transaction.failed",
+    "swap.completed",
+    "swap.failed",
+  ],
+  description: "Production webhook",
+});
+
+// Store this secret securely — it's only shown once
+console.log(webhook.secret); // whsec_a8f3c2e1d4b7f9e2c5a3b6d8f1e4c7a2
+```
+
+```python Python
+webhook = client.webhooks.create(
+    url="https://api.yourapp.com/webhooks/yativo",
+    events=[
+        "deposit.detected",
+        "deposit.confirmed",
+        "transaction.confirmed",
+        "transaction.failed",
+        "swap.completed",
+        "swap.failed",
+    ],
+    description="Production webhook",
+)
+
+# Store this secret securely — it's only shown once
+print(webhook.secret)  # whsec_a8f3c2e1d4b7f9e2c5a3b6d8f1e4c7a2
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "webhookId": "wh_01J2KY3MNPQ7R4S5T6U7VWEBHK",
+  "url": "https://api.yourapp.com/webhooks/yativo",
+  "events": ["deposit.detected", "deposit.confirmed", "transaction.confirmed", "transaction.failed", "swap.completed", "swap.failed"],
+  "status": "active",
+  "secret": "whsec_a8f3c2e1d4b7f9e2c5a3b6d8f1e4c7a2b5d8e1f4",
+  "createdAt": "2026-03-26T15:00:00Z"
+}
+```
+
+<Warning>
+  The `secret` is returned only once at creation time. Store it immediately in a secure environment variable or secrets manager. If you lose it, delete the webhook and create a new one.
+</Warning>
+
+</Step>
+
+<Step title="Verify webhook signatures">
+
+Every webhook request includes an `X-Webhook-Signature` header containing an HMAC-SHA256 hex digest of the raw request body, signed with your webhook secret.
+
+**Always verify this signature before processing the event.**
+
+<Tabs>
+
+<Tab title="TypeScript">
+
+```typescript TypeScript
+import crypto from "crypto";
+
+function verifySignature(
+  rawBody: Buffer,
+  signatureHeader: string,
+  secret: string
+): boolean {
+  if (!signatureHeader) return false;
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
+
+  // Use timing-safe comparison to prevent timing attacks
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(signatureHeader, "hex"),
+      Buffer.from(expected, "hex")
+    );
+  } catch {
+    return false;
+  }
+}
+```
+
+</Tab>
+
+<Tab title="Python">
+
+```python Python
+import hmac
+import hashlib
+
+def verify_signature(raw_body: bytes, signature_header: str, secret: str) -> bool:
+    if not signature_header:
+        return False
+
+    expected = hmac.new(
+        secret.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+
+    # Use compare_digest to prevent timing attacks
+    return hmac.compare_digest(signature_header, expected)
+```
+
+</Tab>
+
+<Tab title="PHP">
+
+```php PHP
+function verifySignature(string $rawBody, string $signatureHeader, string $secret): bool {
+    if (empty($signatureHeader)) {
+        return false;
+    }
+
+    $expected = hash_hmac("sha256", $rawBody, $secret);
+
+    // hash_equals is timing-safe
+    return hash_equals($expected, $signatureHeader);
+}
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+  Always use a timing-safe comparison function (`timingSafeEqual`, `hmac.compare_digest`, `hash_equals`). Using a regular string equality check (`===`) exposes you to timing attacks.
+</Warning>
+
+</Step>
+
+<Step title="Handle events idempotently">
+
+The same event may be delivered more than once (see Retry Policy below). Your handler must be idempotent — processing the same event twice should produce the same result as processing it once.
+
+```typescript TypeScript
+async function handleEvent(event: WebhookEvent): Promise<void> {
+  // 1. Check if already processed
+  const processed = await db.webhookEvents.findById(event.eventId);
+  if (processed) {
+    console.log(`Event ${event.eventId} already processed — skipping`);
+    return;
+  }
+
+  // 2. Process the event
+  switch (event.type) {
+    case "deposit.confirmed":
+      await handleDepositConfirmed(event.data);
+      break;
+    case "transaction.confirmed":
+      await handleTransactionConfirmed(event.data);
+      break;
+    case "transaction.failed":
+      await handleTransactionFailed(event.data);
+      break;
+    case "swap.completed":
+      await handleSwapCompleted(event.data);
+      break;
+    case "swap.failed":
+      await handleSwapFailed(event.data);
+      break;
+    case "card.transaction.approved":
+      await handleCardTransaction(event.data);
+      break;
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
+  }
+
+  // 3. Mark as processed
+  await db.webhookEvents.insert({
+    id: event.eventId,
+    type: event.type,
+    processedAt: new Date(),
+  });
+}
+```
+
+<Tip>
+  Store processed event IDs in a database table with a unique index on `eventId`. Use the insert as an upsert or check-then-insert within a transaction to prevent race conditions when events arrive in parallel.
+</Tip>
+
+</Step>
+
+<Step title="Return 200 quickly and process asynchronously">
+
+Yativo waits up to **5 seconds** for an HTTP 200 response. If your server does not respond in time, the delivery is treated as failed and will be retried.
+
+**Pattern:** Respond 200 first, then process.
+
+```typescript TypeScript
+app.post("/webhooks/yativo", express.raw({ type: "application/json" }), async (req, res) => {
+  // Signature verification is fast — do it synchronously
+  if (!verifySignature(req.body, req.headers["x-webhook-signature"] as string, secret)) {
+    return res.status(401).send();
+  }
+
+  // Acknowledge receipt immediately
+  res.sendStatus(200);
+
+  // Enqueue for async processing (use a job queue in production)
+  const event = JSON.parse(req.body.toString());
+  await jobQueue.enqueue("process_webhook_event", event);
+});
+```
+
+In production, use a job queue (e.g., BullMQ, Celery, SQS) rather than `setImmediate` so events survive server restarts.
+
+</Step>
+
+<Step title="Understand the retry policy">
+
+If your endpoint returns a non-2xx status code, times out, or is unreachable, Yativo retries the delivery with exponential backoff:
+
+| Attempt | Delay after previous |
+|---------|---------------------|
+| 1 (initial) | — |
+| 2 | 1 minute |
+| 3 | 5 minutes |
+| 4 | 30 minutes |
+| 5 | 2 hours |
+| 6 | 6 hours |
+| 7 | 24 hours |
+
+After 7 failed attempts, the event is marked as **permanently failed** and no further retries are made. You can manually replay failed events from the Dashboard or via `POST /webhook/{webhookId}/replay`.
+
+<Note>
+  Because retries are possible, your handlers must be idempotent (see Step 4). A 200 response stops retries — never return 200 if you have not processed (or enqueued) the event.
+</Note>
+
+</Step>
+
+</Steps>
+
+## Event Types Reference
+
+### Wallet & Deposit Events
+
+| Event | Description |
+|-------|-------------|
+| `deposit.detected` | A deposit transaction was seen on-chain (unconfirmed) |
+| `deposit.confirmed` | Deposit has sufficient confirmations — safe to credit |
+| `deposit.failed` | A detected deposit was not confirmed (e.g., dropped from mempool) |
+
+### Transaction Events
+
+| Event | Description |
+|-------|-------------|
+| `transaction.pending` | Outbound transaction created and queued |
+| `transaction.broadcasting` | Being submitted to the blockchain |
+| `transaction.confirmed` | Transaction confirmed on-chain |
+| `transaction.failed` | Transaction failed; funds returned to account |
+
+### Swap Events
+
+| Event | Description |
+|-------|-------------|
+| `swap.initiated` | Swap execution started |
+| `swap.completed` | Destination asset arrived in account |
+| `swap.failed` | Swap failed; see `failureReason` |
+| `swap.refunded` | Swap failed after source funds left; original asset returned |
+
+### Card Events
+
+| Event | Description |
+|-------|-------------|
+| `card.transaction.approved` | Authorization approved |
+| `card.transaction.declined` | Authorization declined (includes `declineReason`) |
+| `card.transaction.completed` | Settlement cleared |
+| `card.transaction.reversed` | Transaction reversed or refunded |
+| `card.funding.completed` | Card top-up completed |
+| `card.spending_limit.reached` | Card spending limit hit |
+
+### KYC & Customer Events
+
+| Event | Description |
+|-------|-------------|
+| `kyc.status_changed` | KYC status updated (includes new status) |
+| `customer.kyc.approved` | Customer KYC approved (issuer program) |
+| `customer.kyc.rejected` | Customer KYC rejected |
+
+### IBAN Events
+
+| Event | Description |
+|-------|-------------|
+| `iban.activated` | IBAN account is active and ready to receive |
+| `iban.transfer.received` | Incoming bank transfer detected |
+| `iban.transfer.converted` | Transfer converted to crypto |
+
+### Issuer Program Events
+
+| Event | Description |
+|-------|-------------|
+| `card_issuer.application_approved` | Issuer program application approved |
+| `card_issuer.application_rejected` | Issuer program application rejected |
+| `card_issuer.limit_warning` | Approaching program volume limits |
+
+## Webhook Event Envelope
+
+All events share a common envelope:
+
+```json
+{
+  "eventId": "evt_01J2KZ3MNPQ7R4S5T6U7VEVT99",
+  "type": "deposit.confirmed",
+  "webhookId": "wh_01J2KY3MNPQ7R4S5T6U7VWEBHK",
+  "createdAt": "2026-03-26T15:30:00Z",
+  "attempt": 1,
+  "data": {
+    // Event-specific payload
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `eventId` | string | Unique event ID — use for idempotency |
+| `type` | string | Event type |
+| `webhookId` | string | ID of the registered webhook |
+| `createdAt` | ISO 8601 | When the event was generated |
+| `attempt` | integer | Delivery attempt number (starts at 1) |
+| `data` | object | Event-specific payload |
+
+## Managing Webhooks
+
+```typescript TypeScript
+// List all registered webhooks
+const webhooks = await client.webhooks.list();
+
+// Update a webhook's events or URL
+await client.webhooks.update("wh_01J2KY3MNPQ7R4S5T6U7VWEBHK", {
+  events: ["deposit.confirmed", "transaction.confirmed"],
+});
+
+// Disable a webhook temporarily
+await client.webhooks.setStatus("wh_01J2KY3MNPQ7R4S5T6U7VWEBHK", "inactive");
+
+// Delete a webhook
+await client.webhooks.delete("wh_01J2KY3MNPQ7R4S5T6U7VWEBHK");
+
+// Replay a failed event
+await client.webhooks.replayEvent("wh_01J2KY3MNPQ7R4S5T6U7VWEBHK", "evt_01J2KZ3MNPQ7R4S5T6U7VEVT99");
+```

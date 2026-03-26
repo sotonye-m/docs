@@ -1,0 +1,422 @@
+---
+title: "Swap Tokens"
+description: "Exchange one crypto asset for another across chains"
+---
+
+This guide covers the full token swap flow: browsing available assets, finding valid swap routes, getting a quote, executing the swap, and monitoring the result.
+
+<Note>
+  Test swaps in the Sandbox at `https://crypto-sandbox.yativo.com/api/`. Sandbox swaps simulate the full flow with test assets.
+</Note>
+
+<Steps>
+
+<Step title="Browse available swap assets">
+
+Retrieve the list of assets supported for swapping. Use this to populate asset selector UI in your app.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/swap/assets \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
+```
+
+```typescript TypeScript
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: "https://crypto-api.yativo.com/api/",
+});
+
+const assets = await client.swap.getAssets();
+
+// Filter to assets available as swap input
+const fromAssets = assets.filter((a) => a.canSwapFrom);
+const toAssets = assets.filter((a) => a.canSwapTo);
+
+console.log(fromAssets.map((a) => `${a.symbol} on ${a.chain}`));
+// ["USDC on ethereum", "ETH on ethereum", "USDC on polygon", ...]
+```
+
+```python Python
+from yativo_crypto import YativoCrypto
+
+client = YativoCrypto(
+    api_key=os.environ["YATIVO_API_KEY"],
+    base_url="https://crypto-api.yativo.com/api/",
+)
+
+assets = client.swap.get_assets()
+from_assets = [a for a in assets if a.can_swap_from]
+```
+
+</CodeGroup>
+
+**Response (excerpt):**
+
+```json
+[
+  {
+    "assetId": "eth-usdc",
+    "symbol": "USDC",
+    "name": "USD Coin",
+    "chain": "ethereum",
+    "contractAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "decimals": 6,
+    "canSwapFrom": true,
+    "canSwapTo": true,
+    "logoUrl": "https://assets.yativo.com/tokens/usdc.png"
+  },
+  {
+    "assetId": "eth-weth",
+    "symbol": "ETH",
+    "name": "Ether",
+    "chain": "ethereum",
+    "contractAddress": null,
+    "decimals": 18,
+    "canSwapFrom": true,
+    "canSwapTo": true,
+    "logoUrl": "https://assets.yativo.com/tokens/eth.png"
+  }
+]
+```
+
+</Step>
+
+<Step title="Find valid swap routes">
+
+Retrieve the available routes for a given asset pair. Routes describe the path the swap will take (which DEXes or bridges are involved) and help you select the best option.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://crypto-api.yativo.com/api/swap/routes?fromAsset=eth-usdc&toAsset=pol-usdc" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
+```
+
+```typescript TypeScript
+const routes = await client.swap.getRoutes({
+  fromAsset: "eth-usdc",   // USDC on Ethereum
+  toAsset: "pol-usdc",     // USDC on Polygon
+});
+
+routes.forEach((route) => {
+  console.log(`Route: ${route.routeId} via ${route.protocol}`);
+  console.log(`  Estimated time: ${route.estimatedTimeSeconds}s`);
+  console.log(`  Estimated fee: $${route.estimatedFeeUsd}`);
+});
+```
+
+```python Python
+routes = client.swap.get_routes(
+    from_asset="eth-usdc",
+    to_asset="pol-usdc",
+)
+
+for route in routes:
+    print(f"Route: {route.route_id} via {route.protocol}")
+    print(f"  Estimated time: {route.estimated_time_seconds}s")
+    print(f"  Estimated fee: ${route.estimated_fee_usd}")
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+[
+  {
+    "routeId": "rte_01J2KV3MNPQ7R4S5T6U7VRTE01",
+    "fromAsset": "eth-usdc",
+    "toAsset": "pol-usdc",
+    "protocol": "stargate",
+    "estimatedTimeSeconds": 180,
+    "estimatedFeeUsd": "2.40",
+    "tags": ["cross-chain", "bridge"]
+  },
+  {
+    "routeId": "rte_01J2KV3MNPQ7R4S5T6U7VRTE02",
+    "fromAsset": "eth-usdc",
+    "toAsset": "pol-usdc",
+    "protocol": "across",
+    "estimatedTimeSeconds": 60,
+    "estimatedFeeUsd": "3.10",
+    "tags": ["cross-chain", "fast"]
+  }
+]
+```
+
+</Step>
+
+<Step title="Get a quote">
+
+Request a precise quote for a specific amount. Quotes have a short expiry window — execute the swap before the quote expires.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/swap/quote \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    "fromAsset": "eth-usdc",
+    "toAsset": "pol-usdc",
+    "fromAmount": "500.00",
+    "routeId": "rte_01J2KV3MNPQ7R4S5T6U7VRTE01"
+  }'
+```
+
+```typescript TypeScript
+const quote = await client.swap.getQuote({
+  accountId: "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  fromAsset: "eth-usdc",
+  toAsset: "pol-usdc",
+  fromAmount: "500.00",
+  routeId: "rte_01J2KV3MNPQ7R4S5T6U7VRTE01",
+});
+
+console.log(quote.quoteId);       // qte_01J2KW3MNPQ7R4S5T6U7VQTE55
+console.log(quote.toAmount);      // "497.52"  (after fees)
+console.log(quote.exchangeRate);  // "0.99504"
+console.log(quote.expiresAt);     // "2026-03-26T14:03:00Z"
+
+// Check if quote is still valid
+const expiresIn = new Date(quote.expiresAt).getTime() - Date.now();
+console.log(`Quote expires in ${Math.round(expiresIn / 1000)}s`);
+```
+
+```python Python
+import time
+from datetime import datetime, timezone
+
+quote = client.swap.get_quote(
+    account_id="acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    from_asset="eth-usdc",
+    to_asset="pol-usdc",
+    from_amount="500.00",
+    route_id="rte_01J2KV3MNPQ7R4S5T6U7VRTE01",
+)
+
+print(quote.quote_id)       # qte_01J2KW3MNPQ7R4S5T6U7VQTE55
+print(quote.to_amount)      # "497.52"
+print(quote.exchange_rate)  # "0.99504"
+
+# Check expiry
+expires_at = datetime.fromisoformat(quote.expires_at.replace("Z", "+00:00"))
+expires_in = (expires_at - datetime.now(timezone.utc)).total_seconds()
+print(f"Quote expires in {expires_in:.0f}s")
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "quoteId": "qte_01J2KW3MNPQ7R4S5T6U7VQTE55",
+  "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  "fromAsset": "eth-usdc",
+  "toAsset": "pol-usdc",
+  "fromAmount": "500.00",
+  "toAmount": "497.52",
+  "exchangeRate": "0.99504",
+  "fees": {
+    "protocolFee": "1.25",
+    "networkFee": "1.23",
+    "yativoFee": "0.00",
+    "totalFeeUsd": "2.48"
+  },
+  "routeId": "rte_01J2KV3MNPQ7R4S5T6U7VRTE01",
+  "protocol": "stargate",
+  "expiresAt": "2026-03-26T14:03:00Z",
+  "createdAt": "2026-03-26T14:00:00Z"
+}
+```
+
+### Quote expiry handling
+
+Quotes are valid for **3 minutes** by default. If a quote expires before execution, request a fresh one.
+
+```typescript TypeScript
+async function getValidQuote(params: QuoteParams): Promise<Quote> {
+  const BUFFER_MS = 30000; // require at least 30s before expiry
+
+  let quote = await client.swap.getQuote(params);
+
+  const expiresIn = new Date(quote.expiresAt).getTime() - Date.now();
+  if (expiresIn < BUFFER_MS) {
+    // Refresh immediately
+    quote = await client.swap.getQuote(params);
+  }
+
+  return quote;
+}
+```
+
+</Step>
+
+<Step title="Execute the swap">
+
+Submit the swap using the `quoteId`. The quote must not have expired.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/swap/execute \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: swap_qte55_exec_01" \
+  -d '{
+    "quoteId": "qte_01J2KW3MNPQ7R4S5T6U7VQTE55",
+    "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y"
+  }'
+```
+
+```typescript TypeScript
+const swap = await client.swap.execute(
+  {
+    quoteId: "qte_01J2KW3MNPQ7R4S5T6U7VQTE55",
+    accountId: "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  },
+  { idempotencyKey: "swap_qte55_exec_01" }
+);
+
+console.log(swap.swapId);   // swp_01J2KX3MNPQ7R4S5T6U7VSWP33
+console.log(swap.status);   // "pending"
+```
+
+```python Python
+swap = client.swap.execute(
+    quote_id="qte_01J2KW3MNPQ7R4S5T6U7VQTE55",
+    account_id="acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    idempotency_key="swap_qte55_exec_01",
+)
+
+print(swap.swap_id)  # swp_01J2KX3MNPQ7R4S5T6U7VSWP33
+print(swap.status)   # "pending"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "swapId": "swp_01J2KX3MNPQ7R4S5T6U7VSWP33",
+  "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  "quoteId": "qte_01J2KW3MNPQ7R4S5T6U7VQTE55",
+  "fromAsset": "eth-usdc",
+  "toAsset": "pol-usdc",
+  "fromAmount": "500.00",
+  "expectedToAmount": "497.52",
+  "status": "pending",
+  "initiatedAt": "2026-03-26T14:01:30Z"
+}
+```
+
+</Step>
+
+<Step title="Monitor swap status">
+
+Poll the swap history endpoint or listen for `swap.completed` / `swap.failed` webhooks.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://crypto-api.yativo.com/api/swap/history?accountId=acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y&swapId=swp_01J2KX3MNPQ7R4S5T6U7VSWP33" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
+```
+
+```typescript TypeScript
+// Get a specific swap
+const swapStatus = await client.swap.getHistory({
+  accountId: "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  swapId: "swp_01J2KX3MNPQ7R4S5T6U7VSWP33",
+});
+
+console.log(swapStatus.status);         // "completed"
+console.log(swapStatus.actualToAmount); // "497.38" (may differ slightly from quote)
+console.log(swapStatus.completedAt);    // "2026-03-26T14:04:52Z"
+
+// List all recent swaps for an account
+const history = await client.swap.getHistory({
+  accountId: "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  limit: 20,
+});
+```
+
+```python Python
+swap_status = client.swap.get_history(
+    account_id="acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    swap_id="swp_01J2KX3MNPQ7R4S5T6U7VSWP33",
+)
+
+print(swap_status.status)           # "completed"
+print(swap_status.actual_to_amount) # "497.38"
+print(swap_status.completed_at)     # "2026-03-26T14:04:52Z"
+```
+
+</CodeGroup>
+
+**Completed swap response:**
+
+```json
+{
+  "swapId": "swp_01J2KX3MNPQ7R4S5T6U7VSWP33",
+  "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  "fromAsset": "eth-usdc",
+  "toAsset": "pol-usdc",
+  "fromAmount": "500.00",
+  "expectedToAmount": "497.52",
+  "actualToAmount": "497.38",
+  "exchangeRate": "0.99476",
+  "fees": {
+    "protocolFee": "1.25",
+    "networkFee": "1.37",
+    "yativoFee": "0.00",
+    "totalFeeUsd": "2.62"
+  },
+  "status": "completed",
+  "txHashSource": "0x1a3c5e7f9b2d4f6a8c0e2g4h6j8k0m2n4p6r8s0t2u4v6w8x",
+  "txHashDestination": "0xabcdef1234567890abcdef1234567890abcdef12",
+  "initiatedAt": "2026-03-26T14:01:30Z",
+  "completedAt": "2026-03-26T14:04:52Z"
+}
+```
+
+### Swap statuses
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Swap initiated, not yet broadcast |
+| `in_progress` | On-chain, awaiting destination confirmation |
+| `completed` | Funds arrived in destination asset |
+| `failed` | Swap failed — check `failureReason` |
+| `refunded` | Swap failed after funds were sent; original asset refunded |
+
+</Step>
+
+</Steps>
+
+## Fee Breakdown
+
+Every quote response includes a `fees` object:
+
+| Field | Description |
+|-------|-------------|
+| `protocolFee` | Fee charged by the underlying protocol (DEX/bridge) |
+| `networkFee` | Gas costs on source and destination chains |
+| `yativoFee` | Yativo platform fee (0% on most routes) |
+| `totalFeeUsd` | Sum of all fees in USD equivalent |
+
+<Note>
+  The `actualToAmount` in the completed swap may differ slightly from `expectedToAmount` in the quote due to slippage and real-time gas fluctuations.
+</Note>
+
+## Next Steps
+
+- **[Send Crypto](/guides/send-crypto)** — Send swapped assets to an external wallet
+- **[Accept Crypto Payments](/guides/accept-crypto-payments)** — Receive deposits before swapping

@@ -1,0 +1,184 @@
+---
+title: "Subscriptions"
+description: "Manage your Yativo subscription plan"
+---
+
+Yativo offers tiered subscription plans that unlock different API rate limits, feature sets, and support levels. You can view available plans, subscribe, manage auto-renewal, and cancel entirely through the API or dashboard.
+
+---
+
+## Get Available Plans
+
+**GET** `/subscription/plans`
+
+Returns all plans available for subscription.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/subscription/plans \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "plans": [
+    {
+      "id": "plan_starter",
+      "name": "Starter",
+      "price_usd": 0,
+      "billing_cycle": "monthly",
+      "features": ["Basic API access", "Up to 1,000 transactions/month", "Email support"]
+    },
+    {
+      "id": "plan_growth",
+      "name": "Growth",
+      "price_usd": 99,
+      "billing_cycle": "monthly",
+      "features": ["Full API access", "Up to 50,000 transactions/month", "Priority support", "Webhooks"]
+    },
+    {
+      "id": "plan_enterprise",
+      "name": "Enterprise",
+      "price_usd": null,
+      "billing_cycle": "custom",
+      "features": ["Unlimited transactions", "Dedicated support", "Custom SLA", "White-label options"]
+    }
+  ]
+}
+```
+
+---
+
+## Get Current Subscription
+
+**GET** `/subscription/current`
+
+Returns your active subscription, including the current billing period and renewal status.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/subscription/current \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "plan_id": "plan_growth",
+  "plan_name": "Growth",
+  "status": "active",
+  "current_period_start": "2026-03-01T00:00:00Z",
+  "current_period_end": "2026-04-01T00:00:00Z",
+  "auto_renew": true,
+  "subscribed_at": "2026-01-15T10:00:00Z"
+}
+```
+
+---
+
+## Subscribe to a Plan
+
+**POST** `/subscription/subscribe`
+
+<ParamField body="plan_id" type="string" required>
+  The ID of the plan to subscribe to, from the `/subscription/plans` response.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/subscription/subscribe \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"plan_id": "plan_growth"}'
+```
+
+```json Response
+{
+  "message": "Successfully subscribed to Growth plan.",
+  "plan_id": "plan_growth",
+  "effective_at": "2026-03-26T10:00:00Z",
+  "next_billing_date": "2026-04-26T10:00:00Z"
+}
+```
+
+---
+
+## Toggle Auto-Renewal
+
+**POST** `/subscription/auto-renew`
+
+Enable or disable automatic renewal at the end of each billing period.
+
+<ParamField body="enabled" type="boolean" required>
+  `true` to enable auto-renewal, `false` to disable.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/subscription/auto-renew \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": false}'
+```
+
+<Note>
+  Disabling auto-renewal does not cancel your subscription immediately. Your plan remains active until the end of the current billing period.
+</Note>
+
+---
+
+## Cancel Subscription
+
+**POST** `/subscription/cancel`
+
+Cancels your subscription at the end of the current billing period. You will retain access to your current plan's features until then.
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/subscription/cancel \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "message": "Subscription will be cancelled at the end of the current billing period.",
+  "cancels_at": "2026-04-26T10:00:00Z"
+}
+```
+
+---
+
+## Subscription History
+
+**GET** `/subscription/history`
+
+Returns a history of all past subscription changes, renewals, and payments.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/subscription/history \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "history": [
+    {
+      "id": "sub_hist_01",
+      "type": "renewal",
+      "plan_id": "plan_growth",
+      "amount_usd": 99,
+      "status": "paid",
+      "date": "2026-03-01T00:00:00Z"
+    },
+    {
+      "id": "sub_hist_02",
+      "type": "upgrade",
+      "plan_id": "plan_growth",
+      "previous_plan_id": "plan_starter",
+      "amount_usd": 99,
+      "status": "paid",
+      "date": "2026-01-15T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+<Tip>
+  For Enterprise plan inquiries, contact the Yativo sales team through the [dashboard support](https://crypto.yativo.com/support) rather than subscribing through the API.
+</Tip>

@@ -1,0 +1,61 @@
+---
+title: "Register"
+api: "POST https://crypto-sandbox.yativo.com/api/authentication/registration"
+description: "Create a new user account and receive authentication tokens"
+authMethod: "none"
+---
+
+<ParamField body="email" type="string" required>
+  The user's email address. Must be unique.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's password. Must be at least 8 characters.
+</ParamField>
+
+<ParamField body="username" type="string">
+  Optional display username.
+</ParamField>
+
+<ParamField body="first_name" type="string">
+  The user's first name.
+</ParamField>
+
+<ParamField body="last_name" type="string">
+  The user's last name.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/authentication/registration' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword123",
+    "username": "cryptouser",
+    "first_name": "Jane",
+    "last_name": "Doe"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Registration successful",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "usr_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "email": "user@example.com",
+      "username": "cryptouser",
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "created_at": "2026-03-26T12:00:00Z"
+    }
+  }
+}
+```
+</ResponseExample>

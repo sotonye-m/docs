@@ -1,0 +1,180 @@
+---
+title: "Gas Station"
+description: "Pre-fund native token reserves to cover network fees on behalf of your users"
+---
+
+The Gas Station solves one of the most common UX friction points in crypto applications: requiring users to hold native tokens just to pay network fees.
+
+Without a Gas Station, a user who holds USDC on Solana still needs SOL to pay for the transaction fee. With a Gas Station, your platform pre-funds SOL (or ETH, BNB, etc.) and covers fees on behalf of your users — they only need to hold the token they actually want to send.
+
+---
+
+## How It Works
+
+1. You add a gas station asset for a specific chain (e.g., SOL for Solana)
+2. You fund the gas station wallet with native tokens
+3. When a user initiates a transaction on that chain, the platform draws from the gas station to pay the network fee automatically
+4. You monitor the gas station balance and top it up as needed
+
+<Note>
+  The Gas Station covers **network fees only**. Transaction amounts are still drawn from the user's wallet.
+</Note>
+
+---
+
+## Add a Gas Station Asset
+
+**POST** `/assets/add-station-asset`
+
+Creates a gas station wallet for a specific chain. The ticker must be the chain's native token.
+
+<ParamField body="chain" type="string" required>
+  The blockchain to create a gas station for (e.g., `solana`, `ethereum`).
+</ParamField>
+
+<ParamField body="ticker" type="string" required>
+  The native gas token for that chain. Must match the chain's native currency.
+</ParamField>
+
+| Chain | Required Ticker |
+|-------|----------------|
+| Ethereum | `ETH` |
+| Solana | `SOL` |
+| Polygon | `POL` |
+| BSC | `BNB` |
+| Base | `ETH_BASE` |
+| Arbitrum | `ETH_ARBITRUM` |
+| Optimism | `ETH_OPTIMISM` |
+| XDC | `XDC` |
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/assets/add-station-asset \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chain": "solana",
+    "ticker": "SOL"
+  }'
+```
+
+```typescript TypeScript
+const gasStation = await client.assets.addStation({
+  chain: 'solana',
+  ticker: 'SOL',
+});
+console.log('Gas station address:', gasStation.address);
+```
+
+```python Python
+gas_station = client.assets.add_station(
+    chain='solana',
+    ticker='SOL',
+)
+print('Gas station address:', gas_station['address'])
+```
+</CodeGroup>
+
+```json Response
+{
+  "id": "station_01abc123",
+  "chain": "solana",
+  "ticker": "SOL",
+  "address": "GasStationXxKXtg2CW87d97TXJSDpbD5jBkheTqA83TZ",
+  "balance": "0",
+  "status": "active",
+  "created_at": "2026-03-26T10:00:00Z"
+}
+```
+
+Send SOL to the `address` to fund the gas station.
+
+---
+
+## Get Gas Station Assets
+
+**POST** `/assets/get-station-assets`
+
+Returns all gas station wallets and their current balances.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/assets/get-station-assets \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```typescript TypeScript
+const stations = await client.assets.getStations();
+```
+</CodeGroup>
+
+```json Response
+{
+  "station_assets": [
+    {
+      "id": "station_01abc123",
+      "chain": "solana",
+      "ticker": "SOL",
+      "address": "GasStationXxKXtg2CW87d97TXJSDpbD5jBkheTqA83TZ",
+      "balance": "5.2",
+      "balance_usd": "750.40",
+      "status": "active"
+    },
+    {
+      "id": "station_02def456",
+      "chain": "ethereum",
+      "ticker": "ETH",
+      "address": "0xGasStationAddr...",
+      "balance": "0.05",
+      "balance_usd": "125.00",
+      "status": "active"
+    }
+  ]
+}
+```
+
+---
+
+## Monitoring & Top-Up
+
+<Warning>
+  If the gas station runs out of native tokens, transactions on that chain will fail with an insufficient gas error. Monitor your gas station balance and set up top-up procedures before going to production.
+</Warning>
+
+Set up a [webhook](/yativo-crypto/webhooks) for the `gas.low` event to get notified when a gas station balance drops below the configured threshold:
+
+```json Webhook payload (gas.low)
+{
+  "id": "evt_01abc",
+  "type": "gas.low",
+  "created_at": "2026-03-26T11:00:00Z",
+  "data": {
+    "station_id": "station_01abc123",
+    "chain": "solana",
+    "ticker": "SOL",
+    "balance": "0.5",
+    "balance_usd": "72.00",
+    "threshold": "1.0"
+  }
+}
+```
+
+---
+
+## Best Practices
+
+<Accordion title="Start with a conservative buffer">
+  When launching, fund each gas station with enough native tokens to cover several hundred transactions. Monitor actual consumption in the first week to calibrate your top-up schedule.
+</Accordion>
+
+<Accordion title="Set up automated top-ups">
+  Wire the `gas.low` webhook to an automated top-up system. Don't rely on manual monitoring in production.
+</Accordion>
+
+<Accordion title="Create a separate gas station per chain">
+  Each chain requires its own gas station. If you support 5 chains, you need 5 gas station wallets.
+</Accordion>
+
+<Accordion title="Account for gas price spikes">
+  On Ethereum and other congested networks, gas prices can spike dramatically. Keep a larger buffer on high-usage chains to survive short-term price spikes.
+</Accordion>

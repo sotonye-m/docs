@@ -1,0 +1,338 @@
+---
+title: "Send Crypto"
+description: "Programmatically send crypto to any wallet address"
+---
+
+This guide covers the full flow for sending crypto from a Yativo account to an external wallet: estimating gas fees, executing the transfer with an idempotency key, and tracking the transaction to completion.
+
+<Note>
+  Test this flow in the Sandbox at `https://crypto-sandbox.yativo.com/api/`. Sandbox transactions are simulated — no real funds move.
+</Note>
+
+<Steps>
+
+<Step title="Get a gas fee estimate">
+
+Before sending, retrieve the current gas fee estimate for the target chain. This lets you show users an accurate fee breakdown and choose a priority level.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/transactions/get-gas-price \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chain": "ethereum",
+    "asset": "USDC"
+  }'
+```
+
+```typescript TypeScript
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: "https://crypto-api.yativo.com/api/",
+});
+
+const gasEstimate = await client.transactions.getGasPrice({
+  chain: "ethereum",
+  asset: "USDC",
+});
+
+console.log(gasEstimate);
+/*
+{
+  chain: "ethereum",
+  slow:   { gasPrice: "18.2", estimatedFeeUsd: "0.82",  estimatedTimeSeconds: 120 },
+  medium: { gasPrice: "22.5", estimatedFeeUsd: "1.02",  estimatedTimeSeconds: 30  },
+  fast:   { gasPrice: "31.0", estimatedFeeUsd: "1.40",  estimatedTimeSeconds: 10  },
+  nativeAsset: "ETH",
+  updatedAt: "2026-03-26T11:00:00Z"
+}
+*/
+```
+
+```python Python
+from yativo_crypto import YativoCrypto
+
+client = YativoCrypto(
+    api_key=os.environ["YATIVO_API_KEY"],
+    base_url="https://crypto-api.yativo.com/api/",
+)
+
+gas_estimate = client.transactions.get_gas_price(
+    chain="ethereum",
+    asset="USDC",
+)
+print(gas_estimate.medium.estimated_fee_usd)  # "1.02"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "chain": "ethereum",
+  "slow": {
+    "gasPrice": "18.2",
+    "estimatedFeeUsd": "0.82",
+    "estimatedTimeSeconds": 120
+  },
+  "medium": {
+    "gasPrice": "22.5",
+    "estimatedFeeUsd": "1.02",
+    "estimatedTimeSeconds": 30
+  },
+  "fast": {
+    "gasPrice": "31.0",
+    "estimatedFeeUsd": "1.40",
+    "estimatedTimeSeconds": 10
+  },
+  "nativeAsset": "ETH",
+  "updatedAt": "2026-03-26T11:00:00Z"
+}
+```
+
+### Priority levels
+
+| Priority | Speed | Use case |
+|----------|-------|----------|
+| `slow`   | 1–3 min | Non-urgent payouts, batch processing |
+| `medium` | 15–30 sec | Default for most use cases |
+| `fast`   | 5–15 sec | Time-sensitive transactions |
+
+</Step>
+
+<Step title="Send funds with an idempotency key">
+
+Use `POST /transactions/send-funds` to initiate the transfer. Always include an `Idempotency-Key` header to safely retry without double-spending.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/transactions/send-funds \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: payout_01J2KG9MNPQ3R4S5T6UPAY001" \
+  -d '{
+    "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    "chain": "ethereum",
+    "asset": "USDC",
+    "toAddress": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "amount": "100.00",
+    "priority": "medium",
+    "memo": "Payout for order #ORD-9821"
+  }'
+```
+
+```typescript TypeScript
+import { v4 as uuidv4 } from "uuid";
+
+// Generate a stable idempotency key tied to your payout record
+const idempotencyKey = `payout_${payoutRecord.id}`;
+
+const transaction = await client.transactions.sendFunds(
+  {
+    accountId: "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    chain: "ethereum",
+    asset: "USDC",
+    toAddress: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    amount: "100.00",
+    priority: "medium",
+    memo: "Payout for order #ORD-9821",
+  },
+  { idempotencyKey }
+);
+
+console.log(transaction.transactionId); // txn_01J2KH3MNPQ7R4S5T6U7VSND99
+console.log(transaction.status);        // "pending"
+```
+
+```python Python
+transaction = client.transactions.send_funds(
+    account_id="acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    chain="ethereum",
+    asset="USDC",
+    to_address="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    amount="100.00",
+    priority="medium",
+    memo="Payout for order #ORD-9821",
+    idempotency_key=f"payout_{payout_record.id}",
+)
+
+print(transaction.transaction_id)  # txn_01J2KH3MNPQ7R4S5T6U7VSND99
+print(transaction.status)          # "pending"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "transactionId": "txn_01J2KH3MNPQ7R4S5T6U7VSND99",
+  "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  "chain": "ethereum",
+  "asset": "USDC",
+  "toAddress": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+  "amount": "100.00",
+  "networkFee": "1.02",
+  "priority": "medium",
+  "status": "pending",
+  "memo": "Payout for order #ORD-9821",
+  "createdAt": "2026-03-26T11:05:00Z"
+}
+```
+
+### Idempotency keys
+
+An idempotency key is a unique string you generate and attach to a request. If the request fails or times out, you can safely retry with the same key — Yativo will return the original response instead of creating a duplicate transaction.
+
+**Best practices:**
+- Derive the key from your internal record ID (e.g., `payout_${payoutId}`)
+- Keys must be unique per operation type — reusing a key for a different transfer will return the original transaction
+- Keys expire after 24 hours
+
+</Step>
+
+<Step title="Poll for transaction status">
+
+You can poll for the current transaction status using `POST /transactions/get-transaction`.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/transactions/get-transaction \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transactionId": "txn_01J2KH3MNPQ7R4S5T6U7VSND99"
+  }'
+```
+
+```typescript TypeScript
+// Poll with exponential backoff
+async function waitForTransaction(transactionId: string): Promise<any> {
+  const maxAttempts = 20;
+  let delay = 2000; // start at 2 seconds
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const txn = await client.transactions.getTransaction({ transactionId });
+
+    if (txn.status === "confirmed") return txn;
+    if (txn.status === "failed") throw new Error(`Transaction failed: ${txn.failureReason}`);
+
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    delay = Math.min(delay * 1.5, 30000); // cap at 30s
+  }
+
+  throw new Error("Transaction did not complete within timeout");
+}
+
+const completed = await waitForTransaction("txn_01J2KH3MNPQ7R4S5T6U7VSND99");
+console.log(completed.txHash); // 0x9f3e2d1c4b7a5e8f2c9b3d6a1e4c7f2b5d8e1c4a...
+```
+
+```python Python
+import time
+
+def wait_for_transaction(transaction_id: str) -> dict:
+    max_attempts = 20
+    delay = 2.0
+
+    for attempt in range(max_attempts):
+        txn = client.transactions.get_transaction(transaction_id=transaction_id)
+
+        if txn.status == "confirmed":
+            return txn
+        if txn.status == "failed":
+            raise Exception(f"Transaction failed: {txn.failure_reason}")
+
+        time.sleep(delay)
+        delay = min(delay * 1.5, 30.0)
+
+    raise TimeoutError("Transaction did not complete within timeout")
+
+completed = wait_for_transaction("txn_01J2KH3MNPQ7R4S5T6U7VSND99")
+print(completed.tx_hash)
+```
+
+</CodeGroup>
+
+**Response (confirmed):**
+
+```json
+{
+  "transactionId": "txn_01J2KH3MNPQ7R4S5T6U7VSND99",
+  "chain": "ethereum",
+  "asset": "USDC",
+  "toAddress": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+  "amount": "100.00",
+  "networkFee": "1.02",
+  "priority": "medium",
+  "status": "confirmed",
+  "txHash": "0x9f3e2d1c4b7a5e8f2c9b3d6a1e4c7f2b5d8e1c4a7f6e3d2b1a8c5f4e3d2c1b",
+  "blockNumber": 19847345,
+  "confirmations": 12,
+  "confirmedAt": "2026-03-26T11:05:42Z",
+  "memo": "Payout for order #ORD-9821"
+}
+```
+
+### Transaction statuses
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Submitted, waiting to be broadcast |
+| `broadcasting` | Being submitted to the network |
+| `mempool` | In the mempool, awaiting inclusion in a block |
+| `confirmed` | Included in a block with sufficient confirmations |
+| `failed` | Transaction failed (see `failureReason`) |
+
+</Step>
+
+<Step title="Handle completion via webhook (recommended)">
+
+Rather than polling, register a webhook for `transaction.confirmed` and `transaction.failed` events to receive push notifications when transactions settle.
+
+```typescript TypeScript (webhook handler)
+case "transaction.confirmed": {
+  const { transactionId, toAddress, amount, asset, txHash } = event.data;
+
+  await db.payouts.markCompleted(transactionId, {
+    txHash,
+    confirmedAt: event.createdAt,
+  });
+
+  await notifyUserPayoutSent({ toAddress, amount, asset });
+  break;
+}
+
+case "transaction.failed": {
+  const { transactionId, failureReason } = event.data;
+
+  await db.payouts.markFailed(transactionId, failureReason);
+  // Refund or retry logic here
+  break;
+}
+```
+
+</Step>
+
+</Steps>
+
+## Common Errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `INSUFFICIENT_BALANCE` | Account balance too low | Check balance before sending |
+| `INVALID_ADDRESS` | Malformed or wrong-network address | Validate address for the target chain |
+| `DUPLICATE_IDEMPOTENCY_KEY` | Key reused for different parameters | Use a unique key per unique transfer |
+| `AMOUNT_TOO_SMALL` | Amount below chain minimum | Check minimum transfer amounts per chain |
+
+## Next Steps
+
+- See **[Webhook Integration](/guides/webhook-integration)** for the full `transaction.confirmed` event payload.
+- Use **[Swap Tokens](/guides/swap-tokens)** to exchange assets before sending.

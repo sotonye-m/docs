@@ -1,0 +1,51 @@
+---
+title: "Fund Card"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/fund"
+description: "Add funds to a card from a source wallet asset"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="card_id" type="string" required>
+  The ID of the card to fund.
+</ParamField>
+
+<ParamField body="asset_id" type="string" required>
+  The ID of the source wallet asset to debit funds from.
+</ParamField>
+
+<ParamField body="amount" type="string" required>
+  The USD equivalent amount to load onto the card, e.g. `"100.00"`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/fund' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
+    "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT5AA",
+    "amount": "250.00"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Card funded successfully",
+  "data": {
+    "funding_id": "fnd_01HX9KZMB3F7VNQP8R2WDGT6BB",
+    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
+    "amount": "250.00",
+    "status": "completed",
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

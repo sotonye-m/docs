@@ -1,0 +1,298 @@
+---
+title: "Webhooks"
+description: "Real-time event notifications for crypto deposits, withdrawals, swaps, cards, and more"
+---
+
+Yativo Crypto fires webhook events for every significant state change across wallets, transactions, cards, IBAN accounts, and system events. Configure webhooks once and your server stays in sync without polling.
+
+For webhook management (creating, updating, deleting webhook endpoints), see the [Webhook Management](/yativo/webhooks) docs. This page covers the crypto-specific event types and their payloads.
+
+<Accordion title="Type Definitions">
+```typescript
+interface Webhook {
+  webhook_id: string;
+  url: string;
+  events: WebhookEventType[];
+  description?: string;
+  status: "active" | "inactive";
+  created_at: string;
+}
+
+type WebhookEventType =
+  | "deposit.detected"
+  | "deposit.confirmed"
+  | "withdrawal.initiated"
+  | "withdrawal.completed"
+  | "withdrawal.failed"
+  | "transaction.completed"
+  | "transaction.failed"
+  | "swap.completed"
+  | "swap.failed"
+  | "card.funded"
+  | "card.transaction.completed"
+  | "card.transaction.failed"
+  | "iban.activated"
+  | "iban.transfer.received"
+  | "gas.low";
+
+interface CreateWebhookRequest {
+  url: string;
+  events: WebhookEventType[];
+  description?: string;
+}
+```
+</Accordion>
+
+---
+
+## Crypto Event Types
+
+### Deposit Events
+
+| Event | Fired When |
+|-------|-----------|
+| `deposit.detected` | An inbound transaction is detected on-chain (unconfirmed) |
+| `deposit.confirmed` | An inbound transaction has reached sufficient block confirmations |
+
+### Withdrawal Events
+
+| Event | Fired When |
+|-------|-----------|
+| `withdrawal.initiated` | A withdrawal transaction has been broadcast to the network |
+| `withdrawal.completed` | A withdrawal has been confirmed on-chain |
+| `withdrawal.failed` | A withdrawal failed (insufficient funds, network error, etc.) |
+
+### Transaction Events
+
+| Event | Fired When |
+|-------|-----------|
+| `transaction.completed` | Any transaction (deposit or withdrawal) has been fully confirmed |
+| `transaction.failed` | A transaction failed for any reason |
+
+### Swap Events
+
+| Event | Fired When |
+|-------|-----------|
+| `swap.completed` | A token swap has settled and destination tokens have been delivered |
+| `swap.failed` | A swap failed; source funds have been returned |
+
+### Card Events
+
+| Event | Fired When |
+|-------|-----------|
+| `card.funded` | A card's balance has been topped up |
+| `card.transaction.completed` | A card payment has been approved and settled |
+| `card.transaction.failed` | A card payment was declined or failed |
+
+### IBAN Events
+
+| Event | Fired When |
+|-------|-----------|
+| `iban.activated` | An IBAN account has been activated and is ready to receive funds |
+| `iban.transfer.received` | A SEPA transfer has been received into the IBAN account |
+
+### System Events
+
+| Event | Fired When |
+|-------|-----------|
+| `autoforward.completed` | An auto-forward rule has executed and funds have been moved |
+| `gas.low` | A gas station's balance has dropped below the configured threshold |
+
+---
+
+## Webhook Payload Examples
+
+All payloads share the same envelope structure:
+
+```json
+{
+  "id": "evt_01abc123",
+  "type": "<event_type>",
+  "created_at": "2026-03-26T10:05:00Z",
+  "data": { ... }
+}
+```
+
+### deposit.confirmed
+
+```json
+{
+  "id": "evt_01abc123",
+  "type": "deposit.confirmed",
+  "created_at": "2026-03-26T10:05:00Z",
+  "data": {
+    "asset_id": "asset_01xyz789",
+    "account_id": "acc_01abc123",
+    "chain": "solana",
+    "ticker": "USDC_SOL",
+    "amount": "250.00",
+    "from_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "to_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    "tx_hash": "5KtP3jNHGXi8YmD2L9sRZVAoWqFcBe4TrKlUvJpMxNy",
+    "confirmations": 1,
+    "new_balance": "750.00"
+  }
+}
+```
+
+### withdrawal.completed
+
+```json
+{
+  "id": "evt_02def456",
+  "type": "withdrawal.completed",
+  "created_at": "2026-03-26T10:07:30Z",
+  "data": {
+    "transaction_id": "txn_01pqr456",
+    "asset_id": "asset_01xyz789",
+    "chain": "ethereum",
+    "ticker": "USDC",
+    "amount": "100.00",
+    "to_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "tx_hash": "0xabc123def456789...",
+    "fee_usd": "3.18",
+    "new_balance": "400.00"
+  }
+}
+```
+
+### transaction.failed
+
+```json
+{
+  "id": "evt_03ghi789",
+  "type": "transaction.failed",
+  "created_at": "2026-03-26T10:10:00Z",
+  "data": {
+    "transaction_id": "txn_02stu789",
+    "chain": "ethereum",
+    "ticker": "USDC",
+    "amount": "1000.00",
+    "error_code": "insufficient_balance",
+    "error_message": "Wallet balance (400.00 USDC) is less than requested amount (1000.00 USDC)"
+  }
+}
+```
+
+### swap.completed
+
+```json
+{
+  "id": "evt_04jkl012",
+  "type": "swap.completed",
+  "created_at": "2026-03-26T10:08:20Z",
+  "data": {
+    "swap_id": "swap_01def456",
+    "from_chain": "ethereum",
+    "from_ticker": "USDC",
+    "from_amount": "500.00",
+    "to_chain": "solana",
+    "to_ticker": "USDC_SOL",
+    "to_amount": "498.71",
+    "to_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    "source_tx_hash": "0xabc123...",
+    "destination_tx_hash": "5KtP3jNHGXi..."
+  }
+}
+```
+
+### card.transaction.completed
+
+```json
+{
+  "id": "evt_05mno345",
+  "type": "card.transaction.completed",
+  "created_at": "2026-03-26T11:00:00Z",
+  "data": {
+    "card_id": "card_01abc",
+    "transaction_id": "card_txn_01xyz",
+    "merchant_name": "Amazon",
+    "merchant_category": "Shopping",
+    "amount": "49.99",
+    "currency": "USD",
+    "status": "approved",
+    "new_balance": "450.01"
+  }
+}
+```
+
+### iban.transfer.received
+
+```json
+{
+  "id": "evt_06pqr678",
+  "type": "iban.transfer.received",
+  "created_at": "2026-03-26T12:00:00Z",
+  "data": {
+    "iban_id": "iban_01abc",
+    "iban_number": "DE89370400440532013000",
+    "amount": "1000.00",
+    "currency": "EUR",
+    "sender_name": "John Smith",
+    "sender_iban": "GB29NWBK60161331926819",
+    "reference": "Invoice #INV-2026-042",
+    "received_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+
+### gas.low
+
+```json
+{
+  "id": "evt_07stu901",
+  "type": "gas.low",
+  "created_at": "2026-03-26T11:00:00Z",
+  "data": {
+    "station_id": "station_01abc123",
+    "chain": "ethereum",
+    "ticker": "ETH",
+    "balance": "0.08",
+    "balance_usd": "200.00",
+    "threshold": "0.10"
+  }
+}
+```
+
+---
+
+## Signature Verification
+
+Every webhook request includes an `X-Webhook-Signature` header. Always verify it before processing:
+
+```typescript
+import crypto from 'crypto';
+
+function verifySignature(rawBody: Buffer, signature: string, secret: string): boolean {
+  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+  return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex'));
+}
+```
+
+See the [Webhook Management](/yativo/webhooks) page for verification examples in Python and PHP.
+
+---
+
+## Setting Up Webhooks
+
+Use the webhook management API to register your endpoint:
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/webhook/create \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-server.com/webhooks/yativo-crypto",
+    "events": [
+      "deposit.confirmed",
+      "withdrawal.completed",
+      "withdrawal.failed",
+      "swap.completed",
+      "card.transaction.completed",
+      "gas.low"
+    ],
+    "description": "Yativo Crypto production webhook"
+  }'
+```
+
+For full webhook management documentation (list, update, delete, retry), see [Webhook Management](/yativo/webhooks).

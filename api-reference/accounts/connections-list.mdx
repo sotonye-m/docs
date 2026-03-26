@@ -1,0 +1,46 @@
+---
+title: "List Connections"
+api: "GET https://crypto-sandbox.yativo.com/api/accounts/get-connections"
+description: "Retrieve blockchain network connections for an account"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField query="account_id" type="string">
+  Filter connections by account ID. If omitted, returns all connections for the authenticated user.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/accounts/get-connections?account_id=acc_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Connections retrieved successfully",
+  "data": [
+    {
+      "connection_id": "con_01HX9KZMB3F7VNQP8R2WDGT4E7",
+      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "chain": "ethereum",
+      "status": "active",
+      "created_at": "2026-03-26T12:00:00Z"
+    },
+    {
+      "connection_id": "con_01HX9KZMB3F7VNQP8R2WDGT4E8",
+      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "chain": "solana",
+      "status": "active",
+      "created_at": "2026-03-26T12:00:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>

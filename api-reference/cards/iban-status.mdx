@@ -1,0 +1,38 @@
+---
+title: "Get Card IBAN Status"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/iban/status"
+description: "Check the status of the IBAN linked to the card wallet"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/iban/status' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "IBAN status retrieved successfully",
+  "data": {
+    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
+    "iban_status": "active",
+    "iban": "DE89370400440532013000",
+    "bic": "COBADEFFXXX",
+    "bank_name": "Commerzbank",
+    "activated_at": "2026-03-25T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

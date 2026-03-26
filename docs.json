@@ -1,68 +1,338 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Yativo",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#813AE3",
+    "light": "#A855F7",
+    "dark": "#5B21B6"
   },
   "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Dashboard",
+        "href": "https://crypto.yativo.com"
+      },
+      {
+        "label": "Support",
+        "href": "https://crypto.yativo.com/support"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get Started",
+      "href": "https://crypto.yativo.com/sign-up"
+    }
+  },
   "navigation": {
     "tabs": [
       {
         "tab": "Guides",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Tutorials",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "guides/overview",
+              "guides/accept-crypto-payments",
+              "guides/send-crypto",
+              "guides/issue-crypto-cards",
+              "guides/b2b-card-issuer",
+              "guides/iban-onboarding",
+              "guides/swap-tokens",
+              "guides/webhook-integration",
+              "guides/sdk-quickstart"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Yativo",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Get Started",
+            "pages": [
+              "yativo/introduction",
+              "yativo/quickstart",
+              "yativo/authentication"
+            ]
+          },
+          {
+            "group": "Platform",
+            "pages": [
+              "yativo/api-keys",
+              "yativo/webhooks",
+              "yativo/subscriptions",
+              "yativo/notifications"
+            ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "yativo/2fa",
+              "yativo/rate-limits"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Yativo Crypto",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "yativo-crypto/introduction",
+              "yativo-crypto/quickstart",
+              "yativo-crypto/authentication",
+              "yativo-crypto/supported-chains"
+            ]
+          },
+          {
+            "group": "Wallets & Assets",
+            "pages": [
+              "yativo-crypto/accounts",
+              "yativo-crypto/assets",
+              "yativo-crypto/gas-station"
+            ]
+          },
+          {
+            "group": "Transactions",
+            "pages": [
+              "yativo-crypto/transactions",
+              "yativo-crypto/swap"
+            ]
+          },
+          {
+            "group": "Yativo Card",
+            "pages": [
+              "yativo-crypto/cards/overview",
+              "yativo-crypto/cards/onboarding",
+              "yativo-crypto/cards/virtual-cards",
+              "yativo-crypto/cards/secure-display",
+              "yativo-crypto/cards/physical-cards",
+              "yativo-crypto/cards/funding",
+              "yativo-crypto/cards/transactions",
+              "yativo-crypto/cards/disputes",
+              "yativo-crypto/cards/spending-limits",
+              "yativo-crypto/cards/iban",
+              "yativo-crypto/cards/issuer-program"
+            ]
+          },
+          {
+            "group": "IBAN",
+            "pages": [
+              "yativo-crypto/iban"
+            ]
+          },
+          {
+            "group": "B2B",
+            "pages": [
+              "yativo-crypto/customers"
+            ]
+          },
+          {
+            "group": "Developer Tools",
+            "pages": [
+              "yativo-crypto/analytics",
+              "yativo-crypto/webhooks",
+              "yativo-crypto/api-keys",
+              "yativo-crypto/errors"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "SDKs",
+        "groups": [
+          {
+            "group": "SDKs",
+            "pages": [
+              "sdks/overview",
+              "sdks/typescript",
+              "sdks/python",
+              "sdks/php",
+              "sdks/java",
+              "sdks/react"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Browser Extensions",
+        "groups": [
+          {
+            "group": "Browser Extensions",
+            "pages": [
+              "extensions/overview",
+              "extensions/chrome",
+              "extensions/firefox"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Sandbox",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "sandbox/overview",
+              "sandbox/authentication"
+            ]
+          },
+          {
+            "group": "Test Endpoints",
+            "pages": [
+              "sandbox/wallets",
+              "sandbox/transactions",
+              "sandbox/swap",
+              "sandbox/cards",
+              "sandbox/iban"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
             "pages": [
               "api-reference/introduction"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Authentication",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/authentication/register",
+              "api-reference/authentication/login",
+              "api-reference/authentication/verify-otp",
+              "api-reference/authentication/refresh"
+            ]
+          },
+          {
+            "group": "Accounts",
+            "pages": [
+              "api-reference/accounts/create",
+              "api-reference/accounts/list",
+              "api-reference/accounts/connections-create",
+              "api-reference/accounts/connections-list"
+            ]
+          },
+          {
+            "group": "Assets",
+            "pages": [
+              "api-reference/assets/list",
+              "api-reference/assets/create",
+              "api-reference/assets/batch-create",
+              "api-reference/assets/list-supported",
+              "api-reference/assets/list-chains",
+              "api-reference/assets/balance",
+              "api-reference/assets/archive"
+            ]
+          },
+          {
+            "group": "Transactions",
+            "pages": [
+              "api-reference/transactions/send",
+              "api-reference/transactions/list",
+              "api-reference/transactions/get",
+              "api-reference/transactions/gas-fee",
+              "api-reference/transactions/cancel"
+            ]
+          },
+          {
+            "group": "Swap",
+            "pages": [
+              "api-reference/swap/quote",
+              "api-reference/swap/execute",
+              "api-reference/swap/assets",
+              "api-reference/swap/routes",
+              "api-reference/swap/history"
+            ]
+          },
+          {
+            "group": "Yativo Card",
+            "pages": [
+              "api-reference/cards/onboard",
+              "api-reference/cards/kyc-status",
+              "api-reference/cards/accept-terms",
+              "api-reference/cards/deploy-wallet",
+              "api-reference/cards/create",
+              "api-reference/cards/create-virtual",
+              "api-reference/cards/create-physical",
+              "api-reference/cards/list",
+              "api-reference/cards/get",
+              "api-reference/cards/freeze",
+              "api-reference/cards/unfreeze",
+              "api-reference/cards/ephemeral-token",
+              "api-reference/cards/get-wallet",
+              "api-reference/cards/funding-address",
+              "api-reference/cards/fund",
+              "api-reference/cards/transactions",
+              "api-reference/cards/dispute-reasons",
+              "api-reference/cards/dispute",
+              "api-reference/cards/spending-limits-get",
+              "api-reference/cards/spending-limits-set",
+              "api-reference/cards/physical-order",
+              "api-reference/cards/physical-order-status",
+              "api-reference/cards/iban-activate",
+              "api-reference/cards/iban-status"
+            ]
+          },
+          {
+            "group": "Card Issuer Program",
+            "pages": [
+              "api-reference/issuer/apply",
+              "api-reference/issuer/program",
+              "api-reference/issuer/fund-customer"
+            ]
+          },
+          {
+            "group": "IBAN",
+            "pages": [
+              "api-reference/iban/initialize",
+              "api-reference/iban/kyc",
+              "api-reference/iban/options",
+              "api-reference/iban/request",
+              "api-reference/iban/status"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/webhooks/create",
+              "api-reference/webhooks/list",
+              "api-reference/webhooks/get"
+            ]
+          },
+          {
+            "group": "Customers",
+            "pages": [
+              "api-reference/customers/list",
+              "api-reference/customers/get",
+              "api-reference/customers/create",
+              "api-reference/customers/update"
+            ]
+          },
+          {
+            "group": "Analytics",
+            "pages": [
+              "api-reference/analytics/overview",
+              "api-reference/analytics/transactions",
+              "api-reference/analytics/volume"
+            ]
+          },
+          {
+            "group": "API Keys",
+            "pages": [
+              "api-reference/api-keys/create",
+              "api-reference/api-keys/list",
+              "api-reference/api-keys/revoke"
             ]
           }
         ]
@@ -71,52 +341,36 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Dashboard",
+          "href": "https://crypto.yativo.com",
+          "icon": "chart-line"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Status",
+          "href": "https://status.yativo.com",
+          "icon": "signal"
+        },
+        {
+          "anchor": "Support",
+          "href": "https://crypto.yativo.com/support",
+          "icon": "headset"
         }
       ]
     }
   },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/yativo",
+      "linkedin": "https://linkedin.com/company/yativo",
+      "website": "https://yativo.com"
     }
   }
 }

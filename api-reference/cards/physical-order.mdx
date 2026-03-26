@@ -1,0 +1,88 @@
+---
+title: "Order Physical Card"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/cards/physical/order"
+description: "Place an order for a physical card to be shipped to an address"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID.
+</ParamField>
+
+<ParamField body="shipping_address" type="object" required>
+  The shipping address for the physical card.
+
+  <Expandable title="shipping_address fields">
+    <ParamField body="line1" type="string" required>
+      Street address line 1.
+    </ParamField>
+    <ParamField body="line2" type="string">
+      Street address line 2 (apartment, suite, etc.).
+    </ParamField>
+    <ParamField body="city" type="string" required>
+      City name.
+    </ParamField>
+    <ParamField body="state" type="string">
+      State or province code.
+    </ParamField>
+    <ParamField body="postal_code" type="string" required>
+      Postal or ZIP code.
+    </ParamField>
+    <ParamField body="country" type="string" required>
+      ISO 3166-1 alpha-2 country code, e.g. `US`, `GB`, `DE`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="personalization" type="object">
+  Optional card personalization options such as cardholder name to emboss.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/cards/physical/order' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "shipping_address": {
+      "line1": "123 Main Street",
+      "line2": "Apt 4B",
+      "city": "New York",
+      "state": "NY",
+      "postal_code": "10001",
+      "country": "US"
+    },
+    "personalization": {
+      "cardholder_name": "JANE DOE"
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Physical card order placed successfully",
+  "data": {
+    "order_id": "ord_01HX9KZMB3F7VNQP8R2WDGT4EN",
+    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
+    "card_type": "physical",
+    "status": "processing",
+    "estimated_delivery": "2026-04-02",
+    "shipping_address": {
+      "line1": "123 Main Street",
+      "city": "New York",
+      "state": "NY",
+      "postal_code": "10001",
+      "country": "US"
+    },
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

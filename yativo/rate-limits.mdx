@@ -1,0 +1,133 @@
+---
+title: "Rate Limits"
+description: "Understanding API rate limits and how to handle them gracefully"
+---
+
+Yativo enforces rate limits to ensure consistent performance for all users. Requests that exceed the limit receive a `429 Too Many Requests` response.
+
+---
+
+## How Rate Limits Work
+
+Rate limits are applied per API key (or per account for user-token requests). They are measured over a rolling time window. Different endpoint categories may have different limits — read operations are generally more permissive than write or transaction operations.
+
+Your current subscription plan determines your overall rate limit tier. Higher-tier plans support higher request rates.
+
+---
+
+## Rate Limit Headers
+
+Every API response includes headers that tell you your current usage:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Total requests allowed in the current window |
+| `X-RateLimit-Remaining` | Requests remaining in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+| `Retry-After` | Seconds to wait before retrying (only present on 429 responses) |
+
+Example headers on a normal response:
+
+```
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 847
+X-RateLimit-Reset: 1743000000
+```
+
+---
+
+## Handling 429 Responses
+
+When you receive a `429 Too Many Requests`:
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests. Please wait before retrying.",
+  "retry_after": 12
+}
+```
+
+Read the `Retry-After` header (or the `retry_after` field in the response body) and wait that many seconds before sending another request.
+
+---
+
+## Implementing Retry Logic
+
+Use exponential backoff with jitter to handle rate limits gracefully:
+
+<Tabs>
+  <Tab title="TypeScript">
+    ```typescript
+    async function requestWithRetry(
+      url: string,
+      options: RequestInit,
+      maxRetries = 3
+    ): Promise<Response> {
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const res = await fetch(url, options);
+
+        if (res.status !== 429) return res;
+
+        if (attempt === maxRetries) throw new Error('Rate limit exceeded after retries');
+
+        const retryAfter = parseInt(res.headers.get('Retry-After') ?? '1', 10);
+        const jitter = Math.random() * 1000;
+        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000 + jitter));
+      }
+      throw new Error('Unreachable');
+    }
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import time
+    import random
+    import requests
+
+    def request_with_retry(url, method='GET', max_retries=3, **kwargs):
+        for attempt in range(max_retries + 1):
+            response = requests.request(method, url, **kwargs)
+
+            if response.status_code != 429:
+                return response
+
+            if attempt == max_retries:
+                raise Exception('Rate limit exceeded after retries')
+
+            retry_after = int(response.headers.get('Retry-After', 1))
+            jitter = random.uniform(0, 1)
+            time.sleep(retry_after + jitter)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Best Practices
+
+<Accordion title="Monitor rate limit headers proactively">
+  Check `X-RateLimit-Remaining` on every response. If it falls below 10% of your limit, consider slowing down your request rate before hitting the wall entirely.
+</Accordion>
+
+<Accordion title="Batch requests where possible">
+  Several Yativo endpoints support batch operations (e.g., `POST /assets/batch-add-asset`). Use them when you need to create multiple resources at once.
+</Accordion>
+
+<Accordion title="Cache read responses">
+  For data that doesn't change frequently (supported chains, asset lists, subscription plan details), cache the responses locally and refresh periodically rather than fetching on every request.
+</Accordion>
+
+<Accordion title="Use webhooks instead of polling">
+  If you're polling the API to check transaction status, switch to webhooks. Real-time event delivery eliminates the need for polling and dramatically reduces your request count.
+</Accordion>
+
+<Accordion title="Separate production and development keys">
+  Use separate API keys for your test and production environments. Development spikes won't consume your production rate limit budget.
+</Accordion>
+
+---
+
+## Need Higher Limits?
+
+If your integration consistently approaches the rate limits on your current plan, consider upgrading. For very high-volume use cases, contact the Yativo team through the [dashboard](https://crypto.yativo.com/support) to discuss Enterprise plan options with custom limits.

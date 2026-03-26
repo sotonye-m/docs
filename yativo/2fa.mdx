@@ -1,0 +1,150 @@
+---
+title: "Two-Factor Authentication"
+description: "Secure your account with TOTP-based two-factor authentication"
+---
+
+Two-factor authentication (2FA) adds a second layer of security to your Yativo account. After enabling it, sensitive operations — including creating and rotating API keys — require a current one-time password (OTP) from your authenticator app.
+
+<Warning>
+  2FA is **required** before you can create API keys. Enable it before starting your integration.
+</Warning>
+
+---
+
+## How It Works
+
+Yativo uses TOTP (Time-based One-Time Password), the same standard used by Google Authenticator, Authy, and 1Password. After setup, your authenticator app generates a new 6-digit code every 30 seconds. You'll need to provide this code whenever performing a 2FA-protected operation.
+
+**Apps that work with Yativo 2FA:**
+- Google Authenticator (iOS / Android)
+- Authy
+- 1Password
+- Microsoft Authenticator
+- Any TOTP-compatible app (RFC 6238)
+
+---
+
+## Set Up 2FA
+
+**POST** `/auth/2fa/setup`
+
+Initiates the 2FA setup flow. Returns a QR code and a manual entry secret for your authenticator app.
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/auth/2fa/setup \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "qr_code_url": "data:image/png;base64,iVBORw0KGgo...",
+  "secret": "JBSWY3DPEHPK3PXP",
+  "otpauth_url": "otpauth://totp/Yativo:jane@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Yativo"
+}
+```
+
+<Steps>
+  <Step title="Call the setup endpoint">
+    Make the POST request to receive your QR code and backup secret.
+  </Step>
+  <Step title="Scan the QR code">
+    Open your authenticator app, tap "Add account" or the "+" button, and scan the QR code from the `qr_code_url` field.
+
+    Alternatively, enter the `secret` manually if your app supports it.
+  </Step>
+  <Step title="Verify to activate">
+    Call the verify endpoint with the 6-digit code shown in your app. This confirms you have successfully added the account and activates 2FA.
+  </Step>
+</Steps>
+
+---
+
+## Verify and Activate 2FA
+
+**POST** `/auth/2fa/verify`
+
+Confirms the setup and activates 2FA on your account. Must be called immediately after setup with a valid code from your authenticator app.
+
+<ParamField body="code" type="string" required>
+  The 6-digit TOTP code currently shown in your authenticator app.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/auth/2fa/verify \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"code": "482931"}'
+```
+
+```json Response
+{
+  "message": "Two-factor authentication has been enabled.",
+  "backup_codes": [
+    "abc12-def34",
+    "ghi56-jkl78",
+    "mno90-pqr12",
+    "stu34-vwx56",
+    "yza78-bcd90"
+  ]
+}
+```
+
+<Warning>
+  Save your backup codes in a secure location. If you lose access to your authenticator app, backup codes are the only way to regain access to your account. Each code can only be used once.
+</Warning>
+
+---
+
+## Check 2FA Status
+
+**GET** `/auth/2fa/status`
+
+Returns whether 2FA is currently enabled on your account.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/auth/2fa/status \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "enabled": true,
+  "setup_at": "2026-03-01T10:00:00Z"
+}
+```
+
+---
+
+## Using 2FA in API Requests
+
+Once 2FA is enabled, protected operations require the `X-2FA-Token` header:
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/apikey/create \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-2FA-Token: 123456" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My Key", "permissions": ["read", "transactions"]}'
+```
+
+**Operations that require 2FA:**
+- Creating API keys
+- Rotating API key secrets
+- Revoking API keys
+- Updating API key permissions
+
+---
+
+## Troubleshooting
+
+<Accordion title="My code is rejected even though it looks correct">
+  TOTP codes are time-sensitive. Make sure your device's clock is synchronized (check Settings > Date & Time > Automatic). A clock drift of more than 30 seconds will cause codes to be rejected.
+</Accordion>
+
+<Accordion title="I lost access to my authenticator app">
+  Use one of your backup codes in place of the TOTP code. If you no longer have backup codes, contact [Yativo support](https://crypto.yativo.com/support) with identity verification to recover your account.
+</Accordion>
+
+<Accordion title="I want to switch to a new authenticator app">
+  Set up 2FA again from a new device or app using the same setup flow. You'll need your current TOTP code to complete the switch.
+</Accordion>

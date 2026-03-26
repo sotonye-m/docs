@@ -1,0 +1,143 @@
+---
+title: "Get Ephemeral Token"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/cards/{cardId}/ephemeral-token"
+description: "Issue a short-lived token for rendering secure card details or PIN via the PSE iframe"
+authMethod: "bearer"
+---
+
+<Note>
+  Card details (PAN, CVV, expiry) and PIN each require **separate tokens**. Pass `element_type: "cardData"` for card details, or `element_type: "cardPin"` for PIN display. Tokens are scoped — a `cardData` token cannot be used to render `cardPin` and vice versa.
+</Note>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID (`yativo_card_id`) from onboarding.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The card ID from card creation.
+</ParamField>
+
+<ParamField body="element_type" type="string" required>
+  The PSE element type this token will be used for. Must be one of:
+  - `"cardData"` — renders full card number, CVV, expiry
+  - `"cardPin"` — renders current PIN view
+  - `"setCardPin"` — renders PIN change form
+</ParamField>
+
+<Warning>
+  Tokens expire in **60 seconds**. Never log, cache, or store them. Always call this endpoint immediately before rendering the iframe.
+</Warning>
+
+<RequestExample>
+```bash Card Data Token
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/ephemeral-token' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "element_type": "cardData" }'
+```
+
+```bash PIN Token
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/ephemeral-token' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "element_type": "cardPin" }'
+```
+
+```bash Set PIN Token
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/ephemeral-token' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "element_type": "setCardPin" }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json cardData Token
+{
+  "status": "success",
+  "message": "Ephemeral token generated successfully",
+  "data": {
+    "ephemeral_token": "eph_01HX9KZMB3F7VNQP8R2WDGT4EK",
+    "app_id": "app_yativo_prod",
+    "card_token": "ct_carddata_01HX9KZMB3F7VNQP8R2W",
+    "pse_auth_token": "pse_auth_01HX9KZMB3F7VNQP8R2WDGT",
+    "last_four": "4242",
+    "pse_config": {
+      "sdk_url": "https://unpkg.com/@gnosispay/pse-sdk@1.3.0/dist/gp-sdk.es.js",
+      "allowed_element_types": ["cardData"]
+    },
+    "expires_at": "2026-03-26T12:01:00Z"
+  }
+}
+```
+
+```json cardPin Token
+{
+  "status": "success",
+  "message": "Ephemeral token generated successfully",
+  "data": {
+    "ephemeral_token": "eph_01HX9KZMB3F7VNQP8R2WDGT4EL",
+    "app_id": "app_yativo_prod",
+    "card_token": "ct_cardpin_01HX9KZMB3F7VNQP8R2W",
+    "pse_auth_token": "pse_auth_01HX9KZMB3F7VNQP8R2WDGT",
+    "last_four": "4242",
+    "pse_config": {
+      "sdk_url": "https://unpkg.com/@gnosispay/pse-sdk@1.3.0/dist/gp-sdk.es.js",
+      "allowed_element_types": ["cardPin"]
+    },
+    "expires_at": "2026-03-26T12:01:00Z"
+  }
+}
+```
+</ResponseExample>
+
+<Accordion title="Response Type Definitions">
+```typescript
+interface EphemeralTokenResponse {
+  ephemeral_token: string;       // Short-lived PSE session token — scoped to one element type
+  app_id: string;                // PSE application identifier
+  card_token: string;            // Card-specific token passed to gp.init() — different per element_type
+  pse_auth_token: string;        // PSE auth token for SDK initialization
+  last_four: string;             // Last 4 digits — safe to display without the iframe
+  pse_config: {
+    sdk_url: string;             // Pinned PSE SDK CDN URL — use this, do not hardcode a version
+    allowed_element_types: string[];  // ["cardData"] | ["cardPin"] | ["setCardPin"]
+  };
+  expires_at: string;            // ISO 8601 — token is invalid after this timestamp
+}
+```
+</Accordion>
+
+## Using the token
+
+Pass the token response fields directly to the PSE SDK:
+
+```javascript
+const { default: GPSDK, ElementType } = await import(token.pse_config.sdk_url);
+
+const elementTypeMap = {
+  cardData:   ElementType.CardData,
+  cardPin:    ElementType.CardPin,
+  setCardPin: ElementType.SetCardPin,
+};
+
+const gp = new GPSDK({
+  appId:                  token.app_id,
+  ephemeralToken:         token.ephemeral_token,
+  gnosisPayApiAuthToken:  token.pse_auth_token,
+  onInvalidToken:         () => refreshAndReinit(),
+  onError:                (msg) => handleError(msg),
+});
+
+gp.init(elementTypeMap[requestedType], '#your-container', {
+  cardToken: token.card_token,
+});
+```
+
+<Tip>
+  See the full integration guide with backend proxy, sanitization, CSP, and React/Vue examples in [Secure Card Display](/yativo-crypto/cards/secure-display).
+</Tip>

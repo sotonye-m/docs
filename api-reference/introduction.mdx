@@ -1,33 +1,77 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "API Reference"
+description: "Complete reference for all Yativo Crypto API endpoints"
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## Base URLs
 
-## Welcome
+| Environment | Base URL |
+|-------------|----------|
+| Production  | `https://crypto-api.yativo.com/api/` |
+| Sandbox     | `https://crypto-sandbox.yativo.com/api/` |
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+The sandbox environment is fully functional for testing. All endpoint pages in this reference include a live API playground connected to the sandbox so you can make real test calls directly from the docs.
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+Yativo Crypto supports two authentication methods depending on the context.
+
+### Bearer Token (Session Auth)
+
+Obtained by calling the [Login](/api-reference/authentication/login) or [Register](/api-reference/authentication/register) endpoints. Include it in every request:
+
+```
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+Access tokens are short-lived. Use the [Refresh Token](/api-reference/authentication/refresh) endpoint to obtain a new one when it expires.
+
+### API Key Auth
+
+For server-to-server integrations, create an API key via the [Create API Key](/api-reference/api-keys/create) endpoint. Pass the key in the header:
+
+```
+X-API-Key: YOUR_API_KEY
+```
+
+Some sensitive operations (creating or revoking API keys) additionally require a two-factor token passed as:
+
+```
+X-2FA-Token: YOUR_2FA_TOKEN
+```
+
+## Common Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes (session auth) | `Bearer YOUR_ACCESS_TOKEN` |
+| `X-API-Key` | Yes (API key auth) | Your API key |
+| `Content-Type` | Yes (POST/PUT) | `application/json` |
+| `X-2FA-Token` | Conditional | Required for API key management |
+| `Idempotency-Key` | Optional | Prevent duplicate transactions |
+
+## Content Type
+
+All request bodies must be sent as JSON with the `Content-Type: application/json` header.
+
+## Response Format
+
+Every response follows this structure:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+{
+  "status": "success",
+  "message": "Human-readable message",
+  "data": { ... }
+}
 ```
+
+Error responses follow the same shape with `"status": "error"` and relevant HTTP status codes (400, 401, 403, 404, 422, 429, 500).
+
+## Further Reading
+
+- [Authentication Guide](/yativo-crypto/authentication)
+- [API Keys](/yativo-crypto/api-keys)
+- [Webhooks](/yativo-crypto/webhooks)
+- [Error Codes](/yativo-crypto/errors)
+- [Rate Limits](/yativo/rate-limits)

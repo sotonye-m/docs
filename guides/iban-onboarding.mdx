@@ -1,0 +1,465 @@
+---
+title: "IBAN Account Setup"
+description: "Get a dedicated IBAN for receiving bank transfers that convert to crypto"
+sidebarTitle: "IBAN Setup"
+---
+
+This guide walks through the full IBAN onboarding flow: checking available account options, submitting KYC, requesting an IBAN, and handling incoming bank transfer events via webhook.
+
+With a Yativo standalone IBAN, you receive a dedicated account number (SEPA or SWIFT) that accepts bank transfers from anywhere in the world. Incoming funds are automatically converted to the crypto asset of your choice.
+
+<Note>
+  Test this flow in the Sandbox at `https://crypto-sandbox.yativo.com/api/`. Sandbox KYC and IBAN activation are instant.
+</Note>
+
+## Activation Status Progression
+
+```
+[initiated] → [kyc_submitted] → [kyc_approved] → [iban_requested] → [active]
+                                      ↓
+                               [kyc_rejected] (resubmit or contact support)
+```
+
+<Steps>
+
+<Step title="Check available IBAN options">
+
+Retrieve the available IBAN types, supported currencies, and jurisdiction-specific requirements before starting onboarding.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/standalone-iban/options \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
+```
+
+```typescript TypeScript
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: "https://crypto-api.yativo.com/api/",
+});
+
+const options = await client.iban.getOptions();
+
+console.log(options.availableTypes);
+// ["sepa", "swift"]
+
+console.log(options.supportedCurrencies);
+// ["EUR", "GBP", "USD"]
+
+console.log(options.kycRequirements);
+// { individual: [...], business: [...] }
+```
+
+```python Python
+from yativo_crypto import YativoCrypto
+
+client = YativoCrypto(
+    api_key=os.environ["YATIVO_API_KEY"],
+    base_url="https://crypto-api.yativo.com/api/",
+)
+
+options = client.iban.get_options()
+
+print(options.available_types)       # ["sepa", "swift"]
+print(options.supported_currencies)  # ["EUR", "GBP", "USD"]
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "availableTypes": ["sepa", "swift"],
+  "supportedCurrencies": ["EUR", "GBP", "USD"],
+  "supportedConversionAssets": ["USDC", "USDT", "ETH", "BTC"],
+  "kycRequirements": {
+    "individual": [
+      "first_name", "last_name", "date_of_birth", "nationality",
+      "address", "government_id", "proof_of_address"
+    ],
+    "business": [
+      "business_name", "registration_number", "registered_address",
+      "director_details", "ubo_details", "certificate_of_incorporation"
+    ]
+  },
+  "processingTime": {
+    "kyc": "1-3 business days",
+    "ibanActivation": "1-2 business days after KYC approval"
+  }
+}
+```
+
+</Step>
+
+<Step title="Initialize onboarding">
+
+Start the onboarding session. This creates a record you will add KYC data to in the next step.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/standalone-iban/onboarding/init \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accountType": "individual",
+    "ibanType": "sepa",
+    "currency": "EUR",
+    "conversionAsset": "USDC",
+    "label": "My EUR Receiving Account"
+  }'
+```
+
+```typescript TypeScript
+const onboarding = await client.iban.initOnboarding({
+  accountType: "individual",
+  ibanType: "sepa",
+  currency: "EUR",
+  conversionAsset: "USDC",
+  label: "My EUR Receiving Account",
+});
+
+console.log(onboarding.onboardingId); // ibn_onb_01J2KS3MNPQ7R4S5T6U7VIBN01
+console.log(onboarding.status);       // "initiated"
+```
+
+```python Python
+onboarding = client.iban.init_onboarding(
+    account_type="individual",
+    iban_type="sepa",
+    currency="EUR",
+    conversion_asset="USDC",
+    label="My EUR Receiving Account",
+)
+
+print(onboarding.onboarding_id)  # ibn_onb_01J2KS3MNPQ7R4S5T6U7VIBN01
+print(onboarding.status)         # "initiated"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "onboardingId": "ibn_onb_01J2KS3MNPQ7R4S5T6U7VIBN01",
+  "accountType": "individual",
+  "ibanType": "sepa",
+  "currency": "EUR",
+  "conversionAsset": "USDC",
+  "status": "initiated",
+  "createdAt": "2026-03-26T14:00:00Z"
+}
+```
+
+</Step>
+
+<Step title="Submit KYC information">
+
+Submit identity verification documents and personal details.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/standalone-iban/onboarding/kyc \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "onboardingId": "ibn_onb_01J2KS3MNPQ7R4S5T6U7VIBN01",
+    "personal": {
+      "firstName": "Carlos",
+      "lastName": "Vega",
+      "dateOfBirth": "1985-03-22",
+      "nationality": "ES",
+      "countryOfResidence": "DE"
+    },
+    "address": {
+      "line1": "Hauptstraße 45",
+      "city": "Berlin",
+      "postalCode": "10115",
+      "country": "DE"
+    },
+    "identity": {
+      "documentType": "passport",
+      "documentNumber": "AAB123456",
+      "issuingCountry": "ES",
+      "expiryDate": "2030-01-15",
+      "frontImageUrl": "https://your-secure-storage.com/docs/passport_front.jpg",
+      "backImageUrl": null
+    },
+    "proofOfAddress": {
+      "documentType": "utility_bill",
+      "issuedDate": "2026-02-15",
+      "imageUrl": "https://your-secure-storage.com/docs/utility_bill.jpg"
+    }
+  }'
+```
+
+```typescript TypeScript
+const kycSubmission = await client.iban.submitKyc({
+  onboardingId: "ibn_onb_01J2KS3MNPQ7R4S5T6U7VIBN01",
+  personal: {
+    firstName: "Carlos",
+    lastName: "Vega",
+    dateOfBirth: "1985-03-22",
+    nationality: "ES",
+    countryOfResidence: "DE",
+  },
+  address: {
+    line1: "Hauptstraße 45",
+    city: "Berlin",
+    postalCode: "10115",
+    country: "DE",
+  },
+  identity: {
+    documentType: "passport",
+    documentNumber: "AAB123456",
+    issuingCountry: "ES",
+    expiryDate: "2030-01-15",
+    frontImageUrl: "https://your-secure-storage.com/docs/passport_front.jpg",
+    backImageUrl: null,
+  },
+  proofOfAddress: {
+    documentType: "utility_bill",
+    issuedDate: "2026-02-15",
+    imageUrl: "https://your-secure-storage.com/docs/utility_bill.jpg",
+  },
+});
+
+console.log(kycSubmission.status); // "kyc_submitted"
+```
+
+```python Python
+kyc_submission = client.iban.submit_kyc(
+    onboarding_id="ibn_onb_01J2KS3MNPQ7R4S5T6U7VIBN01",
+    personal={
+        "first_name": "Carlos",
+        "last_name": "Vega",
+        "date_of_birth": "1985-03-22",
+        "nationality": "ES",
+        "country_of_residence": "DE",
+    },
+    address={
+        "line1": "Hauptstraße 45",
+        "city": "Berlin",
+        "postal_code": "10115",
+        "country": "DE",
+    },
+    identity={
+        "document_type": "passport",
+        "document_number": "AAB123456",
+        "issuing_country": "ES",
+        "expiry_date": "2030-01-15",
+        "front_image_url": "https://your-secure-storage.com/docs/passport_front.jpg",
+        "back_image_url": None,
+    },
+    proof_of_address={
+        "document_type": "utility_bill",
+        "issued_date": "2026-02-15",
+        "image_url": "https://your-secure-storage.com/docs/utility_bill.jpg",
+    },
+)
+
+print(kyc_submission.status)  # "kyc_submitted"
+```
+
+</CodeGroup>
+
+### KYC field requirements
+
+**Individual accounts:**
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `personal.firstName` | Yes | Legal first name |
+| `personal.lastName` | Yes | Legal last name |
+| `personal.dateOfBirth` | Yes | ISO 8601 (YYYY-MM-DD) |
+| `personal.nationality` | Yes | ISO 3166-1 alpha-2 |
+| `personal.countryOfResidence` | Yes | ISO 3166-1 alpha-2 |
+| `address.line1` | Yes | Street address |
+| `address.city` | Yes | |
+| `address.postalCode` | Yes | |
+| `address.country` | Yes | ISO 3166-1 alpha-2 |
+| `identity.documentType` | Yes | `passport`, `national_id`, or `drivers_license` |
+| `identity.documentNumber` | Yes | |
+| `identity.issuingCountry` | Yes | |
+| `identity.expiryDate` | Yes | Must be future date |
+| `identity.frontImageUrl` | Yes | Pre-signed URL to uploaded image |
+| `identity.backImageUrl` | If two-sided | Required for national IDs |
+| `proofOfAddress.documentType` | Yes | `utility_bill`, `bank_statement`, or `government_letter` |
+| `proofOfAddress.issuedDate` | Yes | Must be within last 3 months |
+| `proofOfAddress.imageUrl` | Yes | Pre-signed URL to uploaded image |
+
+<Warning>
+  Document images must be uploaded to your own secure storage first, and the pre-signed URLs must be accessible by Yativo for the duration of the review process. URLs expire after 48 hours.
+</Warning>
+
+</Step>
+
+<Step title="Request the IBAN">
+
+Once KYC is approved, submit the IBAN request to trigger account provisioning.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/standalone-iban/iban/request \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "onboardingId": "ibn_onb_01J2KS3MNPQ7R4S5T6U7VIBN01"
+  }'
+```
+
+```typescript TypeScript
+const request = await client.iban.requestIban({
+  onboardingId: "ibn_onb_01J2KS3MNPQ7R4S5T6U7VIBN01",
+});
+
+console.log(request.status);   // "iban_requested"
+console.log(request.ibanId);   // ibn_01J2KT3MNPQ7R4S5T6U7VIBN77
+```
+
+```python Python
+request = client.iban.request_iban(
+    onboarding_id="ibn_onb_01J2KS3MNPQ7R4S5T6U7VIBN01"
+)
+
+print(request.status)    # "iban_requested"
+print(request.iban_id)   # ibn_01J2KT3MNPQ7R4S5T6U7VIBN77
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Poll for activation">
+
+Once the IBAN is provisioned (typically within 1–2 business days), the status changes to `active` and the account details are available.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://crypto-api.yativo.com/api/standalone-iban/status?ibanId=ibn_01J2KT3MNPQ7R4S5T6U7VIBN77" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
+```
+
+```typescript TypeScript
+const ibanStatus = await client.iban.getStatus("ibn_01J2KT3MNPQ7R4S5T6U7VIBN77");
+
+if (ibanStatus.status === "active") {
+  console.log(ibanStatus.iban);          // DE89370400440532013000
+  console.log(ibanStatus.bic);           // COBADEFFXXX
+  console.log(ibanStatus.bankName);      // Commerzbank AG
+  console.log(ibanStatus.accountName);   // Carlos Vega
+  console.log(ibanStatus.currency);      // EUR
+}
+```
+
+```python Python
+iban_status = client.iban.get_status("ibn_01J2KT3MNPQ7R4S5T6U7VIBN77")
+
+if iban_status.status == "active":
+    print(iban_status.iban)          # DE89370400440532013000
+    print(iban_status.bic)           # COBADEFFXXX
+    print(iban_status.bank_name)     # Commerzbank AG
+    print(iban_status.account_name)  # Carlos Vega
+    print(iban_status.currency)      # EUR
+```
+
+</CodeGroup>
+
+**Active IBAN response:**
+
+```json
+{
+  "ibanId": "ibn_01J2KT3MNPQ7R4S5T6U7VIBN77",
+  "status": "active",
+  "iban": "DE89370400440532013000",
+  "bic": "COBADEFFXXX",
+  "bankName": "Commerzbank AG",
+  "accountName": "Carlos Vega",
+  "currency": "EUR",
+  "conversionAsset": "USDC",
+  "activatedAt": "2026-03-28T09:00:00Z",
+  "depositReference": "YTV-IBN77"
+}
+```
+
+<Tip>
+  Ask senders to include the `depositReference` in the payment reference field. This ensures transfers are matched automatically even when sender details vary.
+</Tip>
+
+</Step>
+
+<Step title="Receive bank transfers as webhook events">
+
+When a bank transfer arrives to the IBAN, Yativo fires an `iban.transfer.received` event, followed by `iban.transfer.converted` once the conversion to USDC is complete.
+
+```typescript TypeScript (webhook handler)
+case "iban.transfer.received": {
+  const { ibanId, amount, currency, senderName, senderIban, reference } = event.data;
+
+  // Notify user — conversion in progress
+  console.log(`EUR ${amount} received from ${senderName}`);
+  break;
+}
+
+case "iban.transfer.converted": {
+  const {
+    ibanId,
+    receivedAmount,
+    receivedCurrency,
+    convertedAmount,
+    convertedAsset,
+    exchangeRate,
+    txHash,
+  } = event.data;
+
+  // Credit user's crypto balance
+  await db.balances.credit(userId, convertedAsset, convertedAmount);
+
+  console.log(
+    `Converted EUR ${receivedAmount} → ${convertedAmount} ${convertedAsset} at rate ${exchangeRate}`
+  );
+  break;
+}
+```
+
+**`iban.transfer.converted` payload:**
+
+```json
+{
+  "eventId": "evt_01J2KU3MNPQ7R4S5T6U7VEVT88",
+  "type": "iban.transfer.converted",
+  "createdAt": "2026-03-28T14:22:00Z",
+  "data": {
+    "ibanId": "ibn_01J2KT3MNPQ7R4S5T6U7VIBN77",
+    "transferId": "trf_01J2KU3MNPQ7R4S5T6U7VTRF44",
+    "receivedAmount": "1000.00",
+    "receivedCurrency": "EUR",
+    "convertedAmount": "1072.50",
+    "convertedAsset": "USDC",
+    "exchangeRate": "1.0725",
+    "networkFee": "1.20",
+    "senderName": "Stefan Müller",
+    "senderIban": "DE44500105175407324931",
+    "reference": "YTV-IBN77",
+    "txHash": "0x7c3d1f2e5b8a4c9e2f1d4b7a3c6e9f2b5d8a1c4e7b3f6a2d5c8e1b4f7a3d6c",
+    "settledAt": "2026-03-28T14:22:00Z"
+  }
+}
+```
+
+</Step>
+
+</Steps>
+
+## Next Steps
+
+- **[Webhook Integration](/guides/webhook-integration)** — Full event reference and retry policy
+- **[Accept Crypto Payments](/guides/accept-crypto-payments)** — Direct crypto deposit flow without IBAN

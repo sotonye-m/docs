@@ -1,0 +1,41 @@
+---
+title: "Get IBAN Status"
+api: "GET https://crypto-sandbox.yativo.com/api/standalone-iban/status"
+description: "Check the status of a standalone IBAN and view its details"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField query="customer_id" type="string">
+  Filter status by customer ID. Defaults to the authenticated user if omitted.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/standalone-iban/status?customer_id=cus_01HX9KZMB3F7VNQP8R2WDGT4EP' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "IBAN status retrieved successfully",
+  "data": {
+    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP",
+    "iban_status": "active",
+    "iban": "DE89370400440532013000",
+    "bic": "COBADEFFXXX",
+    "bank_name": "Commerzbank",
+    "currency": "EUR",
+    "balance": "1500.00",
+    "kyc_status": "approved",
+    "activated_at": "2026-03-25T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

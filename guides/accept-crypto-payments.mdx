@@ -1,0 +1,463 @@
+---
+title: "Accept Crypto Payments"
+description: "Set up a crypto deposit flow for your application"
+sidebarTitle: "Accept Crypto"
+---
+
+This guide walks you through the full flow for accepting crypto deposits: creating a custodial account, generating wallet addresses per chain, registering webhooks, and crediting user accounts when deposits confirm.
+
+<Note>
+  Test this entire flow against the Sandbox at `https://crypto-sandbox.yativo.com/api/` before going live. Sandbox deposits are simulated — no real funds are used.
+</Note>
+
+## Overview
+
+The deposit flow has four components:
+
+1. **Account** — a logical container for assets belonging to one user or entity
+2. **Wallet addresses** — per-chain addresses derived from the account
+3. **Webhooks** — real-time notifications when deposits are detected and confirmed
+4. **Business logic** — your code credits the user after confirming the deposit
+
+<Steps>
+
+<Step title="Create an account">
+
+Each user or entity in your system maps to a Yativo account. Create one at onboarding time and store the returned `accountId`.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/accounts/create-account \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "label": "alice_account",
+    "metadata": {
+      "userId": "usr_01HYZPQR3NMVK8F2GXB7T9D4CE",
+      "email": "alice@example.com"
+    }
+  }'
+```
+
+```typescript TypeScript
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: "https://crypto-api.yativo.com/api/",
+});
+
+const account = await client.accounts.create({
+  label: "alice_account",
+  metadata: {
+    userId: "usr_01HYZPQR3NMVK8F2GXB7T9D4CE",
+    email: "alice@example.com",
+  },
+});
+
+console.log(account.accountId); // acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y
+```
+
+```python Python
+from yativo_crypto import YativoCrypto
+
+client = YativoCrypto(
+    api_key=os.environ["YATIVO_API_KEY"],
+    base_url="https://crypto-api.yativo.com/api/",
+)
+
+account = client.accounts.create(
+    label="alice_account",
+    metadata={
+        "userId": "usr_01HYZPQR3NMVK8F2GXB7T9D4CE",
+        "email": "alice@example.com",
+    },
+)
+
+print(account.account_id)  # acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  "label": "alice_account",
+  "status": "active",
+  "metadata": {
+    "userId": "usr_01HYZPQR3NMVK8F2GXB7T9D4CE",
+    "email": "alice@example.com"
+  },
+  "createdAt": "2026-03-26T10:00:00Z"
+}
+```
+
+<Tip>
+  Store `accountId` in your database alongside the user record. You will reference it for every wallet and transaction operation.
+</Tip>
+
+</Step>
+
+<Step title="Create wallet addresses per chain">
+
+For each blockchain you want to support, add an asset to the account. This returns a deposit address on that chain.
+
+<CodeGroup>
+
+```bash cURL
+# Ethereum (ERC-20 / ETH)
+curl -X POST https://crypto-api.yativo.com/api/assets/add-asset \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    "chain": "ethereum",
+    "asset": "USDC"
+  }'
+```
+
+```typescript TypeScript
+const chains = ["ethereum", "polygon", "base", "solana", "tron"];
+
+const wallets = await Promise.all(
+  chains.map((chain) =>
+    client.assets.addAsset({
+      accountId: "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+      chain,
+      asset: "USDC",
+    })
+  )
+);
+
+// wallets[0] = { chain: "ethereum", address: "0x742d35Cc6634C0532925a3b8D4C9D5b9a1f4e8Bd", ... }
+// wallets[1] = { chain: "polygon",  address: "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD", ... }
+// wallets[2] = { chain: "base",     address: "0x89D24A6b4CcB1B6fAA2625fE562bDD9a23260359", ... }
+// wallets[3] = { chain: "solana",   address: "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV",  ... }
+// wallets[4] = { chain: "tron",     address: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE", ... }
+```
+
+```python Python
+chains = ["ethereum", "polygon", "base", "solana", "tron"]
+
+wallets = [
+    client.assets.add_asset(
+        account_id="acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+        chain=chain,
+        asset="USDC",
+    )
+    for chain in chains
+]
+```
+
+</CodeGroup>
+
+**Response (Ethereum example):**
+
+```json
+{
+  "assetId": "ast_01J2KBMNPQ7R4S5T6U7V8W9XEth",
+  "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+  "chain": "ethereum",
+  "asset": "USDC",
+  "address": "0x742d35Cc6634C0532925a3b8D4C9D5b9a1f4e8Bd",
+  "balance": "0.000000",
+  "createdAt": "2026-03-26T10:01:00Z"
+}
+```
+
+</Step>
+
+<Step title="Register webhooks for deposit events">
+
+Register a webhook endpoint to receive `deposit.detected` (immediate, unconfirmed) and `deposit.confirmed` (safe to credit) events.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/webhook/create \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://api.yourapp.com/webhooks/yativo",
+    "events": ["deposit.detected", "deposit.confirmed"],
+    "description": "Crypto deposit notifications"
+  }'
+```
+
+```typescript TypeScript
+const webhook = await client.webhooks.create({
+  url: "https://api.yourapp.com/webhooks/yativo",
+  events: ["deposit.detected", "deposit.confirmed"],
+  description: "Crypto deposit notifications",
+});
+
+console.log(webhook.webhookId);  // wh_01J2KCMNPQ3R4S5T6U7VWEBHK
+console.log(webhook.secret);     // whsec_a8f3c2e1d4b7... (store this securely!)
+```
+
+```python Python
+webhook = client.webhooks.create(
+    url="https://api.yourapp.com/webhooks/yativo",
+    events=["deposit.detected", "deposit.confirmed"],
+    description="Crypto deposit notifications",
+)
+
+print(webhook.webhook_id)  # wh_01J2KCMNPQ3R4S5T6U7VWEBHK
+print(webhook.secret)      # whsec_a8f3c2e1d4b7... — store securely!
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "webhookId": "wh_01J2KCMNPQ3R4S5T6U7VWEBHK",
+  "url": "https://api.yourapp.com/webhooks/yativo",
+  "events": ["deposit.detected", "deposit.confirmed"],
+  "status": "active",
+  "secret": "whsec_a8f3c2e1d4b7f9e2c5a3b6d8f1e4c7a2b5d8e1f4",
+  "createdAt": "2026-03-26T10:02:00Z"
+}
+```
+
+<Warning>
+  Store `secret` securely (e.g., in an environment variable). It is only returned once and is used to verify webhook signatures. See [Step 6](#step-6-verify-webhook-signatures) for verification details.
+</Warning>
+
+</Step>
+
+<Step title="Display wallet addresses to users">
+
+Fetch the wallet addresses for an account and present them in your UI. Users send crypto to these addresses.
+
+<CodeGroup>
+
+```typescript TypeScript
+// In your backend — return wallet addresses to your frontend
+app.get("/api/deposit-addresses/:userId", async (req, res) => {
+  const user = await db.users.findById(req.params.userId);
+
+  const assets = await client.assets.listByAccount(user.yativoAccountId);
+
+  const addresses = assets.map((a) => ({
+    chain: a.chain,
+    asset: a.asset,
+    address: a.address,
+    network: a.networkLabel, // "Ethereum Mainnet", "Polygon", etc.
+  }));
+
+  res.json({ addresses });
+});
+```
+
+```python Python
+# Flask example
+@app.route("/api/deposit-addresses/<user_id>")
+def get_deposit_addresses(user_id):
+    user = db.users.find_by_id(user_id)
+    assets = client.assets.list_by_account(user.yativo_account_id)
+
+    addresses = [
+        {
+            "chain": a.chain,
+            "asset": a.asset,
+            "address": a.address,
+            "network": a.network_label,
+        }
+        for a in assets
+    ]
+
+    return jsonify({"addresses": addresses})
+```
+
+</CodeGroup>
+
+<Tip>
+  Show a QR code for each address in your UI — most crypto wallets can scan them directly.
+</Tip>
+
+</Step>
+
+<Step title="Handle webhook events and credit user accounts">
+
+When a deposit confirms, your webhook handler receives a `deposit.confirmed` event. Verify the signature (next step), then credit the user.
+
+Here is a complete Express.js webhook handler:
+
+```typescript TypeScript (Express webhook handler)
+import express from "express";
+import crypto from "crypto";
+
+const app = express();
+
+// Use raw body for signature verification
+app.use(
+  "/webhooks/yativo",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    // 1. Verify signature immediately
+    const signature = req.headers["x-webhook-signature"] as string;
+    const secret = process.env.YATIVO_WEBHOOK_SECRET!;
+    const expectedSig = crypto
+      .createHmac("sha256", secret)
+      .update(req.body)
+      .digest("hex");
+
+    if (
+      !signature ||
+      !crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSig)
+      )
+    ) {
+      return res.status(401).json({ error: "Invalid signature" });
+    }
+
+    // 2. Parse event
+    const event = JSON.parse(req.body.toString());
+
+    // 3. Return 200 immediately — process async
+    res.sendStatus(200);
+
+    // 4. Process asynchronously
+    setImmediate(async () => {
+      try {
+        await processEvent(event);
+      } catch (err) {
+        console.error("Failed to process event", event.eventId, err);
+      }
+    });
+  }
+);
+
+async function processEvent(event: any) {
+  // Idempotency: skip already-processed events
+  const alreadyProcessed = await db.events.exists(event.eventId);
+  if (alreadyProcessed) return;
+
+  switch (event.type) {
+    case "deposit.detected":
+      // Optionally notify user of pending deposit — don't credit yet
+      await notifyUserPendingDeposit(event.data);
+      break;
+
+    case "deposit.confirmed":
+      const { accountId, amount, asset, chain, txHash } = event.data;
+
+      // Look up the user by accountId
+      const user = await db.users.findByYativoAccountId(accountId);
+      if (!user) {
+        console.warn("No user found for accountId", accountId);
+        return;
+      }
+
+      // Credit the user
+      await db.balances.credit(user.id, asset, amount);
+      await db.transactions.record({
+        userId: user.id,
+        type: "deposit",
+        asset,
+        chain,
+        amount,
+        txHash,
+        yativoEventId: event.eventId,
+      });
+
+      await notifyUserDepositConfirmed(user, amount, asset);
+      break;
+  }
+
+  // Mark event as processed
+  await db.events.markProcessed(event.eventId);
+}
+```
+
+</Step>
+
+<Step title="Verify webhook signatures">
+
+All webhook requests from Yativo include an `X-Webhook-Signature` header containing an HMAC-SHA256 signature of the raw request body.
+
+<CodeGroup>
+
+```typescript TypeScript
+function verifyWebhookSignature(
+  rawBody: Buffer,
+  signatureHeader: string,
+  secret: string
+): boolean {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
+
+  // Use timing-safe comparison to prevent timing attacks
+  return crypto.timingSafeEqual(
+    Buffer.from(signatureHeader),
+    Buffer.from(expected)
+  );
+}
+```
+
+```python Python
+import hmac
+import hashlib
+
+def verify_webhook_signature(raw_body: bytes, signature_header: str, secret: str) -> bool:
+    expected = hmac.new(
+        secret.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+
+    # Use compare_digest to prevent timing attacks
+    return hmac.compare_digest(signature_header, expected)
+```
+
+```php PHP
+function verifyWebhookSignature(string $rawBody, string $signatureHeader, string $secret): bool {
+    $expected = hash_hmac('sha256', $rawBody, $secret);
+    return hash_equals($expected, $signatureHeader);
+}
+```
+
+</CodeGroup>
+
+</Step>
+
+</Steps>
+
+## Webhook Payload: `deposit.confirmed`
+
+```json
+{
+  "eventId": "evt_01J2KF3MNPQ7R4S5T6U7VDPST1",
+  "type": "deposit.confirmed",
+  "createdAt": "2026-03-26T10:15:32Z",
+  "data": {
+    "depositId": "dep_01J2KF3MNPQ7R4S5T6U7VDEP42",
+    "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    "assetId": "ast_01J2KBMNPQ7R4S5T6U7V8W9XEth",
+    "chain": "ethereum",
+    "asset": "USDC",
+    "amount": "250.000000",
+    "address": "0x742d35Cc6634C0532925a3b8D4C9D5b9a1f4e8Bd",
+    "txHash": "0x4a7d3f2e1c8b5a9e2f4d7c3b6a1e8d2f5c4b3a7e1d9f2c5b8a4e3d7c1b6a2f",
+    "blockNumber": 19847201,
+    "confirmations": 12,
+    "networkFee": "0.001823",
+    "metadata": {
+      "userId": "usr_01HYZPQR3NMVK8F2GXB7T9D4CE"
+    }
+  }
+}
+```
+
+## Next Steps
+
+- See **[Webhook Integration](/guides/webhook-integration)** for the full webhook reference including all event types and retry policy.
+- Use **[Send Crypto](/guides/send-crypto)** to move funds back out on behalf of users.

@@ -1,0 +1,584 @@
+---
+title: "React SDK"
+description: "Complete guide for @yativo/crypto-sdk-react — provider setup, hooks, pre-built components, widgets, and theme customization"
+---
+
+# React SDK
+
+The `@yativo/crypto-sdk-react` package wraps the TypeScript SDK with React hooks and pre-built components, giving you managed authentication state, data-fetching hooks, and drop-in UI widgets.
+
+## Installation
+
+```bash
+npm install @yativo/crypto-sdk-react
+# or
+yarn add @yativo/crypto-sdk-react
+```
+
+**Requirements:** React 17 or higher. The TypeScript SDK (`@yativo/crypto-sdk`) is installed automatically as a peer dependency.
+
+---
+
+## Provider Setup
+
+Wrap your application (or the relevant subtree) with `YativoProvider`. This creates the SDK instance and makes it available to all hooks and components below.
+
+```tsx
+// app.tsx (or _app.tsx in Next.js)
+import { YativoProvider } from "@yativo/crypto-sdk-react";
+
+export default function App({ children }: { children: React.ReactNode }) {
+  return (
+    <YativoProvider
+      config={{
+        baseURL: "https://crypto-api.yativo.com/api/",
+        // Optional: pass API key/secret for server-side or non-login flows
+        // apiKey: process.env.NEXT_PUBLIC_YATIVO_API_KEY,
+        // apiSecret: process.env.NEXT_PUBLIC_YATIVO_API_SECRET,
+      }}
+    >
+      {children}
+    </YativoProvider>
+  );
+}
+```
+
+---
+
+## `useYativo()` — Authentication & SDK Access
+
+```tsx
+import { useYativo } from "@yativo/crypto-sdk-react";
+
+function LoginForm() {
+  const { sdk, client, user, login, logout } = useYativo();
+  const [email, setEmail]       = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError]       = React.useState<string | null>(null);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await login({ email, password });
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
+  if (user) {
+    return (
+      <div>
+        <p>Welcome, {user.email}</p>
+        <button onClick={logout}>Log out</button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleLogin}>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+      />
+      <button type="submit">Login</button>
+    </form>
+  );
+}
+```
+
+### Hook Return Values
+
+| Property | Type | Description |
+|---|---|---|
+| `sdk` | `YativoSDK` | The underlying TypeScript SDK instance |
+| `client` | `YativoSDK` | Alias for `sdk` |
+| `user` | `User \| null` | Currently authenticated user, or `null` |
+| `login` | `(credentials) => Promise<void>` | Login and store session |
+| `logout` | `() => void` | Clear session |
+
+---
+
+## `useWallets()` — Create and List Wallets
+
+```tsx
+import { useWallets } from "@yativo/crypto-sdk-react";
+
+function WalletManager({ accountId }: { accountId: string }) {
+  const { wallets, loading, error, createWallet, refresh } = useWallets(accountId);
+
+  async function handleCreate() {
+    await createWallet({ asset: "USDC", network: "SOLANA" });
+  }
+
+  if (loading) return <p>Loading wallets...</p>;
+  if (error)   return <p>Error: {error.message}</p>;
+
+  return (
+    <div>
+      <button onClick={handleCreate}>+ Create USDC Wallet</button>
+      <button onClick={refresh}>Refresh</button>
+      <ul>
+        {wallets.map((w) => (
+          <li key={w.id}>
+            {w.asset} ({w.network}): {w.address}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+---
+
+## `useTransactions()` — Send and List Transactions
+
+```tsx
+import { useTransactions } from "@yativo/crypto-sdk-react";
+
+function TransactionHistory({ accountId }: { accountId: string }) {
+  const { transactions, total, loading, error, sendFunds, refresh } =
+    useTransactions({ accountId, limit: 20 });
+
+  async function handleSend() {
+    await sendFunds({
+      fromWalletId: "wallet_xyz789",
+      toAddress:    "BjhiXKt...",
+      amount:       "50.00",
+      asset:        "USDC",
+      network:      "SOLANA",
+    });
+    refresh();
+  }
+
+  if (loading) return <p>Loading transactions...</p>;
+
+  return (
+    <div>
+      <button onClick={handleSend}>Send 50 USDC</button>
+      <p>Total transactions: {total}</p>
+      <ul>
+        {transactions.map((tx) => (
+          <li key={tx.id}>
+            {tx.amount} {tx.asset} — {tx.status} — {tx.createdAt}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+---
+
+## `useBalance()` — Auto-Refreshing Balance Display
+
+```tsx
+import { useBalance } from "@yativo/crypto-sdk-react";
+
+function BalanceDisplay({ assetId }: { assetId: string }) {
+  // Auto-refresh every 30 seconds
+  const { balance, asset, loading, error } = useBalance(
+    assetId,
+    true,   // autoRefresh
+    30000   // interval in ms
+  );
+
+  if (loading) return <span>...</span>;
+  if (error)   return <span>Error loading balance</span>;
+
+  return (
+    <div className="balance-card">
+      <span className="amount">{balance}</span>
+      <span className="asset">{asset}</span>
+    </div>
+  );
+}
+```
+
+---
+
+## `useCards()` — Card Management
+
+```tsx
+import { useCards } from "@yativo/crypto-sdk-react";
+
+function CardDashboard({ cardholderId }: { cardholderId: string }) {
+  const { cards, loading, createCard, freezeCard, unfreezeCard } =
+    useCards();
+
+  async function handleCreateCard() {
+    await createCard({
+      cardholderId,
+      currency: "USD",
+      label:    "Travel expenses",
+    });
+  }
+
+  if (loading) return <p>Loading cards...</p>;
+
+  return (
+    <div>
+      <button onClick={handleCreateCard}>Issue New Card</button>
+      {cards.map((card) => (
+        <div key={card.id} className="card-item">
+          <p>•••• {card.last4}</p>
+          <p>Expires: {card.expiry}</p>
+          <p>Status: {card.status}</p>
+          {card.status === "ACTIVE" ? (
+            <button onClick={() => freezeCard(card.id)}>Freeze</button>
+          ) : (
+            <button onClick={() => unfreezeCard(card.id)}>Unfreeze</button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## `useSwap()` — Swap Functionality
+
+```tsx
+import { useSwap } from "@yativo/crypto-sdk-react";
+
+function SwapForm() {
+  const { getQuote, executeSwap, loading, quote, result } = useSwap();
+  const [amount, setAmount] = React.useState("100");
+
+  async function handleQuote() {
+    await getQuote({
+      fromAsset: "USDC",
+      toAsset:   "XDC",
+      amount,
+      network:   "SOLANA",
+    });
+  }
+
+  async function handleExecute() {
+    if (!quote) return;
+    await executeSwap({
+      quoteId:      quote.id,
+      fromWalletId: "wallet_xyz789",
+      toWalletId:   "wallet_xdc001",
+    });
+  }
+
+  return (
+    <div>
+      <input
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        placeholder="Amount USDC"
+      />
+      <button onClick={handleQuote} disabled={loading}>
+        Get Quote
+      </button>
+
+      {quote && (
+        <div className="quote-box">
+          <p>You receive: {quote.toAmount} XDC</p>
+          <p>Rate: {quote.rate}</p>
+          <p>Fee: {quote.fee} USDC</p>
+          <button onClick={handleExecute} disabled={loading}>
+            Execute Swap
+          </button>
+        </div>
+      )}
+
+      {result && <p>Swap complete! Status: {result.status}</p>}
+    </div>
+  );
+}
+```
+
+---
+
+## `useStandaloneIban()` — IBAN Management
+
+```tsx
+import { useStandaloneIban } from "@yativo/crypto-sdk-react";
+
+function IbanManager({ customerId }: { customerId: string }) {
+  const { ibans, loading, createIban } = useStandaloneIban();
+
+  async function handleCreate() {
+    await createIban({
+      customerId,
+      currency: "EUR",
+      label:    "EU Collections",
+    });
+  }
+
+  return (
+    <div>
+      <button onClick={handleCreate}>Create EUR IBAN</button>
+      {ibans.map((iban) => (
+        <div key={iban.id}>
+          <p>IBAN: {iban.iban}</p>
+          <p>BIC: {iban.bic}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## `useGasStations()` — Gas Station Management
+
+```tsx
+import { useGasStations } from "@yativo/crypto-sdk-react";
+
+function GasStationDashboard() {
+  const { stations, loading, createStation } = useGasStations();
+
+  async function handleCreate() {
+    await createStation({
+      network:     "SOLANA",
+      sponsorType: "ALL_WALLETS",
+    });
+  }
+
+  return (
+    <div>
+      <button onClick={handleCreate}>Create Gas Station</button>
+      {stations.map((s) => (
+        <div key={s.id}>
+          <p>Network: {s.network}</p>
+          <p>Balance: {s.balance}</p>
+          <p>Status: {s.status}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## `DepositWidget` — Embedded Deposit UI
+
+The `DepositWidget` renders a complete deposit flow: it displays a QR code, network selector, and deposit address — with real-time confirmation updates.
+
+```tsx
+import { DepositWidget } from "@yativo/crypto-sdk-react";
+
+function DepositPage({ walletId }: { walletId: string }) {
+  return (
+    <DepositWidget
+      walletId={walletId}
+      supportedAssets={["USDC", "XDC", "ETH"]}
+      onDepositConfirmed={(deposit) => {
+        console.log("Deposit confirmed:", deposit.amount, deposit.asset);
+      }}
+      theme={{
+        primaryColor:   "#6366f1",
+        backgroundColor: "#ffffff",
+        borderRadius:   "12px",
+      }}
+    />
+  );
+}
+```
+
+---
+
+## `AutoForwardingControl` — Auto-Forwarding Settings
+
+```tsx
+import { AutoForwardingControl } from "@yativo/crypto-sdk-react";
+
+function ForwardingSettings({ walletId }: { walletId: string }) {
+  return (
+    <AutoForwardingControl
+      walletId={walletId}
+      onRuleCreated={(rule) => {
+        console.log("Rule created:", rule.id);
+      }}
+      onRuleDeleted={(ruleId) => {
+        console.log("Rule deleted:", ruleId);
+      }}
+    />
+  );
+}
+```
+
+---
+
+## `YativoCardWidget` — Embedded Card Display (PSE)
+
+The card widget renders sensitive card details (PAN, CVV, expiry) inside a secure sandboxed iframe. Card data never touches your JavaScript.
+
+```tsx
+import { YativoCardWidget } from "@yativo/crypto-sdk-react";
+
+function CardViewer({ cardId }: { cardId: string }) {
+  return (
+    <div style={{ width: 380, height: 240 }}>
+      <YativoCardWidget
+        cardId={cardId}
+        theme={{
+          background:  "#1a1a2e",
+          textColor:   "#ffffff",
+          fontFamily:  "Inter, sans-serif",
+          borderRadius: "16px",
+        }}
+        onReady={() => console.log("Card widget ready")}
+        onError={(err) => console.error("Widget error:", err)}
+      />
+    </div>
+  );
+}
+```
+
+---
+
+## Pre-Built UI Components
+
+The React SDK ships utility components styled to match the Yativo design system:
+
+```tsx
+import {
+  YativoButton,
+  YativoCard,
+  YativoInput,
+  YativoLogo,
+} from "@yativo/crypto-sdk-react";
+
+function ExamplePage() {
+  return (
+    <YativoCard padding="24px">
+      <YativoLogo size={48} />
+      <YativoInput
+        label="Recipient Address"
+        placeholder="Enter wallet address"
+        type="text"
+      />
+      <YativoButton variant="primary" onClick={() => {}}>
+        Send Funds
+      </YativoButton>
+      <YativoButton variant="secondary" onClick={() => {}}>
+        Cancel
+      </YativoButton>
+    </YativoCard>
+  );
+}
+```
+
+---
+
+## Theme Customization
+
+Pass a `theme` object to `YativoProvider` to apply a global theme to all SDK components and widgets:
+
+```tsx
+<YativoProvider
+  config={{ baseURL: "https://crypto-api.yativo.com/api/" }}
+  theme={{
+    primaryColor:    "#6366f1",   // indigo
+    secondaryColor:  "#8b5cf6",   // violet
+    backgroundColor: "#0f172a",   // dark slate
+    surfaceColor:    "#1e293b",
+    textColor:       "#f1f5f9",
+    errorColor:      "#ef4444",
+    successColor:    "#22c55e",
+    borderRadius:    "12px",
+    fontFamily:      "'Inter', sans-serif",
+  }}
+>
+  {children}
+</YativoProvider>
+```
+
+Individual components and widgets accept their own `theme` prop which merges with (and overrides) the global theme.
+
+---
+
+## Complete Example — Next.js Dashboard Page
+
+```tsx
+// pages/dashboard.tsx
+import {
+  useYativo,
+  useWallets,
+  useBalance,
+  useTransactions,
+  DepositWidget,
+  YativoCardWidget,
+} from "@yativo/crypto-sdk-react";
+
+const ACCOUNT_ID = "acct_abc123";
+const WALLET_ID  = "wallet_xyz789";
+const CARD_ID    = "card_mno345";
+
+export default function Dashboard() {
+  const { user, logout }           = useYativo();
+  const { wallets, loading: wLoad } = useWallets(ACCOUNT_ID);
+  const { balance }                 = useBalance(WALLET_ID, true, 15000);
+  const { transactions }            = useTransactions({ accountId: ACCOUNT_ID, limit: 5 });
+
+  if (!user) return <p>Please log in.</p>;
+
+  return (
+    <main>
+      <header>
+        <h1>Hello, {user.firstName}</h1>
+        <button onClick={logout}>Log out</button>
+      </header>
+
+      <section>
+        <h2>USDC Balance: {balance}</h2>
+      </section>
+
+      <section>
+        <h2>Wallets ({wallets.length})</h2>
+        {wLoad ? (
+          <p>Loading...</p>
+        ) : (
+          wallets.map((w) => (
+            <p key={w.id}>{w.asset} — {w.address}</p>
+          ))
+        )}
+      </section>
+
+      <section>
+        <h2>Deposit</h2>
+        <DepositWidget
+          walletId={WALLET_ID}
+          supportedAssets={["USDC"]}
+          onDepositConfirmed={(d) => alert(`Received ${d.amount} ${d.asset}`)}
+        />
+      </section>
+
+      <section>
+        <h2>My Card</h2>
+        <YativoCardWidget cardId={CARD_ID} />
+      </section>
+
+      <section>
+        <h2>Recent Transactions</h2>
+        <ul>
+          {transactions.map((tx) => (
+            <li key={tx.id}>
+              {tx.amount} {tx.asset} — {tx.status}
+            </li>
+          ))}
+        </ul>
+      </section>
+    </main>
+  );
+}
+```

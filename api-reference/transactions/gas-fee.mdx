@@ -1,0 +1,57 @@
+---
+title: "Get Gas Fee"
+api: "POST https://crypto-sandbox.yativo.com/api/transactions/get-gas-price"
+description: "Estimate the gas fee for a transaction on a given blockchain network"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="chain_type" type="string" required>
+  The blockchain network to estimate gas for. One of: `ethereum`, `solana`, `bitcoin`, `polygon`, `bsc`, `base`, `arbitrum`, `optimism`, `xdc`.
+</ParamField>
+
+<ParamField body="priority" type="string">
+  Transaction priority affecting confirmation speed and fee. One of: `slow`, `medium`, `fast`. Defaults to `medium`.
+</ParamField>
+
+<ParamField body="amount_usd" type="number">
+  Optional transaction amount in USD, used to calculate gas as a percentage of the transfer.
+</ParamField>
+
+<ParamField body="asset_id" type="string">
+  Optional asset ID to get a fee estimate specific to that asset's token type.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/transactions/get-gas-price' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "chain_type": "ethereum",
+    "priority": "fast",
+    "amount_usd": 500
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Gas price retrieved successfully",
+  "data": {
+    "chain": "ethereum",
+    "priority": "fast",
+    "gas_price_gwei": "45.2",
+    "estimated_gas_units": 65000,
+    "estimated_fee_eth": "0.002938",
+    "estimated_fee_usd": "10.58",
+    "estimated_confirmation_seconds": 15
+  }
+}
+```
+</ResponseExample>

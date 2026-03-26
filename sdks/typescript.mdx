@@ -1,0 +1,616 @@
+---
+title: "TypeScript / Node.js SDK"
+description: "Complete guide for @yativo/crypto-sdk — installation, authentication, all resources, card widget, webhooks, and error handling"
+---
+
+# TypeScript / Node.js SDK
+
+The `@yativo/crypto-sdk` package is the official TypeScript SDK for the Yativo Crypto API. It ships with full TypeScript typings, automatic token refresh, rate-limit handling, and an embeddable card widget.
+
+## Installation
+
+```bash
+npm install @yativo/crypto-sdk
+# or
+yarn add @yativo/crypto-sdk
+# or
+pnpm add @yativo/crypto-sdk
+```
+
+**Requirements:** Node.js 16+ or a modern browser bundler (Webpack, Vite, esbuild).
+
+---
+
+## Quick Start
+
+<Tabs>
+  <Tab title="Email / Password Auth">
+    ```typescript
+    import { YativoSDK } from "@yativo/crypto-sdk";
+
+    const sdk = new YativoSDK({
+      baseURL: "https://crypto-api.yativo.com/api/",
+    });
+
+    // Register a new user
+    await sdk.auth.register({
+      email: "user@example.com",
+      password: "SecurePass123!",
+      firstName: "Ada",
+      lastName: "Lovelace",
+    });
+
+    // Log in — the SDK stores and auto-refreshes the token
+    const session = await sdk.auth.login({
+      email: "user@example.com",
+      password: "SecurePass123!",
+    });
+
+    console.log("Logged in:", session.user.email);
+    ```
+  </Tab>
+  <Tab title="API Key Auth">
+    ```typescript
+    import { YativoSDK } from "@yativo/crypto-sdk";
+
+    const sdk = new YativoSDK({
+      apiKey: process.env.YATIVO_API_KEY,
+      apiSecret: process.env.YATIVO_API_SECRET,
+      baseURL: "https://crypto-api.yativo.com/api/",
+    });
+
+    // No login needed — the SDK signs every request automatically
+    const wallets = await sdk.assets.list();
+    console.log("Wallets:", wallets);
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Constructor Options
+
+```typescript
+interface YativoSDKOptions {
+  /** API key for key-based authentication */
+  apiKey?: string;
+  /** API secret for key-based authentication */
+  apiSecret?: string;
+  /** Override the base URL (default: https://crypto-api.yativo.com/api/) */
+  baseURL?: string;
+  /** Request timeout in milliseconds (default: 30000) */
+  timeout?: number;
+  /** Enable the IBAN feature (must be true to use sdk.standaloneIban) */
+  standaloneIbanEnabled?: boolean;
+}
+```
+
+---
+
+## Authentication (`sdk.auth`)
+
+### Register
+
+```typescript
+const user = await sdk.auth.register({
+  email: "user@example.com",
+  password: "SecurePass123!",
+  firstName: "Ada",
+  lastName: "Lovelace",
+  phoneNumber: "+14155552671",  // optional
+});
+```
+
+### Login
+
+```typescript
+const session = await sdk.auth.login({
+  email: "user@example.com",
+  password: "SecurePass123!",
+});
+// session.accessToken is stored internally; auto-refreshed on 401
+```
+
+### OTP Verification
+
+```typescript
+// Request an OTP
+await sdk.auth.requestOtp({ email: "user@example.com" });
+
+// Verify the OTP
+await sdk.auth.verifyOtp({
+  email: "user@example.com",
+  otp: "123456",
+});
+```
+
+### Two-Factor Authentication (2FA)
+
+```typescript
+// Enable 2FA — returns a TOTP secret and QR code URL
+const setup = await sdk.auth.enable2fa();
+console.log("Scan this QR:", setup.qrCodeUrl);
+
+// Confirm 2FA setup with a TOTP code
+await sdk.auth.confirm2fa({ code: "654321" });
+
+// Login with 2FA
+const session = await sdk.auth.login({
+  email: "user@example.com",
+  password: "SecurePass123!",
+});
+// If 2FA is required, complete the second step:
+if (session.requires2fa) {
+  await sdk.auth.verify2fa({ code: "654321" });
+}
+```
+
+---
+
+## Accounts (`sdk.accounts`)
+
+```typescript
+// Create a new account
+const account = await sdk.accounts.create({
+  name: "Main Treasury",
+  currency: "USD",
+});
+
+// List all accounts
+const { accounts, total } = await sdk.accounts.list({ page: 1, limit: 20 });
+
+// Get a single account
+const account = await sdk.accounts.get("acct_abc123");
+```
+
+---
+
+## Assets / Wallets (`sdk.assets`)
+
+### Create a Wallet
+
+```typescript
+const wallet = await sdk.assets.createWallet({
+  accountId: "acct_abc123",
+  asset: "USDC",
+  network: "SOLANA",
+});
+console.log("Deposit address:", wallet.address);
+```
+
+### Batch Create Wallets
+
+```typescript
+const wallets = await sdk.assets.batchCreate({
+  accountId: "acct_abc123",
+  assets: [
+    { asset: "USDC", network: "SOLANA" },
+    { asset: "XDC",  network: "XDC" },
+    { asset: "ETH",  network: "ETHEREUM" },
+  ],
+});
+```
+
+### List Wallets
+
+```typescript
+const wallets = await sdk.assets.list({ accountId: "acct_abc123" });
+```
+
+### Check Balance
+
+```typescript
+const balance = await sdk.assets.getBalance({
+  walletId: "wallet_xyz789",
+});
+console.log(`Balance: ${balance.amount} ${balance.asset}`);
+```
+
+---
+
+## Transactions (`sdk.transactions`)
+
+### Send Funds (with Idempotency)
+
+```typescript
+const tx = await sdk.transactions.send({
+  fromWalletId: "wallet_xyz789",
+  toAddress: "BjhiXKt...",
+  amount: "100.00",
+  asset: "USDC",
+  network: "SOLANA",
+  idempotencyKey: crypto.randomUUID(), // prevents double-sends on retry
+  memo: "Invoice #INV-2026-001",
+});
+console.log("Transaction ID:", tx.id, "Status:", tx.status);
+```
+
+### Estimate Gas Fee
+
+```typescript
+const fee = await sdk.transactions.estimateGas({
+  fromWalletId: "wallet_xyz789",
+  toAddress: "BjhiXKt...",
+  amount: "100.00",
+  asset: "USDC",
+  network: "SOLANA",
+});
+console.log(`Estimated fee: ${fee.fee} ${fee.feeAsset}`);
+```
+
+### List Transactions
+
+```typescript
+const { transactions, total } = await sdk.transactions.list({
+  accountId: "acct_abc123",
+  page: 1,
+  limit: 25,
+  status: "COMPLETED",        // optional filter
+  startDate: "2026-01-01",    // optional
+  endDate:   "2026-03-31",    // optional
+});
+```
+
+### Get a Transaction
+
+```typescript
+const tx = await sdk.transactions.get("txn_def456");
+```
+
+---
+
+## Swap (`sdk.swap`)
+
+```typescript
+// Get a swap quote
+const quote = await sdk.swap.getQuote({
+  fromAsset: "USDC",
+  toAsset:   "XDC",
+  amount:    "500.00",
+  network:   "SOLANA",
+});
+console.log(`You receive: ${quote.toAmount} XDC, rate: ${quote.rate}`);
+
+// Execute the swap (quote expires after ~30 seconds)
+const result = await sdk.swap.execute({
+  quoteId:      quote.id,
+  fromWalletId: "wallet_xyz789",
+  toWalletId:   "wallet_xdc001",
+});
+console.log("Swap status:", result.status);
+```
+
+---
+
+## Cards (`sdk.cards`)
+
+### Onboard a Cardholder
+
+```typescript
+const cardholder = await sdk.cards.onboard({
+  customerId:  "cust_111",
+  firstName:   "Ada",
+  lastName:    "Lovelace",
+  dateOfBirth: "1990-05-15",
+  address: {
+    line1:   "1 Infinite Loop",
+    city:    "Cupertino",
+    state:   "CA",
+    zip:     "95014",
+    country: "US",
+  },
+});
+```
+
+### Create a Virtual Card
+
+```typescript
+const card = await sdk.cards.create({
+  cardholderId: cardholder.id,
+  currency:     "USD",
+  label:        "Engineering expenses",
+});
+console.log("Card ID:", card.id, "Last 4:", card.last4);
+```
+
+### Get Card Funding Address
+
+```typescript
+const funding = await sdk.cards.getFundingAddress({ cardId: card.id });
+console.log("Fund this card at:", funding.address, "on", funding.network);
+```
+
+### Get Card Transactions
+
+```typescript
+const { transactions } = await sdk.cards.getTransactions({
+  cardId: card.id,
+  page:   1,
+  limit:  20,
+});
+```
+
+---
+
+## Webhooks (`sdk.webhooks`)
+
+### Create a Webhook
+
+```typescript
+const webhook = await sdk.webhooks.create({
+  url:    "https://your-app.com/webhooks/yativo",
+  events: ["transaction.completed", "deposit.received", "card.transaction"],
+  secret: "whsec_your_generated_secret",
+});
+console.log("Webhook ID:", webhook.id);
+```
+
+### Verify a Webhook Signature
+
+Use this in your webhook receiver to confirm the payload came from Yativo:
+
+```typescript
+import { Webhooks } from "@yativo/crypto-sdk";
+import express from "express";
+
+const app = express();
+
+app.post(
+  "/webhooks/yativo",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    const signature = req.headers["x-yativo-signature"] as string;
+    const isValid = Webhooks.verifySignature(
+      req.body,          // raw Buffer
+      signature,
+      process.env.YATIVO_WEBHOOK_SECRET!
+    );
+
+    if (!isValid) {
+      return res.status(401).send("Invalid signature");
+    }
+
+    const event = JSON.parse(req.body.toString());
+    console.log("Received event:", event.type, event.data);
+    res.sendStatus(200);
+  }
+);
+```
+
+### List / Delete Webhooks
+
+```typescript
+const webhooks = await sdk.webhooks.list();
+await sdk.webhooks.delete("wh_ghi789");
+```
+
+---
+
+## API Keys (`sdk.apiKeys`)
+
+```typescript
+// Create an API key (requires 2FA code if 2FA is enabled)
+const key = await sdk.apiKeys.create({
+  name:        "Production Server",
+  permissions: ["transactions:read", "transactions:write", "wallets:read"],
+  twoFaCode:   "123456",  // required when 2FA is enabled on the account
+});
+// Store key.secret securely — it is shown only once
+console.log("API Key:", key.key);
+console.log("API Secret:", key.secret);
+
+// List API keys
+const { keys } = await sdk.apiKeys.list();
+
+// Revoke a key
+await sdk.apiKeys.revoke("key_jkl012");
+```
+
+---
+
+## Customers (`sdk.customers`)
+
+```typescript
+const customer = await sdk.customers.create({
+  externalId: "usr_from_your_db",
+  email:      "customer@example.com",
+  firstName:  "Charles",
+  lastName:   "Babbage",
+  kycLevel:   "BASIC",
+});
+
+const { customers } = await sdk.customers.list({ page: 1, limit: 50 });
+const customer      = await sdk.customers.get("cust_abc");
+await sdk.customers.update("cust_abc", { kycLevel: "FULL" });
+```
+
+---
+
+## Analytics (`sdk.analytics`)
+
+```typescript
+const report = await sdk.analytics.getSummary({
+  accountId: "acct_abc123",
+  startDate: "2026-01-01",
+  endDate:   "2026-03-31",
+});
+console.log("Total volume:", report.totalVolume);
+console.log("Total fees:",   report.totalFees);
+```
+
+---
+
+## IBAN (`sdk.standaloneIban`)
+
+<Warning>
+  You must set `standaloneIbanEnabled: true` in the constructor to use this resource. Attempting to call these methods without the feature flag will throw a `FeatureNotEnabledError`.
+</Warning>
+
+```typescript
+const sdk = new YativoSDK({
+  apiKey:                process.env.YATIVO_API_KEY,
+  apiSecret:             process.env.YATIVO_API_SECRET,
+  standaloneIbanEnabled: true,
+});
+
+const iban = await sdk.standaloneIban.create({
+  customerId: "cust_111",
+  currency:   "EUR",
+  label:      "EU Collections",
+});
+console.log("IBAN:", iban.iban, "BIC:", iban.bic);
+
+const ibans = await sdk.standaloneIban.list({ customerId: "cust_111" });
+```
+
+---
+
+## Card Widget — `YativoCardEmbed`
+
+The card widget lets you display sensitive card details (PAN, CVV, expiry) inside a secure iframe that never exposes the data to your JavaScript.
+
+```typescript
+import { YativoCardEmbed } from "@yativo/crypto-sdk";
+
+// Mount the widget into any DOM element
+const embed = YativoCardEmbed.mount("#card-container", {
+  cardId:   "card_mno345",
+  apiKey:   process.env.YATIVO_API_KEY,
+  apiSecret: process.env.YATIVO_API_SECRET,
+  theme: {
+    background: "#1a1a2e",
+    textColor:  "#ffffff",
+    fontFamily: "Inter, sans-serif",
+  },
+  onReady: () => console.log("Card widget loaded"),
+  onError: (err) => console.error("Widget error:", err),
+});
+
+// Unmount when done
+embed.unmount();
+```
+
+```html
+<!-- In your HTML -->
+<div id="card-container" style="width:380px;height:240px;"></div>
+```
+
+---
+
+## Error Handling
+
+```typescript
+import {
+  YativoError,
+  AuthenticationError,
+  ValidationError,
+  RateLimitError,
+  NotFoundError,
+} from "@yativo/crypto-sdk";
+
+try {
+  await sdk.transactions.send({ /* ... */ });
+} catch (err) {
+  if (err instanceof AuthenticationError) {
+    // Token expired and could not be refreshed, or API key invalid
+    console.error("Auth failed:", err.message);
+  } else if (err instanceof ValidationError) {
+    // Request body failed server-side validation
+    console.error("Validation errors:", err.errors);
+  } else if (err instanceof RateLimitError) {
+    // 60 req/min per endpoint limit exceeded
+    const retryAfter = err.retryAfter; // seconds until the window resets
+    console.warn(`Rate limited. Retry after ${retryAfter}s`);
+  } else if (err instanceof NotFoundError) {
+    console.error("Resource not found:", err.resourceId);
+  } else if (err instanceof YativoError) {
+    // Catch-all for other API errors
+    console.error(`API error ${err.statusCode}:`, err.message);
+  } else {
+    throw err; // unexpected — re-throw
+  }
+}
+```
+
+---
+
+## Rate Limiting
+
+The Yativo Crypto API allows **60 requests per minute per endpoint**. The SDK:
+
+1. Throws `RateLimitError` when a `429` response is received.
+2. Exposes `err.retryAfter` (seconds) so you can implement exponential back-off.
+
+```typescript
+import { RateLimitError } from "@yativo/crypto-sdk";
+
+async function sendWithRetry(payload, maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await sdk.transactions.send(payload);
+    } catch (err) {
+      if (err instanceof RateLimitError && attempt < maxRetries) {
+        const delay = (err.retryAfter ?? Math.pow(2, attempt)) * 1000;
+        await new Promise((r) => setTimeout(r, delay));
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+```
+
+---
+
+## TypeScript Interfaces
+
+Key types exported from the SDK:
+
+```typescript
+interface Wallet {
+  id:        string;
+  accountId: string;
+  asset:     string;
+  network:   string;
+  address:   string;
+  balance:   string;
+  createdAt: string;
+}
+
+interface Transaction {
+  id:            string;
+  fromWalletId:  string;
+  toAddress:     string;
+  amount:        string;
+  asset:         string;
+  network:       string;
+  status:        "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+  hash?:         string;
+  fee?:          string;
+  idempotencyKey?: string;
+  createdAt:     string;
+  updatedAt:     string;
+}
+
+interface SwapQuote {
+  id:         string;
+  fromAsset:  string;
+  toAsset:    string;
+  fromAmount: string;
+  toAmount:   string;
+  rate:       string;
+  fee:        string;
+  expiresAt:  string;
+}
+
+interface Card {
+  id:           string;
+  cardholderId: string;
+  last4:        string;
+  expiry:       string;
+  currency:     string;
+  status:       "ACTIVE" | "FROZEN" | "TERMINATED";
+  label?:       string;
+  createdAt:    string;
+}
+```

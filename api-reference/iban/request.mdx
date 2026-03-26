@@ -1,0 +1,40 @@
+---
+title: "Request IBAN"
+api: "POST https://crypto-sandbox.yativo.com/api/standalone-iban/iban/request"
+description: "Request the issuance of a standalone IBAN after KYC approval"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  The customer ID to issue the IBAN for. Uses the authenticated user if not provided.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/iban/request' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "IBAN requested successfully",
+  "data": {
+    "iban_request_id": "ibnreq_01HX9KZMB3F7VNQP8R2WDGT4ES",
+    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP",
+    "status": "pending",
+    "requested_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

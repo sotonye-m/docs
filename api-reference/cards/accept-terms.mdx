@@ -1,0 +1,36 @@
+---
+title: "Accept Terms"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/accept-terms"
+description: "Accept the Yativo Card terms and conditions to proceed with card issuance"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<Note>
+  This endpoint must be called after KYC is approved and before creating a card. Accepting terms is a one-time action per user.
+</Note>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/accept-terms' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Terms accepted successfully",
+  "data": {
+    "terms_accepted": true,
+    "accepted_at": "2026-03-26T12:00:00Z",
+    "terms_version": "2026-01"
+  }
+}
+```
+</ResponseExample>

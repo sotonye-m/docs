@@ -1,0 +1,86 @@
+---
+title: "Submit IBAN KYC"
+api: "POST https://crypto-sandbox.yativo.com/api/standalone-iban/onboarding/kyc"
+description: "Submit KYC information to complete IBAN onboarding verification"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="kyc" type="object" required>
+  KYC data for the customer.
+
+  <Expandable title="kyc fields">
+    <ParamField body="first_name" type="string" required>
+      Customer's first name.
+    </ParamField>
+    <ParamField body="last_name" type="string" required>
+      Customer's last name.
+    </ParamField>
+    <ParamField body="date_of_birth" type="string" required>
+      Date of birth in `YYYY-MM-DD` format.
+    </ParamField>
+    <ParamField body="nationality" type="string" required>
+      ISO 3166-1 alpha-2 country code of nationality.
+    </ParamField>
+    <ParamField body="address" type="object">
+      Residential address object with `line1`, `city`, `postal_code`, and `country` fields.
+    </ParamField>
+    <ParamField body="document_type" type="string">
+      Identity document type. One of: `passport`, `national_id`, `drivers_license`.
+    </ParamField>
+    <ParamField body="document_number" type="string">
+      The document identification number.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="email" type="string">
+  Customer email address. Required if `customer_id` is not provided.
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Existing customer ID. Required if `email` is not provided.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/kyc' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP",
+    "kyc": {
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "date_of_birth": "1990-06-15",
+      "nationality": "DE",
+      "document_type": "passport",
+      "document_number": "C01X00T47",
+      "address": {
+        "line1": "Musterstraße 1",
+        "city": "Berlin",
+        "postal_code": "10115",
+        "country": "DE"
+      }
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "KYC submitted successfully",
+  "data": {
+    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP",
+    "kyc_status": "under_review",
+    "submitted_at": "2026-03-26T12:00:00Z",
+    "estimated_review_time": "1-2 business days"
+  }
+}
+```
+</ResponseExample>

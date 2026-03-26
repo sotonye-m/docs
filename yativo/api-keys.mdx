@@ -1,0 +1,280 @@
+---
+title: "API Keys"
+description: "Create and manage API credentials for server-to-server integrations"
+---
+
+API keys let your server authenticate with Yativo without requiring a logged-in user session. They support fine-grained permission scopes and can be rotated or revoked at any time.
+
+<Warning>
+  2FA must be enabled on your account before you can create API keys. All key management operations require a valid TOTP code in the `X-2FA-Token` header.
+</Warning>
+
+<Accordion title="Type Definitions">
+```typescript
+interface APIKey {
+  key_id: string;
+  name: string;
+  api_key: string;         // Shown only on creation
+  api_secret?: string;     // Shown only on creation
+  permissions: APIKeyPermission[];
+  last_used_at?: string;
+  expires_at?: string;
+  created_at: string;
+  status: "active" | "revoked";
+}
+
+type APIKeyPermission = "read" | "write" | "transactions" | "webhooks";
+
+interface CreateAPIKeyRequest {
+  name: string;
+  two_factor_token: string;
+  permissions?: APIKeyPermission[];
+  expires_in_days?: number;
+}
+```
+</Accordion>
+
+---
+
+## Permissions
+
+When creating an API key, you specify which operations it is allowed to perform:
+
+| Permission | Access |
+|------------|--------|
+| `read` | Read-only access to account data, balances, and transaction history |
+| `write` | Create accounts, assets, and configure platform settings |
+| `transactions` | Initiate and manage fund transfers |
+| `webhooks` | Create, update, and delete webhook subscriptions |
+
+Assign only the permissions your integration actually needs.
+
+---
+
+## Create an API Key
+
+**POST** `/apikey/create`
+
+Requires the `X-2FA-Token` header with a current TOTP code.
+
+<ParamField header="X-2FA-Token" type="string" required>
+  Current 6-digit TOTP code from your authenticator app.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Human-readable name to identify this key.
+</ParamField>
+
+<ParamField body="permissions" type="array" required>
+  Array of permission strings. One or more of: `read`, `write`, `transactions`, `webhooks`.
+</ParamField>
+
+<ParamField body="expires_in_days" type="number">
+  Number of days until the key expires. Omit for a key that does not expire.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/apikey/create \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-2FA-Token: 123456" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Production Server",
+    "permissions": ["read", "write", "transactions"],
+    "expires_in_days": 365
+  }'
+```
+
+```json Response
+{
+  "id": "key_01abc123",
+  "name": "Production Server",
+  "api_key": "yvk_live_abc123...",
+  "api_secret": "yvs_live_xyz789...",
+  "permissions": ["read", "write", "transactions"],
+  "expires_at": "2027-03-26T10:00:00Z",
+  "created_at": "2026-03-26T10:00:00Z"
+}
+```
+
+<Warning>
+  The `api_secret` is only returned once at creation. Store it securely in your secrets manager immediately. It cannot be retrieved again.
+</Warning>
+
+---
+
+## List API Keys
+
+**GET** `/apikey/list`
+
+Returns all API keys on your account (secrets are not included in list responses).
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/apikey/list \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "keys": [
+    {
+      "id": "key_01abc123",
+      "name": "Production Server",
+      "permissions": ["read", "write", "transactions"],
+      "last_used_at": "2026-03-25T14:30:00Z",
+      "expires_at": "2027-03-26T10:00:00Z",
+      "created_at": "2026-03-26T10:00:00Z",
+      "status": "active"
+    }
+  ]
+}
+```
+
+---
+
+## Get API Key
+
+**GET** `/apikey/{id}`
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/apikey/key_01abc123 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Revoke an API Key
+
+**POST** `/apikey/{id}/revoke`
+
+Permanently deactivates the key. This cannot be undone.
+
+<ParamField header="X-2FA-Token" type="string" required>
+  Current 6-digit TOTP code.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/apikey/key_01abc123/revoke \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-2FA-Token: 123456"
+```
+
+---
+
+## Rotate an API Key
+
+**POST** `/apikey/{id}/rotate`
+
+Generates a new `api_secret` and invalidates the old one. Use this to rotate credentials without deleting and recreating the key.
+
+<ParamField header="X-2FA-Token" type="string" required>
+  Current 6-digit TOTP code.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/apikey/key_01abc123/rotate \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-2FA-Token: 123456"
+```
+
+```json Response
+{
+  "id": "key_01abc123",
+  "api_key": "yvk_live_abc123...",
+  "api_secret": "yvs_live_NEW_SECRET...",
+  "rotated_at": "2026-03-26T10:00:00Z"
+}
+```
+
+---
+
+## Update Permissions
+
+**PUT** `/apikey/{id}/permissions`
+
+<ParamField header="X-2FA-Token" type="string" required>
+  Current 6-digit TOTP code.
+</ParamField>
+
+<ParamField body="permissions" type="array" required>
+  New set of permissions. This replaces the existing permission set entirely.
+</ParamField>
+
+```bash cURL
+curl -X PUT https://crypto-api.yativo.com/api/apikey/key_01abc123/permissions \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-2FA-Token: 123456" \
+  -H "Content-Type: application/json" \
+  -d '{"permissions": ["read", "transactions"]}'
+```
+
+---
+
+## Exchange for Bearer Token
+
+**POST** `/apikey/token`
+
+For server-to-server calls, you can exchange your API key and secret for a short-lived Bearer token. This is useful when the downstream service expects a standard `Authorization: Bearer` header.
+
+<ParamField body="api_key" type="string" required>
+  Your API key (`yvk_live_...`).
+</ParamField>
+
+<ParamField body="api_secret" type="string" required>
+  Your API secret (`yvs_live_...`).
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/apikey/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "api_key": "yvk_live_abc123...",
+    "api_secret": "yvs_live_xyz789..."
+  }'
+```
+
+```json Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 3600,
+  "token_type": "Bearer"
+}
+```
+
+---
+
+## Authentication Methods Summary
+
+<Tabs>
+  <Tab title="Header-based (simplest)">
+    Pass your key and secret as headers on every request. No token management required.
+
+    ```bash
+    curl -X GET https://crypto-api.yativo.com/api/apikey/list \
+      -H "X-API-Key: yvk_live_..." \
+      -H "X-API-Secret: yvs_live_..."
+    ```
+  </Tab>
+  <Tab title="Bearer token (recommended)">
+    Exchange credentials once, then use the token until it expires. Better for high-throughput servers.
+
+    ```typescript
+    let token = await getToken(apiKey, apiSecret);
+
+    async function request(path: string) {
+      const res = await fetch(`https://crypto-api.yativo.com/api${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        token = await getToken(apiKey, apiSecret); // refresh
+        return request(path);
+      }
+      return res.json();
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+  Store API keys in environment variables or a secrets manager. Never hardcode them in source code or commit them to version control.
+</Tip>

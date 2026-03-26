@@ -1,0 +1,310 @@
+---
+title: "Authentication"
+description: "Register, log in, verify OTP, and manage tokens"
+---
+
+Yativo uses JWT-based authentication. After logging in, you receive a short-lived `access_token` and a longer-lived `refresh_token`. For server-to-server integrations, you can also use API keys — either as headers or exchanged for a Bearer token.
+
+<Accordion title="Type Definitions">
+```typescript
+interface RegisterRequest {
+  email: string;
+  password: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+interface AuthResponse {
+  access_token: string;
+  refresh_token?: string;
+  token_type: "Bearer";
+  expires_in: number; // seconds
+  user: UserProfile;
+}
+
+interface UserProfile {
+  user_id: string;
+  email: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  email_verified: boolean;
+  two_fa_enabled: boolean;
+  created_at: string;
+}
+```
+</Accordion>
+
+## Base URL
+
+```
+https://crypto-api.yativo.com/api/
+```
+
+---
+
+## Register
+
+Create a new Yativo account.
+
+**POST** `/authentication/registration`
+
+<ParamField body="email" type="string" required>
+  User's email address. Must be unique.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Password. Minimum 8 characters.
+</ParamField>
+
+<ParamField body="username" type="string">
+  Optional username.
+</ParamField>
+
+<ParamField body="first_name" type="string">
+  First name.
+</ParamField>
+
+<ParamField body="last_name" type="string">
+  Last name.
+</ParamField>
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/authentication/registration \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "jane@example.com",
+    "password": "securepassword123",
+    "first_name": "Jane",
+    "last_name": "Doe"
+  }'
+```
+
+```typescript TypeScript
+const response = await fetch('https://crypto-api.yativo.com/api/authentication/registration', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'jane@example.com',
+    password: 'securepassword123',
+    first_name: 'Jane',
+    last_name: 'Doe',
+  }),
+});
+const data = await response.json();
+```
+</CodeGroup>
+
+```json Response
+{
+  "message": "Registration successful. Please check your email to verify your account.",
+  "user_id": "usr_01abc..."
+}
+```
+
+---
+
+## Log In
+
+Authenticate and receive tokens.
+
+**POST** `/authentication/login`
+
+<ParamField body="email" type="string" required>
+  Registered email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Account password.
+</ParamField>
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/authentication/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "jane@example.com",
+    "password": "securepassword123"
+  }'
+```
+
+```typescript TypeScript
+const response = await fetch('https://crypto-api.yativo.com/api/authentication/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: 'jane@example.com', password: 'securepassword123' }),
+});
+const { access_token, refresh_token } = await response.json();
+```
+</CodeGroup>
+
+```json Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 3600,
+  "token_type": "Bearer"
+}
+```
+
+<Note>
+  If OTP verification is required (e.g., after first login or from a new device), the response will indicate that an OTP has been sent to your email. Use the `/authentication/otp_verification` endpoint to complete the login.
+</Note>
+
+---
+
+## Verify OTP
+
+Verify a one-time password sent to your email.
+
+**POST** `/authentication/otp_verification`
+
+<ParamField body="otp" type="string" required>
+  The 6-digit OTP received via email.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Email address associated with the account. Required if not already inferred from session.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/authentication/otp_verification \
+  -H "Content-Type: application/json" \
+  -d '{
+    "otp": "482931",
+    "email": "jane@example.com"
+  }'
+```
+
+```json Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 3600
+}
+```
+
+---
+
+## Verify Google Auth Code
+
+If you use Google Authenticator (TOTP) as your 2FA method, verify the 6-digit code here.
+
+**POST** `/authentication/google_auth_verification`
+
+<ParamField body="code" type="string" required>
+  6-digit TOTP code from your authenticator app.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Account email address.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/authentication/google_auth_verification \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "123456",
+    "email": "jane@example.com"
+  }'
+```
+
+---
+
+## Resend OTP
+
+Request a new OTP if the previous one expired.
+
+**POST** `/authentication/resend_otp`
+
+<ParamField body="email" type="string" required>
+  Email address to resend the OTP to.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/authentication/resend_otp \
+  -H "Content-Type: application/json" \
+  -d '{"email": "jane@example.com"}'
+```
+
+---
+
+## Refresh Access Token
+
+Exchange a refresh token for a new access token without requiring the user to log in again.
+
+**GET** `/authentication/refresh-token`
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer {refresh_token}` — pass your **refresh token**, not your access token.
+</ParamField>
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/authentication/refresh-token \
+  -H "Authorization: Bearer YOUR_REFRESH_TOKEN"
+```
+
+```json Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 3600
+}
+```
+
+---
+
+## Using Tokens in Requests
+
+Once you have an `access_token`, include it in all authenticated requests:
+
+```bash
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+### Token Expiry
+
+Access tokens expire after a short period (typically 1 hour). When a request returns `401 Unauthorized`, use your refresh token to obtain a new access token automatically:
+
+```typescript
+async function refreshIfNeeded(refreshToken: string): Promise<string> {
+  const res = await fetch('https://crypto-api.yativo.com/api/authentication/refresh-token', {
+    headers: { Authorization: `Bearer ${refreshToken}` },
+  });
+  const { access_token } = await res.json();
+  return access_token;
+}
+```
+
+---
+
+## API Key Authentication
+
+For server-to-server integrations, API keys are the recommended approach. There are two ways to use them:
+
+**Method 1: Header-based (simplest)**
+
+```bash
+curl -X GET https://crypto-api.yativo.com/api/apikey/list \
+  -H "X-API-Key: yvk_live_..." \
+  -H "X-API-Secret: yvs_live_..."
+```
+
+**Method 2: Exchange for Bearer token**
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/apikey/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "api_key": "yvk_live_...",
+    "api_secret": "yvs_live_..."
+  }'
+```
+
+See the [API Keys](/yativo/api-keys) page for full details on creating and managing keys.

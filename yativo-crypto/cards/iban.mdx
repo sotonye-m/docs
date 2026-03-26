@@ -1,0 +1,210 @@
+---
+title: "Card IBAN"
+description: "Activate a dedicated IBAN to receive EUR bank transfers directly to your Yativo Card account"
+---
+
+## Overview
+
+The Card IBAN feature gives your Yativo Card account a dedicated European bank account number (IBAN). You can share this IBAN with anyone to receive EUR via SEPA bank transfer. Incoming EUR funds are automatically converted and credited to your card balance.
+
+This feature is ideal for:
+- Receiving salary or freelance payments directly to your card
+- Accepting transfers from European banks without crypto on-ramp friction
+- Combining EUR bank funding with crypto funding in one unified card balance
+
+<Accordion title="Type Definitions">
+```typescript
+interface CardIBANStatus {
+  status: "not_activated" | "pending_kyc" | "kyc_submitted" | "kyc_approved" | "active" | "rejected" | "suspended";
+  iban?: string;
+  bic?: string;
+  activated_at?: string;
+}
+
+interface ActivateIBANRequest {
+  kyc_method: "platform_sumsub" | "user_sumsub" | "direct_docs";
+  sumsub_token?: string; // Required for platform_sumsub and user_sumsub
+}
+```
+</Accordion>
+
+---
+
+## Activate IBAN
+
+Request activation of the IBAN feature for a card account. Activation requires a KYC verification step to comply with European banking regulations.
+
+```
+POST /yativo-card/{yativoCardId}/iban/activate
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField body="kyc_method" type="string" required>
+  The KYC verification method to use. See [KYC Methods](#kyc-methods) below.
+  Accepted values: `platform_sumsub`, `user_sumsub`, `direct_docs`.
+</ParamField>
+
+<ParamField body="sumsub_token" type="string">
+  Required when `kyc_method` is `platform_sumsub` or `user_sumsub`. The Sumsub applicant token generated for the user.
+</ParamField>
+
+<RequestExample>
+```bash Platform Sumsub KYC
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/iban/activate' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "kyc_method": "platform_sumsub",
+    "sumsub_token": "sumsub_applicant_token_abc123xyz"
+  }'
+```
+</RequestExample>
+
+<RequestExample>
+```bash Direct Docs KYC
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/iban/activate' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "kyc_method": "direct_docs"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "iban_activation_id": "iban_act_01HX9KZMB3F7VNQP8R2WDGT777",
+    "kyc_method": "platform_sumsub",
+    "status": "pending_kyc",
+    "submitted_at": "2026-03-25T18:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get IBAN Status
+
+Check the current status of the IBAN activation and retrieve the IBAN details once activated.
+
+```
+GET /yativo-card/{yativoCardId}/iban/status
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/iban/status' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Activated
+{
+  "status": "success",
+  "data": {
+    "iban_status": "active",
+    "iban": "DE89370400440532013000",
+    "bic": "SSKMDEMMXXX",
+    "account_holder": "Jane Doe",
+    "bank_name": "Yativo Payments",
+    "currency": "EUR",
+    "activated_at": "2026-03-26T09:00:00Z"
+  }
+}
+```
+
+```json Pending KYC
+{
+  "status": "success",
+  "data": {
+    "iban_status": "pending_kyc",
+    "iban": null,
+    "message": "KYC verification is in progress. Check back shortly."
+  }
+}
+```
+</ResponseExample>
+
+### IBAN Status Values
+
+| Status | Description |
+|---|---|
+| `not_requested` | IBAN activation has not been initiated for this account. |
+| `pending_kyc` | KYC verification is in progress. |
+| `kyc_approved` | KYC passed. IBAN is being provisioned. |
+| `active` | IBAN is active and ready to receive transfers. |
+| `rejected` | KYC or activation was rejected. Contact support. |
+| `suspended` | IBAN has been temporarily suspended. |
+
+---
+
+## KYC Methods
+
+The IBAN feature requires identity verification due to European banking regulations. Three verification methods are available:
+
+<Accordion title="platform_sumsub — Your platform provides the KYC token">
+  **Best for:** Platforms that already run their own identity verification flow and can supply a KYC applicant token to Yativo.
+
+  Your platform completes identity verification for the user and provides the resulting applicant token to Yativo. Yativo uses this token to retrieve and validate the KYC result on your behalf.
+
+  **Required field:** `sumsub_token` — the KYC applicant token for the user.
+
+  **Flow:**
+  1. Your backend initiates identity verification for the user and obtains an applicant token.
+  2. The user completes verification on your platform.
+  3. Pass the token to Yativo's IBAN activation endpoint.
+  4. Yativo validates the KYC result and provisions the IBAN on approval.
+</Accordion>
+
+<Accordion title="user_sumsub — User completes verification via Yativo-hosted flow">
+  **Best for:** Platforms that want to delegate the KYC experience entirely to Yativo.
+
+  A verification link is generated for the user. The user completes identity verification through the Yativo-hosted flow.
+
+  **Required field:** `sumsub_token` — the KYC applicant token created for the user.
+
+  **Flow:**
+  1. Your platform or Yativo creates an applicant token for the user.
+  2. The user is redirected to or opens the verification URL.
+  3. Yativo monitors the result and activates the IBAN upon approval.
+</Accordion>
+
+<Accordion title="direct_docs — Manual document submission">
+  **Best for:** Scenarios where a direct document review is preferred.
+
+  The user submits identity documents (passport, national ID, proof of address) directly to Yativo for manual review.
+
+  **Required fields:** None — documents are submitted through a separate upload flow.
+
+  **Processing time:** 1–3 business days.
+</Accordion>
+
+---
+
+## Receiving EUR Transfers
+
+Once your IBAN is active, share the IBAN and BIC with the sender. Incoming SEPA transfers will be:
+
+1. Received at the IBAN account.
+2. Automatically converted from EUR to USD equivalent.
+3. Credited to your card wallet balance.
+
+<Tip>
+  SEPA transfers typically settle within 1 business day. Instant SEPA payments (SEPA Instant) may settle within seconds, depending on the sending bank's capabilities.
+</Tip>
+
+<Note>
+  The IBAN is personal to your account and should not be shared beyond intended senders. Notify Yativo support immediately if you suspect misuse.
+</Note>

@@ -1,0 +1,57 @@
+---
+title: "Execute Swap"
+api: "POST https://crypto-sandbox.yativo.com/api/swap/execute"
+description: "Execute a swap using a previously generated quote"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="quote_id" type="string" required>
+  The ID of the quote to execute, obtained from the [Get Swap Quote](/api-reference/swap/quote) endpoint. Quotes expire after a short window.
+</ParamField>
+
+<ParamField body="from_asset_id" type="string" required>
+  The asset ID of the source wallet to deduct funds from.
+</ParamField>
+
+<ParamField body="to_address" type="string" required>
+  The destination wallet address to receive the swapped tokens.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/swap/execute' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "quote_id": "qte_01HX9KZMB3F7VNQP8R2WDGT4EG",
+    "from_asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA",
+    "to_address": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Swap initiated successfully",
+  "data": {
+    "swap_id": "swp_01HX9KZMB3F7VNQP8R2WDGT4EH",
+    "quote_id": "qte_01HX9KZMB3F7VNQP8R2WDGT4EG",
+    "from_chain": "solana",
+    "from_ticker": "USDC_SOL",
+    "to_chain": "ethereum",
+    "to_ticker": "USDC_ETH",
+    "from_amount": "500.00",
+    "to_amount": "497.25",
+    "status": "pending",
+    "from_tx_hash": "5KgF7hJ2mN4pQ8rT9vX1yC3bA6wD0eG2jL5nP8sU1z4",
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

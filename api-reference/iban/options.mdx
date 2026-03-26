@@ -1,0 +1,36 @@
+---
+title: "Get IBAN Options"
+api: "GET https://crypto-sandbox.yativo.com/api/standalone-iban/options"
+description: "Retrieve available IBAN options, currencies, and supported countries"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/standalone-iban/options' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "IBAN options retrieved successfully",
+  "data": {
+    "supported_countries": ["DE", "FR", "NL", "ES", "IT", "BE", "AT"],
+    "supported_currencies": ["EUR"],
+    "kyc_methods": ["platform_sumsub", "user_sumsub", "direct_docs"],
+    "features": {
+      "sepa_transfers": true,
+      "swift_transfers": false,
+      "virtual_iban": true
+    }
+  }
+}
+```
+</ResponseExample>

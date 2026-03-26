@@ -1,0 +1,47 @@
+---
+title: "Initialize IBAN Onboarding"
+api: "POST https://crypto-sandbox.yativo.com/api/standalone-iban/onboarding/init"
+description: "Start the onboarding process for a standalone IBAN"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  The email address of the customer to onboard.
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Optional existing customer ID. If provided, the IBAN will be linked to this customer record.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/init' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "customer@example.com",
+    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "IBAN onboarding initialized",
+  "data": {
+    "onboarding_id": "onb_01HX9KZMB3F7VNQP8R2WDGT4ER",
+    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP",
+    "email": "customer@example.com",
+    "status": "pending_kyc",
+    "next_step": "kyc",
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

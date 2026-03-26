@@ -1,0 +1,91 @@
+---
+title: "List Supported Chains"
+api: "GET https://crypto-sandbox.yativo.com/api/assets/get-chains"
+description: "Retrieve all supported blockchain networks"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/assets/get-chains' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Chains retrieved successfully",
+  "data": [
+    {
+      "chain": "ethereum",
+      "name": "Ethereum",
+      "chain_id": 1,
+      "native_token": "ETH",
+      "is_testnet": false
+    },
+    {
+      "chain": "solana",
+      "name": "Solana",
+      "chain_id": null,
+      "native_token": "SOL",
+      "is_testnet": false
+    },
+    {
+      "chain": "bitcoin",
+      "name": "Bitcoin",
+      "chain_id": null,
+      "native_token": "BTC",
+      "is_testnet": false
+    },
+    {
+      "chain": "polygon",
+      "name": "Polygon",
+      "chain_id": 137,
+      "native_token": "MATIC",
+      "is_testnet": false
+    },
+    {
+      "chain": "bsc",
+      "name": "BNB Smart Chain",
+      "chain_id": 56,
+      "native_token": "BNB",
+      "is_testnet": false
+    },
+    {
+      "chain": "base",
+      "name": "Base",
+      "chain_id": 8453,
+      "native_token": "ETH",
+      "is_testnet": false
+    },
+    {
+      "chain": "arbitrum",
+      "name": "Arbitrum One",
+      "chain_id": 42161,
+      "native_token": "ETH",
+      "is_testnet": false
+    },
+    {
+      "chain": "optimism",
+      "name": "Optimism",
+      "chain_id": 10,
+      "native_token": "ETH",
+      "is_testnet": false
+    },
+    {
+      "chain": "xdc",
+      "name": "XDC Network",
+      "chain_id": 50,
+      "native_token": "XDC",
+      "is_testnet": false
+    }
+  ]
+}
+```
+</ResponseExample>

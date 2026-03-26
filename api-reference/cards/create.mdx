@@ -1,0 +1,60 @@
+---
+title: "Create Card"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/create-card"
+description: "Issue a new virtual or physical card"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="card_type" type="string" required>
+  The type of card to create. One of: `virtual`, `physical`.
+</ParamField>
+
+<ParamField body="display_name" type="string" required>
+  A label for the card shown in the dashboard, e.g. `"Business Expenses"`.
+</ParamField>
+
+<ParamField body="spending_limit_amount" type="number" required>
+  The spending limit amount in USD.
+</ParamField>
+
+<ParamField body="spending_limit_frequency" type="string" required>
+  How often the spending limit resets. One of: `daily`, `weekly`, `monthly`, `yearly`, `lifetime`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/create-card' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "card_type": "virtual",
+    "display_name": "Business Expenses",
+    "spending_limit_amount": 2000,
+    "spending_limit_frequency": "monthly"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Card created successfully",
+  "data": {
+    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
+    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
+    "card_type": "virtual",
+    "display_name": "Business Expenses",
+    "last_four": "4242",
+    "status": "active",
+    "spending_limit_amount": "2000.00",
+    "spending_limit_frequency": "monthly",
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

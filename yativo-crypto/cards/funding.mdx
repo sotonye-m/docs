@@ -1,0 +1,186 @@
+---
+title: "Funding Your Card"
+description: "Deposit crypto to your Yativo Card wallet and convert it to spendable card balance"
+---
+
+## Overview
+
+The Yativo Card is funded via crypto deposits. USDC on Solana is the primary supported funding method. When you send USDC to your card's funding address, the deposit is automatically detected, processed, and credited to your card balance — no manual action required.
+
+```
+USDC (Solana)
+      │
+      ▼  [Auto-Processing]
+Card Wallet Balance (spendable)
+      │
+      ▼
+Virtual / Physical Card
+```
+
+---
+
+## Get Wallet Info
+
+Retrieve your card wallet details, including current balance.
+
+```
+GET /yativo-card/{yativoCardId}/wallet
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "wallet_id": "wlt_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "balance": 250.75,
+    "currency": "USD",
+    "wallet_address": "0x4a9d2f8b3c1e6a7d0f5b8c2e9a4d7f1b3c8e0a2d",
+    "status": "active",
+    "updated_at": "2026-03-25T14:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get Funding Address
+
+Retrieve the USDC on Solana address you should send funds to. Each card account has a unique, dedicated funding address.
+
+```
+GET /yativo-card/{yativoCardId}/wallet/funding-address
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/funding-address' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "funding_address": "7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+    "chain": "solana",
+    "token": "USDC",
+    "token_contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "minimum_deposit": 5.00,
+    "memo_required": false
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Only send **USDC on Solana** to this address. Sending other tokens or using a different network may result in permanent loss of funds. Always verify the chain and token before submitting a transaction.
+</Warning>
+
+---
+
+## How Funding Works
+
+<Steps>
+  <Step title="Get Your Funding Address">
+    Call `GET /yativo-card/{yativoCardId}/wallet/funding-address` to retrieve your unique Solana USDC deposit address.
+  </Step>
+  <Step title="Send USDC on Solana">
+    Transfer USDC from your Solana wallet to the funding address. Ensure you are on the **Solana mainnet** and sending **USDC** (not USDT or any other token).
+  </Step>
+  <Step title="Automatic Detection">
+    Your deposit is detected on-chain automatically. This typically happens within a few seconds to a couple of minutes after the Solana transaction confirms.
+  </Step>
+  <Step title="Auto-Convert and Credit">
+    The detected USDC is automatically processed and converted to your card balance in USD. This conversion is seamless and requires no manual action.
+  </Step>
+  <Step title="Spend">
+    Your updated card balance is available immediately after the conversion completes. Use your card for any transaction.
+  </Step>
+</Steps>
+
+---
+
+## Settlement Times
+
+| Funding Method | Typical Settlement Time |
+|---|---|
+| USDC on Solana | 1–5 minutes after Solana transaction confirmation |
+| EUR via IBAN bank transfer | 1–2 business days |
+
+<Note>
+  Settlement times depend on network congestion and conversion processing. During periods of high activity, times may be slightly longer.
+</Note>
+
+---
+
+## Minimum Deposit Amounts
+
+| Token | Network | Minimum Deposit |
+|---|---|---|
+| USDC | Solana | $5.00 USD equivalent |
+
+Deposits below the minimum will not be processed and may be returned or lost. Always check the minimum before sending.
+
+---
+
+## EUR Funding via IBAN
+
+If you have activated the IBAN feature on your card account, you can receive EUR bank transfers (SEPA) directly to your card. The received EUR is automatically converted to card balance.
+
+See the [Card IBAN documentation](/yativo-crypto/cards/iban) for activation instructions.
+
+---
+
+## Security
+
+- Your funding address is static and unique to your account. It does not change after wallet initialization.
+- Never share your funding address in public forums.
+- Always double-check the address before sending a large deposit.
+
+---
+
+## Sandbox Testing
+
+Use the sandbox to test this endpoint without real funds:
+
+<Note>
+  Sandbox URL: `https://crypto-sandbox.yativo.com/api/`
+</Note>
+
+<CodeGroup>
+```bash cURL
+curl -X GET 'https://crypto-sandbox.yativo.com/api/yativo-card/yc_01SANDBOX_CARD_ID/wallet/funding-address' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+
+```typescript TypeScript SDK
+const sdk = new YativoSDK({
+  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  apiKey: 'YOUR_SANDBOX_API_KEY',
+  apiSecret: 'YOUR_SANDBOX_API_SECRET',
+});
+
+const fundingAddress = await sdk.cardWallet.getFundingAddress('yc_01SANDBOX_CARD_ID');
+console.log('Send USDC on Solana to:', fundingAddress.data.funding_address);
+```
+</CodeGroup>

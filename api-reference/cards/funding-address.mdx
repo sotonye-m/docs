@@ -1,0 +1,37 @@
+---
+title: "Get Funding Address"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/wallet/funding-address"
+description: "Get the deposit address to fund the card wallet with cryptocurrency"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet/funding-address' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Funding address retrieved successfully",
+  "data": {
+    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
+    "funding_address": "0x3f4e5d6c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e",
+    "supported_tokens": ["USDC", "USDT"],
+    "supported_chains": ["ethereum", "polygon", "base", "arbitrum", "optimism"],
+    "minimum_deposit_usd": "10.00"
+  }
+}
+```
+</ResponseExample>

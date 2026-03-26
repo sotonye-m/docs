@@ -1,0 +1,273 @@
+---
+title: "Card Transactions"
+description: "Query and filter transaction history for your Yativo Cards"
+---
+
+## Overview
+
+The Yativo Card API provides full transaction history for both individual cards and the overall account. You can filter transactions by status, date range, and paginate results for large histories.
+
+<Accordion title="Type Definitions">
+```typescript
+interface CardTransaction {
+  transaction_id: string;
+  card_id: string;
+  type: "purchase" | "refund" | "reversal" | "atm_withdrawal";
+  amount: number;
+  currency: string;
+  merchant_name?: string;
+  merchant_category?: string;
+  status: "pending" | "completed" | "failed" | "reversed";
+  created_at: string;
+}
+
+interface CardTransactionListParams {
+  limit?: number;
+  offset?: number;
+  status?: "pending" | "completed" | "failed" | "reversed";
+  from_date?: string; // ISO 8601
+  to_date?: string;   // ISO 8601
+}
+```
+</Accordion>
+
+---
+
+## Get Transactions for a Specific Card
+
+Retrieve transactions for a single card, with optional filters.
+
+```
+GET /yativo-card/{yativoCardId}/cards/{cardId}/transactions
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The card ID to retrieve transactions for.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Number of results to return per page. Default: `20`. Max: `100`.
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Number of results to skip (for pagination). Default: `0`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by transaction status. Accepted values: `pending`, `completed`, `failed`, `reversed`.
+</ParamField>
+
+<ParamField query="from_date" type="string">
+  Start of the date range (ISO 8601 format). Example: `2026-01-01T00:00:00Z`.
+</ParamField>
+
+<ParamField query="to_date" type="string">
+  End of the date range (ISO 8601 format). Example: `2026-03-31T23:59:59Z`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=0&status=completed&from_date=2026-03-01T00:00:00Z' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "transactions": [
+      {
+        "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT901",
+        "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "amount": 42.50,
+        "currency": "USD",
+        "merchant_name": "Amazon",
+        "merchant_category": "Online Retail",
+        "status": "completed",
+        "type": "purchase",
+        "created_at": "2026-03-20T15:30:00Z",
+        "settled_at": "2026-03-21T10:00:00Z"
+      },
+      {
+        "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT902",
+        "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "amount": 12.99,
+        "currency": "USD",
+        "merchant_name": "Netflix",
+        "merchant_category": "Streaming",
+        "status": "completed",
+        "type": "purchase",
+        "created_at": "2026-03-15T08:00:00Z",
+        "settled_at": "2026-03-16T09:00:00Z"
+      }
+    ],
+    "total": 2,
+    "limit": 20,
+    "offset": 0
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get All Account Transactions
+
+Retrieve transactions across all cards in the account. Useful for generating account-level reports.
+
+```
+GET /yativo-card/{yativoCardId}/transactions
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Number of results per page. Default: `20`. Max: `100`.
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Offset for pagination. Default: `0`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by transaction status: `pending`, `completed`, `failed`, `reversed`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=50&offset=0&status=completed' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "transactions": [
+      {
+        "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT901",
+        "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "card_display_name": "Online Shopping",
+        "amount": 42.50,
+        "currency": "USD",
+        "merchant_name": "Amazon",
+        "merchant_category": "Online Retail",
+        "status": "completed",
+        "type": "purchase",
+        "created_at": "2026-03-20T15:30:00Z",
+        "settled_at": "2026-03-21T10:00:00Z"
+      }
+    ],
+    "total": 1,
+    "limit": 50,
+    "offset": 0
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Transaction Status Values
+
+| Status | Description |
+|---|---|
+| `pending` | Transaction has been authorized but not yet settled. Funds are reserved. |
+| `completed` | Transaction has settled successfully. Funds have been deducted. |
+| `failed` | Transaction was declined or failed to process. No funds were deducted. |
+| `reversed` | Transaction was reversed or refunded. Funds have been returned to the card balance. |
+
+---
+
+## Transaction Types
+
+| Type | Description |
+|---|---|
+| `purchase` | A standard card purchase at a merchant. |
+| `refund` | A merchant-initiated refund to the card. |
+| `atm_withdrawal` | A cash withdrawal at an ATM (physical cards only). |
+| `fee` | A fee charged to the card (e.g., foreign transaction fee). |
+| `authorization` | A pre-authorization hold placed by a merchant. |
+
+---
+
+## Pagination
+
+Use `limit` and `offset` for paginating through large transaction histories:
+
+<CodeGroup>
+```bash Page 1
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=0' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+
+```bash Page 2
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=20' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+
+```bash Page 3
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=40' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</CodeGroup>
+
+The `total` field in the response indicates the total number of matching transactions, allowing you to calculate the number of pages: `pages = ceil(total / limit)`.
+
+---
+
+## Filtering by Date Range
+
+To export transactions for a specific month:
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?from_date=2026-03-01T00:00:00Z&to_date=2026-03-31T23:59:59Z' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+
+<Tip>
+  If you need to file a dispute on a transaction, see the [Disputes documentation](/yativo-crypto/cards/disputes). The `transaction_id` from the transaction list is used when submitting a dispute.
+</Tip>
+
+---
+
+## Sandbox Testing
+
+<Note>
+  Replace `YOUR_SANDBOX_TOKEN` with a token obtained by authenticating against `https://crypto-sandbox.yativo.com/api/`. See [Sandbox Overview](/sandbox/overview). Card transactions in the sandbox environment return mock data.
+</Note>
+
+<CodeGroup>
+```bash cURL (Sandbox)
+curl -X GET 'https://crypto-sandbox.yativo.com/api/yativo-card/yc_sandbox_example/cards/card_sandbox_example/transactions?limit=20&offset=0&status=completed' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+
+```typescript TypeScript SDK (Sandbox)
+import { YativoSDK } from '@yativo/crypto-sdk';
+
+const sdk = new YativoSDK({
+  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  apiKey: 'YOUR_SANDBOX_API_KEY',
+  apiSecret: 'YOUR_SANDBOX_API_SECRET',
+});
+
+// Fetch transactions for a specific card (returns mock data in sandbox)
+const transactions = await sdk.cards.getTransactions('yc_sandbox_example', 'card_sandbox_example', {
+  limit: 20,
+  offset: 0,
+  status: 'completed',
+});
+console.log('Transactions:', transactions.data.transactions);
+```
+</CodeGroup>

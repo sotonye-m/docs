@@ -1,0 +1,166 @@
+---
+title: "Analytics"
+description: "Transaction analytics and dashboard metrics for your platform"
+---
+
+The Analytics API provides aggregated metrics about your platform's transaction activity and overall account health. Use these endpoints to build internal dashboards, generate reports, or power analytics widgets in your product.
+
+<Accordion title="Type Definitions">
+```typescript
+interface TransactionAnalytics {
+  total_volume_usd: string;
+  total_transactions: number;
+  successful_transactions: number;
+  failed_transactions: number;
+  average_transaction_usd: string;
+  volume_by_chain: Record<string, string>;
+  volume_by_status: Record<string, number>;
+  period: string;
+}
+
+interface DashboardAnalytics {
+  total_assets: number;
+  total_balance_usd: string;
+  recent_transactions: Transaction[];
+  wallets_by_chain: Record<string, number>;
+}
+```
+</Accordion>
+
+---
+
+## Transaction Analytics
+
+**GET** `/analytics/transaction-analytics`
+
+Returns aggregated transaction data — volumes, counts, success rates, and trends over time.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/analytics/transaction-analytics \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "period": "last_30_days",
+  "summary": {
+    "total_transactions": 1842,
+    "total_volume_usd": "2450000.00",
+    "successful_transactions": 1821,
+    "failed_transactions": 21,
+    "success_rate": "98.86%"
+  },
+  "by_chain": [
+    {
+      "chain": "ethereum",
+      "transaction_count": 620,
+      "volume_usd": "980000.00"
+    },
+    {
+      "chain": "solana",
+      "transaction_count": 890,
+      "volume_usd": "1100000.00"
+    },
+    {
+      "chain": "polygon",
+      "transaction_count": 332,
+      "volume_usd": "370000.00"
+    }
+  ],
+  "by_type": {
+    "deposits": 1020,
+    "withdrawals": 822
+  },
+  "daily_volumes": [
+    {
+      "date": "2026-03-25",
+      "volume_usd": "82000.00",
+      "transaction_count": 61
+    },
+    {
+      "date": "2026-03-26",
+      "volume_usd": "95000.00",
+      "transaction_count": 74
+    }
+  ]
+}
+```
+
+---
+
+## Dashboard Analytics
+
+**GET** `/analytics/dashboard-analytics`
+
+Returns a high-level snapshot for dashboard display: current balances, recent activity, customer counts, and key performance indicators.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/analytics/dashboard-analytics \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "account_summary": {
+    "total_assets": 24,
+    "total_balance_usd": "145000.00",
+    "active_customers": 87,
+    "active_cards": 34
+  },
+  "recent_activity": {
+    "transactions_today": 74,
+    "volume_today_usd": "95000.00",
+    "deposits_today": 45,
+    "withdrawals_today": 29
+  },
+  "top_chains": [
+    { "chain": "solana", "volume_usd": "52000.00" },
+    { "chain": "ethereum", "volume_usd": "28000.00" },
+    { "chain": "polygon", "volume_usd": "15000.00" }
+  ],
+  "gas_station_status": [
+    {
+      "chain": "solana",
+      "balance_native": "8.5",
+      "balance_usd": "1225.00",
+      "status": "healthy"
+    },
+    {
+      "chain": "ethereum",
+      "balance_native": "0.12",
+      "balance_usd": "300.00",
+      "status": "low"
+    }
+  ]
+}
+```
+
+---
+
+## Using Analytics in Your Dashboard
+
+<Tip>
+  Cache analytics responses for 1–5 minutes. These are aggregated metrics that don't need to be fetched on every page load. For real-time transaction status, use webhooks instead.
+</Tip>
+
+The `gas_station_status` field in the dashboard analytics gives you a quick health check of all your gas stations. Treat `"status": "low"` as an alert to top up before the station runs empty.
+
+---
+
+## Common Use Cases
+
+<Accordion title="Volume reporting">
+  Use `transaction-analytics` with the `by_chain` breakdown to generate per-chain volume reports for your finance team or investors.
+</Accordion>
+
+<Accordion title="Customer activity monitoring">
+  Combine `dashboard-analytics` (for totals) with `customers/get-customer-transactions` (for per-customer drill-down) to build a full customer activity view.
+</Accordion>
+
+<Accordion title="Gas station monitoring">
+  The `gas_station_status` array in dashboard analytics is the fastest way to check gas levels across all chains in a single request. Automate an alert when any station shows `"low"` or `"critical"`.
+</Accordion>
+
+<Accordion title="Trend analysis">
+  The `daily_volumes` array in transaction analytics gives you the raw data to render charts. Fetch it daily and store it in your own database to build longer historical views.
+</Accordion>

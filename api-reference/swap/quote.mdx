@@ -1,0 +1,79 @@
+---
+title: "Get Swap Quote"
+api: "POST https://crypto-sandbox.yativo.com/api/swap/quote"
+description: "Get a price quote for a cross-chain or same-chain token swap"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="from_chain" type="string" required>
+  The source blockchain network, e.g. `solana`, `ethereum`.
+</ParamField>
+
+<ParamField body="from_ticker" type="string" required>
+  The source token ticker symbol, e.g. `USDC_SOL`, `ETH`.
+</ParamField>
+
+<ParamField body="to_chain" type="string" required>
+  The destination blockchain network, e.g. `ethereum`, `polygon`.
+</ParamField>
+
+<ParamField body="to_ticker" type="string" required>
+  The destination token ticker symbol, e.g. `USDC_ETH`, `MATIC`.
+</ParamField>
+
+<ParamField body="amount" type="string" required>
+  The amount to swap in the source token's native units, e.g. `"100.00"`.
+</ParamField>
+
+<ParamField body="from_address" type="string" required>
+  The source wallet address sending the funds.
+</ParamField>
+
+<ParamField body="to_address" type="string" required>
+  The destination wallet address to receive the swapped funds.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/swap/quote' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_chain": "solana",
+    "from_ticker": "USDC_SOL",
+    "to_chain": "ethereum",
+    "to_ticker": "USDC_ETH",
+    "amount": "500.00",
+    "from_address": "7nZ9X4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
+    "to_address": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Quote generated successfully",
+  "data": {
+    "quote_id": "qte_01HX9KZMB3F7VNQP8R2WDGT4EG",
+    "from_chain": "solana",
+    "from_ticker": "USDC_SOL",
+    "to_chain": "ethereum",
+    "to_ticker": "USDC_ETH",
+    "from_amount": "500.00",
+    "to_amount": "497.25",
+    "exchange_rate": "0.9945",
+    "fee": "2.75",
+    "fee_usd": "2.75",
+    "slippage_percent": "0.5",
+    "expires_at": "2026-03-26T12:05:00Z",
+    "estimated_time_seconds": 60
+  }
+}
+```
+</ResponseExample>

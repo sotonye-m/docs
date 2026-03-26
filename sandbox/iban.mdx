@@ -1,0 +1,381 @@
+---
+title: "Test: IBAN"
+description: "Test the IBAN onboarding flow in the Yativo Crypto sandbox"
+---
+
+## Overview
+
+Use the sandbox to test the complete IBAN onboarding flow. The sandbox supports IBAN onboarding API calls, allowing you to verify your integration and handle all status transitions — without a real IBAN being provisioned.
+
+**Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/`
+
+<Note>
+  In the sandbox, IBAN provisioning is simulated. No real IBAN is assigned, and no real bank transfers can be sent to sandbox IBANs. Use the sandbox to test your onboarding flow and status handling logic.
+</Note>
+
+---
+
+## Step 1 — Get IBAN Options
+
+Retrieve the options and requirements for standalone IBAN onboarding.
+
+```
+GET https://crypto-sandbox.yativo.com/api/standalone-iban/options
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-sandbox.yativo.com/api/standalone-iban/options' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "supported_currencies": ["EUR"],
+    "supported_networks": ["SEPA", "SEPA_INSTANT"],
+    "kyc_required": true,
+    "kyc_methods": ["sumsub", "direct_docs"],
+    "minimum_transfer_amount": 1.00,
+    "supported_payout_tokens": ["USDC", "USDT", "DAI"],
+    "supported_payout_chains": ["ethereum", "polygon", "solana"],
+    "fees": {
+      "incoming_transfer_fee": "0.5%",
+      "monthly_fee": 0.00
+    },
+    "sandbox_note": "IBAN options in sandbox mirror production. No real IBANs are provisioned in sandbox."
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Step 2 — Initialize Onboarding
+
+```
+POST https://crypto-sandbox.yativo.com/api/standalone-iban/onboarding/init
+```
+
+<ParamField body="email" type="string" required>
+  The applicant's email address.
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Your internal customer identifier for this applicant.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-sandbox.yativo.com/api/standalone-iban/onboarding/init' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "sandbox-iban-test@example.com",
+    "customer_id": "sandbox_customer_iban_001"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "onboarding_id": "iban_onb_sandbox_01HX9KZMB3F7VNQP8R2WDGTAAA",
+    "email": "sandbox-iban-test@example.com",
+    "customer_id": "sandbox_customer_iban_001",
+    "status": "pending_kyc",
+    "created_at": "2026-03-25T21:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Step 3 — Submit KYC
+
+```
+POST https://crypto-sandbox.yativo.com/api/standalone-iban/onboarding/kyc
+```
+
+In the sandbox, KYC submission is simulated. Use any of the following test scenarios to trigger different KYC outcomes.
+
+<ParamField body="customer_id" type="string" required>
+  Your internal customer identifier.
+</ParamField>
+
+<ParamField body="kyc" type="object" required>
+  KYC data for the applicant.
+</ParamField>
+
+<ParamField body="kyc.method" type="string" required>
+  KYC method. Use `sumsub` or `direct_docs`.
+</ParamField>
+
+<CodeGroup>
+```bash KYC Approved (Sandbox)
+# Use any valid-looking email to get an approved KYC result in sandbox
+curl -X POST 'https://crypto-sandbox.yativo.com/api/standalone-iban/onboarding/kyc' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_id": "sandbox_customer_iban_001",
+    "kyc": {
+      "method": "direct_docs",
+      "first_name": "Sandbox",
+      "last_name": "Approved",
+      "date_of_birth": "1990-01-01",
+      "nationality": "DE"
+    }
+  }'
+```
+
+```bash KYC Rejected (Sandbox)
+# Use last_name "Rejected" to simulate a KYC rejection in sandbox
+curl -X POST 'https://crypto-sandbox.yativo.com/api/standalone-iban/onboarding/kyc' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_id": "sandbox_customer_iban_reject_001",
+    "kyc": {
+      "method": "direct_docs",
+      "first_name": "Sandbox",
+      "last_name": "Rejected",
+      "date_of_birth": "1990-01-01",
+      "nationality": "DE"
+    }
+  }'
+```
+</CodeGroup>
+
+<ResponseExample>
+```json KYC Submitted
+{
+  "status": "success",
+  "data": {
+    "customer_id": "sandbox_customer_iban_001",
+    "kyc_status": "pending",
+    "submitted_at": "2026-03-25T21:05:00Z",
+    "estimated_review_time": "Sandbox: auto-approved within 30 seconds"
+  }
+}
+```
+</ResponseExample>
+
+<Info>
+  In the sandbox, KYC review is simulated automatically within 30 seconds of submission. Check the status endpoint to see the result.
+</Info>
+
+---
+
+## Step 4 — Request IBAN
+
+Once KYC is approved (check status first), request IBAN provisioning.
+
+```
+POST https://crypto-sandbox.yativo.com/api/standalone-iban/iban/request
+```
+
+<ParamField body="customer_id" type="string" required>
+  Your internal customer identifier.
+</ParamField>
+
+<ParamField body="payout_token" type="string" required>
+  Token to receive converted funds in (e.g., `"USDC"`).
+</ParamField>
+
+<ParamField body="payout_chain" type="string" required>
+  Chain for payouts (e.g., `"solana"`).
+</ParamField>
+
+<ParamField body="payout_address" type="string" required>
+  Testnet wallet address for payouts.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-sandbox.yativo.com/api/standalone-iban/iban/request' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_id": "sandbox_customer_iban_001",
+    "payout_token": "USDC",
+    "payout_chain": "solana",
+    "payout_address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "customer_id": "sandbox_customer_iban_001",
+    "iban_request_id": "ibanreq_sandbox_01HX9KZMB3F7VNQP8R2WDGTBBB",
+    "status": "provisioning",
+    "estimated_provisioning_time": "Sandbox: auto-provisioned within 60 seconds"
+  }
+}
+```
+
+```json KYC Not Yet Approved
+{
+  "status": "error",
+  "message": "KYC must be approved before requesting an IBAN.",
+  "error_code": "KYC_NOT_APPROVED"
+}
+```
+</ResponseExample>
+
+---
+
+## Step 5 — Check Status
+
+Poll the status endpoint to track the flow. In the sandbox, transitions happen automatically after short delays.
+
+```
+GET https://crypto-sandbox.yativo.com/api/standalone-iban/status
+```
+
+<ParamField query="customer_id" type="string" required>
+  Your internal customer identifier.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-sandbox.yativo.com/api/standalone-iban/status?customer_id=sandbox_customer_iban_001' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json IBAN Active (Sandbox)
+{
+  "status": "success",
+  "data": {
+    "customer_id": "sandbox_customer_iban_001",
+    "overall_status": "active",
+    "kyc_status": "approved",
+    "iban_status": "active",
+    "iban": "DE89370400440532013099",
+    "bic": "SSKMDEMMXXX",
+    "account_holder_name": "Sandbox Approved",
+    "currency": "EUR",
+    "payout_token": "USDC",
+    "payout_chain": "solana",
+    "payout_address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+    "activated_at": "2026-03-25T21:07:00Z",
+    "sandbox_note": "This is a simulated IBAN. It cannot receive real bank transfers."
+  }
+}
+```
+
+```json Pending KYC
+{
+  "status": "success",
+  "data": {
+    "customer_id": "sandbox_customer_iban_001",
+    "overall_status": "pending_kyc",
+    "kyc_status": "pending",
+    "iban_status": "not_requested"
+  }
+}
+```
+
+```json KYC Rejected
+{
+  "status": "success",
+  "data": {
+    "customer_id": "sandbox_customer_iban_reject_001",
+    "overall_status": "kyc_rejected",
+    "kyc_status": "rejected",
+    "kyc_rejection_reason": "Sandbox simulated rejection",
+    "iban_status": "not_requested"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Sandbox State Transitions
+
+In the sandbox, state transitions are automated to allow you to test your full flow quickly:
+
+| Action | Time Until Status Change |
+|---|---|
+| KYC Submitted (`direct_docs`) | ~30 seconds → `approved` or `rejected` |
+| IBAN Requested | ~60 seconds → `active` |
+| KYC Submitted (`sumsub`) | Immediate (simulated token validation) |
+
+---
+
+## Complete Sandbox Flow (Script)
+
+<CodeGroup>
+```bash End-to-End IBAN Test Script
+#!/bin/bash
+
+BASE_URL="https://crypto-sandbox.yativo.com/api"
+TOKEN="YOUR_SANDBOX_TOKEN"
+CUSTOMER_ID="sandbox_iban_test_$(date +%s)"
+
+echo "=== STEP 1: Init onboarding ==="
+curl -s -X POST "$BASE_URL/standalone-iban/onboarding/init" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d "{\"email\":\"test+$CUSTOMER_ID@example.com\",\"customer_id\":\"$CUSTOMER_ID\"}" | jq .
+
+echo "=== STEP 2: Submit KYC ==="
+curl -s -X POST "$BASE_URL/standalone-iban/onboarding/kyc" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d "{\"customer_id\":\"$CUSTOMER_ID\",\"kyc\":{\"method\":\"direct_docs\",\"first_name\":\"Sandbox\",\"last_name\":\"Approved\",\"date_of_birth\":\"1990-01-01\",\"nationality\":\"DE\"}}" | jq .
+
+echo "=== Waiting 35 seconds for KYC auto-approval... ==="
+sleep 35
+
+echo "=== STEP 3: Check KYC status ==="
+curl -s -X GET "$BASE_URL/standalone-iban/status?customer_id=$CUSTOMER_ID" \
+  -H "Authorization: Bearer $TOKEN" | jq '.data.kyc_status'
+
+echo "=== STEP 4: Request IBAN ==="
+curl -s -X POST "$BASE_URL/standalone-iban/iban/request" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d "{\"customer_id\":\"$CUSTOMER_ID\",\"payout_token\":\"USDC\",\"payout_chain\":\"solana\",\"payout_address\":\"9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx\"}" | jq .
+
+echo "=== Waiting 65 seconds for IBAN provisioning... ==="
+sleep 65
+
+echo "=== STEP 5: Check final status ==="
+curl -s -X GET "$BASE_URL/standalone-iban/status?customer_id=$CUSTOMER_ID" \
+  -H "Authorization: Bearer $TOKEN" | jq .
+```
+</CodeGroup>
+
+---
+
+## Testing Error Scenarios
+
+<Accordion title="Test KYC rejection handling">
+  Use `last_name: "Rejected"` in the `direct_docs` KYC submission to trigger a simulated rejection. Verify your application displays the appropriate error message to users.
+</Accordion>
+
+<Accordion title="Test IBAN request before KYC approval">
+  Submit a KYC request and immediately call the IBAN request endpoint before the 30-second auto-approval delay. You should receive a `KYC_NOT_APPROVED` error.
+</Accordion>
+
+<Accordion title="Test duplicate customer ID">
+  Submit two init calls with the same `customer_id` to test how your application handles a conflict response.
+</Accordion>
+
+<Tip>
+  Use unique `customer_id` values for each test run (e.g., append a timestamp) to avoid test state conflicts between runs.
+</Tip>

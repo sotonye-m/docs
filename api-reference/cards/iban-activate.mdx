@@ -1,0 +1,51 @@
+---
+title: "Activate Card IBAN"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/iban/activate"
+description: "Activate an IBAN for the card wallet to enable bank transfers"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID.
+</ParamField>
+
+<ParamField body="kyc_method" type="string" required>
+  The KYC verification method to use. One of:
+  - `platform_sumsub` — KYC handled by the platform using Sumsub
+  - `user_sumsub` — User completes KYC directly via Sumsub
+  - `direct_docs` — KYC via direct document submission
+</ParamField>
+
+<ParamField body="sumsub_token" type="string">
+  A Sumsub access token, required when `kyc_method` is `user_sumsub`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/iban/activate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "kyc_method": "platform_sumsub"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "IBAN activation initiated",
+  "data": {
+    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
+    "iban_status": "pending_kyc",
+    "kyc_method": "platform_sumsub",
+    "initiated_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

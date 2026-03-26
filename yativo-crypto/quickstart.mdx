@@ -1,0 +1,277 @@
+---
+title: "Quickstart"
+description: "Create a wallet and send your first crypto transaction in minutes"
+---
+
+This guide takes you from zero to a completed on-chain transaction using the Yativo Crypto API. Each step includes examples in cURL, TypeScript, and Python.
+
+<Note>
+  Before starting, make sure you have a Yativo account with 2FA enabled and an API key with `read`, `write`, and `transactions` permissions. See the [main Quickstart](/yativo/quickstart) if you haven't done this yet.
+</Note>
+
+---
+
+<Steps>
+  <Step title="Authenticate">
+    Exchange your API credentials for a Bearer token:
+
+    <Tabs>
+      <Tab title="cURL">
+        ```bash
+        curl -X POST https://crypto-api.yativo.com/api/apikey/token \
+          -H "Content-Type: application/json" \
+          -d '{
+            "api_key": "yvk_live_...",
+            "api_secret": "yvs_live_..."
+          }'
+        ```
+      </Tab>
+      <Tab title="TypeScript">
+        ```typescript
+        import { YativoCrypto } from '@yativo/sdk';
+
+        const client = new YativoCrypto({
+          apiKey: process.env.YATIVO_API_KEY!,
+          apiSecret: process.env.YATIVO_API_SECRET!,
+        });
+        // The SDK handles token exchange automatically
+        ```
+      </Tab>
+      <Tab title="Python">
+        ```python
+        from yativo import YativoCrypto
+
+        client = YativoCrypto(
+            api_key=os.environ['YATIVO_API_KEY'],
+            api_secret=os.environ['YATIVO_API_SECRET'],
+        )
+        # The SDK handles token exchange automatically
+        ```
+      </Tab>
+    </Tabs>
+
+    Save the `access_token` — you'll use it as `Authorization: Bearer {token}` in all subsequent requests.
+  </Step>
+
+  <Step title="Create an account">
+    Accounts are containers that hold wallets and assets. Create one for your business or for a specific use case:
+
+    <Tabs>
+      <Tab title="cURL">
+        ```bash
+        curl -X POST https://crypto-api.yativo.com/api/accounts/create-account \
+          -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "account_name": "Main Treasury",
+            "account_type": "business"
+          }'
+        ```
+      </Tab>
+      <Tab title="TypeScript">
+        ```typescript
+        const account = await client.accounts.create({
+          account_name: 'Main Treasury',
+          account_type: 'business',
+        });
+        console.log('Account ID:', account.id);
+        ```
+      </Tab>
+      <Tab title="Python">
+        ```python
+        account = client.accounts.create(
+            account_name='Main Treasury',
+            account_type='business',
+        )
+        print('Account ID:', account['id'])
+        ```
+      </Tab>
+    </Tabs>
+
+    ```json Response
+    {
+      "id": "acc_01abc123",
+      "account_name": "Main Treasury",
+      "account_type": "business",
+      "created_at": "2026-03-26T10:00:00Z"
+    }
+    ```
+
+    Save the `id` — you'll need it to add assets.
+  </Step>
+
+  <Step title="Add a wallet">
+    Add a wallet for a specific chain and token to your account:
+
+    <Tabs>
+      <Tab title="cURL">
+        ```bash
+        curl -X POST https://crypto-api.yativo.com/api/assets/add-asset \
+          -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "account_id": "acc_01abc123",
+            "chain": "solana",
+            "ticker": "USDC_SOL"
+          }'
+        ```
+      </Tab>
+      <Tab title="TypeScript">
+        ```typescript
+        const wallet = await client.assets.add({
+          account_id: account.id,
+          chain: 'solana',
+          ticker: 'USDC_SOL',
+        });
+        console.log('Deposit address:', wallet.address);
+        ```
+      </Tab>
+      <Tab title="Python">
+        ```python
+        wallet = client.assets.add(
+            account_id=account['id'],
+            chain='solana',
+            ticker='USDC_SOL',
+        )
+        print('Deposit address:', wallet['address'])
+        ```
+      </Tab>
+    </Tabs>
+
+    ```json Response
+    {
+      "id": "asset_01xyz789",
+      "account_id": "acc_01abc123",
+      "chain": "solana",
+      "ticker": "USDC_SOL",
+      "address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+      "balance": "0",
+      "created_at": "2026-03-26T10:01:00Z"
+    }
+    ```
+
+    The `address` is your deposit address. Share it with anyone who needs to send funds to this wallet.
+  </Step>
+
+  <Step title="Check balance">
+    After funding the wallet (or for an existing asset), check the current balance:
+
+    <Tabs>
+      <Tab title="cURL">
+        ```bash
+        curl -X POST https://crypto-api.yativo.com/api/balance/check \
+          -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"asset_id": "asset_01xyz789"}'
+        ```
+      </Tab>
+      <Tab title="TypeScript">
+        ```typescript
+        const balance = await client.balance.check({ asset_id: wallet.id });
+        console.log('Balance:', balance.balance, balance.ticker);
+        ```
+      </Tab>
+      <Tab title="Python">
+        ```python
+        balance = client.balance.check(asset_id=wallet['id'])
+        print(f"Balance: {balance['balance']} {balance['ticker']}")
+        ```
+      </Tab>
+    </Tabs>
+
+    ```json Response
+    {
+      "asset_id": "asset_01xyz789",
+      "chain": "solana",
+      "ticker": "USDC_SOL",
+      "balance": "100.00",
+      "balance_usd": "100.00",
+      "last_updated": "2026-03-26T10:05:00Z"
+    }
+    ```
+  </Step>
+
+  <Step title="Send funds">
+    Send crypto from your wallet to an external address:
+
+    <Tabs>
+      <Tab title="cURL">
+        ```bash
+        curl -X POST https://crypto-api.yativo.com/api/transactions/send-funds \
+          -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "from_asset_id": "asset_01xyz789",
+            "to_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+            "amount": "10.00",
+            "chain": "solana",
+            "ticker": "USDC_SOL",
+            "priority": "medium"
+          }'
+        ```
+      </Tab>
+      <Tab title="TypeScript">
+        ```typescript
+        const tx = await client.transactions.send({
+          from_asset_id: wallet.id,
+          to_address: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
+          amount: '10.00',
+          chain: 'solana',
+          ticker: 'USDC_SOL',
+          priority: 'medium',
+        });
+        console.log('Transaction ID:', tx.transaction_id);
+        console.log('Status:', tx.status);
+        ```
+      </Tab>
+      <Tab title="Python">
+        ```python
+        tx = client.transactions.send(
+            from_asset_id=wallet['id'],
+            to_address='9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
+            amount='10.00',
+            chain='solana',
+            ticker='USDC_SOL',
+            priority='medium',
+        )
+        print('Transaction ID:', tx['transaction_id'])
+        print('Status:', tx['status'])
+        ```
+      </Tab>
+    </Tabs>
+
+    ```json Response
+    {
+      "transaction_id": "txn_01pqr456",
+      "status": "pending",
+      "from_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+      "to_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+      "amount": "10.00",
+      "chain": "solana",
+      "ticker": "USDC_SOL",
+      "created_at": "2026-03-26T10:06:00Z"
+    }
+    ```
+
+    The transaction starts as `pending` and moves to `completed` once confirmed on-chain. Set up a [webhook](/yativo-crypto/webhooks) to get notified when it completes.
+  </Step>
+</Steps>
+
+---
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Webhooks" icon="bell" href="/yativo-crypto/webhooks">
+    Get notified in real time when deposits arrive or transactions complete.
+  </Card>
+  <Card title="Supported Chains" icon="link" href="/yativo-crypto/supported-chains">
+    See all supported blockchains and tokens.
+  </Card>
+  <Card title="Yativo Card" icon="credit-card" href="/yativo-crypto/cards/overview">
+    Issue debit cards funded from crypto balances.
+  </Card>
+  <Card title="Sandbox" icon="flask" href="/sandbox/overview">
+    Test your integration safely without real funds.
+  </Card>
+</CardGroup>

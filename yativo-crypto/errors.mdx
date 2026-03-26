@@ -1,0 +1,218 @@
+---
+title: "Errors"
+description: "HTTP error codes, error message patterns, and how to handle each"
+---
+
+The Yativo Crypto API uses standard HTTP status codes and returns structured JSON error responses. All errors follow the same shape:
+
+```json
+{
+  "error": "error_code",
+  "message": "Human-readable description of what went wrong",
+  "details": { } // Optional: additional context
+}
+```
+
+---
+
+## HTTP Status Codes
+
+### 400 — Bad Request
+
+The request was malformed or failed validation. Check the `details` field for which fields are invalid.
+
+```json
+{
+  "error": "validation_error",
+  "message": "Request validation failed",
+  "details": {
+    "amount": "Must be a positive decimal number",
+    "chain": "Unsupported chain identifier"
+  }
+}
+```
+
+**How to handle:** Fix the request before retrying. Do not retry 400 errors without modifying the request.
+
+---
+
+### 401 — Unauthorized
+
+The request is missing authentication credentials, or the provided credentials are invalid or expired.
+
+```json
+{
+  "error": "unauthorized",
+  "message": "Invalid or expired access token"
+}
+```
+
+**How to handle:**
+- If using a Bearer token, refresh it via `POST /apikey/token` or `GET /authentication/refresh-token`
+- If using API key headers, verify your `X-API-Key` and `X-API-Secret` are correct
+
+---
+
+### 403 — Forbidden
+
+The request is authenticated, but the API key or user does not have permission to perform the requested action.
+
+```json
+{
+  "error": "forbidden",
+  "message": "API key does not have the 'transactions' permission"
+}
+```
+
+**How to handle:** Check which permissions your API key has (`GET /apikey/{id}`). If needed, update permissions via `PUT /apikey/{id}/permissions` (requires 2FA).
+
+---
+
+### 404 — Not Found
+
+The requested resource does not exist, or is not accessible from your account.
+
+```json
+{
+  "error": "not_found",
+  "message": "Asset with ID 'asset_01xyz' not found"
+}
+```
+
+**How to handle:** Verify the ID is correct. If you just created the resource, allow a moment for propagation and retry.
+
+---
+
+### 409 — Conflict
+
+A duplicate operation was attempted. Most commonly seen with idempotency key conflicts.
+
+```json
+{
+  "error": "conflict",
+  "message": "A transaction with this idempotency key already exists",
+  "details": {
+    "existing_transaction_id": "txn_01pqr456",
+    "idempotency_key": "idem_7f3a9b2c1e4d"
+  }
+}
+```
+
+**How to handle:** If the `details` include an `existing_transaction_id`, that transaction is the canonical result — use it rather than creating a new one. This is the intended idempotency behavior.
+
+---
+
+### 422 — Unprocessable Entity
+
+The request is syntactically valid but semantically invalid — for example, trying to send more than your wallet balance.
+
+```json
+{
+  "error": "insufficient_balance",
+  "message": "Wallet balance (400.00 USDC) is less than the requested amount (1000.00 USDC)",
+  "details": {
+    "available_balance": "400.00",
+    "requested_amount": "1000.00",
+    "ticker": "USDC"
+  }
+}
+```
+
+Common 422 error codes:
+
+| Error Code | Cause |
+|-----------|-------|
+| `insufficient_balance` | Wallet balance is too low for the requested transfer |
+| `invalid_address` | The `to_address` is not a valid address for the target chain |
+| `unsupported_token` | The chain/ticker combination is not supported |
+| `quote_expired` | A swap quote has passed its `expires_at` timestamp |
+| `gas_station_empty` | The gas station for this chain has no native tokens |
+| `card_not_active` | The target card is not in an active state |
+| `iban_not_activated` | The IBAN account has not completed activation |
+
+**How to handle:** Read the `error_code` and `details` to determine the specific issue. These errors require business logic changes (top up wallet, get a fresh quote, etc.) — not just a retry.
+
+---
+
+### 429 — Too Many Requests
+
+Your request rate has exceeded the limit for your plan.
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests. Please wait before retrying.",
+  "retry_after": 12
+}
+```
+
+**How to handle:** Wait `retry_after` seconds before retrying. Implement exponential backoff for sustained high-volume use. See [Rate Limits](/yativo/rate-limits) for details.
+
+---
+
+### 500 — Internal Server Error
+
+An unexpected error occurred on Yativo's servers.
+
+```json
+{
+  "error": "internal_error",
+  "message": "An unexpected error occurred. Please try again or contact support.",
+  "request_id": "req_01abc123"
+}
+```
+
+**How to handle:** Retry with exponential backoff. If the error persists, open a support ticket with the `request_id` value — it allows the Yativo team to trace the exact request in their logs.
+
+---
+
+## Error Handling Pattern
+
+```typescript
+async function callYativo(url: string, body: object): Promise<unknown> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${await getToken()}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (res.ok) return res.json();
+
+  const error = await res.json();
+
+  switch (res.status) {
+    case 400:
+      throw new ValidationError(error.message, error.details);
+    case 401:
+      await refreshToken();
+      return callYativo(url, body); // retry once
+    case 403:
+      throw new PermissionError(error.message);
+    case 404:
+      throw new NotFoundError(error.message);
+    case 409:
+      // Idempotent — return the existing resource
+      return error.details;
+    case 422:
+      throw new BusinessError(error.error, error.message, error.details);
+    case 429:
+      await sleep(error.retry_after * 1000);
+      return callYativo(url, body);
+    case 500:
+      throw new ServerError(error.message, error.request_id);
+    default:
+      throw new Error(`Unexpected status ${res.status}: ${error.message}`);
+  }
+}
+```
+
+---
+
+## Idempotency
+
+The `POST /transactions/send-funds` endpoint automatically generates a unique idempotency key for each request. If a network failure causes you to retry a send-funds call, you may receive a `409 Conflict` response. This is not an error condition — it means the original transaction was already created. Use the `existing_transaction_id` from the 409 response body to track that transaction.
+
+To override the auto-generated key with your own, include `"idempotency_key": "your-unique-key"` in the request body. Keys must be unique per operation type.

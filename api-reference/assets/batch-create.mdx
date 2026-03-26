@@ -1,0 +1,70 @@
+---
+title: "Batch Create Wallets"
+api: "POST https://crypto-sandbox.yativo.com/api/assets/batch-add-asset"
+description: "Create multiple cryptocurrency wallets for an account in a single request"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="account_id" type="string" required>
+  The account ID to create the wallets under.
+</ParamField>
+
+<ParamField body="chains" type="array" required>
+  Array of blockchain network identifiers, e.g. `["solana", "ethereum", "polygon"]`.
+</ParamField>
+
+<ParamField body="tickers" type="array" required>
+  Array of token ticker symbols corresponding to each chain, e.g. `["USDC_SOL", "USDC_ETH", "USDC_MATIC"]`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/assets/batch-add-asset' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "chains": ["solana", "ethereum", "polygon"],
+    "tickers": ["USDC_SOL", "USDC_ETH", "USDC_MATIC"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Assets created successfully",
+  "data": [
+    {
+      "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA",
+      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "chain": "solana",
+      "ticker": "USDC_SOL",
+      "wallet_address": "7nZ9X4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
+      "status": "active"
+    },
+    {
+      "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EB",
+      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "chain": "ethereum",
+      "ticker": "USDC_ETH",
+      "wallet_address": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+      "status": "active"
+    },
+    {
+      "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EC",
+      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "chain": "polygon",
+      "ticker": "USDC_MATIC",
+      "wallet_address": "0x9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e",
+      "status": "active"
+    }
+  ]
+}
+```
+</ResponseExample>

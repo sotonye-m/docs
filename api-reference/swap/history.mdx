@@ -1,0 +1,57 @@
+---
+title: "Swap History"
+api: "GET https://crypto-sandbox.yativo.com/api/swap/history"
+description: "Retrieve the history of swap transactions"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Maximum number of swaps to return. Defaults to `20`.
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Number of records to skip for pagination. Defaults to `0`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by swap status. One of: `pending`, `completed`, `failed`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/swap/history?limit=20&offset=0&status=completed' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Swap history retrieved successfully",
+  "data": {
+    "swaps": [
+      {
+        "swap_id": "swp_01HX9KZMB3F7VNQP8R2WDGT4EH",
+        "from_chain": "solana",
+        "from_ticker": "USDC_SOL",
+        "to_chain": "ethereum",
+        "to_ticker": "USDC_ETH",
+        "from_amount": "500.00",
+        "to_amount": "497.25",
+        "status": "completed",
+        "created_at": "2026-03-26T12:00:00Z",
+        "completed_at": "2026-03-26T12:01:05Z"
+      }
+    ],
+    "total": 1,
+    "limit": 20,
+    "offset": 0
+  }
+}
+```
+</ResponseExample>

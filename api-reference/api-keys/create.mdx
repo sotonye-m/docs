@@ -1,0 +1,78 @@
+---
+title: "Create API Key"
+api: "POST https://crypto-sandbox.yativo.com/api/api-keys"
+description: "Generate a new API key and secret for programmatic access"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  A human-readable label for this key (e.g. `"Production Backend"`, `"Staging Integration"`).
+</ParamField>
+
+<ParamField body="permissions" type="array">
+  List of permission scopes. Omit to grant all scopes. Available values: `transactions:read`, `transactions:write`, `accounts:read`, `accounts:write`, `webhooks:manage`, `analytics:read`
+</ParamField>
+
+<ParamField body="expires_at" type="string">
+  Optional expiry timestamp (ISO 8601). The key will be automatically revoked after this time.
+</ParamField>
+
+<Warning>
+  The `api_secret` is returned **only once** at creation. Store it securely — it cannot be retrieved again. If lost, revoke the key and create a new one.
+</Warning>
+
+<Accordion title="Request/Response Type Definitions">
+```typescript
+interface CreateApiKeyRequest {
+  name: string;
+  permissions?: string[];
+  expires_at?: string;
+}
+
+interface CreateApiKeyResponse {
+  status: "success";
+  data: {
+    key_id: string;
+    api_key: string;     // Public key — safe to reference in logs
+    api_secret: string;  // Secret — shown ONCE, store securely
+    name: string;
+    permissions: string[];
+    expires_at: string | null;
+    created_at: string;
+  };
+}
+```
+</Accordion>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/api-keys' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Production Backend",
+    "permissions": ["transactions:read", "transactions:write", "accounts:read"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "key_id": "key_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "api_key": "yk_live_AbCdEfGhIjKlMnOpQrStUvWxYz",
+    "api_secret": "ys_live_1234567890abcdef1234567890abcdef",
+    "name": "Production Backend",
+    "permissions": ["transactions:read", "transactions:write", "accounts:read"],
+    "expires_at": null,
+    "created_at": "2026-03-26T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

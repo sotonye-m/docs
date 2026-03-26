@@ -1,0 +1,43 @@
+---
+title: "Set Spending Limits"
+api: "PUT https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/wallet/limits"
+description: "Update the daily spending limit for the card wallet"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID.
+</ParamField>
+
+<ParamField body="daily_limit" type="number" required>
+  The new daily spending limit in USD.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X PUT 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet/limits' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "daily_limit": 3000
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Spending limits updated successfully",
+  "data": {
+    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
+    "daily_limit": "3000.00",
+    "updated_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

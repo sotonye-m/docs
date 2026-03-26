@@ -1,0 +1,52 @@
+---
+title: "Get Dispute Reasons"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/transactions/dispute-reasons"
+description: "Retrieve the list of available reason codes for filing a transaction dispute"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/transactions/dispute-reasons' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Dispute reasons retrieved successfully",
+  "data": [
+    {
+      "reason_code": "unauthorized",
+      "description": "I did not authorize this transaction"
+    },
+    {
+      "reason_code": "not_received",
+      "description": "Goods or services not received"
+    },
+    {
+      "reason_code": "duplicate",
+      "description": "Duplicate charge for the same transaction"
+    },
+    {
+      "reason_code": "incorrect_amount",
+      "description": "Amount charged was incorrect"
+    },
+    {
+      "reason_code": "credit_not_processed",
+      "description": "Expected credit or refund not processed"
+    }
+  ]
+}
+```
+</ResponseExample>

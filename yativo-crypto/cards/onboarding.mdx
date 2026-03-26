@@ -1,0 +1,238 @@
+---
+title: "Card Account Onboarding"
+description: "Complete the required onboarding steps before creating and using Yativo Cards"
+---
+
+<Accordion title="TypeScript Type Definitions">
+```typescript
+interface KYCStatus {
+  status: "not_started" | "pending" | "approved" | "rejected";
+  message?: string;
+}
+```
+</Accordion>
+
+## Overview
+
+Before you can create or use Yativo Cards, every user must complete a four-step onboarding process. This flow verifies identity, establishes acceptance of terms, and initializes the card wallet.
+
+<Steps>
+  <Step title="Register Card Account">
+    Submit name and email to create your card account profile.
+  </Step>
+  <Step title="Complete KYC">
+    Identity verification is required by regulation before card issuance.
+  </Step>
+  <Step title="Accept Terms">
+    Acknowledge the cardholder terms and conditions.
+  </Step>
+  <Step title="Initialize Card Wallet">
+    Initialize your card wallet for funding and transactions.
+  </Step>
+</Steps>
+
+---
+
+## Step 1 — Register Card Account
+
+<ParamField body="email" type="string" required>
+  The user's email address. Used for communication and account identification.
+</ParamField>
+
+<ParamField body="first_name" type="string" required>
+  User's legal first name, as it should appear on the card.
+</ParamField>
+
+<ParamField body="last_name" type="string" required>
+  User's legal last name.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/onboard' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "user@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "email": "user@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "kyc_status": "pending",
+    "created_at": "2026-03-25T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+<Note>
+  Save the `yativo_card_id` from this response. It is required for all subsequent card operations.
+</Note>
+
+---
+
+## Step 2 — Check KYC Status
+
+After registration, KYC verification is initiated. Poll this endpoint to track progress.
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/kyc-status' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "kyc_status": "approved",
+    "kyc_verified_at": "2026-03-25T10:15:00Z",
+    "rejection_reason": null
+  }
+}
+```
+</ResponseExample>
+
+### KYC Status Values
+
+| Status | Description |
+|---|---|
+| `pending` | KYC review is in progress. Poll again in a few minutes. |
+| `approved` | Identity verified. Proceed to Step 3. |
+| `rejected` | Verification failed. See `rejection_reason` for details. |
+| `requires_action` | Additional documents or information needed from the user. |
+
+<Warning>
+  You cannot proceed past this step until the KYC status is `approved`. If the status is `rejected`, contact support to understand next steps.
+</Warning>
+
+---
+
+## Step 3 — Accept Terms and Conditions
+
+Once KYC is approved, the user must explicitly accept the cardholder terms before a card can be issued.
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/accept-terms' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "terms_accepted": true,
+    "accepted_at": "2026-03-25T10:20:00Z",
+    "terms_version": "2026-01"
+  }
+}
+```
+</ResponseExample>
+
+<Tip>
+  If you are building on behalf of users in the B2B Issuer Program, ensure your terms of service incorporate the required cardholder agreement language before calling this endpoint on behalf of your customers.
+</Tip>
+
+---
+
+## Step 4 — Initialize Card Wallet
+
+The final step initializes your card wallet for funding and transactions.
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/deploy-safe' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "status": "deployed",
+    "initialized_at": "2026-03-25T10:22:00Z"
+  }
+}
+```
+</ResponseExample>
+
+<Note>
+  Card wallet initialization is a one-time operation per user. Once initialized, your wallet is ready to receive deposits and fund card transactions.
+</Note>
+
+---
+
+## Complete Onboarding Flow (Code Example)
+
+The following example shows the full onboarding sequence as a series of API calls:
+
+<CodeGroup>
+```bash Step 1: Register
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/onboard' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "user@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe"
+  }'
+# Save yativo_card_id from response
+```
+
+```bash Step 2: Poll KYC Status
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/kyc-status' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+# Repeat until kyc_status == "approved"
+```
+
+```bash Step 3: Accept Terms
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/accept-terms' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+```bash Step 4: Initialize Card Wallet
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/deploy-safe' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## What Happens Next?
+
+After successful wallet initialization, you are ready to:
+
+<CardGroup cols={2}>
+  <Card title="Create a Virtual Card" icon="credit-card" href="/yativo-crypto/cards/virtual-cards">
+    Issue a virtual card instantly for online spending.
+  </Card>
+  <Card title="Fund Your Wallet" icon="wallet" href="/yativo-crypto/cards/funding">
+    Send USDC on Solana to your card wallet funding address.
+  </Card>
+</CardGroup>

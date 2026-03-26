@@ -1,0 +1,66 @@
+---
+title: "Create Virtual Card"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/create"
+description: "Issue a new virtual card linked to an account"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="account_id" type="string" required>
+  The ID of the account to associate the card with.
+</ParamField>
+
+<ParamField body="card_type" type="string" required>
+  Must be `virtual` for a virtual card.
+</ParamField>
+
+<ParamField body="card_program" type="string">
+  The card network to use. One of: `VISA`, `MASTERCARD`.
+</ParamField>
+
+<ParamField body="currency" type="string">
+  The billing currency for the card. Defaults to `USD`.
+</ParamField>
+
+<ParamField body="label" type="string">
+  An optional human-readable nickname for the card, e.g. `"Marketing Spend"`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "card_type": "virtual",
+    "card_program": "VISA",
+    "currency": "USD",
+    "label": "Marketing Spend"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Virtual card created successfully",
+  "data": {
+    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
+    "card_type": "virtual",
+    "card_program": "VISA",
+    "currency": "USD",
+    "label": "Marketing Spend",
+    "status": "pending",
+    "masked_pan": "4111 **** **** 7890",
+    "expiry_month": "03",
+    "expiry_year": "2029",
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

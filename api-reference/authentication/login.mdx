@@ -1,0 +1,45 @@
+---
+title: "Login"
+api: "POST https://crypto-sandbox.yativo.com/api/authentication/login"
+description: "Authenticate with email and password to receive access and refresh tokens"
+authMethod: "none"
+---
+
+<ParamField body="email" type="string" required>
+  The user's registered email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's password.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/authentication/login' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword123"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Login successful",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "usr_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "email": "user@example.com",
+      "username": "cryptouser",
+      "first_name": "Jane",
+      "last_name": "Doe"
+    }
+  }
+}
+```
+</ResponseExample>

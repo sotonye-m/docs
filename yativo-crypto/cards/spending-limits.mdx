@@ -1,0 +1,236 @@
+---
+title: "Spending Limits"
+description: "Configure daily and per-card spending limits on Yativo Card accounts"
+---
+
+## Overview
+
+Spending limits protect against overspending and add an extra layer of control over card usage. You can set a daily limit on your overall card wallet, which applies as a cap across all cards within the account. Card-level limits can also be set at card creation time.
+
+<Note>
+  Card-level spending limits (set during card creation) are independent of wallet-level daily limits. Both apply simultaneously — the more restrictive limit takes precedence.
+</Note>
+
+<Accordion title="Type Definitions">
+```typescript
+interface SpendingLimits {
+  daily_limit: number;
+  weekly_limit?: number;
+  monthly_limit?: number;
+  currency: string;
+  current_daily_spend: number;
+  reset_at: string;
+}
+
+interface SetSpendingLimitRequest {
+  daily_limit: number;
+}
+```
+</Accordion>
+
+---
+
+## Get Current Spending Limits
+
+Retrieve the current spending limits configured for a card wallet.
+
+```
+GET /yativo-card/{yativoCardId}/wallet/limits
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/limits' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "daily_limit": 500.00,
+    "daily_spent": 42.50,
+    "daily_remaining": 457.50,
+    "currency": "USD",
+    "limit_reset_at": "2026-03-26T00:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Set Daily Spending Limit
+
+Update the daily spending limit for a card wallet. The new limit applies immediately.
+
+```
+PUT /yativo-card/{yativoCardId}/wallet/limits
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField body="daily_limit" type="number" required>
+  The maximum amount that can be spent across all cards in a single calendar day (in USD). Set to `0` or `null` to remove the daily limit.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/limits' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "daily_limit": 1000.00
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "daily_limit": 1000.00,
+    "currency": "USD",
+    "updated_at": "2026-03-25T17:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Remove Daily Limit
+
+To remove the daily spending limit entirely, set `daily_limit` to `null`:
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/limits' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "daily_limit": null
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "daily_limit": null,
+    "currency": "USD",
+    "updated_at": "2026-03-25T17:05:00Z"
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Removing spending limits increases risk exposure. Only remove limits if you have other controls in place, such as low card balances or card-level limits.
+</Warning>
+
+---
+
+## B2B Issuer: Customer Spending Limits
+
+If you are a Card Issuer, you can view and set spending limits for your customers' card accounts using the B2B endpoints.
+
+### Get Customer Limits
+
+```
+GET /yativo-card/customers/{yativoCardId}/wallet/limits
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/wallet/limits' \
+  -H 'Authorization: Bearer YOUR_ISSUER_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "customer_id": "yc_customer_01HX9KZMB3F7",
+    "daily_limit": 250.00,
+    "daily_spent": 0.00,
+    "daily_remaining": 250.00,
+    "currency": "USD",
+    "limit_reset_at": "2026-03-26T00:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Set Customer Limits
+
+```
+PUT /yativo-card/customers/{yativoCardId}/wallet/limits
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's Yativo Card account ID.
+</ParamField>
+
+<ParamField body="daily_limit" type="number" required>
+  The new daily limit for the customer's account.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/wallet/limits' \
+  -H 'Authorization: Bearer YOUR_ISSUER_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "daily_limit": 500.00
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "customer_id": "yc_customer_01HX9KZMB3F7",
+    "daily_limit": 500.00,
+    "currency": "USD",
+    "updated_at": "2026-03-25T17:10:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Limit Types Summary
+
+| Limit Type | Endpoint | Scope |
+|---|---|---|
+| Daily wallet limit | `PUT /yativo-card/{id}/wallet/limits` | All cards in the account |
+| Card spending limit | Set via `create-card` | Per card, per frequency period |
+| Customer daily limit (B2B) | `PUT /yativo-card/customers/{id}/wallet/limits` | All cards under a customer |
+
+<Tip>
+  For B2B issuers managing corporate or consumer card programs, setting conservative daily limits at the customer level is recommended as a risk management best practice. Customers can request limit increases through your platform, and you can raise them via API.
+</Tip>

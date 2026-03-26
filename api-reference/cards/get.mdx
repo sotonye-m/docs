@@ -1,0 +1,44 @@
+---
+title: "Get Card"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/get/{card_id}"
+description: "Retrieve full details for a specific card"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="card_id" type="string" required>
+  The unique ID of the card to retrieve.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/get/crd_01HX9KZMB3F7VNQP8R2WDGT4EJ' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "data": {
+    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "card_type": "virtual",
+    "card_program": "VISA",
+    "currency": "USD",
+    "label": "Marketing Spend",
+    "status": "active",
+    "masked_pan": "4111 **** **** 7890",
+    "expiry_month": "03",
+    "expiry_year": "2029",
+    "balance": "450.00",
+    "created_at": "2026-03-26T12:00:00Z",
+    "updated_at": "2026-03-26T14:30:00Z"
+  }
+}
+```
+</ResponseExample>

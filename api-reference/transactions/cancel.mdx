@@ -1,0 +1,43 @@
+---
+title: "Cancel Transaction"
+api: "POST https://crypto-sandbox.yativo.com/api/transactions/cancel"
+description: "Cancel a pending transaction before it is confirmed on-chain"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="transaction_id" type="string" required>
+  The ID of the pending transaction to cancel.
+</ParamField>
+
+<Note>
+  Only transactions with a `pending` status can be cancelled. Once a transaction is broadcast and being confirmed on-chain, cancellation may not be possible.
+</Note>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/transactions/cancel' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4EF"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Transaction cancelled successfully",
+  "data": {
+    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4EF",
+    "status": "cancelled",
+    "cancelled_at": "2026-03-26T12:01:00Z"
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,43 @@
+---
+title: "Check Balance"
+api: "POST https://crypto-sandbox.yativo.com/api/balance/check"
+description: "Check the current balance of a specific asset wallet"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="asset_id" type="string" required>
+  The ID of the asset wallet to check the balance for.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/balance/check' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Balance retrieved successfully",
+  "data": {
+    "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA",
+    "chain": "solana",
+    "ticker": "USDC_SOL",
+    "wallet_address": "7nZ9X4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
+    "balance": "1250.000000",
+    "balance_usd": "1250.00",
+    "last_updated": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

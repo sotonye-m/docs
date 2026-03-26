@@ -1,0 +1,383 @@
+---
+title: "Physical Cards"
+description: "Order and manage physical payment cards delivered to your address"
+---
+
+## Overview
+
+Physical Yativo Cards are plastic payment cards delivered to a shipping address. They work anywhere the payment network is accepted — in-store, at ATMs, and for contactless payments. Physical card orders go through a fulfillment process before the card is shipped.
+
+<Note>
+  Physical card issuance requires a fully onboarded account with KYC approved, terms accepted, and wallet deployed. See the [Onboarding Guide](/yativo-crypto/cards/onboarding).
+</Note>
+
+<Accordion title="Type Definitions">
+```typescript
+interface PhysicalCardOrder {
+  order_id: string;
+  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  shipping_address: ShippingAddress;
+  tracking_number?: string;
+  estimated_delivery?: string;
+  created_at: string;
+}
+
+interface ShippingAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  state?: string;
+  postal_code: string;
+  country: string; // ISO 3166-1 alpha-2
+}
+
+interface CreatePhysicalOrderRequest {
+  shipping_address: ShippingAddress;
+  personalization?: {
+    name_on_card?: string;
+  };
+}
+```
+</Accordion>
+
+---
+
+## Order a Physical Card
+
+Submit an order for a physical card. A shipping address is required.
+
+```
+POST /yativo-card/{yativoCardId}/cards/physical/order
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField body="shipping_address" type="object" required>
+  The delivery address for the physical card.
+</ParamField>
+
+<ParamField body="shipping_address.line1" type="string" required>
+  Street address line 1.
+</ParamField>
+
+<ParamField body="shipping_address.line2" type="string">
+  Street address line 2 (apartment, suite, unit, etc.).
+</ParamField>
+
+<ParamField body="shipping_address.city" type="string" required>
+  City name.
+</ParamField>
+
+<ParamField body="shipping_address.state" type="string">
+  State or province code. Required for applicable countries.
+</ParamField>
+
+<ParamField body="shipping_address.postal_code" type="string" required>
+  Postal or ZIP code.
+</ParamField>
+
+<ParamField body="shipping_address.country" type="string" required>
+  ISO 3166-1 alpha-2 country code (e.g., `"DE"`, `"GB"`, `"US"`).
+</ParamField>
+
+<ParamField body="display_name" type="string">
+  A label for this card (e.g., "Personal Card"). Defaults to the account holder name.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "display_name": "Jane'\''s Personal Card",
+    "shipping_address": {
+      "line1": "123 Main Street",
+      "line2": "Apt 4B",
+      "city": "Berlin",
+      "postal_code": "10115",
+      "country": "DE"
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "order_id": "ord_01HX9KZMB3F7VNQP8R2WDGT4F6",
+    "status": "pending_payment",
+    "display_name": "Jane's Personal Card",
+    "shipping_address": {
+      "line1": "123 Main Street",
+      "line2": "Apt 4B",
+      "city": "Berlin",
+      "postal_code": "10115",
+      "country": "DE"
+    },
+    "created_at": "2026-03-25T12:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Attach Payment to Order
+
+After creating an order, submit payment to initiate card fulfillment.
+
+```
+POST /yativo-card/{yativoCardId}/cards/physical/order/{orderId}/payment
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField path="orderId" type="string" required>
+  The order ID returned when the order was created.
+</ParamField>
+
+<ParamField body="payment_method" type="string" required>
+  Payment method. Accepted values: `"card_balance"`, `"crypto"`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4F6/payment' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "payment_method": "card_balance"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "order_id": "ord_01HX9KZMB3F7VNQP8R2WDGT4F6",
+    "payment_status": "paid",
+    "order_status": "processing",
+    "amount_charged": 9.99,
+    "currency": "USD"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get Order Status
+
+Check the current status of a physical card order.
+
+```
+GET /yativo-card/{yativoCardId}/cards/physical/order/{orderId}/status
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField path="orderId" type="string" required>
+  The order ID to check.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4F6/status' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "order_id": "ord_01HX9KZMB3F7VNQP8R2WDGT4F6",
+    "order_status": "shipped",
+    "tracking_number": "1Z999AA10123456784",
+    "carrier": "DHL",
+    "estimated_delivery": "2026-04-02",
+    "shipped_at": "2026-03-27T08:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Order Status Values
+
+| Status | Description |
+|---|---|
+| `pending_payment` | Order created, awaiting payment. |
+| `processing` | Payment received. Card is being manufactured and personalized. |
+| `shipped` | Card has been dispatched. Tracking number available. |
+| `delivered` | Card confirmed delivered to the shipping address. |
+| `cancelled` | Order was cancelled before shipment. |
+| `failed` | Order could not be fulfilled. Contact support. |
+
+---
+
+## List All Orders
+
+Retrieve all physical card orders for a Yativo Card account.
+
+```
+GET /yativo-card/{yativoCardId}/cards/physical/orders
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/orders' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "order_id": "ord_01HX9KZMB3F7VNQP8R2WDGT4F6",
+      "order_status": "shipped",
+      "display_name": "Jane's Personal Card",
+      "created_at": "2026-03-25T12:00:00Z",
+      "shipped_at": "2026-03-27T08:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+</ResponseExample>
+
+---
+
+## Cancel an Order
+
+Cancel a physical card order. Cancellation is only possible while the order is in `pending_payment` or `processing` status. Once shipped, orders cannot be cancelled.
+
+```
+POST /yativo-card/{yativoCardId}/cards/physical/order/{orderId}/cancel
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField path="orderId" type="string" required>
+  The order ID to cancel.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4F6/cancel' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "order_id": "ord_01HX9KZMB3F7VNQP8R2WDGT4F6",
+    "order_status": "cancelled",
+    "cancelled_at": "2026-03-25T13:00:00Z",
+    "refund_status": "pending"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Set Physical Card PIN
+
+Set the PIN for an activated physical card. The PIN is used for chip-and-PIN transactions and ATM withdrawals.
+
+```
+POST /yativo-card/{yativoCardId}/cards/physical/{cardId}/pin
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The physical card ID (available once the card is activated).
+</ParamField>
+
+<ParamField body="pin" type="string" required>
+  The new 4-digit numeric PIN.
+</ParamField>
+
+<ParamField body="otp" type="string" required>
+  One-time password sent to the registered email or phone number. Request an OTP before calling this endpoint.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/card_phys_01HX9KZMB3F7/pin' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "pin": "7391",
+    "otp": "293847"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "pin_set": true,
+    "card_id": "card_phys_01HX9KZMB3F7"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Delivery Timeframes
+
+<Info>
+  Delivery times are estimates and may vary based on destination country and carrier conditions.
+</Info>
+
+| Region | Estimated Delivery |
+|---|---|
+| Europe (EU) | 5–10 business days |
+| United Kingdom | 5–10 business days |
+| North America | 7–14 business days |
+| Rest of World | 10–21 business days |
+
+After your card is shipped, you will receive a tracking number via the order status endpoint and via email notification.
+
+---
+
+## Physical Card Activation
+
+Physical cards are typically activated automatically once delivered. If your card requires manual activation, use the card activation endpoint or follow the instructions included with your card delivery.
+
+<Tip>
+  Set your PIN as soon as you receive your card and before your first chip-and-PIN transaction to ensure smooth usage at point-of-sale terminals.
+</Tip>

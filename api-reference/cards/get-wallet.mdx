@@ -1,0 +1,39 @@
+---
+title: "Get Card Wallet"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/wallet"
+description: "Retrieve the card wallet details including balance and funding address"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Wallet retrieved successfully",
+  "data": {
+    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
+    "wallet_address": "0x3f4e5d6c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e",
+    "balance_usd": "500.00",
+    "status": "active",
+    "daily_limit": "2000.00",
+    "daily_spent": "150.00",
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

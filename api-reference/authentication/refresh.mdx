@@ -1,0 +1,29 @@
+---
+title: "Refresh Token"
+api: "GET https://crypto-sandbox.yativo.com/api/authentication/refresh-token"
+description: "Exchange a refresh token for a new access token"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Pass the refresh token in the Authorization header: `Bearer YOUR_REFRESH_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/authentication/refresh-token' \
+  -H 'Authorization: Bearer YOUR_REFRESH_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Token refreshed successfully",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+</ResponseExample>

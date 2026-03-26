@@ -1,0 +1,97 @@
+---
+title: "Create Physical Card"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/create"
+description: "Issue a new physical card that will be shipped to the provided address"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="account_id" type="string" required>
+  The ID of the account to associate the card with.
+</ParamField>
+
+<ParamField body="card_type" type="string" required>
+  Must be `physical` for a physical card.
+</ParamField>
+
+<ParamField body="card_program" type="string">
+  The card network to use. One of: `VISA`, `MASTERCARD`.
+</ParamField>
+
+<ParamField body="currency" type="string">
+  The billing currency for the card. Defaults to `USD`.
+</ParamField>
+
+<ParamField body="label" type="string">
+  An optional human-readable nickname for the card, e.g. `"Operations Card"`.
+</ParamField>
+
+<ParamField body="shipping_name" type="string" required>
+  The full name of the recipient to print on the shipping label.
+</ParamField>
+
+<ParamField body="shipping_address" type="object" required>
+  The delivery address for the physical card.
+
+  <Expandable title="shipping_address fields">
+    <ParamField body="line1" type="string" required>
+      Street address line 1.
+    </ParamField>
+    <ParamField body="city" type="string" required>
+      City name.
+    </ParamField>
+    <ParamField body="country" type="string" required>
+      ISO 3166-1 alpha-2 country code, e.g. `US`.
+    </ParamField>
+    <ParamField body="postal_code" type="string" required>
+      Postal or ZIP code.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "card_type": "physical",
+    "card_program": "MASTERCARD",
+    "currency": "USD",
+    "label": "Operations Card",
+    "shipping_name": "Jane Doe",
+    "shipping_address": {
+      "line1": "123 Main Street",
+      "city": "New York",
+      "country": "US",
+      "postal_code": "10001"
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Physical card created successfully",
+  "data": {
+    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4FK",
+    "card_type": "physical",
+    "card_program": "MASTERCARD",
+    "currency": "USD",
+    "label": "Operations Card",
+    "status": "pending",
+    "masked_pan": "5200 **** **** 3456",
+    "expiry_month": "03",
+    "expiry_year": "2029",
+    "shipping_tracking_number": null,
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

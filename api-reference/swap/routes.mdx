@@ -1,0 +1,55 @@
+---
+title: "List Swap Routes"
+api: "GET https://crypto-sandbox.yativo.com/api/swap/routes"
+description: "Retrieve all available swap routes between assets and chains"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/swap/routes' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Swap routes retrieved successfully",
+  "data": [
+    {
+      "from_chain": "solana",
+      "from_ticker": "USDC_SOL",
+      "to_chain": "ethereum",
+      "to_ticker": "USDC_ETH",
+      "min_amount": "10.00",
+      "max_amount": "100000.00",
+      "estimated_time_seconds": 60
+    },
+    {
+      "from_chain": "ethereum",
+      "from_ticker": "ETH",
+      "to_chain": "solana",
+      "to_ticker": "SOL",
+      "min_amount": "0.01",
+      "max_amount": "500.00",
+      "estimated_time_seconds": 120
+    },
+    {
+      "from_chain": "ethereum",
+      "from_ticker": "USDC_ETH",
+      "to_chain": "polygon",
+      "to_ticker": "USDC_MATIC",
+      "min_amount": "10.00",
+      "max_amount": "50000.00",
+      "estimated_time_seconds": 30
+    }
+  ]
+}
+```
+</ResponseExample>

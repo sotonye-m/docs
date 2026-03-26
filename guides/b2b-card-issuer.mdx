@@ -1,0 +1,461 @@
+---
+title: "B2B Card Issuer Program"
+description: "Issue cards to your own customers as a card issuer"
+sidebarTitle: "Card Issuer Program"
+---
+
+The Yativo Card Issuer Program lets businesses issue Visa/Mastercard virtual and physical cards directly to their own customers — under your brand. This guide covers the full setup: applying for issuer status, creating customers, issuing cards, and funding card balances programmatically.
+
+<Note>
+  The Issuer Program requires approval from Yativo's compliance team. Apply using the steps below — approvals typically take 2–5 business days. You can develop and test against the Sandbox at `https://crypto-sandbox.yativo.com/api/` while waiting.
+</Note>
+
+## Who This Is For
+
+- Fintechs and neobanks building branded card products
+- Payroll and expense management platforms
+- Crypto exchanges wanting to offer spending cards
+- Any business that wants to issue cards to end users
+
+<Steps>
+
+<Step title="Apply for the issuer program">
+
+Submit your business details and intended use case. Yativo's team will review your application.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/card-issuer/apply \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "businessName": "Acme Financial Inc.",
+    "businessType": "fintech",
+    "website": "https://acmefinancial.com",
+    "estimatedMonthlyCards": 500,
+    "useCase": "We provide crypto-funded expense cards to our B2B customers for cross-border payments.",
+    "contact": {
+      "name": "James Okafor",
+      "email": "james@acmefinancial.com",
+      "phone": "+14085559821"
+    },
+    "country": "US",
+    "incorporationNumber": "7821934-DE"
+  }'
+```
+
+```typescript TypeScript
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: "https://crypto-api.yativo.com/api/",
+});
+
+const application = await client.cardIssuer.apply({
+  businessName: "Acme Financial Inc.",
+  businessType: "fintech",
+  website: "https://acmefinancial.com",
+  estimatedMonthlyCards: 500,
+  useCase:
+    "We provide crypto-funded expense cards to our B2B customers for cross-border payments.",
+  contact: {
+    name: "James Okafor",
+    email: "james@acmefinancial.com",
+    phone: "+14085559821",
+  },
+  country: "US",
+  incorporationNumber: "7821934-DE",
+});
+
+console.log(application.applicationId); // app_01J2KM3MNPQ7R4S5T6U7VAPP01
+console.log(application.status);        // "under_review"
+```
+
+```python Python
+from yativo_crypto import YativoCrypto
+
+client = YativoCrypto(
+    api_key=os.environ["YATIVO_API_KEY"],
+    base_url="https://crypto-api.yativo.com/api/",
+)
+
+application = client.card_issuer.apply(
+    business_name="Acme Financial Inc.",
+    business_type="fintech",
+    website="https://acmefinancial.com",
+    estimated_monthly_cards=500,
+    use_case="We provide crypto-funded expense cards to our B2B customers.",
+    contact={
+        "name": "James Okafor",
+        "email": "james@acmefinancial.com",
+        "phone": "+14085559821",
+    },
+    country="US",
+    incorporation_number="7821934-DE",
+)
+
+print(application.application_id)  # app_01J2KM3MNPQ7R4S5T6U7VAPP01
+print(application.status)          # "under_review"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "applicationId": "app_01J2KM3MNPQ7R4S5T6U7VAPP01",
+  "status": "under_review",
+  "submittedAt": "2026-03-26T13:00:00Z",
+  "estimatedReviewDays": 3
+}
+```
+
+</Step>
+
+<Step title="Wait for approval">
+
+Poll the program status endpoint or listen for a `card_issuer.application_approved` webhook event.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/card-issuer/my-program \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
+```
+
+```typescript TypeScript
+const program = await client.cardIssuer.getMyProgram();
+
+console.log(program.status);    // "approved"
+console.log(program.issuerId);  // iss_01J2KN3MNPQ7R4S5T6U7VISSUER
+console.log(program.limits.maxActiveCards);    // 10000
+console.log(program.limits.maxMonthlyVolume);  // "5000000.00"
+```
+
+```python Python
+program = client.card_issuer.get_my_program()
+
+print(program.status)                        # "approved"
+print(program.issuer_id)                     # iss_01J2KN3MNPQ7R4S5T6U7VISSUER
+print(program.limits.max_active_cards)       # 10000
+print(program.limits.max_monthly_volume)     # "5000000.00"
+```
+
+</CodeGroup>
+
+**Approved program response:**
+
+```json
+{
+  "issuerId": "iss_01J2KN3MNPQ7R4S5T6U7VISSUER",
+  "status": "approved",
+  "businessName": "Acme Financial Inc.",
+  "approvedAt": "2026-03-29T09:00:00Z",
+  "limits": {
+    "maxActiveCards": 10000,
+    "maxMonthlyVolume": "5000000.00",
+    "currency": "USD"
+  },
+  "cardNetworks": ["visa", "mastercard"],
+  "supportedCardTypes": ["virtual", "physical"]
+}
+```
+
+</Step>
+
+<Step title="Create customers">
+
+Once approved, create customer records for each of your end users. These map to cardholder profiles within your issuer program.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/customers/create-customer \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "externalId": "your_user_id_8821",
+    "firstName": "Priya",
+    "lastName": "Sharma",
+    "email": "priya@yourapp.com",
+    "phoneNumber": "+919876543210",
+    "dateOfBirth": "1992-11-28",
+    "nationality": "IN",
+    "address": {
+      "line1": "42 MG Road",
+      "city": "Bangalore",
+      "state": "KA",
+      "postalCode": "560001",
+      "country": "IN"
+    }
+  }'
+```
+
+```typescript TypeScript
+const customer = await client.customers.create({
+  externalId: "your_user_id_8821",
+  firstName: "Priya",
+  lastName: "Sharma",
+  email: "priya@yourapp.com",
+  phoneNumber: "+919876543210",
+  dateOfBirth: "1992-11-28",
+  nationality: "IN",
+  address: {
+    line1: "42 MG Road",
+    city: "Bangalore",
+    state: "KA",
+    postalCode: "560001",
+    country: "IN",
+  },
+});
+
+console.log(customer.customerId); // cst_01J2KP3MNPQ7R4S5T6U7VCST55
+```
+
+```python Python
+customer = client.customers.create(
+    external_id="your_user_id_8821",
+    first_name="Priya",
+    last_name="Sharma",
+    email="priya@yourapp.com",
+    phone_number="+919876543210",
+    date_of_birth="1992-11-28",
+    nationality="IN",
+    address={
+        "line1": "42 MG Road",
+        "city": "Bangalore",
+        "state": "KA",
+        "postal_code": "560001",
+        "country": "IN",
+    },
+)
+
+print(customer.customer_id)  # cst_01J2KP3MNPQ7R4S5T6U7VCST55
+```
+
+</CodeGroup>
+
+<Tip>
+  Pass your internal user ID as `externalId` so you can look up the Yativo customer record from your own database without storing the Yativo ID separately.
+</Tip>
+
+</Step>
+
+<Step title="Create a card for the customer">
+
+Issue a card to a specific customer within your issuer program.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://crypto-api.yativo.com/api/yativo-card/customers/cst_01J2KP3MNPQ7R4S5T6U7VCST55/create-card" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "virtual",
+    "label": "Priya Expense Card",
+    "currency": "USD",
+    "spendingLimit": {
+      "amount": "2000.00",
+      "interval": "monthly"
+    }
+  }'
+```
+
+```typescript TypeScript
+const card = await client.card.createCardForCustomer({
+  customerId: "cst_01J2KP3MNPQ7R4S5T6U7VCST55",
+  type: "virtual",
+  label: "Priya Expense Card",
+  currency: "USD",
+  spendingLimit: {
+    amount: "2000.00",
+    interval: "monthly",
+  },
+});
+
+console.log(card.cardId);   // crd_01J2KQ3MNPQ7R4S5T6U7VCRD99
+console.log(card.status);   // "active"
+console.log(card.last4);    // "7891"
+```
+
+```python Python
+card = client.card.create_card_for_customer(
+    customer_id="cst_01J2KP3MNPQ7R4S5T6U7VCST55",
+    type="virtual",
+    label="Priya Expense Card",
+    currency="USD",
+    spending_limit={
+        "amount": "2000.00",
+        "interval": "monthly",
+    },
+)
+
+print(card.card_id)   # crd_01J2KQ3MNPQ7R4S5T6U7VCRD99
+print(card.status)    # "active"
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Fund the customer's card">
+
+Top up a customer's card balance directly from your issuer account's USDC balance.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://crypto-api.yativo.com/api/card-issuer/customers/cst_01J2KP3MNPQ7R4S5T6U7VCST55/fund" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: topup_cst55_20260326_001" \
+  -d '{
+    "cardId": "crd_01J2KQ3MNPQ7R4S5T6U7VCRD99",
+    "amount": "250.00",
+    "currency": "USD",
+    "memo": "Monthly expense allowance - March 2026"
+  }'
+```
+
+```typescript TypeScript
+const funding = await client.cardIssuer.fundCustomerCard(
+  {
+    customerId: "cst_01J2KP3MNPQ7R4S5T6U7VCST55",
+    cardId: "crd_01J2KQ3MNPQ7R4S5T6U7VCRD99",
+    amount: "250.00",
+    currency: "USD",
+    memo: "Monthly expense allowance - March 2026",
+  },
+  { idempotencyKey: "topup_cst55_20260326_001" }
+);
+
+console.log(funding.fundingId);  // fnd_01J2KR3MNPQ7R4S5T6U7VFND12
+console.log(funding.status);     // "completed"
+console.log(funding.newBalance); // "250.00"
+```
+
+```python Python
+funding = client.card_issuer.fund_customer_card(
+    customer_id="cst_01J2KP3MNPQ7R4S5T6U7VCST55",
+    card_id="crd_01J2KQ3MNPQ7R4S5T6U7VCRD99",
+    amount="250.00",
+    currency="USD",
+    memo="Monthly expense allowance - March 2026",
+    idempotency_key="topup_cst55_20260326_001",
+)
+
+print(funding.funding_id)   # fnd_01J2KR3MNPQ7R4S5T6U7VFND12
+print(funding.status)       # "completed"
+print(funding.new_balance)  # "250.00"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "fundingId": "fnd_01J2KR3MNPQ7R4S5T6U7VFND12",
+  "customerId": "cst_01J2KP3MNPQ7R4S5T6U7VCST55",
+  "cardId": "crd_01J2KQ3MNPQ7R4S5T6U7VCRD99",
+  "amount": "250.00",
+  "currency": "USD",
+  "previousBalance": "0.00",
+  "newBalance": "250.00",
+  "status": "completed",
+  "memo": "Monthly expense allowance - March 2026",
+  "completedAt": "2026-03-26T13:30:00Z"
+}
+```
+
+</Step>
+
+<Step title="Monitor with webhooks">
+
+Subscribe to card issuer events to keep your platform in sync.
+
+<CodeGroup>
+
+```typescript TypeScript
+const webhook = await client.webhooks.create({
+  url: "https://api.yourapp.com/webhooks/yativo",
+  events: [
+    "card.transaction.approved",
+    "card.transaction.declined",
+    "card.funding.completed",
+    "customer.kyc.approved",
+    "customer.kyc.rejected",
+  ],
+  description: "Issuer program events",
+});
+```
+
+</CodeGroup>
+
+**Relevant events for card issuers:**
+
+| Event | Trigger |
+|-------|---------|
+| `card.transaction.approved` | A card transaction was authorized |
+| `card.transaction.declined` | A transaction was declined (includes reason) |
+| `card.transaction.completed` | A settlement cleared |
+| `card.funding.completed` | A top-up completed |
+| `customer.kyc.approved` | A customer's KYC was approved |
+| `customer.kyc.rejected` | A customer's KYC was rejected |
+| `card_issuer.limit_warning` | Your program is approaching a volume limit |
+
+</Step>
+
+</Steps>
+
+## Bulk Card Issuance
+
+For issuing cards to many customers at once, batch the create-customer and create-card calls with appropriate rate limiting:
+
+```typescript TypeScript
+async function bulkIssueCards(users: UserRecord[]): Promise<void> {
+  const BATCH_SIZE = 10;
+  const DELAY_MS = 200; // stay within rate limits
+
+  for (let i = 0; i < users.length; i += BATCH_SIZE) {
+    const batch = users.slice(i, i + BATCH_SIZE);
+
+    await Promise.all(
+      batch.map(async (user) => {
+        const customer = await client.customers.create({
+          externalId: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          // ...
+        });
+
+        const card = await client.card.createCardForCustomer({
+          customerId: customer.customerId,
+          type: "virtual",
+          label: `${user.firstName} Card`,
+          currency: "USD",
+        });
+
+        await db.users.update(user.id, {
+          yativoCustomerId: customer.customerId,
+          yativoCardId: card.cardId,
+        });
+      })
+    );
+
+    if (i + BATCH_SIZE < users.length) {
+      await new Promise((r) => setTimeout(r, DELAY_MS));
+    }
+  }
+}
+```
+
+## Next Steps
+
+- **[Issue Crypto-Funded Cards](/guides/issue-crypto-cards)** — Single-user card issuance flow
+- **[Webhook Integration](/guides/webhook-integration)** — Full webhook event reference

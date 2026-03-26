@@ -1,0 +1,56 @@
+---
+title: "Fund Customer"
+api: "POST https://crypto-sandbox.yativo.com/api/card-issuer/customers/{customerId}/fund"
+description: "Fund a customer's card wallet on their behalf as a card issuer"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="customerId" type="string" required>
+  The ID of the customer to fund.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  The amount in USD to fund the customer's card wallet.
+</ParamField>
+
+<ParamField body="source_chain" type="string" required>
+  The blockchain network to source the funds from, e.g. `ethereum`, `polygon`, `base`.
+</ParamField>
+
+<ParamField body="pricing_mode" type="string" required>
+  How the funding amount is interpreted. One of: `exact_usd`, `exact_token`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/customers/cus_01HX9KZMB3F7VNQP8R2WDGT4EP/fund' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "amount": 500,
+    "source_chain": "polygon",
+    "pricing_mode": "exact_usd"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Customer funded successfully",
+  "data": {
+    "funding_id": "fnd_01HX9KZMB3F7VNQP8R2WDGT4EQ",
+    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP",
+    "amount_usd": "500.00",
+    "source_chain": "polygon",
+    "status": "completed",
+    "funded_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

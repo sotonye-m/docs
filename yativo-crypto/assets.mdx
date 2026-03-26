@@ -1,0 +1,319 @@
+---
+title: "Assets & Wallets"
+description: "Add and manage crypto wallets for specific chains and tokens"
+---
+
+Assets are wallets tied to a specific blockchain and token within an account. Each asset has a unique deposit address and tracks its own balance. You can add individual assets or batch-create many at once.
+
+---
+
+## Get All Supported Assets
+
+**GET** `/assets/get-all-assets`
+
+Returns the full list of chains and tokens available on the platform.
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/assets/get-all-assets \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "assets": [
+    { "chain": "ethereum", "ticker": "ETH", "name": "Ether", "decimals": 18 },
+    { "chain": "ethereum", "ticker": "USDC", "name": "USD Coin", "decimals": 6 },
+    { "chain": "solana", "ticker": "SOL", "name": "Solana", "decimals": 9 },
+    { "chain": "solana", "ticker": "USDC_SOL", "name": "USD Coin (Solana)", "decimals": 6 }
+  ]
+}
+```
+
+---
+
+## Get Supported Chains
+
+**GET** `/assets/get-chains`
+
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/assets/get-chains \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Add an Asset
+
+**POST** `/assets/add-asset`
+
+Creates a new wallet (deposit address) for a specific chain and token within an account.
+
+<ParamField body="account_id" type="string" required>
+  The account this wallet belongs to.
+</ParamField>
+
+<ParamField body="chain" type="string" required>
+  The blockchain identifier (e.g., `ethereum`, `solana`). See [Supported Chains](/yativo-crypto/supported-chains).
+</ParamField>
+
+<ParamField body="ticker" type="string" required>
+  The token ticker (e.g., `USDC`, `SOL`).
+</ParamField>
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/assets/add-asset \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "account_id": "acc_01abc123",
+    "chain": "ethereum",
+    "ticker": "USDC"
+  }'
+```
+
+```typescript TypeScript
+const wallet = await client.assets.add({
+  account_id: 'acc_01abc123',
+  chain: 'ethereum',
+  ticker: 'USDC',
+});
+console.log('Deposit address:', wallet.address);
+```
+
+```python Python
+wallet = client.assets.add(
+    account_id='acc_01abc123',
+    chain='ethereum',
+    ticker='USDC',
+)
+print('Deposit address:', wallet['address'])
+```
+</CodeGroup>
+
+```json Response
+{
+  "id": "asset_01xyz789",
+  "account_id": "acc_01abc123",
+  "chain": "ethereum",
+  "ticker": "USDC",
+  "name": "USD Coin",
+  "address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
+  "balance": "0",
+  "balance_usd": "0",
+  "status": "active",
+  "created_at": "2026-03-26T10:00:00Z"
+}
+```
+
+---
+
+## Batch Add Assets
+
+**POST** `/assets/batch-add-asset`
+
+Create multiple wallets in a single request. Useful when onboarding a new account that needs wallets across multiple chains.
+
+<ParamField body="account_id" type="string" required>
+  The account these wallets will belong to.
+</ParamField>
+
+<ParamField body="chains" type="array" required>
+  Array of chain identifiers.
+</ParamField>
+
+<ParamField body="tickers" type="array" required>
+  Array of token tickers. Each ticker is paired with the corresponding chain by index.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/assets/batch-add-asset \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "account_id": "acc_01abc123",
+    "chains": ["ethereum", "solana", "polygon"],
+    "tickers": ["USDC", "USDC_SOL", "USDC_POLYGON"]
+  }'
+```
+
+```json Response
+{
+  "created": [
+    {
+      "id": "asset_01a",
+      "chain": "ethereum",
+      "ticker": "USDC",
+      "address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1"
+    },
+    {
+      "id": "asset_02b",
+      "chain": "solana",
+      "ticker": "USDC_SOL",
+      "address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+    },
+    {
+      "id": "asset_03c",
+      "chain": "polygon",
+      "ticker": "USDC_POLYGON",
+      "address": "0x8A7c4f2E9B1D3A6C5E0F7B2D4A9C8E1F3B5D7A9"
+    }
+  ]
+}
+```
+
+---
+
+## Get User Assets
+
+**POST** `/assets/get-user-assets`
+
+Returns all assets (wallets) for the authenticated user, or filtered by account.
+
+<ParamField body="account_id" type="string">
+  Filter assets by account. If omitted, returns all assets across all accounts.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/assets/get-user-assets \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"account_id": "acc_01abc123"}'
+```
+
+```json Response
+{
+  "assets": [
+    {
+      "id": "asset_01xyz789",
+      "account_id": "acc_01abc123",
+      "chain": "ethereum",
+      "ticker": "USDC",
+      "address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
+      "balance": "500.00",
+      "balance_usd": "500.00",
+      "status": "active"
+    }
+  ]
+}
+```
+
+---
+
+## Check Balance
+
+**POST** `/balance/check`
+
+Returns the current balance for a specific asset.
+
+<ParamField body="asset_id" type="string" required>
+  The asset ID to check the balance for.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/balance/check \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"asset_id": "asset_01xyz789"}'
+```
+
+```json Response
+{
+  "asset_id": "asset_01xyz789",
+  "chain": "ethereum",
+  "ticker": "USDC",
+  "address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
+  "balance": "500.00",
+  "balance_usd": "500.00",
+  "last_updated": "2026-03-26T10:05:00Z"
+}
+```
+
+---
+
+## Archive an Asset
+
+**POST** `/assets/archive-asset`
+
+Deactivates a wallet. The address remains valid for receiving funds, but the asset will no longer appear in active asset lists.
+
+<ParamField body="asset_id" type="string" required>
+  The ID of the asset to archive.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/assets/archive-asset \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"asset_id": "asset_01xyz789"}'
+```
+
+---
+
+## Add Customer Asset
+
+**POST** `/assets/add-customer-asset`
+
+Create a wallet for a specific B2B customer. See [Customers](/yativo-crypto/customers) for context on the customer model.
+
+<ParamField body="customer_id" type="string" required>
+  The customer ID to create the wallet for.
+</ParamField>
+
+<ParamField body="chain" type="string" required>
+  Blockchain identifier.
+</ParamField>
+
+<ParamField body="ticker" type="string" required>
+  Token ticker.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/assets/add-customer-asset \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_id": "cust_01abc",
+    "chain": "solana",
+    "ticker": "USDC_SOL"
+  }'
+```
+
+---
+
+## Get Customer Assets
+
+**POST** `/assets/get-customer-assets`
+
+Returns all wallets for a B2B customer.
+
+<ParamField body="customer_id" type="string">
+  Filter by customer. If omitted, returns assets for all customers.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/assets/get-customer-assets \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id": "cust_01abc"}'
+```
+
+---
+
+## Supported Chains & Tickers Reference
+
+| Chain | Native | Stablecoins |
+|-------|--------|-------------|
+| Ethereum | `ETH` | `USDC`, `USDT`, `DAI` |
+| Solana | `SOL` | `USDC_SOL`, `USDT_SOL` |
+| Bitcoin | `BTC` | — |
+| Polygon | `POL` | `USDC_POLYGON`, `USDT_POLYGON` |
+| BSC | `BNB` | `USDC_BSC`, `USDT_BSC` |
+| Base | `ETH_BASE` | `USDC_BASE` |
+| Arbitrum | `ETH_ARBITRUM` | `USDC_ARBITRUM`, `USDT_ARBITRUM` |
+| Optimism | `ETH_OPTIMISM` | `USDC_OPTIMISM`, `USDT_OPTIMISM` |
+| XDC | `XDC` | `USDC_XDC`, `USDT_XDC` |
+
+<Note>
+  Deposit addresses are chain-specific. Never send a token to an address on the wrong chain — funds sent to the wrong network cannot be automatically recovered.
+</Note>

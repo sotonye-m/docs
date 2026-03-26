@@ -1,0 +1,45 @@
+---
+title: "Revoke API Key"
+api: "DELETE https://crypto-sandbox.yativo.com/api/api-keys/{keyId}"
+description: "Permanently revoke an API key. This action is immediate and irreversible."
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="keyId" type="string" required>
+  The key ID to revoke (e.g. `key_01HX9KZMB3F7VNQP8R2WDGT4E5`).
+</ParamField>
+
+<Warning>
+  Revoking a key is **immediate and irreversible**. Any services using this key will lose API access instantly. Ensure you have updated all dependent services before revoking.
+</Warning>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://crypto-api.yativo.com/api/api-keys/key_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "key_id": "key_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "revoked",
+    "revoked_at": "2026-03-26T11:00:00Z"
+  }
+}
+```
+
+```json Not Found
+{
+  "status": "error",
+  "message": "API key not found"
+}
+```
+</ResponseExample>

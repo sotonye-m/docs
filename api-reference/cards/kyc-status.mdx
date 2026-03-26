@@ -1,0 +1,33 @@
+---
+title: "Get KYC Status"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/kyc-status"
+description: "Check the KYC verification status for the card program"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/kyc-status' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "KYC status retrieved successfully",
+  "data": {
+    "kyc_status": "approved",
+    "kyc_level": "full",
+    "submitted_at": "2026-03-24T10:00:00Z",
+    "approved_at": "2026-03-25T09:00:00Z",
+    "rejection_reason": null
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,37 @@
+---
+title: "Verify OTP"
+api: "POST https://crypto-sandbox.yativo.com/api/authentication/otp_verification"
+description: "Verify a one-time password to complete two-factor authentication"
+authMethod: "none"
+---
+
+<ParamField body="otp" type="string" required>
+  The one-time password sent to the user's email or authenticator app.
+</ParamField>
+
+<ParamField body="email" type="string">
+  The user's email address. Required if not already established in the session.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/authentication/otp_verification' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "otp": "123456",
+    "email": "user@example.com"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "OTP verified successfully",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+</ResponseExample>

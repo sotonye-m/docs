@@ -1,0 +1,271 @@
+---
+title: "Transaction Disputes"
+description: "File and manage disputes for unauthorized or erroneous card transactions"
+---
+
+## Overview
+
+If a transaction on your Yativo Card was unauthorized, incorrect, or you did not receive goods or services paid for, you can file a dispute through the API. Disputes require a valid reason code and a description of the issue.
+
+<Note>
+  Disputes should be filed as soon as possible after identifying a problem. Most card networks require disputes to be submitted within 60–120 days of the transaction date.
+</Note>
+
+<Accordion title="Type Definitions">
+```typescript
+interface DisputeReason {
+  code: string;
+  description: string;
+  category: string;
+}
+
+interface CreateDisputeRequest {
+  reason_code: string;
+  description?: string;
+}
+
+interface Dispute {
+  dispute_id: string;
+  transaction_id: string;
+  reason_code: string;
+  status: "submitted" | "under_review" | "resolved" | "rejected";
+  created_at: string;
+}
+```
+</Accordion>
+
+---
+
+## Get Dispute Reason Codes
+
+Before submitting a dispute, retrieve the list of valid reason codes for your account type.
+
+```
+GET /yativo-card/{yativoCardId}/transactions/dispute-reasons
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions/dispute-reasons' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "reason_code": "UNAUTHORIZED",
+      "description": "Transaction was not authorized by the cardholder"
+    },
+    {
+      "reason_code": "DUPLICATE",
+      "description": "Transaction was charged more than once for the same purchase"
+    },
+    {
+      "reason_code": "NOT_RECEIVED",
+      "description": "Goods or services were not received"
+    },
+    {
+      "reason_code": "NOT_AS_DESCRIBED",
+      "description": "Goods or services were significantly different from what was described"
+    },
+    {
+      "reason_code": "CANCELLED",
+      "description": "Subscription or service was cancelled but charge still occurred"
+    },
+    {
+      "reason_code": "INCORRECT_AMOUNT",
+      "description": "Transaction amount was incorrect"
+    },
+    {
+      "reason_code": "CREDIT_NOT_PROCESSED",
+      "description": "A refund or credit was agreed upon but not posted"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## File a Dispute
+
+Submit a dispute for a specific transaction.
+
+```
+POST /yativo-card/{yativoCardId}/transactions/{transactionId}/dispute
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  Your Yativo Card account ID.
+</ParamField>
+
+<ParamField path="transactionId" type="string" required>
+  The transaction ID to dispute. Retrieve this from the [transactions endpoint](/yativo-crypto/cards/transactions).
+</ParamField>
+
+<ParamField body="reason_code" type="string" required>
+  A valid dispute reason code from the reasons list (e.g., `"UNAUTHORIZED"`, `"NOT_RECEIVED"`).
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  A detailed description of the dispute. Minimum 20 characters. Include relevant details such as merchant name, transaction date, and what happened.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions/txn_01HX9KZMB3F7VNQP8R2WDGT901/dispute' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "reason_code": "UNAUTHORIZED",
+    "description": "I did not authorize this transaction at Amazon on March 20, 2026 for $42.50. My card was in my possession at the time and I did not make this purchase."
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "dispute_id": "dsp_01HX9KZMB3F7VNQP8R2WDGT999",
+    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT901",
+    "reason_code": "UNAUTHORIZED",
+    "status": "submitted",
+    "submitted_at": "2026-03-25T16:00:00Z",
+    "expected_resolution_by": "2026-04-24T16:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Common Dispute Reason Codes
+
+<Accordion title="UNAUTHORIZED — Transaction not authorized by cardholder">
+  Use this reason code when you see a transaction on your card that you did not make and did not authorize anyone else to make. This typically indicates fraudulent use or card compromise.
+
+  **What to include in your description:**
+  - Where you were at the time of the transaction
+  - Whether your card was in your possession
+  - Whether you have shared your card details with anyone
+</Accordion>
+
+<Accordion title="DUPLICATE — Same transaction charged twice">
+  Use when a merchant has charged you more than once for the same purchase.
+
+  **What to include:**
+  - The dates of both charges
+  - Order or receipt numbers if available
+  - Any communication with the merchant about the duplicate
+</Accordion>
+
+<Accordion title="NOT_RECEIVED — Goods or services not received">
+  Use when you paid for goods or services but never received them, and the merchant has not issued a refund.
+
+  **What to include:**
+  - Expected delivery or service date
+  - Evidence of merchant contact (email threads, support tickets)
+  - Whether tracking shows non-delivery (for physical goods)
+</Accordion>
+
+<Accordion title="CANCELLED — Charge after cancellation">
+  Use when a subscription, service, or order was cancelled but you were still charged after the cancellation date.
+
+  **What to include:**
+  - Cancellation date and confirmation number
+  - The charge date relative to the cancellation
+  - Any confirmation emails from the merchant
+</Accordion>
+
+<Accordion title="INCORRECT_AMOUNT — Wrong amount charged">
+  Use when the amount charged differs from the agreed price or invoice.
+
+  **What to include:**
+  - The amount you expected to be charged
+  - The amount actually charged
+  - Receipts or invoices showing the agreed price
+</Accordion>
+
+---
+
+## B2B Issuer: Dispute Endpoints
+
+If you are operating as a Card Issuer and managing disputes on behalf of your customers, use the B2B dispute endpoints:
+
+### Get Dispute Reasons (B2B)
+
+```
+GET /yativo-card/customers/{yativoCardId}/transactions/dispute-reasons
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/transactions/dispute-reasons' \
+  -H 'Authorization: Bearer YOUR_ISSUER_API_KEY'
+```
+</RequestExample>
+
+### File a Dispute (B2B)
+
+```
+POST /yativo-card/customers/{yativoCardId}/transactions/{transactionId}/dispute
+```
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/transactions/txn_01HX9KZMB3F7VNQP8R2WDGT901/dispute' \
+  -H 'Authorization: Bearer YOUR_ISSUER_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "reason_code": "NOT_RECEIVED",
+    "description": "Customer reports they did not receive the goods ordered on March 18, 2026. Multiple attempts to contact the merchant have been unsuccessful."
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "dispute_id": "dsp_01HX9KZMB3F7VNQP8R2WDGT888",
+    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT901",
+    "customer_id": "yc_customer_01HX9KZMB3F7",
+    "reason_code": "NOT_RECEIVED",
+    "status": "submitted",
+    "submitted_at": "2026-03-25T16:30:00Z",
+    "expected_resolution_by": "2026-04-24T16:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Dispute Process Timeline
+
+| Phase | Typical Duration | Description |
+|---|---|---|
+| Submission | Immediate | Dispute is submitted and acknowledged. |
+| Review | 3–5 business days | Internal review of the dispute details. |
+| Chargeback Filing | 5–10 business days | Dispute is escalated to the card network if valid. |
+| Merchant Response | Up to 30 days | Merchant is given time to respond or accept the chargeback. |
+| Resolution | 30–90 days total | Final decision is made and any credits are applied. |
+
+<Tip>
+  Providing clear, detailed descriptions and any supporting documentation significantly improves the likelihood of a successful dispute outcome and speeds up the resolution process.
+</Tip>
+
+<Warning>
+  Filing a fraudulent dispute is a violation of the cardholder agreement and may result in account suspension. Only submit disputes for genuine issues.
+</Warning>

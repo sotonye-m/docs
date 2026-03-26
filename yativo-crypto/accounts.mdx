@@ -1,0 +1,294 @@
+---
+title: "Accounts"
+description: "Create and manage accounts — containers for wallets and assets"
+---
+
+<Accordion title="TypeScript Type Definitions">
+```typescript
+interface Account {
+  account_id: string;
+  account_name: string;
+  account_type: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CreateAccountRequest {
+  account_name: string;
+  account_type?: string;
+}
+```
+</Accordion>
+
+Accounts are the top-level organizational unit in Yativo Crypto. Each account holds a collection of wallets (assets) across one or more blockchains. You can create multiple accounts to separate concerns — for example, a treasury account, a hot wallet account, and a per-customer account.
+
+---
+
+## Create an Account
+
+**POST** `/accounts/create-account`
+
+<ParamField body="account_name" type="string" required>
+  A human-readable name for the account.
+</ParamField>
+
+<ParamField body="account_type" type="string" required>
+  The account type. Common values: `business`, `personal`, `customer`.
+</ParamField>
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/accounts/create-account \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "account_name": "Main Treasury",
+    "account_type": "business"
+  }'
+```
+
+```typescript TypeScript
+const account = await client.accounts.create({
+  account_name: 'Main Treasury',
+  account_type: 'business',
+});
+```
+
+```python Python
+account = client.accounts.create(
+    account_name='Main Treasury',
+    account_type='business',
+)
+```
+</CodeGroup>
+
+```json Response
+{
+  "id": "acc_01abc123",
+  "account_name": "Main Treasury",
+  "account_type": "business",
+  "status": "active",
+  "created_at": "2026-03-26T10:00:00Z"
+}
+```
+
+---
+
+## Get All Accounts
+
+**GET** `/accounts/get-accounts`
+
+Returns all accounts belonging to the authenticated user.
+
+<CodeGroup>
+```bash cURL
+curl -X GET https://crypto-api.yativo.com/api/accounts/get-accounts \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```typescript TypeScript
+const accounts = await client.accounts.list();
+```
+
+```python Python
+accounts = client.accounts.list()
+```
+</CodeGroup>
+
+```json Response
+{
+  "accounts": [
+    {
+      "id": "acc_01abc123",
+      "account_name": "Main Treasury",
+      "account_type": "business",
+      "status": "active",
+      "asset_count": 4,
+      "created_at": "2026-03-26T10:00:00Z"
+    },
+    {
+      "id": "acc_02def456",
+      "account_name": "Hot Wallet",
+      "account_type": "business",
+      "status": "active",
+      "asset_count": 2,
+      "created_at": "2026-03-20T08:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Get User Accounts
+
+**POST** `/accounts/get-user-accounts`
+
+Returns accounts for a specific sub-user or B2B customer. Used when managing accounts on behalf of your customers.
+
+<ParamField body="user_id" type="string" required>
+  The ID of the user or customer whose accounts you want to retrieve.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/accounts/get-user-accounts \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "usr_cust_01xyz"}'
+```
+
+```json Response
+{
+  "user_id": "usr_cust_01xyz",
+  "accounts": [
+    {
+      "id": "acc_cust_01abc",
+      "account_name": "Customer Wallet",
+      "account_type": "customer",
+      "status": "active",
+      "created_at": "2026-03-10T12:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Create Connections
+
+**POST** `/accounts/create-connections`
+
+Connect an account to one or more blockchain networks. This initializes address generation for the specified chains on that account.
+
+<ParamField body="account_id" type="string" required>
+  The ID of the account to connect.
+</ParamField>
+
+<ParamField body="chains" type="array" required>
+  Array of chain identifiers to connect. See [Supported Chains](/yativo-crypto/supported-chains) for valid values.
+</ParamField>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/accounts/create-connections \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "account_id": "acc_01abc123",
+    "chains": ["ethereum", "solana", "polygon"]
+  }'
+```
+
+```json Response
+{
+  "account_id": "acc_01abc123",
+  "connections": [
+    {
+      "chain": "ethereum",
+      "status": "connected",
+      "connected_at": "2026-03-26T10:02:00Z"
+    },
+    {
+      "chain": "solana",
+      "status": "connected",
+      "connected_at": "2026-03-26T10:02:00Z"
+    },
+    {
+      "chain": "polygon",
+      "status": "connected",
+      "connected_at": "2026-03-26T10:02:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Get Connections
+
+**GET** `/accounts/get-connections`
+
+Returns blockchain connections for an account.
+
+<ParamField query="account_id" type="string">
+  Filter connections by account ID. If omitted, returns connections for all accounts.
+</ParamField>
+
+```bash cURL
+curl -X GET "https://crypto-api.yativo.com/api/accounts/get-connections?account_id=acc_01abc123" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "connections": [
+    {
+      "account_id": "acc_01abc123",
+      "chain": "ethereum",
+      "status": "connected",
+      "connected_at": "2026-03-26T10:02:00Z"
+    },
+    {
+      "account_id": "acc_01abc123",
+      "chain": "solana",
+      "status": "connected",
+      "connected_at": "2026-03-26T10:02:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Account Hierarchy
+
+<Note>
+  Accounts belong to your platform. Within an account, you add [Assets (wallets)](/yativo-crypto/assets) for specific chains and tokens. For B2B scenarios, use [Customers](/yativo-crypto/customers) to create managed sub-accounts that belong to your end customers.
+</Note>
+
+```
+Your Platform
+├── Account: Main Treasury
+│   ├── Asset: ETH (Ethereum)
+│   ├── Asset: USDC (Ethereum)
+│   └── Asset: SOL (Solana)
+└── Account: Customer 001
+    ├── Asset: USDC_SOL (Solana)
+    └── Asset: USDT_POLYGON (Polygon)
+```
+
+---
+
+## Sandbox Testing
+
+Use the sandbox to test this endpoint without real funds:
+
+<Note>
+  Sandbox URL: `https://crypto-sandbox.yativo.com/api/`
+</Note>
+
+<CodeGroup>
+```bash cURL
+curl -X POST 'https://crypto-sandbox.yativo.com/api/accounts/create-account' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_name": "Sandbox Treasury",
+    "account_type": "business"
+  }'
+```
+
+```typescript TypeScript SDK
+const sdk = new YativoSDK({
+  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  apiKey: 'YOUR_SANDBOX_API_KEY',
+  apiSecret: 'YOUR_SANDBOX_API_SECRET',
+});
+
+const account = await sdk.accounts.create({
+  account_name: 'Sandbox Treasury',
+  account_type: 'business',
+});
+console.log('Account ID:', account.id);
+```
+</CodeGroup>

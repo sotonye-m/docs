@@ -1,0 +1,505 @@
+---
+title: "Issue Crypto-Funded Cards"
+description: "Issue virtual and physical payment cards funded by crypto"
+sidebarTitle: "Issue Cards"
+---
+
+This guide walks through the complete flow for issuing a Visa/Mastercard virtual card to a user: onboarding, KYC, wallet deployment, card creation, funding via USDC deposit, and securely displaying card details.
+
+<Note>
+  Test this flow in the Sandbox at `https://crypto-sandbox.yativo.com/api/`. KYC checks are auto-approved in the Sandbox environment.
+</Note>
+
+## Prerequisites
+
+- An authenticated Yativo Crypto API key
+- User identity information for KYC (name, date of birth, address, government ID)
+
+<Steps>
+
+<Step title="Onboard the user">
+
+Submit basic user information to begin the card onboarding process.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/yativo-card/onboard \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Alice",
+    "lastName": "Martinez",
+    "email": "alice@example.com",
+    "phoneNumber": "+14155552671",
+    "dateOfBirth": "1990-06-15",
+    "nationality": "US",
+    "address": {
+      "line1": "123 Main Street",
+      "city": "San Francisco",
+      "state": "CA",
+      "postalCode": "94105",
+      "country": "US"
+    }
+  }'
+```
+
+```typescript TypeScript
+import { YativoCrypto } from "@yativo/crypto-sdk";
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  baseUrl: "https://crypto-api.yativo.com/api/",
+});
+
+const onboarding = await client.card.onboard({
+  firstName: "Alice",
+  lastName: "Martinez",
+  email: "alice@example.com",
+  phoneNumber: "+14155552671",
+  dateOfBirth: "1990-06-15",
+  nationality: "US",
+  address: {
+    line1: "123 Main Street",
+    city: "San Francisco",
+    state: "CA",
+    postalCode: "94105",
+    country: "US",
+  },
+});
+
+console.log(onboarding.cardUserId); // cus_01J2KJ3MNPQ7R4S5T6U7VCRD01
+console.log(onboarding.kycStatus);  // "pending"
+```
+
+```python Python
+from yativo_crypto import YativoCrypto
+
+client = YativoCrypto(
+    api_key=os.environ["YATIVO_API_KEY"],
+    base_url="https://crypto-api.yativo.com/api/",
+)
+
+onboarding = client.card.onboard(
+    first_name="Alice",
+    last_name="Martinez",
+    email="alice@example.com",
+    phone_number="+14155552671",
+    date_of_birth="1990-06-15",
+    nationality="US",
+    address={
+        "line1": "123 Main Street",
+        "city": "San Francisco",
+        "state": "CA",
+        "postal_code": "94105",
+        "country": "US",
+    },
+)
+
+print(onboarding.card_user_id)  # cus_01J2KJ3MNPQ7R4S5T6U7VCRD01
+print(onboarding.kyc_status)    # "pending"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "cardUserId": "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+  "kycStatus": "pending",
+  "createdAt": "2026-03-26T12:00:00Z"
+}
+```
+
+</Step>
+
+<Step title="Wait for KYC approval">
+
+KYC review can be instant (automated) or take up to 24 hours for manual review. Poll the status endpoint or listen for the `kyc.approved` webhook event.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://crypto-api.yativo.com/api/yativo-card/kyc-status?cardUserId=cus_01J2KJ3MNPQ7R4S5T6U7VCRD01" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
+```
+
+```typescript TypeScript
+// Poll until approved or rejected
+async function waitForKycApproval(cardUserId: string): Promise<string> {
+  const maxAttempts = 60; // poll for up to 10 minutes
+  let delay = 10000;
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const status = await client.card.getKycStatus(cardUserId);
+
+    if (status.kycStatus === "approved") return "approved";
+    if (status.kycStatus === "rejected") {
+      throw new Error(`KYC rejected: ${status.rejectionReason}`);
+    }
+
+    await new Promise((r) => setTimeout(r, delay));
+  }
+
+  throw new Error("KYC did not complete within timeout");
+}
+
+await waitForKycApproval("cus_01J2KJ3MNPQ7R4S5T6U7VCRD01");
+```
+
+```python Python
+import time
+
+def wait_for_kyc_approval(card_user_id: str) -> str:
+    max_attempts = 60
+    delay = 10.0
+
+    for _ in range(max_attempts):
+        status = client.card.get_kyc_status(card_user_id)
+
+        if status.kyc_status == "approved":
+            return "approved"
+        if status.kyc_status == "rejected":
+            raise Exception(f"KYC rejected: {status.rejection_reason}")
+
+        time.sleep(delay)
+
+    raise TimeoutError("KYC did not complete within timeout")
+
+wait_for_kyc_approval("cus_01J2KJ3MNPQ7R4S5T6U7VCRD01")
+```
+
+</CodeGroup>
+
+**KYC status values:**
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Under review |
+| `approved` | User can proceed |
+| `rejected` | KYC failed — reason in `rejectionReason` |
+| `more_info_required` | Additional documents needed |
+
+<Tip>
+  Rather than polling, register a webhook for `kyc.status_changed` to get notified the moment the status updates.
+</Tip>
+
+</Step>
+
+<Step title="Accept terms and conditions">
+
+Before a card can be issued, the user must accept the card program's terms.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/yativo-card/accept-terms \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardUserId": "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+    "termsVersion": "2.1.0",
+    "acceptedAt": "2026-03-26T12:05:00Z"
+  }'
+```
+
+```typescript TypeScript
+await client.card.acceptTerms({
+  cardUserId: "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+  termsVersion: "2.1.0",
+  acceptedAt: new Date().toISOString(),
+});
+```
+
+```python Python
+client.card.accept_terms(
+    card_user_id="cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+    terms_version="2.1.0",
+    accepted_at="2026-03-26T12:05:00Z",
+)
+```
+
+</CodeGroup>
+
+<Note>
+  Retrieve the latest terms version from `GET /yativo-card/terms` and display the full terms text to users in your UI before recording acceptance.
+</Note>
+
+</Step>
+
+<Step title="Initialize the card wallet (deploy safe)">
+
+Deploy a smart contract wallet for the user. This wallet holds the USDC that funds the card.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/yativo-card/deploy-safe \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardUserId": "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01"
+  }'
+```
+
+```typescript TypeScript
+const wallet = await client.card.deploySafe({
+  cardUserId: "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+});
+
+console.log(wallet.walletId);      // wlt_01J2KK3MNPQ7R4S5T6U7VWLT77
+console.log(wallet.walletAddress); // 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984
+console.log(wallet.status);        // "deployed"
+```
+
+```python Python
+wallet = client.card.deploy_safe(
+    card_user_id="cus_01J2KJ3MNPQ7R4S5T6U7VCRD01"
+)
+
+print(wallet.wallet_id)       # wlt_01J2KK3MNPQ7R4S5T6U7VWLT77
+print(wallet.wallet_address)  # 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984
+print(wallet.status)          # "deployed"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "walletId": "wlt_01J2KK3MNPQ7R4S5T6U7VWLT77",
+  "cardUserId": "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+  "walletAddress": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+  "chain": "polygon",
+  "status": "deployed",
+  "deployedAt": "2026-03-26T12:07:00Z"
+}
+```
+
+</Step>
+
+<Step title="Create a virtual card">
+
+With the wallet deployed and KYC approved, create the virtual card.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://crypto-api.yativo.com/api/yativo-card/create-card \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardUserId": "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+    "type": "virtual",
+    "label": "Alice Main Card",
+    "spendingLimit": {
+      "amount": "500.00",
+      "interval": "monthly"
+    }
+  }'
+```
+
+```typescript TypeScript
+const card = await client.card.createCard({
+  cardUserId: "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+  type: "virtual",
+  label: "Alice Main Card",
+  spendingLimit: {
+    amount: "500.00",
+    interval: "monthly",
+  },
+});
+
+console.log(card.cardId);     // crd_01J2KL3MNPQ7R4S5T6U7VCRD88
+console.log(card.status);     // "active"
+console.log(card.last4);      // "4242"
+console.log(card.network);    // "visa"
+```
+
+```python Python
+card = client.card.create_card(
+    card_user_id="cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+    type="virtual",
+    label="Alice Main Card",
+    spending_limit={
+        "amount": "500.00",
+        "interval": "monthly",
+    },
+)
+
+print(card.card_id)   # crd_01J2KL3MNPQ7R4S5T6U7VCRD88
+print(card.status)    # "active"
+print(card.last4)     # "4242"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "cardId": "crd_01J2KL3MNPQ7R4S5T6U7VCRD88",
+  "cardUserId": "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+  "type": "virtual",
+  "label": "Alice Main Card",
+  "status": "active",
+  "network": "visa",
+  "last4": "4242",
+  "expiryMonth": 3,
+  "expiryYear": 2029,
+  "spendingLimit": {
+    "amount": "500.00",
+    "interval": "monthly"
+  },
+  "createdAt": "2026-03-26T12:08:00Z"
+}
+```
+
+</Step>
+
+<Step title="Get the USDC funding address">
+
+Retrieve the deposit address for the card wallet. Users send USDC to this address to fund their card.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://crypto-api.yativo.com/api/yativo-card/crd_01J2KL3MNPQ7R4S5T6U7VCRD88/wallet/funding-address" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
+```
+
+```typescript TypeScript
+const funding = await client.card.getFundingAddress(
+  "crd_01J2KL3MNPQ7R4S5T6U7VCRD88"
+);
+
+console.log(funding.address); // 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984
+console.log(funding.chain);   // "polygon"
+console.log(funding.asset);   // "USDC"
+```
+
+```python Python
+funding = client.card.get_funding_address("crd_01J2KL3MNPQ7R4S5T6U7VCRD88")
+
+print(funding.address)  # 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984
+print(funding.chain)    # "polygon"
+print(funding.asset)    # "USDC"
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "cardId": "crd_01J2KL3MNPQ7R4S5T6U7VCRD88",
+  "chain": "polygon",
+  "asset": "USDC",
+  "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+  "minimumDeposit": "5.00",
+  "balance": "0.00"
+}
+```
+
+Display this address to users. When they send USDC to it, the card is funded automatically — no manual step required.
+
+</Step>
+
+<Step title="Display card details securely with an ephemeral token">
+
+Card details (full PAN, CVV, expiry) are sensitive and must never be stored or logged. Use the ephemeral token API to retrieve them for a short-lived display session.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://crypto-api.yativo.com/api/yativo-card/cus_01J2KJ3MNPQ7R4S5T6U7VCRD01/cards/crd_01J2KL3MNPQ7R4S5T6U7VCRD88/ephemeral-token" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ttlSeconds": 300
+  }'
+```
+
+```typescript TypeScript
+// Backend: generate the ephemeral token
+const ephemeral = await client.card.createEphemeralToken({
+  cardUserId: "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+  cardId: "crd_01J2KL3MNPQ7R4S5T6U7VCRD88",
+  ttlSeconds: 300, // 5-minute window
+});
+
+// Return token to frontend (never log or store it)
+res.json({ token: ephemeral.token, expiresAt: ephemeral.expiresAt });
+
+// Frontend: use the token to fetch card details from Yativo's secure endpoint
+// The token is single-use and expires after ttlSeconds
+const cardDetails = await fetch("https://crypto-api.yativo.com/api/yativo-card/reveal", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ token: ephemeral.token }),
+}).then((r) => r.json());
+
+// Display cardDetails.pan, cardDetails.cvv, cardDetails.expiry in your UI
+// Never store or log these values
+```
+
+```python Python
+# Backend: generate the ephemeral token
+ephemeral = client.card.create_ephemeral_token(
+    card_user_id="cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+    card_id="crd_01J2KL3MNPQ7R4S5T6U7VCRD88",
+    ttl_seconds=300,
+)
+
+# Return token to frontend — never log or store it
+return jsonify({"token": ephemeral.token, "expires_at": ephemeral.expires_at})
+```
+
+</CodeGroup>
+
+**Ephemeral token response:**
+
+```json
+{
+  "token": "eph_eyJhbGciOiJSUzI1NiJ9.eyJjYXJkSWQiOiJjcmRfMDFKMkts...",
+  "expiresAt": "2026-03-26T12:13:00Z",
+  "ttlSeconds": 300
+}
+```
+
+<Warning>
+  Never log, store, or transmit full card details (PAN, CVV) through your servers. Use the ephemeral token pattern to retrieve them directly in the browser or mobile app for display-only purposes.
+</Warning>
+
+</Step>
+
+</Steps>
+
+## Physical Cards
+
+To issue a physical card instead of virtual, set `"type": "physical"` in the create-card request and include shipping details:
+
+```json
+{
+  "cardUserId": "cus_01J2KJ3MNPQ7R4S5T6U7VCRD01",
+  "type": "physical",
+  "label": "Alice Physical Card",
+  "shipping": {
+    "name": "Alice Martinez",
+    "line1": "123 Main Street",
+    "city": "San Francisco",
+    "state": "CA",
+    "postalCode": "94105",
+    "country": "US"
+  }
+}
+```
+
+Physical card delivery typically takes 5–10 business days. The card arrives inactive and must be activated via `POST /yativo-card/{cardId}/activate`.
+
+## Next Steps
+
+- **[B2B Card Issuer Program](/guides/b2b-card-issuer)** — Issue cards to your own customers at scale
+- **[Webhook Integration](/guides/webhook-integration)** — Receive real-time card transaction events

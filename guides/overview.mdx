@@ -1,0 +1,82 @@
+---
+title: "Guides"
+description: "Step-by-step tutorials for building with Yativo Crypto"
+---
+
+These guides walk you through real-world integration scenarios end-to-end — from setting up wallets to issuing cards to handling webhooks. Each guide is self-contained with complete code examples in TypeScript, Python, and cURL.
+
+<Note>
+  Every guide in this section can be tested against the Sandbox environment before going live. Use the base URL `https://crypto-sandbox.yativo.com/api/` with sandbox credentials. See the [Sandbox docs](/sandbox/overview) for details.
+</Note>
+
+## Tutorials
+
+<CardGroup cols={2}>
+  <Card
+    title="Accept Crypto Payments"
+    icon="wallet"
+    href="/guides/accept-crypto-payments"
+  >
+    Create wallets, display deposit addresses to users, and receive real-time deposit notifications via webhooks. The fastest path to accepting crypto in your app.
+  </Card>
+  <Card
+    title="Send Crypto"
+    icon="paper-plane"
+    href="/guides/send-crypto"
+  >
+    Programmatically send crypto to any external wallet address. Learn about gas estimation, idempotency keys, priority levels, and tracking transaction status.
+  </Card>
+  <Card
+    title="Issue Crypto-Funded Cards"
+    icon="credit-card"
+    href="/guides/issue-crypto-cards"
+  >
+    Issue Visa/Mastercard virtual and physical cards funded by USDC. Walk through KYC onboarding, wallet deployment, card creation, and secure card detail retrieval.
+  </Card>
+  <Card
+    title="B2B Card Issuer Program"
+    icon="building"
+    href="/guides/b2b-card-issuer"
+  >
+    Apply for the card issuer program and issue cards directly to your own customers. Ideal for fintechs, neobanks, and platforms building branded card products.
+  </Card>
+  <Card
+    title="IBAN Account Setup"
+    icon="bank"
+    href="/guides/iban-onboarding"
+  >
+    Get a dedicated IBAN that converts incoming bank transfers (SEPA/SWIFT) to crypto automatically. Complete KYC onboarding and start receiving fiat in minutes.
+  </Card>
+  <Card
+    title="Swap Tokens"
+    icon="arrows-rotate"
+    href="/guides/swap-tokens"
+  >
+    Exchange one crypto asset for another across chains. Get quotes, handle expiry, execute swaps, and monitor swap history with full fee transparency.
+  </Card>
+  <Card
+    title="Webhook Integration"
+    icon="webhook"
+    href="/guides/webhook-integration"
+  >
+    Receive real-time event notifications for deposits, withdrawals, card transactions, and more. Includes signature verification, retry handling, and full event reference.
+  </Card>
+  <Card
+    title="SDK Quickstart"
+    icon="code"
+    href="/guides/sdk-quickstart"
+  >
+    Go from zero to your first API call in TypeScript, Python, PHP, Java, or React. Install the SDK, authenticate, and create your first wallet in under 5 minutes.
+  </Card>
+</CardGroup>
+
+## Where to Start
+
+If you are new to Yativo Crypto, we recommend this sequence:
+
+1. **[SDK Quickstart](/guides/sdk-quickstart)** — Install the SDK and authenticate
+2. **[Accept Crypto Payments](/guides/accept-crypto-payments)** — Set up wallets and start receiving deposits
+3. **[Webhook Integration](/guides/webhook-integration)** — Get real-time event notifications
+4. **[Send Crypto](/guides/send-crypto)** — Move funds out programmatically
+
+For card-specific use cases, start with **[Issue Crypto-Funded Cards](/guides/issue-crypto-cards)**, and for B2B platform use cases see the **[B2B Card Issuer Program](/guides/b2b-card-issuer)**.

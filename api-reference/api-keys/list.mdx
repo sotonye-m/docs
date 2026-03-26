@@ -1,0 +1,75 @@
+---
+title: "List API Keys"
+api: "GET https://crypto-sandbox.yativo.com/api/api-keys"
+description: "List all API keys for your account. Secrets are never returned in list responses."
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<Note>
+  The `api_secret` is never returned in list or get responses — only at creation. To rotate a secret, revoke the key and create a new one.
+</Note>
+
+<Accordion title="Response Type Definitions">
+```typescript
+interface ApiKeySummary {
+  key_id: string;
+  api_key: string;      // Public key only — secret is never returned
+  name: string;
+  permissions: string[];
+  status: "active" | "revoked" | "expired";
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+interface ListApiKeysResponse {
+  status: "success";
+  data: {
+    keys: ApiKeySummary[];
+  };
+}
+```
+</Accordion>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/api-keys' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "keys": [
+      {
+        "key_id": "key_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "api_key": "yk_live_AbCdEfGhIjKlMnOpQrStUvWxYz",
+        "name": "Production Backend",
+        "permissions": ["transactions:read", "transactions:write", "accounts:read"],
+        "status": "active",
+        "last_used_at": "2026-03-26T09:45:00Z",
+        "expires_at": null,
+        "created_at": "2026-03-01T10:00:00Z"
+      },
+      {
+        "key_id": "key_02HX9KZMB3F7VNQP8R2WDGT4E6",
+        "api_key": "yk_live_ZyXwVuTsRqPoNmLkJiHgFeDcBa",
+        "name": "Staging Integration",
+        "permissions": ["transactions:read", "analytics:read"],
+        "status": "active",
+        "last_used_at": "2026-03-25T14:00:00Z",
+        "expires_at": "2026-06-01T00:00:00Z",
+        "created_at": "2026-02-15T10:00:00Z"
+      }
+    ]
+  }
+}
+```
+</ResponseExample>

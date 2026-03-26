@@ -1,0 +1,58 @@
+---
+title: "Create Webhook"
+api: "POST https://crypto-sandbox.yativo.com/api/webhook/create"
+description: "Register a webhook endpoint to receive real-time event notifications"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="url" type="string" required>
+  The HTTPS URL that will receive webhook POST requests.
+</ParamField>
+
+<ParamField body="events" type="array" required>
+  Array of event types to subscribe to. Example events:
+  - `transaction.confirmed`
+  - `transaction.failed`
+  - `swap.completed`
+  - `card.transaction.completed`
+  - `iban.activated`
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  A human-readable description of this webhook's purpose.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/webhook/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://your-app.com/webhooks/yativo",
+    "events": ["transaction.confirmed", "transaction.failed", "swap.completed"],
+    "description": "Production webhook for transaction events"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Webhook created successfully",
+  "data": {
+    "webhook_id": "wbh_01HX9KZMB3F7VNQP8R2WDGT4ET",
+    "url": "https://your-app.com/webhooks/yativo",
+    "events": ["transaction.confirmed", "transaction.failed", "swap.completed"],
+    "description": "Production webhook for transaction events",
+    "secret": "whsec_01HX9KZMB3F7VNQP8R2WDGT4EU",
+    "status": "active",
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

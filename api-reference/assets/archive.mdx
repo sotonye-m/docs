@@ -1,0 +1,39 @@
+---
+title: "Archive Asset"
+api: "POST https://crypto-sandbox.yativo.com/api/assets/archive-asset"
+description: "Archive a wallet asset to prevent it from appearing in active listings"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="asset_id" type="string" required>
+  The ID of the asset to archive.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/assets/archive-asset' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Asset archived successfully",
+  "data": {
+    "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA",
+    "status": "archived",
+    "archived_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

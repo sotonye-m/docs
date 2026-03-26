@@ -1,0 +1,39 @@
+---
+title: "List Cards"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/list-cards"
+description: "Retrieve all cards issued under the authenticated user's card account"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/list-cards' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Cards retrieved successfully",
+  "data": [
+    {
+      "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
+      "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
+      "card_type": "virtual",
+      "display_name": "My Crypto Card",
+      "last_four": "4242",
+      "status": "active",
+      "spending_limit_amount": "1000.00",
+      "spending_limit_frequency": "monthly",
+      "created_at": "2026-03-26T12:00:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>

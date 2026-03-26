@@ -1,0 +1,483 @@
+---
+title: "Virtual Cards"
+description: "Create and manage virtual payment cards for online and contactless spending"
+---
+
+## Overview
+
+Virtual cards are instantly issued, digital-only payment cards. Use them for online purchases, subscriptions, and contactless payments. You can create multiple virtual cards, set custom spending limits, and freeze or void them at any time.
+
+<Note>
+  Before creating a card, you must complete the [onboarding flow](/yativo-crypto/cards/onboarding) including KYC approval, terms acceptance, and wallet deployment.
+</Note>
+
+<Accordion title="Type Definitions">
+```typescript
+interface Card {
+  card_id: string;
+  yativo_card_id: string;
+  display_name: string;
+  type: "virtual" | "physical";
+  status: "active" | "frozen" | "voided";
+  last_four: string;
+  expiry_month: number;
+  expiry_year: number;
+  spending_limit_amount: number;
+  spending_limit_frequency: "daily" | "weekly" | "monthly";
+  created_at: string;
+}
+
+interface CreateCardRequest {
+  card_type?: "virtual" | "physical";
+  display_name?: string;
+  spending_limit_amount?: number;
+  spending_limit_frequency?: "daily" | "weekly" | "monthly";
+}
+
+interface EphemeralTokenResponse {
+  ephemeral_token: string;
+  app_id: string;
+  pse_auth_token: string;
+  card_token: string;
+  last_four: string;
+  expires_at: string;
+}
+```
+</Accordion>
+
+---
+
+## List Cards
+
+Retrieve all cards associated with the authenticated account.
+
+```
+GET /yativo-card/list-cards
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/list-cards' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "display_name": "Online Shopping",
+      "card_type": "virtual",
+      "status": "active",
+      "last_four": "4242",
+      "spending_limit_amount": 500.00,
+      "spending_limit_frequency": "monthly",
+      "created_at": "2026-03-25T10:30:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Create Virtual Card
+
+Issue a new virtual card. Specify a display name and optional spending limit.
+
+```
+POST /yativo-card/create-card
+```
+
+<ParamField body="card_type" type="string" required>
+  Must be `"virtual"` for virtual card creation.
+</ParamField>
+
+<ParamField body="display_name" type="string" required>
+  A human-readable label for the card (e.g., "Monthly Subscriptions", "Travel Expenses").
+</ParamField>
+
+<ParamField body="spending_limit_amount" type="number">
+  Maximum amount the card can spend per period. Omit to set no limit.
+</ParamField>
+
+<ParamField body="spending_limit_frequency" type="string">
+  The reset frequency for the spending limit. Accepted values: `daily`, `weekly`, `monthly`, `yearly`, `per_authorization`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/create-card' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "card_type": "virtual",
+    "display_name": "Online Shopping",
+    "spending_limit_amount": 500.00,
+    "spending_limit_frequency": "monthly"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "display_name": "Online Shopping",
+    "card_type": "virtual",
+    "status": "active",
+    "last_four": "4242",
+    "spending_limit_amount": 500.00,
+    "spending_limit_frequency": "monthly",
+    "created_at": "2026-03-25T10:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## View Card Details and PIN (Secure iframe)
+
+Sensitive card data — the full card number (PAN), CVV, expiry, and PIN — is never returned in standard API responses. Yativo uses a **PSE (Partner Secure Element) iframe** pattern instead.
+
+<Note>
+  Card details and PIN use **separate tokens** — you must request the correct `element_type` for each view. A `cardData` token cannot display the PIN, and a `cardPin` token cannot display card numbers.
+</Note>
+
+**Quick steps:**
+
+1. Call `POST /yativo-card/{yativoCardId}/cards/{cardId}/ephemeral-token` with `element_type: "cardData"` (or `"cardPin"` for PIN)
+2. Pass the returned token fields to the PSE SDK
+3. The SDK mounts a sandboxed iframe — your app never sees raw sensitive data
+
+```bash Card Data Token
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/ephemeral-token' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{ "element_type": "cardData" }'
+```
+
+```json Response
+{
+  "status": "success",
+  "data": {
+    "ephemeral_token": "eph_01HX9KZMB3F7VNQP8R2WDGT4EK",
+    "app_id": "app_yativo_prod",
+    "card_token": "ct_carddata_01HX9KZMB3F7VNQP8R2W",
+    "pse_auth_token": "pse_auth_01HX9KZMB3F7VNQP8R2WDGT",
+    "pse_config": {
+      "sdk_url": "https://unpkg.com/@gnosispay/pse-sdk@1.3.0/dist/gp-sdk.es.js",
+      "allowed_element_types": ["cardData"]
+    },
+    "expires_at": "2026-03-26T12:01:00Z"
+  }
+}
+```
+
+<Warning>
+  Tokens expire in 60 seconds. Never log, cache, or store them. Always call this from your backend — never from the browser with your API credentials.
+</Warning>
+
+<Card title="Full iframe integration guide" icon="window" href="/yativo-crypto/cards/secure-display">
+  Step-by-step setup for card data and PIN iframes, backend proxy pattern, CSP requirements, React/Vue/Vanilla JS examples, and security requirements.
+</Card>
+
+---
+
+## Freeze a Card
+
+Temporarily suspend a card. All transactions on a frozen card will be declined until unfrozen.
+
+```
+POST /yativo-card/cards/{cardId}/freeze
+```
+
+<ParamField path="cardId" type="string" required>
+  The card ID to freeze.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/freeze' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "frozen",
+    "frozen_at": "2026-03-25T11:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Unfreeze a Card
+
+Re-activate a frozen card.
+
+```
+POST /yativo-card/cards/{cardId}/unfreeze
+```
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/unfreeze' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "active",
+    "unfrozen_at": "2026-03-25T11:05:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Void a Card
+
+Permanently cancel a card. This action is irreversible. A voided card cannot be reactivated.
+
+```
+POST /yativo-card/cards/{cardId}/void
+```
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/void' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "voided",
+    "voided_at": "2026-03-25T11:10:00Z"
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Voiding a card is permanent. If you only need to temporarily stop spending, use [freeze](#freeze-a-card) instead.
+</Warning>
+
+---
+
+## Set Card PIN
+
+Setting a PIN requires a two-step process: first request an OTP, then submit the OTP along with the new PIN.
+
+### Step 1 — Request OTP
+
+```
+POST /yativo-card/cards/{cardId}/pin/otp
+```
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/pin/otp' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "otp_sent": true,
+    "delivery_method": "email",
+    "expires_in_seconds": 300
+  }
+}
+```
+</ResponseExample>
+
+### Step 2 — Set PIN
+
+```
+POST /yativo-card/cards/{cardId}/pin/set
+```
+
+<ParamField path="cardId" type="string" required>
+  The card ID for which to set the PIN.
+</ParamField>
+
+<ParamField body="otp" type="string" required>
+  The one-time password received via email or SMS.
+</ParamField>
+
+<ParamField body="pin" type="string" required>
+  The new 4-digit PIN. Must be numeric only.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/pin/set' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "otp": "847291",
+    "pin": "4821"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "pin_set": true,
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get User Profile
+
+Retrieve the card account profile for a given Yativo Card ID.
+
+```
+GET /yativo-card/{yativoCardId}/profile
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/profile' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "email": "user@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "kyc_status": "approved",
+    "terms_accepted": true,
+    "wallet_deployed": true,
+    "created_at": "2026-03-25T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Card Status Reference
+
+| Status | Description |
+|---|---|
+| `active` | Card is in good standing and can be used for transactions. |
+| `frozen` | Card is temporarily suspended. Transactions will be declined. |
+| `voided` | Card has been permanently cancelled. Cannot be reactivated. |
+| `pending` | Card is being provisioned. Usually resolves within seconds. |
+
+---
+
+## Sandbox Testing
+
+<Note>
+  Replace `YOUR_SANDBOX_TOKEN` with a token obtained by authenticating against `https://crypto-sandbox.yativo.com/api/`. See [Sandbox Overview](/sandbox/overview).
+</Note>
+
+### Create a Virtual Card (Sandbox)
+
+<CodeGroup>
+```bash cURL (Sandbox)
+curl -X POST 'https://crypto-sandbox.yativo.com/api/yativo-card/create-card' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "card_type": "virtual",
+    "display_name": "Sandbox Test Card",
+    "spending_limit_amount": 100.00,
+    "spending_limit_frequency": "monthly"
+  }'
+```
+
+```typescript TypeScript SDK (Sandbox)
+import { YativoSDK } from '@yativo/crypto-sdk';
+
+const sdk = new YativoSDK({
+  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  apiKey: 'YOUR_SANDBOX_API_KEY',
+  apiSecret: 'YOUR_SANDBOX_API_SECRET',
+});
+
+const card = await sdk.cards.create({
+  card_type: 'virtual',
+  display_name: 'Sandbox Test Card',
+  spending_limit_amount: 100.00,
+  spending_limit_frequency: 'monthly',
+});
+console.log('Card ID:', card.data.card_id);
+```
+</CodeGroup>
+
+### List Cards (Sandbox)
+
+<CodeGroup>
+```bash cURL (Sandbox)
+curl -X GET 'https://crypto-sandbox.yativo.com/api/yativo-card/list-cards' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+
+```typescript TypeScript SDK (Sandbox)
+import { YativoSDK } from '@yativo/crypto-sdk';
+
+const sdk = new YativoSDK({
+  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  apiKey: 'YOUR_SANDBOX_API_KEY',
+  apiSecret: 'YOUR_SANDBOX_API_SECRET',
+});
+
+const cards = await sdk.cards.list();
+console.log('Cards:', cards.data);
+```
+</CodeGroup>

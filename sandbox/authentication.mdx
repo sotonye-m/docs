@@ -1,0 +1,305 @@
+---
+title: "Test: Authentication"
+description: "Test the Yativo authentication flow in the sandbox environment"
+---
+
+## Overview
+
+This guide walks through testing the complete Yativo authentication flow using the sandbox environment. All examples use the sandbox base URL: `https://crypto-sandbox.yativo.com/api/`.
+
+The authentication flow consists of three steps:
+1. **Register** — Create a new sandbox account
+2. **Login** — Authenticate and trigger OTP delivery
+3. **Verify OTP** — Confirm the one-time password to receive your access token
+
+<Note>
+  Sandbox credentials are completely separate from production. Use the sandbox API key from your developer dashboard for all sandbox requests.
+</Note>
+
+---
+
+## Step 1 — Register
+
+Create a new account in the sandbox environment.
+
+```
+POST https://crypto-sandbox.yativo.com/api/authentication/registration
+```
+
+<ParamField body="email" type="string" required>
+  Email address for the sandbox account. Use a test email you can access for OTP verification.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  A secure password for the account. Minimum 8 characters.
+</ParamField>
+
+<ParamField body="first_name" type="string" required>
+  First name for the account.
+</ParamField>
+
+<ParamField body="last_name" type="string" required>
+  Last name for the account.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-sandbox.yativo.com/api/authentication/registration' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "sandbox-test@example.com",
+    "password": "SandboxTest2026!",
+    "first_name": "Sandbox",
+    "last_name": "Tester"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "message": "Registration successful. Please verify your email.",
+  "data": {
+    "user_id": "usr_sandbox_01HX9KZMB3F7VNQP8R2WDGTXXX",
+    "email": "sandbox-test@example.com",
+    "first_name": "Sandbox",
+    "last_name": "Tester",
+    "email_verified": false,
+    "created_at": "2026-03-25T10:00:00Z"
+  }
+}
+```
+
+```json Email Already Registered
+{
+  "status": "error",
+  "message": "An account with this email already exists.",
+  "error_code": "EMAIL_ALREADY_EXISTS"
+}
+```
+</ResponseExample>
+
+<Tip>
+  In the sandbox environment, email verification may be pre-approved or skipped. Check the `email_verified` field — if it's already `true`, you can proceed directly to login.
+</Tip>
+
+---
+
+## Step 2 — Login
+
+Authenticate with your sandbox credentials. A successful login triggers an OTP to be sent to your email.
+
+```
+POST https://crypto-sandbox.yativo.com/api/authentication/login
+```
+
+<ParamField body="email" type="string" required>
+  The email address used during registration.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The account password.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-sandbox.yativo.com/api/authentication/login' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "sandbox-test@example.com",
+    "password": "SandboxTest2026!"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "message": "Login successful. OTP sent to your email.",
+  "data": {
+    "otp_required": true,
+    "otp_delivery": "email",
+    "otp_expires_in_seconds": 300,
+    "session_token": "sess_sandbox_7f3k9d2m1p8q4r5t6y7u8i9o0p"
+  }
+}
+```
+
+```json Invalid Credentials
+{
+  "status": "error",
+  "message": "Invalid email or password.",
+  "error_code": "INVALID_CREDENTIALS"
+}
+```
+</ResponseExample>
+
+<Note>
+  The `session_token` returned here is used in the OTP verification step to associate the OTP with this login attempt.
+</Note>
+
+---
+
+## Step 3 — Verify OTP
+
+Submit the OTP received via email to complete authentication and receive your access token.
+
+```
+POST https://crypto-sandbox.yativo.com/api/authentication/otp_verification
+```
+
+<ParamField body="otp" type="string" required>
+  The 6-digit one-time password sent to your registered email.
+</ParamField>
+
+<ParamField body="session_token" type="string" required>
+  The session token returned from the login response.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-sandbox.yativo.com/api/authentication/otp_verification' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "otp": "847291",
+    "session_token": "sess_sandbox_7f3k9d2m1p8q4r5t6y7u8i9o0p"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "message": "Authentication successful.",
+  "data": {
+    "access_token": "sandbox_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sandbox_payload.sandbox_signature",
+    "refresh_token": "sandbox_refresh_9x8y7z6w5v4u3t2s1r0q",
+    "token_type": "Bearer",
+    "expires_in": 3600,
+    "user": {
+      "user_id": "usr_sandbox_01HX9KZMB3F7VNQP8R2WDGTXXX",
+      "email": "sandbox-test@example.com",
+      "first_name": "Sandbox",
+      "last_name": "Tester",
+      "email_verified": true
+    }
+  }
+}
+```
+
+```json Invalid OTP
+{
+  "status": "error",
+  "message": "Invalid or expired OTP.",
+  "error_code": "INVALID_OTP"
+}
+```
+
+```json Expired OTP
+{
+  "status": "error",
+  "message": "OTP has expired. Please login again to request a new OTP.",
+  "error_code": "OTP_EXPIRED"
+}
+```
+</ResponseExample>
+
+---
+
+## Using the Access Token
+
+Once you have the access token, include it as a Bearer token in all subsequent requests:
+
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/wallets' \
+  -H 'Authorization: Bearer sandbox_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+```
+
+---
+
+## Token Refresh
+
+Access tokens expire after 1 hour. Use the refresh token to obtain a new access token without re-authenticating.
+
+```
+POST https://crypto-sandbox.yativo.com/api/authentication/refresh
+```
+
+<ParamField body="refresh_token" type="string" required>
+  The refresh token received during OTP verification.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-sandbox.yativo.com/api/authentication/refresh' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "refresh_token": "sandbox_refresh_9x8y7z6w5v4u3t2s1r0q"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "access_token": "sandbox_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new_sandbox_payload.new_signature",
+    "expires_in": 3600
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Complete Authentication Flow (Script)
+
+<CodeGroup>
+```bash Full Flow Script
+#!/bin/bash
+
+BASE_URL="https://crypto-sandbox.yativo.com/api"
+EMAIL="sandbox-test@example.com"
+PASSWORD="SandboxTest2026!"
+
+# Step 1: Register (skip if already registered)
+echo "=== STEP 1: Register ==="
+curl -s -X POST "$BASE_URL/authentication/registration" \
+  -H 'Content-Type: application/json' \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"first_name\":\"Sandbox\",\"last_name\":\"Tester\"}" | jq .
+
+# Step 2: Login
+echo "=== STEP 2: Login ==="
+LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/authentication/login" \
+  -H 'Content-Type: application/json' \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")
+echo $LOGIN_RESPONSE | jq .
+SESSION_TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.data.session_token')
+
+# Step 3: Verify OTP (enter OTP from email)
+echo "=== STEP 3: Verify OTP ==="
+read -p "Enter OTP from email: " OTP
+curl -s -X POST "$BASE_URL/authentication/otp_verification" \
+  -H 'Content-Type: application/json' \
+  -d "{\"otp\":\"$OTP\",\"session_token\":\"$SESSION_TOKEN\"}" | jq .
+```
+</CodeGroup>
+
+---
+
+## Sandbox Test Credentials
+
+For quick testing, you may use these sandbox test credentials. These are pre-registered in the sandbox:
+
+| Field | Value |
+|---|---|
+| Email | `sandbox-test@example.com` |
+| Password | `SandboxTest2026!` |
+
+<Warning>
+  These test credentials are shared. Do not store sensitive data in accounts using these credentials. For integration testing, register a unique sandbox account.
+</Warning>

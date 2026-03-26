@@ -1,0 +1,46 @@
+---
+title: "Apply for Issuer Program"
+api: "POST https://crypto-sandbox.yativo.com/api/card-issuer/apply"
+description: "Apply to become a card issuer and configure your card program"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="funding_structure" type="string" required>
+  The funding model for the issuer program. Defines how card balances are funded, e.g. `pre_funded`, `post_funded`.
+</ParamField>
+
+<ParamField body="iban_enabled" type="boolean" required>
+  Whether to enable IBAN functionality for cardholders in your program.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/apply' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "funding_structure": "pre_funded",
+    "iban_enabled": true
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Issuer program application submitted",
+  "data": {
+    "program_id": "prg_01HX9KZMB3F7VNQP8R2WDGT4EO",
+    "funding_structure": "pre_funded",
+    "iban_enabled": true,
+    "status": "under_review",
+    "applied_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

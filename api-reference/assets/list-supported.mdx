@@ -1,0 +1,60 @@
+---
+title: "List Supported Assets"
+api: "GET https://crypto-sandbox.yativo.com/api/assets/get-all-assets"
+description: "Retrieve all supported cryptocurrency assets and tokens"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/assets/get-all-assets' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "message": "Assets retrieved successfully",
+  "data": [
+    {
+      "ticker": "USDC_SOL",
+      "name": "USD Coin (Solana)",
+      "chain": "solana",
+      "decimals": 6,
+      "contract_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "is_native": false
+    },
+    {
+      "ticker": "ETH",
+      "name": "Ethereum",
+      "chain": "ethereum",
+      "decimals": 18,
+      "contract_address": null,
+      "is_native": true
+    },
+    {
+      "ticker": "BTC",
+      "name": "Bitcoin",
+      "chain": "bitcoin",
+      "decimals": 8,
+      "contract_address": null,
+      "is_native": true
+    },
+    {
+      "ticker": "USDC_ETH",
+      "name": "USD Coin (Ethereum)",
+      "chain": "ethereum",
+      "decimals": 6,
+      "contract_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "is_native": false
+    }
+  ]
+}
+```
+</ResponseExample>
