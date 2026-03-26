@@ -8,7 +8,7 @@ description: "Authenticate with the Yativo API using your account credentials"
 | Environment | Base URL |
 |-------------|----------|
 | Production | `https://api.yativo.com/api/v1` |
-| Sandbox | `https://smtp.yativo.com/api/v1` |
+| Sandbox | `https://test-api.yativo.com/api/v1` |
 
 ---
 
@@ -113,4 +113,4 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
 
 - Store `account_id` and `app_secret` as environment variables — never hardcode them.
 - Rotate your `app_secret` immediately if you suspect it has been exposed.
-- Use the sandbox (`https://smtp.yativo.com/api/v1`) for development and testing.
+- Use the sandbox (`https://test-api.yativo.com/api/v1`) for development and testing.
