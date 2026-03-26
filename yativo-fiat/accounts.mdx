@@ -1,0 +1,294 @@
+---
+title: "Accounts"
+description: "Manage multi-currency accounts, sub-accounts, and addresses"
+---
+
+<Accordion title="Type Definitions">
+```typescript
+interface Account {
+  id: string;
+  name: string;
+  currency: string;
+  status: "active" | "suspended";
+  created_at: string;
+}
+
+interface AccountBalance {
+  currency: string;
+  available: string;
+  on_hold: string;
+  total: string;
+}
+
+interface SubAccount {
+  id: string;
+  parent_account_id: string;
+  name: string;
+  currency: string;
+  status: "active" | "suspended";
+  created_at: string;
+}
+
+interface SubAccountAddress {
+  id: string;
+  sub_account_id: string;
+  address: string;
+  network: string;
+  created_at: string;
+}
+
+interface CreateSubAccountRequest {
+  name: string;
+  currency: string;
+}
+
+interface CreateSubAccountAddressRequest {
+  sub_account_id: string;
+  network: string;
+}
+```
+</Accordion>
+
+---
+
+## List accounts
+
+```
+GET /accounts
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/accounts' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "name": "Main USD Account",
+      "currency": "USD",
+      "status": "active",
+      "created_at": "2026-01-15T10:00:00Z"
+    },
+    {
+      "id": "acc_02HX9KZMB3F7VNQP8R2WDGT4E6",
+      "name": "EUR Account",
+      "currency": "EUR",
+      "status": "active",
+      "created_at": "2026-02-01T10:00:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Get account
+
+```
+GET /accounts/{account_id}
+```
+
+<ParamField path="account_id" type="string" required>
+  The account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/accounts/acc_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Get account balance
+
+```
+GET /accounts/{account_id}/balance
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/accounts/acc_01HX9KZMB3F7VNQP8R2WDGT4E5/balance' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "currency": "USD",
+    "available": "12450.00",
+    "on_hold": "200.00",
+    "total": "12650.00"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get account assets
+
+```
+GET /accounts/{account_id}/assets
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/accounts/acc_01HX9KZMB3F7VNQP8R2WDGT4E5/assets' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    { "symbol": "USD", "name": "US Dollar", "balance": "12450.00" },
+    { "symbol": "EUR", "name": "Euro", "balance": "3200.00" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Get account transactions
+
+```
+GET /accounts/{account_id}/transactions
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/accounts/acc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Sub-accounts
+
+Sub-accounts allow you to segment funds within a parent account — useful for isolating balances per product, customer segment, or region.
+
+### Create sub-account
+
+```
+POST /accounts/sub-accounts
+```
+
+<ParamField body="name" type="string" required>
+  A descriptive label for the sub-account.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  The currency code (ISO 4217), e.g. `"USD"`, `"EUR"`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/accounts/sub-accounts' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Customer Escrow USD",
+    "currency": "USD"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "id": "sub_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "parent_account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "name": "Customer Escrow USD",
+    "currency": "USD",
+    "status": "active",
+    "created_at": "2026-03-26T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Get sub-account
+
+```
+GET /accounts/{account_id}/sub-accounts/{sub_account_id}
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/accounts/acc_01HX/sub-accounts/sub_01HX' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+### Get sub-account addresses
+
+```
+GET /accounts/sub-accounts/addresses/{sub_account_id}
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/accounts/sub-accounts/addresses/sub_01HX' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+### Create sub-account address
+
+```
+POST /accounts/sub-accounts/addresses
+```
+
+<ParamField body="sub_account_id" type="string" required>
+  The sub-account to create an address for.
+</ParamField>
+
+<ParamField body="network" type="string" required>
+  The network to generate an address on (e.g. `"polygon"`, `"ethereum"`, `"solana"`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/accounts/sub-accounts/addresses' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "sub_account_id": "sub_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "network": "polygon"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "id": "addr_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "sub_account_id": "sub_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "address": "0xAbCdEf1234567890AbCdEf1234567890AbCdEf12",
+    "network": "polygon",
+    "created_at": "2026-03-26T10:05:00Z"
+  }
+}
+```
+</ResponseExample>

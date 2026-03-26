@@ -1,0 +1,341 @@
+---
+title: "Deposits (Payins)"
+description: "Accept incoming payments from customers via local payment rails"
+---
+
+A payin creates a payment link your customer uses to send funds. First discover the right payment gateway for the destination currency, then create the payin — optionally locking an exchange rate with a [quote](/yativo-fiat/exchange-rate) first.
+
+<Accordion title="Type Definitions">
+```typescript
+interface PayinGateway {
+  id: number;
+  method_name: string;
+  country: string;    // ISO 3166-1 alpha-3
+  currency: string;
+  base_currency: string;
+}
+
+interface CreatePayinRequest {
+  gateway: number;        // ID from /payment-methods/payin
+  currency: string;       // currency of the deposit
+  amount?: number;        // required if no quote_id
+  quote_id?: string;      // from /exchange-rate (locks rate for 5 mins)
+  customer_id?: string;   // attach to a specific customer
+  redirect_url?: string;  // redirect after payment
+}
+
+interface PayinResponse {
+  id: string;
+  deposit_url: string;    // send this to your customer
+  amount: number;
+  currency: string;
+  gateway: string;
+  status: "pending" | "success" | "failed";
+  receive_amount: string;
+  customer_id?: string;
+  created_at: string;
+}
+```
+</Accordion>
+
+---
+
+## Step 1 — Find your gateway ID
+
+### Supported payin countries
+
+Returns countries available for receiving payments (ISO 3166-1 **alpha-3** codes).
+
+```
+GET /payment-methods/payin/countries
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/countries' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    { "iso3": "BRA", "name": "brazil" },
+    { "iso3": "CHL", "name": "chile" },
+    { "iso3": "MEX", "name": "mexico" },
+    { "iso3": "COL", "name": "colombia" },
+    { "iso3": "PER", "name": "peru" }
+  ]
+}
+```
+</ResponseExample>
+
+### Gateway ID by country and currency
+
+```
+GET /payment-methods/payin?country={iso3}&currency={code}
+```
+
+<ParamField query="country" type="string" required>
+  Country ISO 3166-1 alpha-3 code (e.g. `CHL`, `BRA`, `MEX`).
+</ParamField>
+
+<ParamField query="currency" type="string" required>
+  Currency code (e.g. `CLP`, `BRL`, `MXN`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin?country=CHL&currency=CLP' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": 22,
+      "method_name": "Bank Transfer",
+      "country": "CHL",
+      "currency": "CLP",
+      "base_currency": "CLP"
+    },
+    {
+      "id": 23,
+      "method_name": "Bank Transfer",
+      "country": "CHL",
+      "currency": "CLP",
+      "base_currency": "USD"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+Note the `id` — this is your `gateway` value in the payin request.
+
+---
+
+## Step 2 — Create a payin
+
+```
+POST /wallet/deposits/new
+```
+
+<ParamField body="gateway" type="number" required>
+  Gateway ID from Step 1.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Currency of the deposit (e.g. `"CLP"`, `"BRL"`, `"MXN"`).
+</ParamField>
+
+<ParamField body="quote_id" type="string">
+  Quote ID from [`/exchange-rate`](/yativo-fiat/exchange-rate). Locks the rate for 5 minutes. **Recommended** — amount is taken from the quote.
+</ParamField>
+
+<ParamField body="amount" type="number">
+  Amount to collect. Required if `quote_id` is not provided. Uses current market rate.
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Attach this deposit to a specific customer wallet.
+</ParamField>
+
+<ParamField body="redirect_url" type="string">
+  URL to redirect the customer after payment is completed.
+</ParamField>
+
+<RequestExample>
+```bash With quote ID (recommended)
+curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "gateway": 22,
+    "currency": "CLP",
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "customer_id": "xxxxxx-xxxx-xxxx-xxxxxx",
+    "redirect_url": "https://yourapp.com/payment/success"
+  }'
+```
+
+```bash Without quote ID (market rate)
+curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "gateway": 22,
+    "amount": 10000,
+    "currency": "CLP"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "deposit_url": "https://checkout.yativo.com/process-payin/b3150e03-xxxx-4de3-a0ff-xxxxxxxxxx/paynow",
+    "deposit_data": {
+      "currency": "CLP",
+      "deposit_currency": "USD",
+      "amount": 10000,
+      "gateway": 22,
+      "receive_amount": 9,
+      "customer_id": "948a039f-9883-xxxx-88a6-xxxxxxxxx",
+      "id": "b3150e03-d27e-4de3-a0ff-16ebeb55683c",
+      "created_at": "2026-03-18T15:52:43.000000Z"
+    },
+    "payment_info": {
+      "send_amount": "10000 CLP",
+      "receive_amount": "9 USD",
+      "exchange_rate": "1 USD = 936.0336 CLP",
+      "transaction_fee": "1236.03 CLP",
+      "payment_method": "Bank Transfer",
+      "estimate_delivery_time": "6 Minute(s)",
+      "total_amount_due": "10000 CLP"
+    }
+  }
+}
+```
+</ResponseExample>
+
+Send `deposit_url` to your customer — they complete payment through Yativo's hosted checkout.
+
+---
+
+## List deposits
+
+```
+GET /wallet/deposits/
+```
+
+Filter by `gateway`, `currency`, `start_date`, or `end_date` as query parameters.
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/wallet/deposits/?currency=CLP&start_date=2026-03-01&end_date=2026-03-31' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx",
+      "amount": 10000,
+      "gateway": "22",
+      "currency": "CLP",
+      "status": "success",
+      "deposit_currency": "USD",
+      "receive_amount": "9.36",
+      "customer_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx",
+      "created_at": "2026-03-15T10:00:00.000000Z"
+    }
+  ],
+  "pagination": {
+    "total": 7,
+    "per_page": 10,
+    "current_page": 1,
+    "last_page": 1
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Stablecoin funding
+
+Fund your Yativo USD balance using stablecoins (USDC or EURC on Solana) to use for payouts or fee payments.
+
+### Generate a deposit wallet address
+
+```
+POST /crypto/create-wallet
+```
+
+<ParamField body="currency" type="string" required>
+  `"USDC_SOL"` or `"EURC_SOL"`.
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Pass a customer ID to generate a deposit address for a specific customer's account.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/crypto/create-wallet' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "currency": "USDC_SOL" }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "coin_name": "USDC_SOL",
+    "wallet_address": "7TzXXXXXXXXXXXXX",
+    "wallet_network": "SOL",
+    "wallet_status": "active",
+    "wallet_balance": "0"
+  }
+}
+```
+</ResponseExample>
+
+### Retrieve your deposit wallet addresses
+
+```
+GET /crypto/get-wallets
+```
+
+### Deposit history
+
+```
+GET /crypto/deposit-histories
+```
+
+For a specific wallet address:
+
+```
+GET /crypto/wallet/deposit/histories/{wallet_address}
+```
+
+---
+
+## Recommended workflow
+
+```
+# Option A: With locked rate (recommended)
+1. POST /exchange-rate           → get quote_id (rate locked 5 minutes)
+2. POST /wallet/deposits/new     → create payin using quote_id
+
+# Option B: Market rate
+1. POST /wallet/deposits/new     → create payin with amount directly
+```

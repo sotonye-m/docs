@@ -1,0 +1,174 @@
+---
+title: "API Keys"
+description: "Generate and manage API credentials for programmatic access"
+---
+
+API keys allow your backend services to authenticate with the Yativo API without the magic-link flow. Each key can be scoped to specific permissions and rotated independently.
+
+<Accordion title="Type Definitions">
+```typescript
+interface ApiKey {
+  id: string;
+  name: string;
+  key_prefix: string;   // first 8 characters of the key, e.g. "yat_live"
+  permissions: string[];
+  is_active: boolean;
+  last_used_at?: string;
+  created_at: string;
+  expires_at?: string;
+}
+
+interface CreateApiKeyRequest {
+  name: string;
+  permissions?: string[];
+  expires_at?: string;  // ISO 8601; omit for non-expiring keys
+}
+
+interface ApiKeyResponse extends ApiKey {
+  key: string;  // full key — only returned once on creation
+}
+```
+</Accordion>
+
+---
+
+## List API keys
+
+```
+GET /business/api-keys
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/business/api-keys' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "key_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "name": "Production Backend",
+      "key_prefix": "yat_live",
+      "permissions": ["transactions:read", "payouts:write"],
+      "is_active": true,
+      "last_used_at": "2026-03-25T18:42:00Z",
+      "created_at": "2026-01-10T10:00:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Create API key
+
+```
+POST /business/api-keys
+```
+
+<ParamField body="name" type="string" required>
+  A label to identify this key (e.g. `"Production Backend"`, `"Staging"`).
+</ParamField>
+
+<ParamField body="permissions" type="string[]">
+  Optional list of permission scopes. Omit to grant all permissions available to your account.
+
+  | Scope | Access |
+  |-------|--------|
+  | `transactions:read` | View transactions |
+  | `payouts:write` | Initiate payouts |
+  | `customers:read` | View customers |
+  | `customers:write` | Create/update customers |
+  | `virtual-accounts:write` | Create virtual accounts |
+  | `webhooks:write` | Manage webhooks |
+</ParamField>
+
+<ParamField body="expires_at" type="string">
+  Expiry date in ISO 8601 format. Omit for a non-expiring key.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/business/api-keys' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Production Backend",
+    "permissions": ["transactions:read", "payouts:write", "customers:read"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "id": "key_01HX9KZMB3F7VNQP8R2WDGT4E6",
+    "name": "Production Backend",
+    "key": "yat_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789",
+    "key_prefix": "yat_live",
+    "permissions": ["transactions:read", "payouts:write", "customers:read"],
+    "is_active": true,
+    "created_at": "2026-03-26T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  The full `key` value is only returned once. Copy it immediately and store it in a secrets manager — it cannot be retrieved again.
+</Warning>
+
+---
+
+## Revoke API key
+
+```
+DELETE /business/api-keys/{id}
+```
+
+<ParamField path="id" type="string" required>
+  The API key ID to revoke.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://api.yativo.com/api/business/api-keys/key_01HX9KZMB3F7VNQP8R2WDGT4E6' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Using an API key
+
+Include the key in the `Authorization` header of every request:
+
+```bash
+Authorization: Bearer yat_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789
+```
+
+```javascript Node.js
+const axios = require('axios');
+
+const client = axios.create({
+  baseURL: 'https://api.yativo.com/api',
+  headers: {
+    Authorization: `Bearer ${process.env.YATIVO_API_KEY}`,
+    'Content-Type': 'application/json',
+  },
+});
+
+const { data } = await client.get('/business/transactions/index');
+```
+
+<Note>
+  Store API keys as environment variables or in a secrets manager. Never commit them to source control.
+</Note>

@@ -1,0 +1,259 @@
+---
+title: "Payouts"
+description: "Send cross-border payments to recipients via local bank transfer, mobile money, and more"
+---
+
+Payouts follow a structured flow: discover the payment method for the destination country, collect recipient bank details, then initiate the transfer. Using a [quote](/yativo-fiat/exchange-rate) first locks your exchange rate for 5 minutes.
+
+<Accordion title="Type Definitions">
+```typescript
+interface PayoutMethod {
+  id: number;
+  method_name: string;
+  country: string;
+  currency: string;
+  base_currency: string;
+}
+
+interface BeneficiaryPaymentMethod {
+  id: string;
+  beneficiary_id: string;
+  payment_method_id: number;
+  account_details: Record<string, string>;
+  created_at: string;
+}
+
+interface PayoutRequest {
+  debit_wallet: string;    // currency to debit from your balance, e.g. "USD"
+  payment_method_id: number;
+  amount?: number;         // required if no quote_id
+  quote_id?: string;       // from /exchange-rate (recommended, locks rate for 5 mins)
+}
+```
+</Accordion>
+
+---
+
+## Step 1 — Get payout methods for a country
+
+Retrieve available payout rails for the destination country. Use the **ISO 3166-1 alpha-3** country code.
+
+```
+GET /payment-methods/payout?country={iso3}
+```
+
+<ParamField query="country" type="string" required>
+  Destination country ISO 3166-1 alpha-3 code (e.g. `CHL`, `MEX`, `PER`, `COL`, `ARG`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+# Chile
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout?country=CHL' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+
+# Mexico
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout?country=MEX' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": 21,
+      "method_name": "Bank Transfer",
+      "country": "CHL",
+      "currency": "CLP",
+      "base_currency": "CLP"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+Note the `id` — this is your `payment_method_id` used in subsequent steps.
+
+---
+
+## Step 2 — Get required form fields
+
+Each payment method has different required recipient details (CLABE, CBU, account number, etc.). Retrieve the exact fields needed:
+
+```
+GET /beneficiary/form/show/{payment_method_id}
+```
+
+<ParamField path="payment_method_id" type="number" required>
+  The payment method ID from Step 1.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/beneficiary/form/show/21' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Step 3 — Save recipient payment details
+
+Submit the recipient's bank details using the form structure from Step 2:
+
+```
+POST /beneficiaries/payment-methods/
+```
+
+<ParamField body="beneficiary_id" type="string" required>
+  The beneficiary ID (from your beneficiaries list, or create one first).
+</ParamField>
+
+<ParamField body="payment_method_id" type="number" required>
+  Payment method ID from Step 1.
+</ParamField>
+
+<ParamField body="account_details" type="object" required>
+  Key-value pairs of the fields required by this payment method (e.g. `clabe`, `account_number`, `bank_code`).
+</ParamField>
+
+<RequestExample>
+```bash Chile (CLP bank transfer)
+curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "beneficiary_id": "benef_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "payment_method_id": 21,
+    "account_details": {
+      "account_number": "12345678",
+      "bank_code": "001",
+      "account_type": "checking"
+    }
+  }'
+```
+
+```bash Mexico (SPEI)
+curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "beneficiary_id": "benef_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "payment_method_id": 30,
+    "account_details": {
+      "clabe": "012345678901234567"
+    }
+  }'
+```
+</RequestExample>
+
+The response includes an `id` — this is the `payment_method_id` used in Step 5.
+
+---
+
+## Step 4 — List saved payment methods (optional)
+
+```
+GET /beneficiaries/payment-methods/all
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/all' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Step 5 — Initiate payout
+
+Send funds using either a locked quote (recommended) or a live market rate:
+
+```
+POST /wallet/payout
+```
+
+<ParamField body="debit_wallet" type="string" required>
+  Currency to debit from your balance (e.g. `"USD"`).
+</ParamField>
+
+<ParamField body="payment_method_id" type="number" required>
+  The saved payment method ID from Step 3.
+</ParamField>
+
+<ParamField body="quote_id" type="string">
+  Quote ID from [`/exchange-rate`](/yativo-fiat/exchange-rate). Locks the rate for 5 minutes. Recommended — amount is taken from the quote.
+</ParamField>
+
+<ParamField body="amount" type="number">
+  Amount to send. Required if `quote_id` is not provided. Uses current market rate.
+</ParamField>
+
+<RequestExample>
+```bash With quote (recommended)
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-payout-key' \
+  -d '{
+    "debit_wallet": "USD",
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "payment_method_id": 21
+  }'
+```
+
+```bash Without quote (market rate)
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-payout-key' \
+  -d '{
+    "debit_wallet": "USD",
+    "amount": 500,
+    "payment_method_id": 21
+  }'
+```
+</RequestExample>
+
+---
+
+## Manage payment methods
+
+### Update
+
+```
+PUT /beneficiaries/payment-methods/update/{id}
+```
+
+Send updated account details as the request body.
+
+### Delete
+
+```
+DELETE /beneficiaries/payment-methods/delete/{id}
+```
+
+---
+
+## Supported payout countries
+
+Use `GET /payment-methods/payout/countries` to retrieve the full list of supported destinations.
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout/countries' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<Note>
+  Yativo supports payouts to LATAM countries (CHL, MEX, PER, COL, ARG), USA, and stablecoin wallets. Contact your integration team for enterprise destinations.
+</Note>

@@ -1,56 +1,58 @@
 ---
 title: "Welcome to Yativo"
-description: "The all-in-one payments infrastructure for modern businesses"
+description: "Global payments infrastructure for businesses and developers"
 ---
 
-Yativo is a payments infrastructure platform built for businesses, fintechs, and developers who need reliable, programmable money movement. Whether you're processing cross-border transfers, managing multi-currency accounts, or building crypto-powered financial products, Yativo gives you a single API surface to work from.
+Yativo is a payments infrastructure platform built for businesses, fintechs, and developers who need reliable, programmable money movement across borders and across chains.
 
-## What Yativo Does
-
-Yativo provides two complementary platforms:
-
-**Yativo** is the core fiat payments platform. It handles multi-currency accounts, cross-border transfers, subscription billing, and the developer tooling (API keys, webhooks, notifications) that ties it all together.
-
-**Yativo Crypto** is the crypto infrastructure division. It extends the platform with multi-chain wallets, crypto-funded debit cards, IBAN accounts, token swaps, and a full B2B customer management layer. If you're building a crypto neobank, a treasury tool, or a Web3 payments product, Yativo Crypto is where you'll spend most of your time.
-
-## Who It's For
-
-- **Businesses** that need to send and receive payments across borders without building from scratch
-- **Fintechs** that want to embed financial services — cards, accounts, transfers — into their products
-- **Developers** who need a well-documented API with SDKs, webhooks, and sandbox environments
-
-## Key Capabilities
-
-| Capability | Description |
-|------------|-------------|
-| Multi-currency accounts | Hold and move money in multiple currencies |
-| Cross-border transfers | Send funds internationally via a single API call |
-| Crypto wallets | Multi-chain wallet infrastructure with automatic address generation |
-| Crypto-funded cards | Issue debit cards funded from crypto balances |
-| IBAN accounts | European bank account numbers linked to crypto wallets |
-| Token swaps | Cross-chain and same-chain token exchange |
-| Webhooks | Real-time event notifications for all platform activity |
-| B2B customer management | Create and manage sub-accounts for your own customers |
-
-## Explore the Platform
+## Two platforms, one API surface
 
 <CardGroup cols={2}>
+  <Card title="Yativo Fiat" icon="building-columns" href="/yativo-fiat/authentication">
+    Multi-currency accounts, cross-border transfers, virtual accounts, beneficiary management, and subscription billing. Send and receive money in 50+ currencies.
+  </Card>
   <Card title="Yativo Crypto" icon="bitcoin" href="/yativo-crypto/introduction">
-    Crypto wallets, cards, IBAN, swaps, and more. The full crypto infrastructure stack.
-  </Card>
-  <Card title="API Keys" icon="key" href="/yativo/api-keys">
-    Generate and manage API credentials for authenticating your integration.
-  </Card>
-  <Card title="Webhooks" icon="bell" href="/yativo/webhooks">
-    Subscribe to real-time events and get notified when things happen on your account.
-  </Card>
-  <Card title="Dashboard" icon="chart-bar" href="https://crypto.yativo.com">
-    Log in to the Yativo dashboard to manage your account visually.
+    Multi-chain wallets, crypto-funded debit cards, IBAN accounts, token swaps, and a full B2B card issuer program. Build crypto-native financial products.
   </Card>
 </CardGroup>
 
-## Getting Started
+## Key capabilities
 
-If this is your first time, follow the [Quickstart](/yativo/quickstart) to create an account, generate your first API key, and make your first API call in under five minutes.
+| Capability | Platform | Description |
+|---|---|---|
+| Multi-currency accounts | Fiat | Hold and move money in 50+ currencies |
+| Cross-border transfers | Fiat | Send funds internationally via a single API call |
+| Virtual accounts | Fiat | Issue receiving accounts per customer or transaction |
+| Beneficiary management | Fiat | Store and reuse recipient bank details across countries |
+| Crypto wallets | Crypto | Multi-chain wallet infrastructure with automatic address generation |
+| Crypto-funded cards | Crypto | Issue debit cards funded from crypto balances |
+| IBAN accounts | Crypto | European bank accounts linked to crypto wallets |
+| Token swaps | Crypto | Cross-chain and same-chain token exchange |
+| Webhooks | Both | Real-time event notifications for all platform activity |
+| B2B customer management | Both | Create and manage sub-accounts for your own customers |
 
-For crypto-specific features, jump to the [Yativo Crypto Quickstart](/yativo-crypto/quickstart).
+## Authentication
+
+Both platforms authenticate via **Bearer tokens**. Generate a token by exchanging your API key and secret at the authentication endpoint for each platform.
+
+All API requests must include:
+```http
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+## Explore the docs
+
+<CardGroup cols={2}>
+  <Card title="Fiat API Reference" icon="code" href="/api-reference/introduction">
+    Complete endpoint reference with interactive playground.
+  </Card>
+  <Card title="Guides" icon="book-open" href="/guides/overview">
+    Step-by-step tutorials for common integration patterns.
+  </Card>
+  <Card title="SDKs" icon="package" href="/sdks/overview">
+    TypeScript, Python, PHP, Java, and React SDKs.
+  </Card>
+  <Card title="Sandbox" icon="flask" href="/sandbox/overview">
+    Test your integration against live-like sandbox environments.
+  </Card>
+</CardGroup>

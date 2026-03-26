@@ -1,0 +1,251 @@
+---
+title: "Webhooks"
+description: "Receive real-time event notifications for payments, transfers, and account activity"
+---
+
+Webhooks push event notifications to your server the moment something happens — no polling needed. Configure a single HTTPS endpoint to receive all events, then filter by `event.type` in your handler.
+
+---
+
+## Set webhook URL
+
+```
+POST /business/webhook
+```
+
+<ParamField body="url" type="string" required>
+  Your HTTPS endpoint that will receive webhook events.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/webhook' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "url": "https://your-app.com/webhooks/yativo"
+  }'
+```
+</RequestExample>
+
+---
+
+## Get webhook URL
+
+```
+GET /business/webhook
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/webhook' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Update webhook URL
+
+```
+PUT /business/webhook
+```
+
+<ParamField body="url" type="string" required>
+  New destination URL.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://api.yativo.com/api/v1/business/webhook' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "url": "https://your-app.com/webhooks/yativo-v2"
+  }'
+```
+</RequestExample>
+
+---
+
+## Webhook event types
+
+Your endpoint receives `POST` requests with a JSON body containing an `event.type` field.
+
+| Event type | Triggered when |
+|------------|---------------|
+| `payout.updated` | A payout status changes (e.g. completed or failed) |
+| `deposit.created` | A new deposit is initiated |
+| `deposit.updated` | A deposit status changes (e.g. `pending` → `success`) |
+| `customer.created` | A new customer is created |
+| `virtual_account.deposit` | A payment arrives at a virtual account |
+
+---
+
+## Event payloads
+
+### `payout.updated`
+
+```json
+{
+  "event.type": "payout.updated",
+  "payload": {
+    "payout_id": "4533bb23-0f2d-4c00-8ce3-a2b4ab727b0e",
+    "amount": "20.00",
+    "currency": "ARS",
+    "debit_wallet": "USD",
+    "beneficiary_id": 5,
+    "status": "failed",
+    "created_at": "2026-02-20T21:32:46.000000Z",
+    "updated_at": "2026-02-20T21:43:59.000000Z"
+  }
+}
+```
+
+### `deposit.created`
+
+```json
+{
+  "event.type": "deposit.created",
+  "payload": {
+    "id": "93df8440-b756-449c-b0e8-190e2bd8e2bf",
+    "amount": 11,
+    "gateway": "23",
+    "currency": "CLP",
+    "status": "pending",
+    "deposit_currency": "USD",
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "created_at": "2026-05-19T17:19:56.000000Z"
+  }
+}
+```
+
+### `deposit.updated`
+
+```json
+{
+  "event.type": "deposit.updated",
+  "payload": {
+    "id": "93df8440-b756-449c-b0e8-190e2bd8e2bf",
+    "amount": 11,
+    "gateway": "23",
+    "currency": "CLP",
+    "status": "success",
+    "deposit_currency": "USD",
+    "receive_amount": 2681,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "updated_at": "2026-05-19T17:22:10.000000Z"
+  }
+}
+```
+
+### `customer.created`
+
+```json
+{
+  "event.type": "customer.created",
+  "payload": {
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "customer_name": "Jane Doe",
+    "customer_email": "jane@example.com",
+    "customer_phone": "+5511999999999",
+    "customer_country": "BRA",
+    "customer_status": "active",
+    "customer_kyc_status": "approved",
+    "created_at": "2026-05-17T16:15:20.000000Z"
+  }
+}
+```
+
+### `virtual_account.deposit`
+
+```json
+{
+  "event.type": "virtual_account.deposit",
+  "payload": {
+    "amount": 1000,
+    "currency": "USD",
+    "status": "completed",
+    "credited_amount": 950,
+    "transaction_type": "virtual_account_topup",
+    "transaction_id": "TXNMP2HK81BHJ",
+    "customer": {
+      "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+      "customer_name": "Jane Doe",
+      "customer_kyc_status": "approved"
+    },
+    "source": {
+      "account_number": "93405934593930",
+      "sender_name": "Jane Doe",
+      "transaction_fees": 50,
+      "amount_received": 1000,
+      "credited_amount": 950
+    }
+  }
+}
+```
+
+---
+
+## Webhook handler example
+
+```javascript Node.js (Express)
+app.post('/webhooks/yativo', express.json(), (req, res) => {
+  const event = req.body;
+
+  switch (event['event.type']) {
+    case 'deposit.updated':
+      if (event.payload.status === 'success') {
+        // Credit customer account
+        creditCustomer(event.payload.customer_id, event.payload.receive_amount);
+      }
+      break;
+
+    case 'payout.updated':
+      // Update payout status in your database
+      updatePayoutStatus(event.payload.payout_id, event.payload.status);
+      break;
+
+    case 'virtual_account.deposit':
+      // Notify customer of received funds
+      notifyCustomer(event.payload.customer.customer_id, event.payload.credited_amount);
+      break;
+  }
+
+  res.status(200).send('OK');
+});
+```
+
+<Note>
+  Respond with a `2xx` status within 10 seconds to acknowledge receipt. Failed deliveries are retried automatically.
+</Note>
+
+---
+
+## Logs and events
+
+### All webhook logs
+
+```
+GET /business/logs/all
+```
+
+### Single log
+
+```
+GET /business/logs/show/{log_id}
+```
+
+### All events
+
+```
+GET /business/events/all
+```
+
+### Single event
+
+```
+GET /business/events/show/{event_id}
+```

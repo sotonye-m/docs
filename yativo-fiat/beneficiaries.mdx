@@ -1,0 +1,294 @@
+---
+title: "Beneficiaries"
+description: "Store and manage recipient bank details for recurring payouts"
+---
+
+Beneficiaries are saved recipient profiles. Create them once and reference them by ID in transfers, eliminating the need to re-enter bank details for every payment.
+
+<Accordion title="Type Definitions">
+```typescript
+interface Beneficiary {
+  id: string;
+  name: string;
+  account_number: string;
+  bank_code: string;
+  bank_name: string;
+  country: string;
+  currency: string;
+  created_at: string;
+}
+
+interface CreateBeneficiaryRequest {
+  name: string;
+  account_number: string;
+  bank_code: string;
+  country: string;
+  currency: string;
+}
+
+interface PaymentMethod {
+  id: string;
+  beneficiary_id: string;
+  payment_method_id: string;
+  account_details: Record<string, string>;
+  created_at: string;
+}
+
+interface PayoutCountry {
+  country: string;
+  country_name: string;
+  currencies: string[];
+}
+
+interface PayoutMethod {
+  id: string;
+  name: string;
+  type: string;
+  fields: Array<{ key: string; label: string; required: boolean }>;
+}
+```
+</Accordion>
+
+---
+
+## List beneficiaries
+
+```
+GET /beneficiaries/list
+```
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/beneficiaries/list' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "benef_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "name": "Acme Supplier Ltd",
+      "account_number": "001-987654321",
+      "bank_name": "BCP",
+      "country": "PE",
+      "currency": "PEN",
+      "created_at": "2026-02-15T10:00:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Add beneficiary
+
+```
+POST /beneficiaries
+```
+
+<ParamField body="name" type="string" required>
+  Recipient's full name or business name.
+</ParamField>
+
+<ParamField body="account_number" type="string" required>
+  The recipient's bank account number.
+</ParamField>
+
+<ParamField body="bank_code" type="string" required>
+  The bank's routing or sort code. Use [Local Banks](#local-banks) to get valid codes.
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Destination country (ISO 3166-1 alpha-2).
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  The currency the recipient receives (ISO 4217).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/beneficiaries' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Acme Supplier Ltd",
+    "account_number": "001-987654321",
+    "bank_code": "002",
+    "country": "PE",
+    "currency": "PEN"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "id": "benef_01HX9KZMB3F7VNQP8R2WDGT4E6",
+    "name": "Acme Supplier Ltd",
+    "account_number": "001-987654321",
+    "bank_code": "002",
+    "bank_name": "BCP",
+    "country": "PE",
+    "currency": "PEN",
+    "created_at": "2026-03-26T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Supported payout countries
+
+```
+GET /payment-methods/payout/countries
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/payment-methods/payout/countries' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Payout methods by country
+
+```
+GET /payment-methods/payout?country={iso}
+```
+
+<ParamField query="country" type="string" required>
+  Country ISO code.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/payment-methods/payout?country=MX' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "pm_spei",
+      "name": "SPEI Transfer",
+      "type": "bank_transfer",
+      "fields": [
+        { "key": "clabe", "label": "CLABE", "required": true },
+        { "key": "bank_name", "label": "Bank Name", "required": false }
+      ]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Payment method fields
+
+Get the required form fields for a specific bank or payment method.
+
+```
+GET /beneficiary/form/show/{bankId}
+```
+
+<ParamField path="bankId" type="string" required>
+  The bank or payment method ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/beneficiary/form/show/pm_spei' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Save payment method
+
+Attach a specific payment method to a beneficiary.
+
+```
+POST /beneficiaries/payment-methods
+```
+
+<ParamField body="beneficiary_id" type="string" required>
+  The beneficiary to attach the payment method to.
+</ParamField>
+
+<ParamField body="payment_method_id" type="string" required>
+  The payment method ID (from `/payment-methods/payout`).
+</ParamField>
+
+<ParamField body="account_details" type="object" required>
+  Key-value pairs of the required fields for this payment method.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/beneficiaries/payment-methods' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "beneficiary_id": "benef_01HX9KZMB3F7VNQP8R2WDGT4E6",
+    "payment_method_id": "pm_spei",
+    "account_details": {
+      "clabe": "012345678901234567"
+    }
+  }'
+```
+</RequestExample>
+
+---
+
+## List payment methods
+
+```
+GET /beneficiaries/payment-methods/all
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/beneficiaries/payment-methods/all' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Delete payment method
+
+```
+DELETE /beneficiaries/payment-methods/delete/{id}
+```
+
+<ParamField path="id" type="string" required>
+  The payment method ID to delete.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://api.yativo.com/api/beneficiaries/payment-methods/delete/pm_01HX' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>

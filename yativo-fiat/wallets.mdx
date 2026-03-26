@@ -1,0 +1,147 @@
+---
+title: "Wallet Balances"
+description: "Retrieve multi-currency wallet balances and total portfolio value"
+---
+
+<Accordion title="Type Definitions">
+```typescript
+interface WalletBalance {
+  name: string;           // currency code, e.g. "USD"
+  slug: string;           // URL-friendly, e.g. "usd"
+  balance: string;        // current balance as string
+  currency: string;       // currency code
+  decimal_places: number;
+  meta: {
+    logo: string;         // URL to currency logo/flag
+    symbol: string;       // e.g. "$", "R$", "S/"
+    fullname: string;     // e.g. "US Dollar"
+    precision: string | number;
+  };
+}
+
+interface TotalBalance {
+  total_balance: number;  // total of all wallets converted to USD
+}
+```
+</Accordion>
+
+---
+
+## Get all wallet balances
+
+Returns detailed balance information for every currency wallet on your account.
+
+```
+GET /wallet/balance
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/wallet/balance' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "name": "USD",
+      "slug": "usd",
+      "balance": "35585.00",
+      "currency": "USD",
+      "decimal_places": 2,
+      "meta": {
+        "logo": "https://cdn.yativo.com/usd.svg",
+        "symbol": "$",
+        "fullname": "US Dollar",
+        "precision": 2
+      }
+    },
+    {
+      "name": "BRL",
+      "slug": "brl",
+      "balance": "14200.00",
+      "currency": "BRL",
+      "decimal_places": 2,
+      "meta": {
+        "logo": "https://cdn.yativo.com/brl.svg",
+        "symbol": "R$",
+        "fullname": "Brazilian Real",
+        "precision": "2"
+      }
+    },
+    {
+      "name": "ARS",
+      "slug": "ars",
+      "balance": "0",
+      "currency": "ARS",
+      "decimal_places": 2,
+      "meta": {
+        "logo": "https://cdn.yativo.com/ars.svg",
+        "symbol": "$",
+        "fullname": "Argentine Peso",
+        "precision": "2"
+      }
+    }
+  ]
+}
+```
+</ResponseExample>
+
+**Supported currencies:** ARS, BRL, CLP, COP, EUR, MXN, PEN, USD
+
+---
+
+## Get total balance in USD
+
+Returns the sum of all wallet balances converted to USD at current exchange rates.
+
+```
+GET /wallet/balance/total
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/wallet/balance/total' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "total_balance": 37629.18
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Display tips
+
+```javascript
+// Format a wallet balance for display
+function formatBalance(wallet) {
+  const balance = parseFloat(wallet.balance);
+  const symbol = wallet.meta.symbol;
+  const precision = wallet.decimal_places;
+  return `${symbol}${balance.toFixed(precision)}`;
+}
+
+// Filter out zero balances
+const activeWallets = wallets.filter(w => parseFloat(w.balance) > 0);
+```
+
+<Note>
+  Wallets with zero balances are included in the response. Filter client-side if you only want non-zero holdings.
+</Note>

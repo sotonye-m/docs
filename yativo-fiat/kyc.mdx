@@ -1,0 +1,245 @@
+---
+title: "KYC / KYB Verification"
+description: "Verify individual customers (KYC) and business customers (KYB) for compliance"
+---
+
+Customer identity verification is required before issuing virtual accounts or enabling certain payment features. Individual customers go through KYC; business customers go through KYB.
+
+---
+
+## KYC — Individual verification
+
+Submit customer identity details via API. The customer must already be [created](/yativo-fiat/customers).
+
+```
+POST /verification/verify-customer
+```
+
+### Required fields
+
+<ParamField body="customer_id" type="string" required>
+  The customer's Yativo ID.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  `"individual"`
+</ParamField>
+
+<ParamField body="first_name" type="string" required>
+  Customer's first name.
+</ParamField>
+
+<ParamField body="last_name" type="string" required>
+  Customer's last name.
+</ParamField>
+
+<ParamField body="birth_date" type="string" required>
+  Date of birth in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField body="nationality" type="string" required>
+  ISO 3166-1 alpha-3 code (e.g. `"PER"`, `"BRA"`, `"USA"`).
+</ParamField>
+
+<ParamField body="address" type="object" required>
+  Customer's address: `street_line_1`, `city`, `state` (ISO 3166-2 if country has subdivisions), `postal_code`, `country` (ISO 3166-1 alpha-3).
+</ParamField>
+
+<ParamField body="employment_status" type="string" required>
+  `"employed"`, `"self_employed"`, or `"unemployed"`.
+</ParamField>
+
+<ParamField body="expected_monthly_payments" type="string" required>
+  Range string, e.g. `"0_4999"`, `"5000_9999"`.
+</ParamField>
+
+<ParamField body="acting_as_intermediary" type="boolean" required>
+  Whether the customer acts as an intermediary.
+</ParamField>
+
+<ParamField body="most_recent_occupation" type="string" required>
+  Occupation code — retrieve valid codes from `GET /occupation-codes`.
+</ParamField>
+
+<ParamField body="account_purpose" type="string" required>
+  e.g. `"purchase_goods_and_services"`.
+</ParamField>
+
+<ParamField body="source_of_funds" type="string" required>
+  e.g. `"salary"`, `"savings"`, `"investments_loans"`.
+</ParamField>
+
+<ParamField body="identifying_information" type="array">
+  Required for USA customers. Each item: `type`, `issuing_country`, `number`, `image_front` (Base64), `image_back` (Base64).
+</ParamField>
+
+<ParamField body="documents" type="array">
+  Additional documents: `{ purposes: string[], file: Base64 }`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/verification/verify-customer' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: kyc-unique-key' \
+  -d '{
+    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx",
+    "type": "individual",
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "email": "jane@example.com",
+    "birth_date": "1990-01-15",
+    "nationality": "BRA",
+    "address": {
+      "street_line_1": "Rua das Flores, 100",
+      "city": "São Paulo",
+      "state": "SP",
+      "postal_code": "01310-100",
+      "country": "BRA"
+    },
+    "employment_status": "employed",
+    "expected_monthly_payments": "5000_9999",
+    "acting_as_intermediary": false,
+    "most_recent_occupation": "132011",
+    "account_purpose": "purchase_goods_and_services",
+    "source_of_funds": "salary",
+    "documents": [],
+    "identifying_information": [
+      {
+        "type": "passport",
+        "issuing_country": "BRA",
+        "number": "AB123456",
+        "image_front": "data:image/jpeg;base64,..."
+      }
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "status": "not_started",
+    "rejection_reasons": [],
+    "requirements_due": []
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Check KYC status
+
+Poll this after submission. Once `status` is `"approved"` and `is_va_approved` is `true`, the customer can receive virtual accounts.
+
+```
+GET /customer/kyc/{customer_id}
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/kyc/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Approved
+{
+  "status": "success",
+  "data": {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "status": "approved",
+    "kyc_rejection_reasons": [],
+    "bio_data": {
+      "customer_kyc_status": "approved",
+      "kyc_verified_date": "2026-03-26T12:00:00.000000Z"
+    },
+    "kyc_link": "https://checkout.yativo.com/kyc/update-biodata/xxxxx",
+    "is_va_approved": true
+  }
+}
+```
+</ResponseExample>
+
+If the status is delayed beyond 24 hours, share the `kyc_link` with your customer to complete verification manually.
+
+---
+
+## KYC update
+
+To update an existing KYC submission:
+
+```
+PUT /customer/kyc/update
+```
+
+Send the updated fields using the same schema as the initial submission.
+
+---
+
+## Get occupation codes
+
+```
+GET /occupation-codes
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/occupation-codes' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    { "display_name": "Accountant and auditor", "code": "132011" },
+    { "display_name": "Actor", "code": "272011" },
+    { "display_name": "Acupuncturist", "code": "291291" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## KYB — Business verification
+
+For customers with `customer_type: "business"`. Uses the same endpoint as KYC.
+
+```
+POST /verification/verify-customer
+```
+
+Set `"type": "business"` and provide the additional business fields below. All fields are required unless marked optional.
+
+Key fields specific to KYB:
+
+| Field | Description |
+|-------|-------------|
+| `business_name` | Registered business name |
+| `registration_number` | Official registration number |
+| `business_type` | e.g. `"corporation"`, `"llc"` |
+| `business_industry` | Industry code (from `GET /business-industry-codes`) |
+| `formation_document` | Base64-encoded formation document |
+| `ownership_document` | Base64-encoded ownership document |
+| `tax_identification_number` | Business TIN |
+| `ultimate_beneficial_owners` | Array of UBO objects with ID docs |
+| `sof_eu_questionnaire` | Source of funds questionnaire |
+| `primary_website` | Business website (required if `nature_of_business` not provided) |
+
+<Note>
+  KYB requires significantly more documentation than KYC. See your integration team for a full checklist specific to your use case.
+</Note>

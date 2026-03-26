@@ -1,0 +1,250 @@
+---
+title: "Transactions"
+description: "View, filter, track, and export business transactions"
+---
+
+<Accordion title="Type Definitions">
+```typescript
+interface Transaction {
+  id: number;                      // internal numeric ID
+  transaction_id: string;          // UUID
+  transaction_amount: string;
+  transaction_status: TransactionStatus;
+  transaction_type: TransactionType;
+  transaction_currency: string;
+  transaction_memo: string;
+  transaction_purpose: string;
+  customer_id: string | null;
+  created_at: string;
+}
+
+type TransactionStatus =
+  | "success"
+  | "complete"
+  | "detected"
+  | "pending"
+  | "In Progress"
+  | "failed";
+
+type TransactionType =
+  | "deposit"
+  | "payout"
+  | "virtual_account"
+  | "transfer"
+  | "card_transaction"
+  | "crypto_deposit";
+```
+</Accordion>
+
+---
+
+## List transactions
+
+```
+GET /business/transactions/index
+```
+
+All query parameters are optional and can be combined.
+
+<ParamField query="status" type="string">
+  Filter by status: `success`, `complete`, `detected`, `pending`, `In Progress`, `failed`.
+</ParamField>
+
+<ParamField query="transaction_type" type="string">
+  Filter by type: `deposit`, `payout`, `virtual_account`, `transfer`, `card_transaction`, `crypto_deposit`.
+</ParamField>
+
+<ParamField query="customer_id" type="string">
+  Filter by customer ID.
+</ParamField>
+
+<ParamField query="amount" type="number">
+  Filter by exact transaction amount.
+</ParamField>
+
+<ParamField query="start_date" type="string">
+  From date (inclusive), e.g. `2026-03-01`.
+</ParamField>
+
+<ParamField query="end_date" type="string">
+  To date (inclusive), e.g. `2026-03-31`.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number. Default: `1`.
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page. Default: `10`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/transactions/index?status=success&transaction_type=deposit&start_date=2026-03-01&end_date=2026-03-31&page=1&per_page=10' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": 14,
+      "transaction_id": "a0e9e50e-81be-4bd0-9941-0151e68b9e97",
+      "transaction_amount": "8.736",
+      "transaction_status": "success",
+      "transaction_type": "deposit",
+      "transaction_memo": "payin",
+      "transaction_purpose": "Deposit",
+      "transaction_currency": "BRL",
+      "customer_id": null,
+      "created_at": "2026-03-15T10:00:00.000000Z"
+    }
+  ],
+  "meta": {
+    "total": 6,
+    "per_page": 10,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get transaction
+
+```
+GET /business/transaction/show/{id}
+```
+
+<ParamField path="id" type="number" required>
+  The internal numeric transaction ID (the `id` field, not `transaction_id`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/transaction/show/14' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+The single transaction response includes additional `payin_method` and `payout_method` objects with payment method details.
+
+---
+
+## Track transaction
+
+Get a live status timeline for a transaction.
+
+```
+GET /transaction/tracking/{transaction_id}
+```
+
+<ParamField path="transaction_id" type="string" required>
+  The transaction UUID (`transaction_id` field).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/transaction/tracking/a0e9e50e-81be-4bd0-9941-0151e68b9e97' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "tracking_status": "Payment credited to beneficiary",
+      "transaction_type": "withdrawal",
+      "created_at": "2026-03-15T10:03:22.000000Z"
+    },
+    {
+      "tracking_status": "With Beneficiary's Bank/Rail",
+      "transaction_type": "withdrawal",
+      "created_at": "2026-03-15T10:02:54.000000Z"
+    },
+    {
+      "tracking_status": "Processed by Yativo",
+      "transaction_type": "withdrawal",
+      "created_at": "2026-03-15T10:01:45.000000Z"
+    },
+    {
+      "tracking_status": "Send money initiated",
+      "transaction_type": "withdrawal",
+      "created_at": "2026-03-15T10:00:00.000000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Transaction metadata
+
+```
+GET /transaction/metadata/{transaction_id}
+```
+
+<ParamField path="transaction_id" type="string" required>
+  The transaction UUID.
+</ParamField>
+
+---
+
+## Transactions by currency
+
+```
+GET /business/transaction/by-currency?currency={code}
+```
+
+<ParamField query="currency" type="string" required>
+  Currency code (e.g. `BRL`, `USD`, `CLP`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/transaction/by-currency?currency=BRL' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Download receipt (PDF)
+
+Download a receipt for a completed transaction. Returns a **base64-encoded PDF**.
+
+```
+GET /business/transaction/{transaction_id}/pdf/receipt
+```
+
+<ParamField path="transaction_id" type="string" required>
+  The transaction UUID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/transaction/a0e9e50e-81be-4bd0-9941-0151e68b9e97/pdf/receipt' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```javascript Node.js decode
+const response = await client.get(`/business/transaction/${txId}/pdf/receipt`);
+const pdfBuffer = Buffer.from(response.data, 'base64');
+fs.writeFileSync('receipt.pdf', pdfBuffer);
+```
+</RequestExample>

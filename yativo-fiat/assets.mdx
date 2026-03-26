@@ -1,0 +1,202 @@
+---
+title: "Assets"
+description: "Query supported assets and exchange rates for fiat operations"
+---
+
+Assets represent the currencies and payment rails available on the Yativo platform. Use these endpoints to discover what's supported and to get live exchange rates before executing transfers.
+
+<Accordion title="Type Definitions">
+```typescript
+interface Asset {
+  code: string;
+  name: string;
+  symbol: string;
+  type: "fiat";
+  countries: string[];
+  is_send_enabled: boolean;
+  is_receive_enabled: boolean;
+}
+
+interface ExchangeRate {
+  from: string;
+  to: string;
+  rate: string;
+  inverse_rate: string;
+  timestamp: string;
+}
+
+interface ConvertRequest {
+  from: string;
+  to: string;
+  amount: number;
+}
+
+interface ConvertResponse {
+  from: string;
+  to: string;
+  from_amount: string;
+  to_amount: string;
+  rate: string;
+  fee: string;
+  expires_at: string;
+}
+```
+</Accordion>
+
+---
+
+## List assets
+
+Get all assets (currencies) available on the platform.
+
+```
+GET /assets
+```
+
+<ParamField query="type" type="string">
+  Filter by asset type. Currently `fiat`.
+</ParamField>
+
+<ParamField query="country" type="string">
+  Filter by supported country (ISO 3166-1 alpha-2).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/assets' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "code": "BRL",
+      "name": "Brazilian Real",
+      "symbol": "R$",
+      "type": "fiat",
+      "countries": ["BR"],
+      "is_send_enabled": true,
+      "is_receive_enabled": true
+    },
+    {
+      "code": "MXN",
+      "name": "Mexican Peso",
+      "symbol": "$",
+      "type": "fiat",
+      "countries": ["MX"],
+      "is_send_enabled": true,
+      "is_receive_enabled": true
+    },
+    {
+      "code": "USD",
+      "name": "US Dollar",
+      "symbol": "$",
+      "type": "fiat",
+      "countries": ["US"],
+      "is_send_enabled": true,
+      "is_receive_enabled": true
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Get exchange rate
+
+Retrieve the current exchange rate between two currencies.
+
+```
+GET /assets/rate?from={code}&to={code}
+```
+
+<ParamField query="from" type="string" required>
+  Source currency code (e.g. `USD`).
+</ParamField>
+
+<ParamField query="to" type="string" required>
+  Target currency code (e.g. `BRL`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/assets/rate?from=USD&to=BRL' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "from": "USD",
+    "to": "BRL",
+    "rate": "4.9820",
+    "inverse_rate": "0.2007",
+    "timestamp": "2026-03-26T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Convert amount
+
+Get the converted amount and applicable fee for a specific conversion, without executing a transfer.
+
+```
+POST /assets/convert
+```
+
+<ParamField body="from" type="string" required>
+  Source currency code.
+</ParamField>
+
+<ParamField body="to" type="string" required>
+  Target currency code.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  The amount in the source currency to convert.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/assets/convert' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from": "USD",
+    "to": "BRL",
+    "amount": 1000
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "from": "USD",
+    "to": "BRL",
+    "from_amount": "1000.00",
+    "to_amount": "4974.00",
+    "rate": "4.9820",
+    "fee": "8.00",
+    "expires_at": "2026-03-26T10:05:00Z"
+  }
+}
+```
+</ResponseExample>
+
+<Note>
+  Conversion quotes are indicative. To lock in a rate and initiate a transfer, use [Send Money](/yativo-fiat/send-money) — the quote step there returns a binding rate ID valid for 60 seconds.
+</Note>

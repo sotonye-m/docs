@@ -1,0 +1,179 @@
+---
+title: "Exchange Rate & Quotes"
+description: "Get real-time rates and generate locked quotes before executing payins or payouts"
+---
+
+The exchange rate endpoint generates a **quote** — a rate-locked calculation valid for 5 minutes. Use the returned `quote_id` in your deposit or payout request to guarantee that exact rate and fee at execution time.
+
+<Accordion title="Type Definitions">
+```typescript
+interface QuoteRequest {
+  from_currency: string;   // source currency (ISO 4217)
+  to_currency: string;     // target currency (ISO 4217)
+  method_id: number;       // payment method ID from /payment-methods/payin or /payout
+  method_type: "payin" | "payout";
+  amount: number;          // amount in the source currency
+}
+
+interface Quote {
+  quote_id: string;        // valid for 5 minutes
+  from_currency: string;
+  to_currency: string;
+  rate: string;
+  amount: string;
+  payout_data: {
+    total_transaction_fee_in_from_currency: string;
+    total_transaction_fee_in_to_currency: string;
+    customer_sent_amount: string;
+    customer_receive_amount: string;
+    customer_total_amount_due: string;
+  };
+  calculator: {
+    fee_breakdown: {
+      float: { wallet_currency: number; payout_currency: number };
+      fixed: { wallet_currency: number; payout_currency: number };
+      total: number;
+    };
+    exchange_rate: number;
+    customer_receive_amount: { wallet_currency: number; payout_currency: number };
+  };
+}
+```
+</Accordion>
+
+---
+
+## Get exchange rate / generate quote
+
+```
+POST /exchange-rate
+```
+
+<ParamField body="from_currency" type="string" required>
+  Source currency code (ISO 4217), e.g. `"USD"`, `"GBP"`.
+</ParamField>
+
+<ParamField body="to_currency" type="string" required>
+  Target currency code (ISO 4217), e.g. `"CLP"`, `"BRL"`.
+</ParamField>
+
+<ParamField body="method_id" type="number" required>
+  Payment method ID — from `GET /payment-methods/payin` or `GET /payment-methods/payout`.
+</ParamField>
+
+<ParamField body="method_type" type="string" required>
+  `"payin"` or `"payout"`.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount in the source currency to convert.
+</ParamField>
+
+<RequestExample>
+```bash Payout quote (USD → CLP)
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "CLP",
+    "method_id": 21,
+    "method_type": "payout",
+    "amount": 500
+  }'
+```
+
+```bash Payin quote (CLP → USD)
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_currency": "CLP",
+    "to_currency": "USD",
+    "method_id": 22,
+    "method_type": "payin",
+    "amount": 11000
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "from_currency": "USD",
+    "to_currency": "USD",
+    "rate": "1.00000000",
+    "amount": "406.00000000",
+    "payout_data": {
+      "total_transaction_fee_in_from_currency": "11.15000000",
+      "total_transaction_fee_in_to_currency": "11.15",
+      "customer_sent_amount": "406.00",
+      "customer_receive_amount": "406.00",
+      "customer_total_amount_due": "417.15"
+    },
+    "calculator": {
+      "fee_breakdown": {
+        "float": { "wallet_currency": 10.15, "payout_currency": 10.15 },
+        "fixed": { "wallet_currency": 1, "payout_currency": 1 },
+        "total": 11.15
+      },
+      "exchange_rate": 1,
+      "customer_receive_amount": { "wallet_currency": 406, "payout_currency": 406 }
+    }
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Quotes are valid for **5 minutes**. Execute the transaction within this window using the `quote_id`.
+</Warning>
+
+---
+
+## Using the quote ID
+
+### In a payin (deposit)
+
+```json
+POST /wallet/deposits/new
+{
+  "gateway": 22,
+  "currency": "CLP",
+  "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed"
+}
+```
+
+### In a payout
+
+```json
+POST /wallet/payout
+{
+  "debit_wallet": "USD",
+  "payment_method_id": 21,
+  "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed"
+}
+```
+
+---
+
+## Recommended workflow
+
+```
+1. GET /payment-methods/payin?country=CHL&currency=CLP  → get method_id
+2. POST /exchange-rate                                   → get quote_id (5 min window)
+3. POST /wallet/deposits/new   (or /wallet/payout)      → execute with quote_id
+```
+
+Using a `quote_id` guarantees the displayed rate and fee through execution. Without it, the live market rate applies and may shift between quote and payment completion.
+
+---
+
+## Rate limits
+
+Maximum **100 requests per minute** per API key. Rate limit headers are included in all responses.

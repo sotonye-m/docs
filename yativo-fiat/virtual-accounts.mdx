@@ -1,0 +1,206 @@
+---
+title: "Virtual Accounts"
+description: "Issue dedicated receiving accounts per customer for automatic payment matching"
+---
+
+Virtual accounts give each customer a unique receiving account number. When a payment arrives, it's automatically matched and credited to the right customer. KYC must be approved before a virtual account can be issued.
+
+<Note>
+  Each customer can hold **one virtual account per currency**. KYC approval (`is_va_approved: true`) is required before creating virtual accounts.
+</Note>
+
+<Accordion title="Type Definitions">
+```typescript
+interface VirtualAccount {
+  account_id: string;
+  account_number: string;
+  account_type: string;
+  currency: string;
+  customer_id: string;
+  created_at: string;
+}
+
+interface CreateVirtualAccountRequest {
+  customer_id: string;    // must be KYC-approved
+  currency: SupportedCurrency;
+}
+
+type SupportedCurrency =
+  | "USDBASE"   // USD (standard)
+  | "EURBASE"   // EUR (standard)
+  | "EURDE"     // EUR (Germany)
+  | "MXN"       // Mexican Peso via SPEI
+  | "MXNBASE"   // Mexican Peso via SPEI
+  | "MXNUSD"   // USD-settled via SPEI
+  | "BRL";      // Brazilian Real via Pix
+```
+</Accordion>
+
+---
+
+## Create virtual account
+
+```
+POST /business/virtual-account/create
+```
+
+<ParamField body="customer_id" type="string" required>
+  The ID of the KYC-approved customer to issue the account to.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Currency for the virtual account. Supported values: `USDBASE`, `EURBASE`, `EURDE`, `MXN`, `MXNBASE`, `MXNUSD`, `BRL`. For enterprise currencies, contact your integration team.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "currency": "USDBASE"
+  }'
+```
+
+```javascript Node.js
+const { data } = await client.post('/business/virtual-account/create', {
+  customer_id: customerId,
+  currency: 'BRL',  // Pix account
+}, {
+  headers: { 'Idempotency-Key': crypto.randomUUID() },
+});
+console.log('Account number:', data.data.account_number);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Virtual account creation in progress",
+  "data": {
+    "account_id": "va_xxxxxx",
+    "account_number": "9900123456",
+    "account_type": "savings",
+    "currency": "USDBASE",
+    "created_at": "2026-03-26T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## List virtual accounts
+
+```
+GET /business/virtual-account
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Get virtual account
+
+```
+GET /business/virtual-account/show/{virtual_account_id}
+```
+
+<ParamField path="virtual_account_id" type="string" required>
+  The virtual account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/show/va_xxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Delete virtual account
+
+```
+DELETE /business/virtual-account/delete-virtual-account/{virtual_account_id}
+```
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://api.yativo.com/api/v1/business/virtual-account/delete-virtual-account/va_xxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Virtual account transaction history
+
+Retrieve payment history for a specific virtual account number.
+
+```
+POST /business/virtual-account/history/{account_number}
+```
+
+<ParamField path="account_number" type="string" required>
+  The account number (not the account ID).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by payment status.
+</ParamField>
+
+<ParamField query="start_date" type="string">
+  From date (ISO 8601).
+</ParamField>
+
+<ParamField query="end_date" type="string">
+  To date (ISO 8601).
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number.
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/history/9900123456?start_date=2026-03-01&end_date=2026-03-31' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "amount": 1000,
+      "currency": "USD",
+      "status": "completed",
+      "credited_amount": 950,
+      "transaction_id": "TXNMP2HK81BHJ",
+      "sender_name": "John Smith",
+      "account_number": "9900123456",
+      "transaction_fees": 50
+    }
+  ],
+  "pagination": { "total": 12, "per_page": 20, "current_page": 1 }
+}
+```
+</ResponseExample>

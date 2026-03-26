@@ -1,0 +1,118 @@
+---
+title: "Security"
+description: "Best practices for securing your Yativo API integration"
+---
+
+## Authentication
+
+All API requests must be authenticated. Yativo supports two authentication methods:
+
+- **Bearer tokens** — obtained via the magic-link flow or the [API keys](/yativo-fiat/api-keys) endpoint. Include in every request as `Authorization: Bearer <token>`.
+- **Two-factor authentication (2FA)** — optional TOTP-based 2FA for your account login. Enable it via the [Authentication](/yativo-fiat/authentication) endpoints.
+
+Tokens expire after a set period. Use `GET /auth/refresh-token` to get a new one without re-authenticating.
+
+---
+
+## API key hygiene
+
+- **One key per service** — create a separate key for each backend service or environment so you can rotate or revoke a single key without affecting others.
+- **Minimal permissions** — scope each key to only the permissions it needs (e.g. `transactions:read` for a reporting service, not full access).
+- **Never expose keys client-side** — API keys belong on your server. Do not embed them in mobile apps, browser JavaScript, or public repositories.
+- **Rotate regularly** — revoke and reissue keys on a schedule or immediately after any suspected exposure.
+- **Store in secrets managers** — use environment variables or a dedicated secrets manager (AWS Secrets Manager, HashiCorp Vault, etc.), not plaintext config files.
+
+---
+
+## Webhook signature verification
+
+Always verify the `X-Yativo-Signature` header on incoming webhook requests. This prevents replay attacks and spoofed events.
+
+```javascript Node.js
+const crypto = require('crypto');
+
+function verifySignature(rawBody, signature, secret) {
+  const hmac = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
+
+  return crypto.timingSafeEqual(
+    Buffer.from(`sha256=${hmac}`),
+    Buffer.from(signature)
+  );
+}
+```
+
+Use `crypto.timingSafeEqual` (not `===`) to prevent timing attacks.
+
+---
+
+## HTTPS only
+
+The Yativo API only accepts HTTPS connections. Webhook delivery also targets HTTPS endpoints only — HTTP URLs will be rejected on webhook creation.
+
+---
+
+## IP allowlisting
+
+For production environments, restrict outbound API calls to Yativo's IP ranges and consider allowlisting inbound webhook IPs on your firewall. Contact support for the current list of Yativo webhook egress IPs.
+
+---
+
+## Idempotency
+
+For mutating requests (payouts, deposits, transfers), use the `Idempotency-Key` header to safely retry without risk of duplicate transactions:
+
+```bash
+curl -X POST 'https://api.yativo.com/api/sendmoney' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Idempotency-Key: your-unique-request-id-abc123' \
+  -H 'Content-Type: application/json' \
+  -d '{ ... }'
+```
+
+If a request with the same idempotency key succeeds, subsequent requests with that key return the original response without executing the operation again. Keys expire after 24 hours.
+
+---
+
+## Rate limits
+
+The API enforces rate limits per API key:
+
+| Tier | Requests per minute |
+|------|-------------------|
+| Default | 120 |
+| Elevated | 600 (on request) |
+
+When a limit is hit, the API returns `429 Too Many Requests` with a `Retry-After` header indicating when to retry.
+
+---
+
+## Sensitive data handling
+
+- Card details (PAN, CVV, PIN) are never returned in plain API responses — use the [Secure Card Display](/yativo-crypto/cards/secure-display) hosted iframe for that.
+- Yativo is PCI-DSS compliant. Do not log or store raw card data in your systems.
+- Customer PII (names, emails, phone numbers) should be treated as sensitive. Limit access in your systems to only those who need it.
+
+---
+
+## Error responses
+
+Security-related errors you may encounter:
+
+| HTTP status | Meaning |
+|-------------|---------|
+| `401 Unauthorized` | Missing or invalid Bearer token / API key |
+| `403 Forbidden` | Valid credentials but insufficient permissions |
+| `429 Too Many Requests` | Rate limit exceeded |
+
+All error responses include a machine-readable `code` field:
+
+```json
+{
+  "status": "error",
+  "code": "UNAUTHORIZED",
+  "message": "Invalid or expired access token"
+}
+```

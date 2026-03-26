@@ -1,0 +1,234 @@
+---
+title: "Customers"
+description: "Create and manage end-customer profiles"
+---
+
+Customers are end-users of your platform. Once created, customers can be assigned virtual accounts, attached to payins/payouts, and verified through KYC/KYB.
+
+<Accordion title="Type Definitions">
+```typescript
+interface Customer {
+  customer_id: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  customer_country: string;       // ISO 3166-1 alpha-3 (e.g. "USA", "BRA")
+  customer_status: "active" | "inactive";
+  customer_kyc_status: "not_started" | "pending" | "approved" | "rejected" | null;
+  customer_kyc_reject_reason: string | null;
+  created_at: string;
+  kyc_verified_date?: string;
+}
+
+interface CreateCustomerRequest {
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;          // E.164 format (e.g. "+5511999999999")
+  customer_country: string;        // ISO 3166-1 alpha-3
+  customer_type?: "individual" | "business";  // defaults to "individual"
+}
+```
+</Accordion>
+
+---
+
+## Create customer
+
+```
+POST /customer
+```
+
+<ParamField body="customer_name" type="string" required>
+  Customer's full name.
+</ParamField>
+
+<ParamField body="customer_email" type="string" required>
+  Customer's email address.
+</ParamField>
+
+<ParamField body="customer_phone" type="string" required>
+  Customer's phone number in E.164 format (e.g. `"+5511999999999"`).
+</ParamField>
+
+<ParamField body="customer_country" type="string" required>
+  Customer's country — ISO 3166-1 **alpha-3** code (e.g. `"BRA"`, `"USA"`, `"MEX"`).
+</ParamField>
+
+<ParamField body="customer_type" type="string">
+  `"individual"` (default) or `"business"`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_name": "Jane Doe",
+    "customer_email": "jane@example.com",
+    "customer_phone": "+5511999999999",
+    "customer_country": "BRA",
+    "customer_type": "individual"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "customer_name": "Jane Doe",
+    "customer_email": "jane@example.com",
+    "customer_phone": "+5511999999999",
+    "customer_country": "BRA",
+    "customer_status": "active",
+    "created_at": "2026-03-26T10:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get customer
+
+Retrieve a single customer along with their virtual accounts, transactions, and linked cards.
+
+```
+GET /customer/customer/{customer_id}
+```
+
+<ParamField path="customer_id" type="string" required>
+  The customer ID (UUID).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Customer retrieved successfully",
+  "data": {
+    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "customer_name": "Jane Doe",
+    "customer_email": "jane@example.com",
+    "customer_phone": "+5511999999999",
+    "customer_country": "BRA",
+    "customer_status": "active",
+    "customer_kyc_status": "approved",
+    "customer_kyc_reject_reason": null,
+    "created_at": "2026-03-26T10:00:00.000000Z",
+    "kyc_verified_date": "2026-03-26T12:00:00.000000Z",
+    "customer_virtualaccounts": [
+      {
+        "account_id": "va_xxxxxx",
+        "currency": "BRL",
+        "account_number": "BRLPIX0000000000000000000000000000000000",
+        "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+      }
+    ],
+    "customer_deposit": [],
+    "customer_payouts": []
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## List all customers
+
+```
+GET /customer/customer
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/customer' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "customer_name": "Jane Doe",
+      "customer_email": "jane@example.com",
+      "customer_phone": "+5511999999999",
+      "customer_country": "BRA",
+      "customer_status": "active",
+      "customer_kyc_status": "approved",
+      "created_at": "2026-03-26T10:00:00.000000Z"
+    }
+  ],
+  "pagination": {
+    "total": 142,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 8
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Check KYC status
+
+```
+GET /customer/kyc/{customer_id}
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/kyc/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "status": "approved",
+    "kyc_rejection_reasons": [],
+    "kyc_requirements_due": [],
+    "bio_data": {
+      "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "customer_name": "Jane Doe",
+      "customer_kyc_status": "approved",
+      "kyc_verified_date": "2026-03-26T12:00:00.000000Z"
+    },
+    "kyc_link": "https://checkout.yativo.com/kyc/update-biodata/xxxxx-xxxxx-xxx-xxxx-xxxx",
+    "is_va_approved": true
+  }
+}
+```
+</ResponseExample>
+
+<Note>
+  Once `is_va_approved` is `true`, the customer can be issued virtual accounts. See the [KYC/KYB](/yativo-fiat/kyc) page for submitting identity verification.
+</Note>

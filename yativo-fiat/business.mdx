@@ -1,0 +1,183 @@
+---
+title: "Business Account"
+description: "Manage your business profile, balances, and account settings"
+---
+
+<Accordion title="Type Definitions">
+```typescript
+interface BusinessAccount {
+  id: string;
+  name: string;
+  email: string;
+  country: string;
+  currency: string;
+  kyc_status: "not_started" | "pending" | "approved" | "rejected";
+  is_active: boolean;
+  created_at: string;
+}
+
+interface BusinessBalance {
+  currency: string;
+  available: string;
+  pending: string;
+  total: string;
+}
+
+interface FeeStructure {
+  transaction_type: string;
+  fee_type: "flat" | "percentage" | "combined";
+  flat_amount?: string;
+  percentage?: string;
+  currency: string;
+  min_amount?: string;
+  max_amount?: string;
+}
+```
+</Accordion>
+
+---
+
+## Get business profile
+
+```
+GET /business/profile
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/business/profile' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "id": "biz_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "name": "Acme Payments Ltd",
+    "email": "finance@acme.com",
+    "country": "US",
+    "currency": "USD",
+    "kyc_status": "approved",
+    "is_active": true,
+    "created_at": "2025-06-15T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get balances
+
+Retrieve available, pending, and total balances across all currencies held by your business account.
+
+```
+GET /business/balances
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/business/balances' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "currency": "USD",
+      "available": "12540.00",
+      "pending": "800.00",
+      "total": "13340.00"
+    },
+    {
+      "currency": "BRL",
+      "available": "45200.00",
+      "pending": "0.00",
+      "total": "45200.00"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Fee schedule
+
+Get the fee structure applied to your account for each transaction type.
+
+```
+GET /business/fees
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/business/fees' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "transaction_type": "payout",
+      "fee_type": "percentage",
+      "percentage": "0.8",
+      "currency": "USD",
+      "min_amount": "1.00",
+      "max_amount": "50.00"
+    },
+    {
+      "transaction_type": "deposit",
+      "fee_type": "flat",
+      "flat_amount": "2.00",
+      "currency": "USD"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Supported currencies
+
+Get a list of all currencies available on the platform for sending and receiving.
+
+```
+GET /business/currencies
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/business/currencies' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    { "code": "USD", "name": "US Dollar", "symbol": "$" },
+    { "code": "BRL", "name": "Brazilian Real", "symbol": "R$" },
+    { "code": "MXN", "name": "Mexican Peso", "symbol": "$" },
+    { "code": "COP", "name": "Colombian Peso", "symbol": "$" },
+    { "code": "PEN", "name": "Peruvian Sol", "symbol": "S/" },
+    { "code": "CLP", "name": "Chilean Peso", "symbol": "$" },
+    { "code": "ARS", "name": "Argentine Peso", "symbol": "$" }
+  ]
+}
+```
+</ResponseExample>

@@ -54,27 +54,60 @@
         "tab": "Yativo",
         "groups": [
           {
+            "group": "Company",
+            "pages": [
+              "yativo/introduction"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Yativo Fiat",
+        "groups": [
+          {
             "group": "Get Started",
             "pages": [
-              "yativo/introduction",
-              "yativo/quickstart",
-              "yativo/authentication"
+              "yativo-fiat/authentication"
             ]
           },
           {
-            "group": "Platform",
+            "group": "Payments",
             "pages": [
-              "yativo/api-keys",
-              "yativo/webhooks",
-              "yativo/subscriptions",
-              "yativo/notifications"
+              "yativo-fiat/exchange-rate",
+              "yativo-fiat/send-money",
+              "yativo-fiat/deposits",
+              "yativo-fiat/virtual-accounts"
             ]
           },
           {
-            "group": "Security",
+            "group": "Wallets",
             "pages": [
-              "yativo/2fa",
-              "yativo/rate-limits"
+              "yativo-fiat/wallets",
+              "yativo-fiat/accounts",
+              "yativo-fiat/assets"
+            ]
+          },
+          {
+            "group": "Customers & Compliance",
+            "pages": [
+              "yativo-fiat/customers",
+              "yativo-fiat/kyc",
+              "yativo-fiat/beneficiaries"
+            ]
+          },
+          {
+            "group": "Transactions",
+            "pages": [
+              "yativo-fiat/transactions"
+            ]
+          },
+          {
+            "group": "Developer Tools",
+            "pages": [
+              "yativo-fiat/webhooks",
+              "yativo-fiat/api-keys",
+              "yativo-fiat/security",
+              "yativo-fiat/business"
             ]
           }
         ]

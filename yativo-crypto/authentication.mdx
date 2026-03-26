@@ -7,10 +7,10 @@ The Yativo Crypto API uses the same authentication system as the core Yativo pla
 
 ## Base URLs
 
-| Environment | Base URL |
-|-------------|----------|
-| Production | `https://crypto-api.yativo.com/api/` |
-| Sandbox | `https://crypto-sandbox.yativo.com/api/` |
+| Environment | URL |
+|-------------|-----|
+| Dashboard | `https://crypto.yativo.com` |
+| API Base | `https://crypto-api.yativo.com/api` |
 
 ---
 
@@ -24,7 +24,7 @@ For backend integrations, use the API key + secret flow. It does not require a u
   </Step>
   <Step title="Exchange for a Bearer token">
     ```bash
-    curl -X POST https://crypto-api.yativo.com/api/apikey/token \
+    curl -X POST https://crypto-api.yativo.com/api/auth/token \
       -H "Content-Type: application/json" \
       -d '{
         "api_key": "yvk_live_...",
@@ -34,9 +34,12 @@ For backend integrations, use the API key + secret flow. It does not require a u
 
     ```json Response
     {
+      "success": true,
       "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "token_type": "Bearer",
       "expires_in": 3600,
-      "token_type": "Bearer"
+      "expires_at": "2026-03-26T14:00:00.000Z",
+      "scopes": ["read", "write", "transactions"]
     }
     ```
   </Step>
@@ -70,7 +73,7 @@ class YativoAuth {
   }
 
   private async refresh(): Promise<string> {
-    const res = await fetch('https://crypto-api.yativo.com/api/apikey/token', {
+    const res = await fetch('https://crypto-api.yativo.com/api/auth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ api_key: this.apiKey, api_secret: this.apiSecret }),
@@ -193,7 +196,7 @@ When testing in the sandbox, use the sandbox base URL with the same authenticati
 
 ```
 https://crypto-sandbox.yativo.com/api/authentication/login
-https://crypto-sandbox.yativo.com/api/apikey/token
+https://crypto-sandbox.yativo.com/api/auth/token
 ```
 
 Create a separate API key for sandbox use to keep test and production credentials separate. See the [Sandbox docs](/sandbox/authentication) for details.

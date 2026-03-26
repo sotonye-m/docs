@@ -1,0 +1,116 @@
+---
+title: "Authentication"
+description: "Authenticate with the Yativo API using your account credentials"
+---
+
+## Environments
+
+| Environment | Base URL |
+|-------------|----------|
+| Production | `https://api.yativo.com/api/v1` |
+| Sandbox | `https://smtp.yativo.com/api/v1` |
+
+---
+
+## Onboarding
+
+Before making API calls, complete the onboarding process via the [Yativo dashboard](https://app.yativo.com). This includes providing your business details and UBO (Ultimate Beneficial Owner) verification. Contact support if you need help with this step.
+
+---
+
+## Generate a bearer token
+
+All API requests require a bearer token. Generate one by sending your **Account ID** and **App Secret** — both available under **Developer** in your dashboard.
+
+```
+POST /auth/login
+```
+
+<ParamField body="account_id" type="string" required>
+  Your Account ID from the Yativo dashboard.
+</ParamField>
+
+<ParamField body="app_secret" type="string" required>
+  Your App Secret from the Yativo dashboard.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/auth/login' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_id": "your_account_id",
+    "app_secret": "your_app_secret"
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.yativo.com/api/v1/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    account_id: process.env.YATIVO_ACCOUNT_ID,
+    app_secret: process.env.YATIVO_APP_SECRET,
+  }),
+});
+const { data } = await response.json();
+const token = data.access_token;
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
+    "token_type": "bearer",
+    "expires_in": 600
+  }
+}
+```
+</ResponseExample>
+
+<Note>
+  Tokens expire in **600 seconds** (10 minutes). Re-authenticate before expiry to maintain uninterrupted access.
+</Note>
+
+---
+
+## Using the bearer token
+
+Include the token in the `Authorization` header for all subsequent requests:
+
+```
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...
+```
+
+---
+
+## Idempotency
+
+All `POST`, `PUT`, and `PATCH` requests require an `Idempotency-Key` header. This ensures safe retries without risk of duplicate operations.
+
+```
+Idempotency-Key: <unique-string-per-request>
+```
+
+Use a UUID or any unique identifier you generate. On retry, Yativo returns the original response without re-processing the request.
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000' \
+  -H 'Content-Type: application/json' \
+  -d '{ ... }'
+```
+
+---
+
+## Security best practices
+
+- Store `account_id` and `app_secret` as environment variables — never hardcode them.
+- Rotate your `app_secret` immediately if you suspect it has been exposed.
+- Use the sandbox (`https://smtp.yativo.com/api/v1`) for development and testing.
