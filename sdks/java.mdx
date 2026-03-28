@@ -75,14 +75,13 @@ yativo.crypto.webhook.secret=${YATIVO_WEBHOOK_SECRET}
 |---|---|
 | `CustomerService` | Manage end-customers |
 | `WalletService` | Create and query wallets |
-| `DepositService` | Monitor and retrieve deposits |
 | `WithdrawalService` | Send funds (withdrawals) |
 | `TransactionService` | Query transaction history |
 | `CardService` | Virtual card issuance and management |
 | `SwapService` | Quote and execute swaps |
 | `StandaloneIbanService` | Dedicated IBAN accounts |
-| `AutoForwardingService` | Configure auto-forwarding rules |
 | `GasStationService` | Manage gas station sponsorships |
+| `AutoForwardingService` | Create and manage auto-forwarding rules |
 
 ---
 
@@ -172,33 +171,6 @@ public class WalletManagementService {
 
     public List<Wallet> listWallets(String accountId) {
         return walletService.list(accountId);
-    }
-}
-```
-
----
-
-## DepositService
-
-```java
-import com.yativo.service.DepositService;
-import com.yativo.model.Deposit;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import java.util.List;
-
-@Service
-public class DepositManagementService {
-
-    @Autowired
-    private DepositService depositService;
-
-    public List<Deposit> getPendingDeposits(String accountId) {
-        return depositService.list(accountId, "PENDING");
-    }
-
-    public Deposit getDeposit(String depositId) {
-        return depositService.get(depositId);
     }
 }
 ```
@@ -416,29 +388,46 @@ public class IbanService {
 ```java
 import com.yativo.service.AutoForwardingService;
 import com.yativo.model.AutoForwardingRule;
+import com.yativo.model.CreateAutoForwardingRequest;
+import com.yativo.model.UpdateAutoForwardingRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 @Service
-public class ForwardingConfigService {
+public class ForwardingManagementService {
 
     @Autowired
     private AutoForwardingService autoForwardingService;
 
-    public AutoForwardingRule createRule(String walletId, String destinationAddress,
-                                          String asset, String percentage) {
-        return autoForwardingService.create(
-            CreateAutoForwardingRequest.builder()
-                .sourceWalletId(walletId)
-                .destinationAddress(destinationAddress)
-                .asset(asset)
-                .percentage(percentage)  // e.g. "100" for 100%
-                .build()
-        );
+    public List<AutoForwardingRule> listRules() {
+        return autoForwardingService.list();
     }
 
-    public java.util.List<AutoForwardingRule> listRules(String walletId) {
-        return autoForwardingService.list(walletId);
+    public AutoForwardingRule createRule(String sourceWalletId,
+                                         String destinationAddress,
+                                         String asset, String network) {
+        CreateAutoForwardingRequest request = CreateAutoForwardingRequest.builder()
+            .sourceWalletId(sourceWalletId)
+            .destinationAddress(destinationAddress)
+            .asset(asset)
+            .network(network)
+            .minAmount("10.00")   // optional
+            .build();
+
+        return autoForwardingService.create(request);
+    }
+
+    public AutoForwardingRule updateRule(String ruleId, String newMinAmount) {
+        UpdateAutoForwardingRequest request = UpdateAutoForwardingRequest.builder()
+            .minAmount(newMinAmount)
+            .build();
+
+        return autoForwardingService.update(ruleId, request);
+    }
+
+    public void deleteRule(String ruleId) {
+        autoForwardingService.delete(ruleId);
     }
 }
 ```

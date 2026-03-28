@@ -24,7 +24,7 @@ pnpm add @yativo/crypto-sdk
 ## Quick Start
 
 <Tabs>
-  <Tab title="Email / Password Auth">
+  <Tab title="Passwordless Auth">
     ```typescript
     import { YativoSDK } from "@yativo/crypto-sdk";
 
@@ -40,11 +40,12 @@ pnpm add @yativo/crypto-sdk
       lastName: "Lovelace",
     });
 
-    // Log in — the SDK stores and auto-refreshes the token
-    const session = await sdk.auth.login({
-      email: "user@example.com",
-      password: "SecurePass123!",
-    });
+    // Step 1 — Send OTP to the user's email
+    await sdk.auth.login("user@example.com");
+
+    // Step 2 — Verify the OTP to complete login
+    // The SDK stores and auto-refreshes the token
+    const session = await sdk.auth.verifyOTP("123456", "user@example.com");
 
     console.log("Logged in:", session.user.email);
     ```
@@ -101,48 +102,52 @@ const user = await sdk.auth.register({
 });
 ```
 
-### Login
+### Login (Passwordless)
+
+Login is passwordless. Call `login(email)` to send an OTP to the user, then call `verifyOTP(otp, email)` to complete authentication. The SDK stores the token internally and auto-refreshes on 401.
 
 ```typescript
-const session = await sdk.auth.login({
-  email: "user@example.com",
-  password: "SecurePass123!",
-});
+// Step 1 — Send OTP
+await sdk.auth.login("user@example.com");
+
+// Step 2 — Verify OTP to complete auth
+const session = await sdk.auth.verifyOTP("123456", "user@example.com");
 // session.accessToken is stored internally; auto-refreshed on 401
 ```
 
-### OTP Verification
+### 2FA Setup (Google Authenticator)
 
 ```typescript
-// Request an OTP
-await sdk.auth.requestOtp({ email: "user@example.com" });
+// Get QR code and secret for Google Authenticator setup
+const details = await sdk.auth.get2faDetails();
+// details.qrCode — display this as a QR image
+// details.secret — manual entry fallback
 
-// Verify the OTP
-await sdk.auth.verifyOtp({
-  email: "user@example.com",
-  otp: "123456",
-});
+// Activate 2FA on the account
+await sdk.auth.enable2fa();
+
+// Verify a TOTP code (use instead of verifyOTP when 2FA is enabled)
+const session = await sdk.auth.verify2FA("654321", "user@example.com");
 ```
 
-### Two-Factor Authentication (2FA)
+### Passkey (WebAuthn) Auth
 
 ```typescript
-// Enable 2FA — returns a TOTP secret and QR code URL
-const setup = await sdk.auth.enable2fa();
-console.log("Scan this QR:", setup.qrCodeUrl);
+// Get WebAuthn challenge
+const options = await sdk.auth.passkeyAuthOptions("user@example.com");
 
-// Confirm 2FA setup with a TOTP code
-await sdk.auth.confirm2fa({ code: "654321" });
+// Verify WebAuthn credential (pass the result from navigator.credentials.get)
+const session = await sdk.auth.passkeyAuthVerify(credential);
+```
 
-// Login with 2FA
-const session = await sdk.auth.login({
-  email: "user@example.com",
-  password: "SecurePass123!",
-});
-// If 2FA is required, complete the second step:
-if (session.requires2fa) {
-  await sdk.auth.verify2fa({ code: "654321" });
-}
+### Exchange API Key for Bearer Token
+
+```typescript
+// Exchange API key + secret for a Bearer token (POST /auth/token)
+const { token } = await sdk.auth.getToken(
+  process.env.YATIVO_API_KEY!,
+  process.env.YATIVO_API_SECRET!
+);
 ```
 
 ---
@@ -389,11 +394,12 @@ await sdk.webhooks.delete("wh_ghi789");
 ## API Keys (`sdk.apiKeys`)
 
 ```typescript
-// Create an API key (requires 2FA code if 2FA is enabled)
+// Create an API key
 const key = await sdk.apiKeys.create({
-  name:        "Production Server",
-  permissions: ["transactions:read", "transactions:write", "wallets:read"],
-  twoFaCode:   "123456",  // required when 2FA is enabled on the account
+  key_name:        "Production Server",
+  scopes:          ["transactions:read", "transactions:write", "wallets:read"],
+  expires_in_days: 90,          // optional
+  allowed_ips:     ["203.0.113.10"], // optional
 });
 // Store key.secret securely — it is shown only once
 console.log("API Key:", key.key);
@@ -402,8 +408,35 @@ console.log("API Secret:", key.secret);
 // List API keys
 const { keys } = await sdk.apiKeys.list();
 
-// Revoke a key
+// Revoke a key (simple DELETE — no 2FA token required)
 await sdk.apiKeys.revoke("key_jkl012");
+```
+
+---
+
+## Auto-Forwarding (`sdk.autoForwarding`)
+
+Auto-forwarding rules automatically sweep incoming deposits to a destination address.
+
+```typescript
+// List all auto-forwarding rules
+const { rules } = await sdk.autoForwarding.list();
+
+// Create a rule
+const rule = await sdk.autoForwarding.create({
+  sourceWalletId:     "wallet_xyz789",
+  destinationAddress: "BjhiXKt...",
+  asset:              "USDC",
+  network:            "SOLANA",
+  minAmount:          "10.00",  // optional — only forward if amount >= this
+});
+console.log("Rule ID:", rule.id);
+
+// Update a rule
+await sdk.autoForwarding.update(rule.id, { minAmount: "25.00" });
+
+// Delete a rule
+await sdk.autoForwarding.delete(rule.id);
 ```
 
 ---
@@ -467,16 +500,28 @@ const ibans = await sdk.standaloneIban.list({ customerId: "cust_111" });
 
 ## Card Widget — `YativoCardEmbed`
 
-The card widget lets you display sensitive card details (PAN, CVV, expiry) inside a secure iframe that never exposes the data to your JavaScript.
+The card widget displays sensitive card details (PAN, CVV, expiry) inside a secure sandboxed iframe. Card data never touches your JavaScript.
+
+The widget requires a short-lived **ephemeral token** generated server-side — never pass your `apiSecret` to client code.
+
+**Step 1 — Generate an ephemeral token on your server:**
+
+```typescript
+// Server-side only (Node.js / backend route)
+const ephemeral = await sdk.cards.getEphemeralToken({
+  yativoCardId: "yc_abc123",
+  cardId:       "card_mno345",
+});
+// Send ephemeral.token to your frontend — it expires in ~5 minutes
+```
+
+**Step 2 — Mount the widget with the ephemeral token:**
 
 ```typescript
 import { YativoCardEmbed } from "@yativo/crypto-sdk";
 
-// Mount the widget into any DOM element
 const embed = YativoCardEmbed.mount("#card-container", {
-  cardId:   "card_mno345",
-  apiKey:   process.env.YATIVO_API_KEY,
-  apiSecret: process.env.YATIVO_API_SECRET,
+  ephemeralToken: ephemeralTokenFromServer,   // from your backend
   theme: {
     background: "#1a1a2e",
     textColor:  "#ffffff",
@@ -494,6 +539,10 @@ embed.unmount();
 <!-- In your HTML -->
 <div id="card-container" style="width:380px;height:240px;"></div>
 ```
+
+<Warning>
+  Never pass `apiKey` or `apiSecret` to the card widget in client-side code. Use the ephemeral token pattern above. See [Get Ephemeral Token](/api-reference/cards/ephemeral-token).
+</Warning>
 
 ---
 

@@ -23,6 +23,10 @@ yarn add @yativo/crypto-sdk-react
 
 Wrap your application (or the relevant subtree) with `YativoProvider`. This creates the SDK instance and makes it available to all hooks and components below.
 
+<Warning>
+  Never expose `apiSecret` in client-side code. Do not use `NEXT_PUBLIC_YATIVO_API_SECRET` or any environment variable that gets bundled into the browser. For React apps, use email/password login so that credentials stay server-side — or have your backend exchange API key credentials and return a short-lived access token to the frontend.
+</Warning>
+
 ```tsx
 // app.tsx (or _app.tsx in Next.js)
 import { YativoProvider } from "@yativo/crypto-sdk-react";
@@ -32,9 +36,8 @@ export default function App({ children }: { children: React.ReactNode }) {
     <YativoProvider
       config={{
         baseURL: "https://crypto-api.yativo.com/api/",
-        // Optional: pass API key/secret for server-side or non-login flows
-        // apiKey: process.env.NEXT_PUBLIC_YATIVO_API_KEY,
-        // apiSecret: process.env.NEXT_PUBLIC_YATIVO_API_SECRET,
+        // Use email/password login (sdk.auth.login) for client-side auth.
+        // Do NOT pass apiSecret here — it would be exposed in the browser bundle.
       }}
     >
       {children}
@@ -47,19 +50,32 @@ export default function App({ children }: { children: React.ReactNode }) {
 
 ## `useYativo()` — Authentication & SDK Access
 
+Login is passwordless and happens in two steps: send an OTP with `login(email)`, then verify it with `verifyOTP(otp, email)`.
+
 ```tsx
 import { useYativo } from "@yativo/crypto-sdk-react";
 
 function LoginForm() {
-  const { sdk, client, user, login, logout } = useYativo();
-  const [email, setEmail]       = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [error, setError]       = React.useState<string | null>(null);
+  const { sdk, user, logout } = useYativo();
+  const [email, setEmail]     = React.useState("");
+  const [otp, setOtp]         = React.useState("");
+  const [step, setStep]       = React.useState<"email" | "otp">("email");
+  const [error, setError]     = React.useState<string | null>(null);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await login({ email, password });
+      await sdk.auth.login(email);
+      setStep("otp");
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await sdk.auth.verifyOTP(otp, email);
     } catch (err: any) {
       setError(err.message);
     }
@@ -74,8 +90,24 @@ function LoginForm() {
     );
   }
 
+  if (step === "otp") {
+    return (
+      <form onSubmit={handleVerifyOtp}>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        <p>Enter the OTP sent to {email}</p>
+        <input
+          type="text"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          placeholder="6-digit OTP"
+        />
+        <button type="submit">Verify</button>
+      </form>
+    );
+  }
+
   return (
-    <form onSubmit={handleLogin}>
+    <form onSubmit={handleSendOtp}>
       {error && <p style={{ color: "red" }}>{error}</p>}
       <input
         type="email"
@@ -83,13 +115,7 @@ function LoginForm() {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Email"
       />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-      />
-      <button type="submit">Login</button>
+      <button type="submit">Send OTP</button>
     </form>
   );
 }
@@ -102,7 +128,6 @@ function LoginForm() {
 | `sdk` | `YativoSDK` | The underlying TypeScript SDK instance |
 | `client` | `YativoSDK` | Alias for `sdk` |
 | `user` | `User \| null` | Currently authenticated user, or `null` |
-| `login` | `(credentials) => Promise<void>` | Login and store session |
 | `logout` | `() => void` | Clear session |
 
 ---
@@ -396,40 +421,22 @@ function DepositPage({ walletId }: { walletId: string }) {
 
 ---
 
-## `AutoForwardingControl` — Auto-Forwarding Settings
-
-```tsx
-import { AutoForwardingControl } from "@yativo/crypto-sdk-react";
-
-function ForwardingSettings({ walletId }: { walletId: string }) {
-  return (
-    <AutoForwardingControl
-      walletId={walletId}
-      onRuleCreated={(rule) => {
-        console.log("Rule created:", rule.id);
-      }}
-      onRuleDeleted={(ruleId) => {
-        console.log("Rule deleted:", ruleId);
-      }}
-    />
-  );
-}
-```
-
----
-
 ## `YativoCardWidget` — Embedded Card Display (PSE)
 
 The card widget renders sensitive card details (PAN, CVV, expiry) inside a secure sandboxed iframe. Card data never touches your JavaScript.
 
+The widget requires an **ephemeral token** from your backend — never pass API credentials to client-side components.
+
 ```tsx
 import { YativoCardWidget } from "@yativo/crypto-sdk-react";
 
-function CardViewer({ cardId }: { cardId: string }) {
+// ephemeralToken must come from your backend:
+// const { token } = await sdk.cards.getEphemeralToken({ yativoCardId, cardId })
+function CardViewer({ ephemeralToken }: { ephemeralToken: string }) {
   return (
     <div style={{ width: 380, height: 240 }}>
       <YativoCardWidget
-        cardId={cardId}
+        ephemeralToken={ephemeralToken}
         theme={{
           background:  "#1a1a2e",
           textColor:   "#ffffff",

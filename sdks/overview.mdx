@@ -111,7 +111,7 @@ All SDKs expose the same logical resources:
 
 | Resource | Description |
 |---|---|
-| `auth` | Register, login, OTP, 2FA |
+| `auth` | Register, login, OTP verification |
 | `accounts` | Manage business accounts |
 | `assets` | Wallets and supported assets |
 | `transactions` | Send / receive funds |
@@ -121,14 +121,14 @@ All SDKs expose the same logical resources:
 | `analytics` | Volume, fees, and reporting |
 | `cards` | Virtual card issuance and management |
 | `swap` | Quote and execute asset swaps |
-| `standaloneIban` | Dedicated IBAN accounts |
+| `iban` | Dedicated IBAN accounts |
 
 ### Authentication Modes
 
 Every SDK supports two authentication flows:
 
-1. **Email / password** — call `auth.login()` to obtain a JWT; the SDK stores it and refreshes it automatically on 401 responses.
-2. **API key + secret** — pass `apiKey` and `apiSecret` to the constructor. The SDK signs requests directly; no manual token management required.
+1. **Email / password** — call `auth.login()` then `auth.verifyOtp()` to obtain a session token; the SDK stores it and auto-refreshes on 401 responses.
+2. **API key + secret** — pass `apiKey` and `apiSecret` to the constructor. The SDK exchanges them for a Bearer token automatically; no manual token management required.
 
 ### Rate Limiting
 

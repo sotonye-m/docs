@@ -24,7 +24,7 @@ uv add yativo-crypto-sdk
 ## Quick Start
 
 <Tabs>
-  <Tab title="Email / Password Auth">
+  <Tab title="Passwordless Auth">
     ```python
     from yativo import YativoSDK
 
@@ -40,11 +40,12 @@ uv add yativo-crypto-sdk
         last_name="Lovelace",
     )
 
-    # Login — token is stored and refreshed automatically
-    session = sdk.auth.login(
-        email="user@example.com",
-        password="SecurePass123!",
-    )
+    # Step 1 — Send OTP to the user's email
+    sdk.auth.login("user@example.com")
+
+    # Step 2 — Verify the OTP to complete login
+    # Token is stored and refreshed automatically
+    session = sdk.auth.verify_otp("123456", "user@example.com")
     print("Logged in as:", session["user"]["email"])
     ```
   </Tab>
@@ -96,39 +97,52 @@ user = sdk.auth.register(
 )
 ```
 
-### Login
+### Login (Passwordless)
+
+Login is passwordless. Call `login(email)` to send an OTP to the user, then call `verify_otp(otp, email)` to complete authentication.
 
 ```python
-session = sdk.auth.login(
-    email="user@example.com",
-    password="SecurePass123!",
+# Step 1 — Send OTP
+sdk.auth.login("user@example.com")
+
+# Step 2 — Verify OTP to complete auth
+session = sdk.auth.verify_otp("123456", "user@example.com")
+```
+
+### 2FA Setup (Google Authenticator)
+
+```python
+# Get QR code and secret for Google Authenticator setup
+details = sdk.auth.get_2fa_details()
+# details["qr_code"] — display as QR image
+# details["secret"]  — manual entry fallback
+
+# Activate 2FA on the account
+sdk.auth.enable_2fa()
+
+# Verify a TOTP code (use instead of verify_otp when 2FA is enabled)
+session = sdk.auth.verify_2fa("654321", "user@example.com")
+```
+
+### Passkey (WebAuthn) Auth
+
+```python
+# Get WebAuthn challenge
+options = sdk.auth.passkey_auth_options("user@example.com")
+
+# Verify WebAuthn credential
+session = sdk.auth.passkey_auth_verify(credential)
+```
+
+### Exchange API Key for Bearer Token
+
+```python
+import os
+
+token_resp = sdk.auth.get_token(
+    os.environ["YATIVO_API_KEY"],
+    os.environ["YATIVO_API_SECRET"],
 )
-```
-
-### OTP Verification
-
-```python
-# Request an OTP
-sdk.auth.request_otp(email="user@example.com")
-
-# Verify the OTP
-sdk.auth.verify_otp(email="user@example.com", otp="123456")
-```
-
-### Two-Factor Authentication (2FA)
-
-```python
-# Enable 2FA
-setup = sdk.auth.enable_2fa()
-print("Scan QR:", setup["qr_code_url"])
-
-# Confirm setup
-sdk.auth.confirm_2fa(code="654321")
-
-# Login with 2FA
-session = sdk.auth.login(email="user@example.com", password="SecurePass123!")
-if session.get("requires_2fa"):
-    sdk.auth.verify_2fa(code="654321")
 ```
 
 ---
@@ -362,11 +376,12 @@ sdk.webhooks.delete("wh_ghi789")
 ## API Keys (`sdk.api_keys`)
 
 ```python
-# Create an API key (requires 2FA code if 2FA is enabled)
+# Create an API key
 key = sdk.api_keys.create(
-    name="Production Server",
-    permissions=["transactions:read", "transactions:write", "wallets:read"],
-    two_fa_code="123456",
+    key_name="Production Server",
+    scopes=["transactions:read", "transactions:write", "wallets:read"],
+    expires_in_days=90,              # optional
+    allowed_ips=["203.0.113.10"],    # optional
 )
 # Store key["secret"] securely — shown only once
 print("API Key:", key["key"])
@@ -375,8 +390,35 @@ print("API Secret:", key["secret"])
 # List API keys
 result = sdk.api_keys.list()
 
-# Revoke a key
+# Revoke a key (simple DELETE — no 2FA token required)
 sdk.api_keys.revoke("key_jkl012")
+```
+
+---
+
+## Auto-Forwarding (`sdk.auto_forwarding`)
+
+Auto-forwarding rules automatically sweep incoming deposits to a destination address.
+
+```python
+# List all auto-forwarding rules
+result = sdk.auto_forwarding.list()
+
+# Create a rule
+rule = sdk.auto_forwarding.create(
+    source_wallet_id="wallet_xyz789",
+    destination_address="BjhiXKt...",
+    asset="USDC",
+    network="SOLANA",
+    min_amount="10.00",  # optional — only forward if amount >= this
+)
+print("Rule ID:", rule["id"])
+
+# Update a rule
+sdk.auto_forwarding.update(rule["id"], min_amount="25.00")
+
+# Delete a rule
+sdk.auto_forwarding.delete(rule["id"])
 ```
 
 ---

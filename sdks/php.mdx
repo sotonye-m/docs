@@ -20,7 +20,7 @@ composer require yativo/crypto-sdk
 ## Quick Start
 
 <Tabs>
-  <Tab title="Email / Password Auth">
+  <Tab title="Passwordless Auth">
     ```php
     <?php
     require __DIR__ . '/vendor/autoload.php';
@@ -39,11 +39,12 @@ composer require yativo/crypto-sdk
         'last_name'  => 'Lovelace',
     ]);
 
-    // Login — token is stored and auto-refreshed on 401
-    $session = $sdk->auth->login([
-        'email'    => 'user@example.com',
-        'password' => 'SecurePass123!',
-    ]);
+    // Step 1 — Send OTP to the user's email
+    $sdk->auth->login('user@example.com');
+
+    // Step 2 — Verify the OTP to complete login
+    // Token is stored and auto-refreshed on 401
+    $session = $sdk->auth->verifyOTP('123456', 'user@example.com');
 
     echo 'Logged in as: ' . $session['user']['email'] . PHP_EOL;
     ```
@@ -98,44 +99,50 @@ $user = $sdk->auth->register([
 ]);
 ```
 
-### Login
+### Login (Passwordless)
+
+Login is passwordless. Call `login($email)` to send an OTP, then call `verifyOTP($otp, $email)` to complete authentication.
 
 ```php
-$session = $sdk->auth->login([
-    'email'    => 'user@example.com',
-    'password' => 'SecurePass123!',
-]);
+// Step 1 — Send OTP
+$sdk->auth->login('user@example.com');
+
+// Step 2 — Verify OTP to complete auth
+$session = $sdk->auth->verifyOTP('123456', 'user@example.com');
 ```
 
-### OTP Verification
+### 2FA Setup (Google Authenticator)
 
 ```php
-$sdk->auth->requestOtp(['email' => 'user@example.com']);
+// Get QR code and secret for Google Authenticator setup
+$details = $sdk->auth->get2faDetails();
+// $details['qr_code'] — display as QR image
+// $details['secret']  — manual entry fallback
 
-$sdk->auth->verifyOtp([
-    'email' => 'user@example.com',
-    'otp'   => '123456',
-]);
+// Activate 2FA on the account
+$sdk->auth->enable2fa();
+
+// Verify a TOTP code (use instead of verifyOTP when 2FA is enabled)
+$session = $sdk->auth->verify2FA('654321', 'user@example.com');
 ```
 
-### Two-Factor Authentication (2FA)
+### Passkey (WebAuthn) Auth
 
 ```php
-// Enable 2FA
-$setup = $sdk->auth->enable2fa();
-echo 'Scan QR: ' . $setup['qr_code_url'];
+// Get WebAuthn challenge
+$options = $sdk->auth->passkeyAuthOptions('user@example.com');
 
-// Confirm setup
-$sdk->auth->confirm2fa(['code' => '654321']);
+// Verify WebAuthn credential
+$session = $sdk->auth->passkeyAuthVerify($credential);
+```
 
-// Login with 2FA
-$session = $sdk->auth->login([
-    'email'    => 'user@example.com',
-    'password' => 'SecurePass123!',
-]);
-if (!empty($session['requires_2fa'])) {
-    $sdk->auth->verify2fa(['code' => '654321']);
-}
+### Exchange API Key for Bearer Token
+
+```php
+$tokenResp = $sdk->auth->getToken(
+    getenv('YATIVO_API_KEY'),
+    getenv('YATIVO_API_SECRET')
+);
 ```
 
 ---
@@ -379,11 +386,12 @@ $sdk->webhooks->delete('wh_ghi789');
 ## API Keys (`$sdk->apiKeys`)
 
 ```php
-// Create an API key (requires 2FA code if 2FA is enabled on the account)
+// Create an API key
 $key = $sdk->apiKeys->create([
-    'name'        => 'Production Server',
-    'permissions' => ['transactions:read', 'transactions:write', 'wallets:read'],
-    'two_fa_code' => '123456',
+    'key_name'        => 'Production Server',
+    'scopes'          => ['transactions:read', 'transactions:write', 'wallets:read'],
+    'expires_in_days' => 90,               // optional
+    'allowed_ips'     => ['203.0.113.10'], // optional
 ]);
 // Store $key['secret'] securely — shown only once
 echo 'API Key: '    . $key['key']    . PHP_EOL;
@@ -392,8 +400,35 @@ echo 'API Secret: ' . $key['secret'] . PHP_EOL;
 // List API keys
 $result = $sdk->apiKeys->list();
 
-// Revoke a key
+// Revoke a key (simple DELETE — no 2FA token required)
 $sdk->apiKeys->revoke('key_jkl012');
+```
+
+---
+
+## Auto-Forwarding (`$sdk->autoForwarding`)
+
+Auto-forwarding rules automatically sweep incoming deposits to a destination address.
+
+```php
+// List all auto-forwarding rules
+$result = $sdk->autoForwarding->list();
+
+// Create a rule
+$rule = $sdk->autoForwarding->create([
+    'source_wallet_id'     => 'wallet_xyz789',
+    'destination_address'  => 'BjhiXKt...',
+    'asset'                => 'USDC',
+    'network'              => 'SOLANA',
+    'min_amount'           => '10.00', // optional — only forward if amount >= this
+]);
+echo 'Rule ID: ' . $rule['id'] . PHP_EOL;
+
+// Update a rule
+$sdk->autoForwarding->update($rule['id'], ['min_amount' => '25.00']);
+
+// Delete a rule
+$sdk->autoForwarding->delete($rule['id']);
 ```
 
 ---
