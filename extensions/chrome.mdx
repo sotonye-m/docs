@@ -151,7 +151,8 @@ Notifications require the `notifications` permission (declared in manifest.json)
 |---|---|
 | Credential storage | Stored in `chrome.storage.local` — isolated to the extension's sandbox |
 | Data in transit | All API calls use HTTPS to `https://crypto-api.yativo.com/api/` |
-| No third parties | The extension communicates only with `crypto-api.yativo.com` |
+| No third parties | The extension communicates only with `crypto-api.yativo.com` for account data |
+| Price data | Prices for alerts are fetched from the CoinGecko public API (no auth required) |
 | Minimal permissions | `storage`, `notifications`, `alarms` — no broad host permissions |
 | Manifest v3 | Uses service workers instead of persistent background pages for better security and performance |
 

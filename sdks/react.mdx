@@ -24,7 +24,7 @@ yarn add @yativo/crypto-sdk-react
 Wrap your application (or the relevant subtree) with `YativoProvider`. This creates the SDK instance and makes it available to all hooks and components below.
 
 <Warning>
-  Never expose `apiSecret` in client-side code. Do not use `NEXT_PUBLIC_YATIVO_API_SECRET` or any environment variable that gets bundled into the browser. For React apps, use email/password login so that credentials stay server-side — or have your backend exchange API key credentials and return a short-lived access token to the frontend.
+  Never expose `apiSecret` in client-side code. Do not use `NEXT_PUBLIC_YATIVO_API_SECRET` or any environment variable that gets bundled into the browser. For React apps, use passwordless login (`sdk.auth.login` + `sdk.auth.verifyOTP`) for client-side auth — or have your backend exchange API key credentials and return a short-lived access token to the frontend.
 </Warning>
 
 ```tsx
@@ -36,7 +36,7 @@ export default function App({ children }: { children: React.ReactNode }) {
     <YativoProvider
       config={{
         baseURL: "https://crypto-api.yativo.com/api/",
-        // Use email/password login (sdk.auth.login) for client-side auth.
+        // Use passwordless login (sdk.auth.login + sdk.auth.verifyOTP) for client-side auth.
         // Do NOT pass apiSecret here — it would be exposed in the browser bundle.
       }}
     >
@@ -385,6 +385,48 @@ function GasStationDashboard() {
           <p>Network: {s.network}</p>
           <p>Balance: {s.balance}</p>
           <p>Status: {s.status}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## `useAutoForwarding()` — Auto-Forwarding Rules
+
+```tsx
+import { useAutoForwarding } from "@yativo/crypto-sdk-react";
+
+function AutoForwardingManager() {
+  const { rules, loading, createRule, updateRule, deleteRule } =
+    useAutoForwarding();
+
+  async function handleCreate() {
+    await createRule({
+      sourceWalletId:    "wallet_xyz789",
+      destinationAddress: "BjhiXKt...",
+      asset:             "USDC",
+      network:           "SOLANA",
+      minAmount:         "10.00",
+    });
+  }
+
+  if (loading) return <p>Loading rules...</p>;
+
+  return (
+    <div>
+      <button onClick={handleCreate}>Add Forwarding Rule</button>
+      {rules.map((rule) => (
+        <div key={rule.id}>
+          <p>
+            {rule.asset} on {rule.network} → {rule.destinationAddress}
+          </p>
+          <button onClick={() => updateRule(rule.id, { minAmount: "25.00" })}>
+            Update Min
+          </button>
+          <button onClick={() => deleteRule(rule.id)}>Delete</button>
         </div>
       ))}
     </div>
