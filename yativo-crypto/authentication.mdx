@@ -1,59 +1,82 @@
 ---
 title: "Authentication"
-description: "Authenticate with the Yativo Crypto API using JWT tokens or API keys"
+description: "Sign up at the Yativo Crypto dashboard, then use your API key and secret to authenticate all API calls with a Bearer token"
 ---
 
-The Yativo Crypto API uses the same authentication system as the core Yativo platform. You can authenticate using short-lived JWT tokens (for user-session flows) or API keys (recommended for server-to-server integrations).
+## Step 1 — Create an account
 
-## Base URLs
+Sign up and log in from the Yativo Crypto dashboard. Authentication is **passwordless** — you enter your email and receive a one-time code; no password required.
 
-| Environment | URL |
-|-------------|-----|
-| Dashboard | `https://crypto.yativo.com` |
-| API Base | `https://crypto-api.yativo.com/api` |
+| Environment | Dashboard URL |
+|-------------|---------------|
+| Live | [crypto.yativo.com](https://crypto.yativo.com) |
+| Sandbox | [sandbox-crypto.yativo.com](https://sandbox-crypto.yativo.com) |
+
+Once logged in, go to **Settings → API Keys** to generate your credentials.
 
 ---
 
-## Recommended: Server-to-Server with API Keys
+## Step 2 — Generate an API key
 
-For backend integrations, use the API key + secret flow. It does not require a user session and tokens can be programmatically refreshed.
+From the dashboard (or via `POST /apikey/generate` once you already have a token), create an API key:
 
-<Steps>
-  <Step title="Generate an API key">
-    Create an API key from the dashboard or via the API (requires 2FA). See [API Keys](/yativo-crypto/api-keys) for full details.
-  </Step>
-  <Step title="Exchange for a Bearer token">
-    ```bash
-    curl -X POST https://crypto-api.yativo.com/api/auth/token \
-      -H "Content-Type: application/json" \
-      -d '{
-        "api_key": "yvk_live_...",
-        "api_secret": "yvs_live_..."
-      }'
-    ```
+- Give it a name and assign the **scopes** it needs (e.g. `wallets:read`, `transactions:write`)
+- Optionally set an expiry and restrict it to specific IP addresses
+- Copy the **API key** and **API secret** — the secret is shown **only once**
 
-    ```json Response
-    {
-      "success": true,
-      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      "token_type": "Bearer",
-      "expires_in": 3600,
-      "expires_at": "2026-03-26T14:00:00.000Z",
-      "scopes": ["read", "write", "transactions"]
-    }
-    ```
-  </Step>
-  <Step title="Use the token">
-    ```bash
-    curl -X GET https://crypto-api.yativo.com/api/accounts/get-accounts \
-      -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    ```
-  </Step>
-</Steps>
+<Warning>
+  Store the API secret securely (e.g. an environment variable or secrets manager). If you lose it, you must rotate the key.
+</Warning>
 
-### Auto-Refresh Pattern
+---
 
-Implement automatic token refresh to avoid 401 errors in long-running processes:
+## Step 3 — Exchange for a Bearer token
+
+All API endpoints require an `Authorization: Bearer <token>` header. Tokens expire after **60 minutes**; your API key never expires.
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "api_key":    "yativo_...",
+    "api_secret": "..."
+  }'
+```
+
+```json Response
+{
+  "success": true,
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "expires_at": "2026-03-28T11:00:00.000Z"
+}
+```
+
+For sandbox, use the sandbox base URL:
+
+```bash
+curl -X POST https://crypto-sandbox.yativo.com/api/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{ "api_key": "yativo_...", "api_secret": "..." }'
+```
+
+---
+
+## Step 4 — Call the API
+
+Pass the access token in every request:
+
+```bash
+curl https://crypto-api.yativo.com/api/accounts/get-accounts \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+---
+
+## Auto-refresh pattern
+
+Tokens expire after 60 minutes. Implement a refresh helper so your integration never hits a 401:
 
 ```typescript
 class YativoAuth {
@@ -62,18 +85,20 @@ class YativoAuth {
 
   constructor(
     private readonly apiKey: string,
-    private readonly apiSecret: string
+    private readonly apiSecret: string,
+    private readonly baseURL = 'https://crypto-api.yativo.com/api'
   ) {}
 
   async getToken(): Promise<string> {
+    // Reuse the token if it has more than 60 seconds left
     if (this.token && Date.now() < this.expiresAt - 60_000) {
-      return this.token; // still valid with 60s buffer
+      return this.token;
     }
     return this.refresh();
   }
 
   private async refresh(): Promise<string> {
-    const res = await fetch('https://crypto-api.yativo.com/api/auth/token', {
+    const res = await fetch(`${this.baseURL}/auth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ api_key: this.apiKey, api_secret: this.apiSecret }),
@@ -84,125 +109,48 @@ class YativoAuth {
     return access_token;
   }
 }
+
+// Usage
+const auth = new YativoAuth(process.env.YATIVO_API_KEY, process.env.YATIVO_API_SECRET);
+const token = await auth.getToken(); // automatically refreshes when near expiry
 ```
+
+The SDKs handle this automatically — see [SDKs](/sdks/overview).
 
 ---
 
-## User Session Flow
+## Scopes
 
-For flows where a user logs in directly, use the standard authentication endpoints.
+When generating an API key, assign only the scopes your integration needs:
 
-### Register
-
-**POST** `/authentication/registration`
-
-```bash
-curl -X POST https://crypto-api.yativo.com/api/authentication/registration \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "securepassword123",
-    "first_name": "Jane",
-    "last_name": "Doe"
-  }'
-```
-
-### Log In
-
-**POST** `/authentication/login`
-
-```bash
-curl -X POST https://crypto-api.yativo.com/api/authentication/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "securepassword123"
-  }'
-```
-
-```json Response
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expires_in": 3600
-}
-```
-
-### Verify OTP
-
-If login requires email OTP verification:
-
-**POST** `/authentication/otp_verification`
-
-```bash
-curl -X POST https://crypto-api.yativo.com/api/authentication/otp_verification \
-  -H "Content-Type: application/json" \
-  -d '{"otp": "482931", "email": "user@example.com"}'
-```
-
-### Verify Google Authenticator Code
-
-**POST** `/authentication/google_auth_verification`
-
-```bash
-curl -X POST https://crypto-api.yativo.com/api/authentication/google_auth_verification \
-  -H "Content-Type: application/json" \
-  -d '{"code": "123456", "email": "user@example.com"}'
-```
-
-### Resend OTP
-
-**POST** `/authentication/resend_otp`
-
-```bash
-curl -X POST https://crypto-api.yativo.com/api/authentication/resend_otp \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com"}'
-```
-
-### Refresh Access Token
-
-**GET** `/authentication/refresh-token`
-
-Pass the **refresh token** (not the access token) in the Authorization header:
-
-```bash
-curl -X GET https://crypto-api.yativo.com/api/authentication/refresh-token \
-  -H "Authorization: Bearer YOUR_REFRESH_TOKEN"
-```
-
-```json Response
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expires_in": 3600
-}
-```
+| Scope | Access |
+|-------|--------|
+| `wallets:read` | List wallets and balances |
+| `wallets:write` | Create wallets |
+| `transactions:read` | View transaction history |
+| `transactions:write` | Send funds |
+| `cards:read` | View card details |
+| `cards:write` | Issue and manage cards |
+| `swap:read` | Get swap quotes |
+| `swap:write` | Execute swaps |
+| `webhooks:write` | Create and manage webhooks |
+| `apikey:write` | Generate and rotate API keys |
 
 ---
 
-## Authentication Methods at a Glance
+## Environments
 
-| Method | Header | Best For |
-|--------|--------|----------|
-| API Key headers | `X-API-Key` + `X-API-Secret` | Quick testing, simple integrations |
-| API Key Bearer token | `Authorization: Bearer {token}` | Production server-to-server |
-| User JWT | `Authorization: Bearer {token}` | User session flows |
+| | Live | Sandbox |
+|---|---|---|
+| Dashboard | [crypto.yativo.com](https://crypto.yativo.com) | [sandbox-crypto.yativo.com](https://sandbox-crypto.yativo.com) |
+| API base URL | `https://crypto-api.yativo.com/api` | `https://crypto-sandbox.yativo.com/api` |
+| Token endpoint | `POST /auth/token` | `POST /auth/token` |
+| Real funds | Yes | No — testnet only |
 
----
-
-## Sandbox Authentication
-
-When testing in the sandbox, use the sandbox base URL with the same authentication endpoints:
-
-```
-https://crypto-sandbox.yativo.com/api/authentication/login
-https://crypto-sandbox.yativo.com/api/auth/token
-```
-
-Create a separate API key for sandbox use to keep test and production credentials separate. See the [Sandbox docs](/sandbox/authentication) for details.
+Use separate API keys for live and sandbox. See [Sandbox](/sandbox/overview) for pre-populated test credentials.
 
 ---
 
-<Warning>
-  Never share your API secret or access tokens in client-side code, public repositories, or logs. Rotate compromised credentials immediately using the `/apikey/{id}/rotate` endpoint.
-</Warning>
+<Note>
+  Register and log in via the dashboard only. The API does not expose public sign-up or password-based login endpoints — account creation and access management happen through the Yativo Crypto web interface.
+</Note>

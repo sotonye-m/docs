@@ -1,17 +1,17 @@
 ---
 title: "Test: Authentication"
-description: "Authenticate against the sandbox using the shared API key or your own credentials"
+description: "Get a Bearer token for the sandbox — use the shared key instantly or sign up at the sandbox dashboard for isolated data"
 ---
 
-## Option A — API Key (Recommended, No Registration Needed)
+## Option A — Shared sandbox key (instant, no sign-up)
 
-The fastest way to get started. Use the **shared sandbox API key** to generate a bearer token instantly.
+Use the pre-populated shared sandbox API key to get a token immediately:
 
 ```bash
 curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
   -H 'Content-Type: application/json' \
   -d '{
-    "api_key": "yativo_e072b3ef7e30fcb420183aa86ddd8452abd28a9ac8f5d04d",
+    "api_key":    "yativo_e072b3ef7e30fcb420183aa86ddd8452abd28a9ac8f5d04d",
     "api_secret": "df8da4d6b855c7e89bd3b4216dd0a1f4b30de1963c9bff0dcd666b15a0f836a5"
   }'
 ```
@@ -21,140 +21,54 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
   "success": true,
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "token_type": "Bearer",
-  "expires_in": 3600,
-  "expires_at": "2026-03-28T11:00:00.000Z",
-  "scopes": ["read", "write", "transactions"]
+  "expires_in": 3600
 }
 ```
 
-Use the `access_token` as `Authorization: Bearer <token>` on all requests. Tokens expire in 60 minutes — call `/auth/token` again to get a fresh one. **The API key itself never expires.**
+Pass the `access_token` as `Authorization: Bearer <token>` on every request. Tokens expire in 60 minutes — call `/auth/token` again with the same key to refresh. **The API key itself never expires.**
 
 <Warning>
-  This is a **shared public sandbox key**. Anyone with this key can read and write to the shared sandbox account. For private testing, [create your own sandbox account](#option-b--register--log-in) and generate a personal API key.
+  This is a **shared public sandbox key**. Any developer following these docs can read and write to the shared sandbox account. For private isolated testing, use Option B below.
 </Warning>
 
 ---
 
-## Option B — Register & Log In
+## Option B — Your own sandbox account
 
-If you want a private sandbox account with isolated data:
+For isolated sandbox data with your own wallets and transactions:
 
-### Step 1 — Register
-
-```
-POST https://crypto-sandbox.yativo.com/api/auth/registration
-```
+1. Sign up at [sandbox-crypto.yativo.com](https://sandbox-crypto.yativo.com) — sign-up is **passwordless**, you'll receive a one-time code by email
+2. Go to **Settings → API Keys** and create a sandbox API key
+3. Use your key with the token endpoint:
 
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/registration' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
   -H 'Content-Type: application/json' \
   -d '{
-    "email": "you@example.com",
-    "password": "YourPassword123!",
-    "first_name": "Test",
-    "last_name": "User"
+    "api_key":    "yativo_<your_sandbox_key>",
+    "api_secret": "<your_sandbox_secret>"
   }'
-```
-
-```json Response
-{
-  "status": true,
-  "message": "Registration successful. Please verify your email.",
-  "data": {
-    "userId": "usr_6615c3a1e55d9ff7bc0a1234",
-    "email": "you@example.com"
-  }
-}
-```
-
-### Step 2 — Log In
-
-```
-POST https://crypto-sandbox.yativo.com/api/auth/sign-in
-```
-
-```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/sign-in' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "email": "you@example.com",
-    "password": "YourPassword123!"
-  }'
-```
-
-### Step 3 — Verify OTP
-
-```
-POST https://crypto-sandbox.yativo.com/api/auth/otp-verification
-```
-
-```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/otp-verification' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "otp": "847291",
-    "email": "you@example.com"
-  }'
-```
-
-```json Response
-{
-  "status": true,
-  "message": "Login successful",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "userId": "usr_6615c3a1e55d9ff7bc0a1234",
-      "email": "you@example.com"
-    }
-  }
-}
-```
-
-### Step 4 — Create Your Own API Key
-
-Once logged in, create a permanent API key so you never have to go through the OTP flow again:
-
-```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/apikey/generate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{"name": "My Sandbox Key"}'
-```
-
-Store the returned `api_key` and `api_secret`. You can then use Option A above with your own private credentials.
-
----
-
-## Refresh a Token
-
-```
-POST https://crypto-sandbox.yativo.com/api/auth/refresh-token
-```
-
-```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/refresh-token' \
-  -H 'Content-Type: application/json' \
-  -d '{"refreshToken": "YOUR_REFRESH_TOKEN"}'
-```
-
-```json Response
-{
-  "status": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
 ```
 
 ---
 
-## Using the Access Token
+## Using the token
 
-Include the token on every authenticated request:
+Pass the token on every sandbox request:
 
 ```bash
-curl -X GET 'https://crypto-sandbox.yativo.com/api/accounts/get-accounts' \
+curl 'https://crypto-sandbox.yativo.com/api/accounts/get-accounts' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+---
+
+## Refreshing a token
+
+Simply call `/auth/token` again with the same API key credentials — there is no separate refresh endpoint:
+
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
+  -H 'Content-Type: application/json' \
+  -d '{ "api_key": "yativo_...", "api_secret": "..." }'
 ```

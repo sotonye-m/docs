@@ -41,87 +41,6 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Tutorials",
-            "pages": [
-              "guides/overview",
-              "guides/accept-crypto-payments",
-              "guides/send-crypto",
-              "guides/issue-crypto-cards",
-              "guides/b2b-card-issuer",
-              "guides/iban-onboarding",
-              "guides/swap-tokens",
-              "guides/webhook-integration",
-              "guides/sdk-quickstart"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Yativo",
-        "groups": [
-          {
-            "group": "Company",
-            "pages": [
-              "yativo/introduction"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Yativo Fiat",
-        "groups": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "yativo-fiat/authentication"
-            ]
-          },
-          {
-            "group": "Payments",
-            "pages": [
-              "yativo-fiat/exchange-rate",
-              "yativo-fiat/send-money",
-              "yativo-fiat/deposits",
-              "yativo-fiat/virtual-accounts"
-            ]
-          },
-          {
-            "group": "Wallets",
-            "pages": [
-              "yativo-fiat/wallets",
-              "yativo-fiat/accounts",
-              "yativo-fiat/assets"
-            ]
-          },
-          {
-            "group": "Customers & Compliance",
-            "pages": [
-              "yativo-fiat/customers",
-              "yativo-fiat/kyc",
-              "yativo-fiat/beneficiaries"
-            ]
-          },
-          {
-            "group": "Transactions",
-            "pages": [
-              "yativo-fiat/transactions"
-            ]
-          },
-          {
-            "group": "Developer Tools",
-            "pages": [
-              "yativo-fiat/webhooks",
-              "yativo-fiat/api-keys",
-              "yativo-fiat/security",
-              "yativo-fiat/business"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "Yativo Crypto",
         "groups": [
           {
@@ -184,12 +103,21 @@
               "yativo-crypto/api-keys",
               "yativo-crypto/errors"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "SDKs",
-        "groups": [
+          },
+          {
+            "group": "Tutorials",
+            "pages": [
+              "guides/overview",
+              "guides/accept-crypto-payments",
+              "guides/send-crypto",
+              "guides/issue-crypto-cards",
+              "guides/b2b-card-issuer",
+              "guides/iban-onboarding",
+              "guides/swap-tokens",
+              "guides/webhook-integration",
+              "guides/sdk-quickstart"
+            ]
+          },
           {
             "group": "SDKs",
             "pages": [
@@ -200,12 +128,7 @@
               "sdks/java",
               "sdks/react"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Browser Extensions",
-        "groups": [
+          },
           {
             "group": "Browser Extensions",
             "pages": [
@@ -213,22 +136,12 @@
               "extensions/chrome",
               "extensions/firefox"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Sandbox",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": [
-              "sandbox/overview",
-              "sandbox/authentication"
-            ]
           },
           {
-            "group": "Test Endpoints",
+            "group": "Sandbox",
             "pages": [
+              "sandbox/overview",
+              "sandbox/authentication",
               "sandbox/wallets",
               "sandbox/transactions",
               "sandbox/swap",
@@ -239,7 +152,7 @@
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "Crypto API References",
         "groups": [
           {
             "group": "Overview",
@@ -250,8 +163,7 @@
           {
             "group": "Authentication",
             "pages": [
-              "api-reference/authentication/register",
-              "api-reference/authentication/login",
+              "api-reference/api-keys/token",
               "api-reference/authentication/verify-otp",
               "api-reference/authentication/refresh"
             ]
@@ -373,9 +285,70 @@
             "group": "API Keys",
             "pages": [
               "api-reference/api-keys/create",
-              "api-reference/api-keys/token",
               "api-reference/api-keys/list",
               "api-reference/api-keys/revoke"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Yativo Fiat",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "yativo-fiat/authentication"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "yativo-fiat/exchange-rate",
+              "yativo-fiat/send-money",
+              "yativo-fiat/deposits",
+              "yativo-fiat/virtual-accounts"
+            ]
+          },
+          {
+            "group": "Wallets",
+            "pages": [
+              "yativo-fiat/wallets",
+              "yativo-fiat/accounts",
+              "yativo-fiat/assets"
+            ]
+          },
+          {
+            "group": "Customers & Compliance",
+            "pages": [
+              "yativo-fiat/customers",
+              "yativo-fiat/kyc",
+              "yativo-fiat/beneficiaries"
+            ]
+          },
+          {
+            "group": "Transactions",
+            "pages": [
+              "yativo-fiat/transactions"
+            ]
+          },
+          {
+            "group": "Developer Tools",
+            "pages": [
+              "yativo-fiat/webhooks",
+              "yativo-fiat/api-keys",
+              "yativo-fiat/security",
+              "yativo-fiat/business"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Yativo",
+        "groups": [
+          {
+            "group": "Company",
+            "pages": [
+              "yativo/introduction"
             ]
           }
         ]

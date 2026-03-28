@@ -1,11 +1,11 @@
 ---
-title: "Generate Bearer Token"
+title: "Get Bearer Token"
 api: "POST https://crypto-sandbox.yativo.com/api/auth/token"
-description: "Exchange your API key and secret for a short-lived Bearer token used in all authenticated requests"
+description: "Exchange your API key and secret for a Bearer token. This is the starting point for all API authentication."
 authMethod: "none"
 ---
 
-API keys never expire, but API calls require a **Bearer token**. Use this endpoint to mint a fresh token from your API key credentials. Tokens are valid for **60 minutes** — call this endpoint again to get a new one.
+**Start here.** All API endpoints require `Authorization: Bearer <token>`. Exchange your API key credentials for a token using this endpoint — no login session required. Tokens expire after **60 minutes**; call this endpoint again to get a fresh one. Your API key never expires.
 
 <ParamField body="api_key" type="string" required>
   Your API key (starts with `yativo_`). Obtained when you created the key.
