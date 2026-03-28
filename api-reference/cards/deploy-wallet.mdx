@@ -1,6 +1,6 @@
 ---
 title: "Initialize Card Wallet"
-api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/deploy-safe"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/safe/deploy"
 description: "Initialize the card wallet to enable funding and card creation"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/deploy-safe' \
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/safe/deploy' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json'
 ```

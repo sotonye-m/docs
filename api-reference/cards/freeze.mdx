@@ -1,6 +1,6 @@
 ---
 title: "Freeze Card"
-api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/cards/{cardId}/freeze"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/cards/{cardId}/freeze"
 description: "Temporarily freeze a card to prevent any new transactions"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/crd_01HX9KZMB3F7VNQP8R2WDGT4EJ/freeze' \
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/cards/b2dc97ab-03f9-49eb-c72f-95be13815278/freeze' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json'
 ```

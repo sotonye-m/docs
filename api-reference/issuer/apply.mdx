@@ -32,14 +32,12 @@ curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/apply' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Issuer program application submitted",
+  "success": true,
+  "message": "Application submitted successfully",
   "data": {
-    "program_id": "prg_01HX9KZMB3F7VNQP8R2WDGT4EO",
-    "funding_structure": "pre_funded",
-    "iban_enabled": true,
-    "status": "under_review",
-    "applied_at": "2026-03-26T12:00:00Z"
+    "application_id": "app_69c799d9f1fba3928d8a12ac",
+    "status": "pending",
+    "submitted_at": "2026-03-28T10:00:00.000Z"
   }
 }
 ```

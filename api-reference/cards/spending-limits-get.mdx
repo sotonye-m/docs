@@ -23,14 +23,14 @@ curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Spending limits retrieved successfully",
+  "success": true,
   "data": {
-    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
-    "daily_limit": "2000.00",
-    "daily_spent": "150.00",
-    "daily_remaining": "1850.00",
-    "reset_at": "2026-03-27T00:00:00Z"
+    "currency": "USDCe",
+    "limits": {
+      "daily": {"limit": 7999, "used": 0, "remaining": 7999},
+      "monthly": {},
+      "per_transaction": {}
+    }
   }
 }
 ```

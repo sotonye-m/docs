@@ -1,6 +1,6 @@
 ---
 title: "Get IBAN Options"
-api: "GET https://crypto-sandbox.yativo.com/api/standalone-iban/options"
+api: "GET https://crypto-sandbox.yativo.com/api/iban/options"
 description: "Retrieve available IBAN options, currencies, and supported countries"
 authMethod: "bearer"
 ---
@@ -11,7 +11,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/standalone-iban/options' \
+curl -X GET 'https://crypto-api.yativo.com/api/iban/options' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -19,16 +19,20 @@ curl -X GET 'https://crypto-api.yativo.com/api/standalone-iban/options' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "IBAN options retrieved successfully",
+  "success": true,
   "data": {
-    "supported_countries": ["DE", "FR", "NL", "ES", "IT", "BE", "AT"],
-    "supported_currencies": ["EUR"],
-    "kyc_methods": ["platform_sumsub", "user_sumsub", "direct_docs"],
-    "features": {
-      "sepa_transfers": true,
-      "swift_transfers": false,
-      "virtual_iban": true
+    "auth_model": "platform_managed_email",
+    "custody_model": "yativo_custodial",
+    "settlement_asset": "EURe",
+    "chain": "gnosis",
+    "supported_chains": {
+      "production": ["ethereum", "gnosis", "polygon", "arbitrum", "linea", "base", "noble"],
+      "sandbox": ["sepolia", "chiado", "amoy", "arbitrumsepolia", "lineasepolia", "basesepolia"]
+    },
+    "profile_kinds": ["personal", "corporate"],
+    "onboarding": {
+      "phase_a": "initialize",
+      "phase_b": "submit_kyc_and_proceed"
     }
   }
 }

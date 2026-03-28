@@ -1,11 +1,11 @@
 ---
 title: "Sandbox Environment"
-description: "Test and develop against the Yativo Crypto sandbox before going live"
+description: "Test and develop against the Yativo Crypto sandbox — pre-populated with test data and a public API key you can use immediately"
 ---
 
 ## Overview
 
-The Yativo Crypto Sandbox is an isolated testing environment that mirrors the production API. Use the sandbox to build, test, and validate your integration without using real funds or affecting live accounts.
+The Yativo Crypto Sandbox is an isolated testing environment that mirrors the production API. All wallets and transactions in sandbox run on **testnets only** — no real funds are ever involved.
 
 <CardGroup cols={2}>
   <Card title="Sandbox URL" icon="flask">
@@ -18,128 +18,110 @@ The Yativo Crypto Sandbox is an isolated testing environment that mirrors the pr
 
 ---
 
-## What Is the Sandbox?
+## Quick Start — Use the Shared Sandbox Account
 
-The sandbox is a testnet-based environment where:
+To get started immediately without registering, use the **shared sandbox API key** below. It's public and pre-populated with accounts, wallets, customers, and a webhook so you can explore every endpoint right away.
 
-- **No real funds are used** — all tokens are testnet tokens with no monetary value
-- **All API endpoints mirror production** — same request/response formats
-- **Credentials are separate** — sandbox credentials do not work in production and vice versa
-- **Testnet blockchains are used** — transactions are broadcast to testnets, not mainnet
+<Warning>
+  This is a **shared public account** for exploration only. Do not store sensitive data here. For real integration testing, [create your own sandbox account](#create-your-own-sandbox-account) with a private API key.
+</Warning>
 
-This means you can safely test your integration, explore the full API surface, and validate edge cases without financial risk.
+### Step 1 — Generate a Bearer Token
+
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "api_key": "yativo_e072b3ef7e30fcb420183aa86ddd8452abd28a9ac8f5d04d",
+    "api_secret": "df8da4d6b855c7e89bd3b4216dd0a1f4b30de1963c9bff0dcd666b15a0f836a5"
+  }'
+```
+
+You'll get back an `access_token` valid for 60 minutes. Call `/auth/token` again at any time to refresh — the API key never expires.
+
+### Step 2 — Start calling the API
+
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/accounts/get-accounts' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+The shared sandbox account is pre-populated with:
+
+| Resource | Details |
+|----------|---------|
+| Accounts | 1 account — "Sandbox Main" |
+| Assets | USDC (SOL testnet) at address `GY1EZGdpiJNyx2BSKq8rfTDRe5K8Bb6Cf2Bn1pdmE2o1` |
+| Customers | 2 customers — alice@example.com, bob@example.com |
+| Webhooks | 1 active webhook |
 
 ---
 
-## Getting Sandbox Credentials
+## Create Your Own Sandbox Account
 
-To get sandbox API credentials:
+For private integration testing with dedicated credentials:
 
-1. Register for a Yativo developer account at [https://yativo.com/developers](https://yativo.com/developers).
-2. Navigate to the **Sandbox** section of your developer dashboard.
-3. Generate a sandbox API key.
-4. Use the sandbox API key only with the sandbox base URL: `https://crypto-sandbox.yativo.com/api/`.
+1. Register at [crypto.yativo.com/sign-up](https://crypto.yativo.com/sign-up)
+2. Log in and go to **Developer → API Keys**
+3. Create an API key — it works against both sandbox and production (just change the base URL)
+4. Use `POST /auth/token` with your credentials against `https://crypto-sandbox.yativo.com/api/`
+
+---
+
+## Sandbox vs Production
+
+| Feature | Sandbox | Production |
+|---------|---------|------------|
+| Base URL | `https://crypto-sandbox.yativo.com/api/` | `https://crypto-api.yativo.com/api/` |
+| API Keys | Same keys work on both | Same |
+| Wallets | Testnet only — no real value | Mainnet, real funds |
+| Blockchains | Testnets (Solana Devnet, Sepolia, Chiado…) | Mainnets |
+| Swap rates | Simulated | Live market rates |
+| IBAN | Testnet Monerium (Chiado) | Live EUR IBAN |
+| Card program | Test-mode card provider | Live card issuer |
+| Data | Isolated from production | Live data |
 
 <Note>
-  Sandbox credentials and production credentials are entirely separate. You will have different API keys for each environment. Never use a production API key against the sandbox, or vice versa.
+  All crypto wallets created in sandbox are on **testnet chains**. Addresses generated will never hold real funds. Testnet tokens can be obtained from each chain's faucet.
 </Note>
 
 ---
 
 ## Supported Testnet Chains
 
-The sandbox mirrors the production chain support, using their testnet equivalents:
-
-| Network | Testnet | Supported Tokens |
-|---|---|---|
-| Ethereum | Sepolia | USDC (testnet), ETH (testnet) |
-| Solana | Solana Devnet | USDC (devnet), SOL (devnet) |
-| Polygon | Polygon Mumbai (Amoy) | USDC (testnet), MATIC (testnet) |
-| BNB Chain | BSC Testnet | USDC (testnet), BNB (testnet) |
-| Avalanche | Fuji (C-Chain) | USDC (testnet), AVAX (testnet) |
-
-<Info>
-  Testnet tokens can be obtained from the respective blockchain testnets' faucets. These tokens have no real-world value.
-</Info>
+| Network | Testnet Used |
+|---------|-------------|
+| Solana | Devnet |
+| Ethereum / Base | Sepolia |
+| Gnosis | Chiado |
+| Polygon | Amoy |
+| BNB Chain | BSC Testnet |
 
 ---
 
 ## Sandbox Limitations
 
-Understanding what the sandbox can and cannot do helps you plan your testing approach:
-
-**What works in the sandbox:**
-- Authentication (register, login, OTP verification)
-- Wallet creation and management
-- Viewing testnet balances
-- Simulating transactions with testnet tokens
-- Testing swap endpoints
-- Testing IBAN onboarding flow
-- Webhook delivery testing
-
-**What does NOT work in the sandbox:**
-
-<Note>
-  The **Yativo Card** feature does not have a sandbox environment. Card endpoints (`/yativo-card/...`) are not available in the sandbox. When building card integrations, refer to the [mock response examples in the Cards sandbox documentation](/sandbox/cards) to understand expected response shapes, then test directly in production with real KYC-verified accounts.
-</Note>
-
-**Other limitations:**
-- Swap rates in the sandbox are simulated and do not reflect real market prices
-- IBAN transfers cannot be sent from real banks to the sandbox IBAN
-- Some third-party integrations may behave differently in the testnet environment
-
----
-
-## Testing Flow
-
-A typical development workflow using the sandbox:
-
-<Steps>
-  <Step title="Get sandbox credentials">
-    Register and generate a sandbox API key from the developer dashboard.
-  </Step>
-  <Step title="Authenticate">
-    Register and log in using the sandbox authentication endpoints. See [Sandbox Authentication](/sandbox/authentication).
-  </Step>
-  <Step title="Create a wallet">
-    Create a test wallet and add testnet assets. See [Sandbox Wallets](/sandbox/wallets).
-  </Step>
-  <Step title="Test transactions">
-    Send test transactions using testnet tokens. See [Sandbox Transactions](/sandbox/transactions).
-  </Step>
-  <Step title="Test swaps">
-    Try token swaps and verify the swap flow. See [Sandbox Swaps](/sandbox/swap).
-  </Step>
-  <Step title="Review Card mock responses">
-    Study the mock card responses to prepare your card integration for production. See [Cards in Sandbox](/sandbox/cards).
-  </Step>
-  <Step title="Go live">
-    Switch to production credentials and the production URL. Your code should require only an environment variable change.
-  </Step>
-</Steps>
+- **Yativo Card KYC**: Uses a test-mode KYC and card provider. Transactions are simulated.
+- **IBAN bank transfers**: Cannot receive transfers from real banks — testnet Monerium only.
+- **Swap rates**: Simulated, not live market prices.
+- **Email OTPs**: Delivered to real email addresses, same as production.
 
 ---
 
 ## Environment Variable Pattern
 
-We recommend using environment variables to switch between sandbox and production:
+We recommend switching environments with a single variable change:
 
 ```bash .env.sandbox
-YATIVO_API_KEY=your_sandbox_api_key
+YATIVO_API_KEY=yativo_e072b3ef7e30fcb420183aa86ddd8452abd28a9ac8f5d04d
+YATIVO_API_SECRET=df8da4d6b855c7e89bd3b4216dd0a1f4b30de1963c9bff0dcd666b15a0f836a5
 YATIVO_BASE_URL=https://crypto-sandbox.yativo.com/api
 ```
 
 ```bash .env.production
 YATIVO_API_KEY=your_production_api_key
+YATIVO_API_SECRET=your_production_api_secret
 YATIVO_BASE_URL=https://crypto-api.yativo.com/api
 ```
 
----
-
-## Support
-
-If you encounter issues with the sandbox environment, contact [developer-support@yativo.com](mailto:developer-support@yativo.com) with:
-- Your sandbox API key (prefix only, not the full key)
-- The endpoint you are calling
-- The request body and response you received
-- A timestamp of when the issue occurred
+Your integration code doesn't change — only the environment variables.

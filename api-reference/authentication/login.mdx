@@ -1,6 +1,6 @@
 ---
 title: "Login"
-api: "POST https://crypto-sandbox.yativo.com/api/authentication/login"
+api: "POST https://crypto-sandbox.yativo.com/api/auth/sign-in"
 description: "Authenticate with email and password to receive access and refresh tokens"
 authMethod: "none"
 ---
@@ -15,7 +15,7 @@ authMethod: "none"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/authentication/login' \
+curl -X POST 'https://crypto-api.yativo.com/api/auth/sign-in' \
   -H 'Content-Type: application/json' \
   -d '{
     "email": "user@example.com",
@@ -27,17 +27,14 @@ curl -X POST 'https://crypto-api.yativo.com/api/authentication/login' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
+  "status": true,
   "message": "Login successful",
   "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
-      "id": "usr_01HX9KZMB3F7VNQP8R2WDGT4E5",
-      "email": "user@example.com",
-      "username": "cryptouser",
-      "first_name": "Jane",
-      "last_name": "Doe"
+      "userId": "usr_6615c3a1e55d9ff7bc0a1234",
+      "email": "merchant@example.com"
     }
   }
 }

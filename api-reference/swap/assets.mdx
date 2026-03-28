@@ -19,38 +19,22 @@ curl -X GET 'https://crypto-api.yativo.com/api/swap/assets' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Swap assets retrieved successfully",
+  "success": true,
   "data": [
     {
-      "ticker": "USDC_SOL",
-      "name": "USD Coin",
-      "chain": "solana",
+      "id": "ast_6615c3c3e55d9ff7bc0a9012",
+      "name": "USD Coin (Solana)",
+      "symbol": "USDC",
+      "ticker_name": "USDC_SOL",
+      "address": "7xKt3Bm4NZpQhsWn1YvJd2Lr8Pk5Cq9eAw6Fu0GiRHs",
+      "chain": "SOL",
+      "balance": "0.300000",
+      "type": "user",
       "decimals": 6,
-      "logo_url": "https://assets.yativo.com/tokens/usdc.png"
-    },
-    {
-      "ticker": "USDC_ETH",
-      "name": "USD Coin",
-      "chain": "ethereum",
-      "decimals": 6,
-      "logo_url": "https://assets.yativo.com/tokens/usdc.png"
-    },
-    {
-      "ticker": "ETH",
-      "name": "Ethereum",
-      "chain": "ethereum",
-      "decimals": 18,
-      "logo_url": "https://assets.yativo.com/tokens/eth.png"
-    },
-    {
-      "ticker": "SOL",
-      "name": "Solana",
-      "chain": "solana",
-      "decimals": 9,
-      "logo_url": "https://assets.yativo.com/tokens/sol.png"
+      "contract_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
     }
-  ]
+  ],
+  "message": "User assets retrieved successfully"
 }
 ```
 </ResponseExample>

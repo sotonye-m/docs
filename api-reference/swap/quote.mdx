@@ -43,13 +43,9 @@ curl -X POST 'https://crypto-api.yativo.com/api/swap/quote' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "from_chain": "solana",
-    "from_ticker": "USDC_SOL",
-    "to_chain": "ethereum",
-    "to_ticker": "USDC_ETH",
-    "amount": "500.00",
-    "from_address": "7nZ9X4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
-    "to_address": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b"
+    "sourceAsset": "USDC_SOL",
+    "destinationAsset": "ETH_Base",
+    "amount": "10"
   }'
 ```
 </RequestExample>
@@ -57,23 +53,8 @@ curl -X POST 'https://crypto-api.yativo.com/api/swap/quote' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Quote generated successfully",
-  "data": {
-    "quote_id": "qte_01HX9KZMB3F7VNQP8R2WDGT4EG",
-    "from_chain": "solana",
-    "from_ticker": "USDC_SOL",
-    "to_chain": "ethereum",
-    "to_ticker": "USDC_ETH",
-    "from_amount": "500.00",
-    "to_amount": "497.25",
-    "exchange_rate": "0.9945",
-    "fee": "2.75",
-    "fee_usd": "2.75",
-    "slippage_percent": "0.5",
-    "expires_at": "2026-03-26T12:05:00Z",
-    "estimated_time_seconds": 60
-  }
+  "success": false,
+  "error": "Insufficient balance. Required: 10, Available: 0.300000"
 }
 ```
 </ResponseExample>

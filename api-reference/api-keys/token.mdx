@@ -1,0 +1,67 @@
+---
+title: "Generate Bearer Token"
+api: "POST https://crypto-sandbox.yativo.com/api/auth/token"
+description: "Exchange your API key and secret for a short-lived Bearer token used in all authenticated requests"
+authMethod: "none"
+---
+
+API keys never expire, but API calls require a **Bearer token**. Use this endpoint to mint a fresh token from your API key credentials. Tokens are valid for **60 minutes** — call this endpoint again to get a new one.
+
+<ParamField body="api_key" type="string" required>
+  Your API key (starts with `yativo_`). Obtained when you created the key.
+</ParamField>
+
+<ParamField body="api_secret" type="string" required>
+  Your API secret. Shown **only once** at key creation — store it securely.
+</ParamField>
+
+<Note>
+  This endpoint does **not** require an `Authorization` header — use it to bootstrap your authentication.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/auth/token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "api_key": "yativo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "api_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  }'
+```
+
+```typescript TypeScript
+const response = await fetch('https://crypto-api.yativo.com/api/auth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    api_key: process.env.YATIVO_API_KEY,
+    api_secret: process.env.YATIVO_API_SECRET,
+  }),
+});
+const { access_token } = await response.json();
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "expires_at": "2026-03-28T11:00:00.000Z",
+  "scopes": ["read", "write", "transactions"],
+  "refresh_recommendation": {
+    "refresh_before_seconds": 300,
+    "auto_refresh_enabled": true
+  }
+}
+```
+
+```json Error — Invalid credentials
+{
+  "success": false,
+  "error": "Invalid, expired, or revoked API key"
+}
+```
+</ResponseExample>

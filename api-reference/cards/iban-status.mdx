@@ -23,15 +23,17 @@ curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "IBAN status retrieved successfully",
+  "success": true,
   "data": {
-    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
-    "iban_status": "active",
-    "iban": "DE89370400440532013000",
-    "bic": "COBADEFFXXX",
-    "bank_name": "Commerzbank",
-    "activated_at": "2026-03-25T10:00:00Z"
+    "activated": true,
+    "profile_status": "approved",
+    "iban": {
+      "iban": "EE740205417800000001",
+      "bic": "FAKEFK01",
+      "currency": "EUR",
+      "status": "active"
+    },
+    "usage": "standalone_onramp"
   }
 }
 ```

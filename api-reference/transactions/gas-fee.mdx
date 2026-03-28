@@ -31,9 +31,8 @@ curl -X POST 'https://crypto-api.yativo.com/api/transactions/get-gas-price' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "chain_type": "ethereum",
-    "priority": "fast",
-    "amount_usd": 500
+    "chainType": "ETH",
+    "priority": "low"
   }'
 ```
 </RequestExample>
@@ -41,16 +40,19 @@ curl -X POST 'https://crypto-api.yativo.com/api/transactions/get-gas-price' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Gas price retrieved successfully",
+  "success": true,
   "data": {
-    "chain": "ethereum",
-    "priority": "fast",
-    "gas_price_gwei": "45.2",
-    "estimated_gas_units": 65000,
-    "estimated_fee_eth": "0.002938",
-    "estimated_fee_usd": "10.58",
-    "estimated_confirmation_seconds": 15
+    "estimatedFee": 0.00063,
+    "gasFee": 0.00063,
+    "platformFees": 0,
+    "priority": "low",
+    "chainType": "ETH",
+    "breakdown": {
+      "gas_cost_usd": "0.00063000",
+      "platform_fees_usd": "0.00000000",
+      "total_cost_usd": "0.00063000",
+      "platform_fee_details": []
+    }
   }
 }
 ```

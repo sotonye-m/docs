@@ -1,7 +1,7 @@
 ---
 title: "Volume Analytics"
-api: "GET https://crypto-sandbox.yativo.com/api/analytics/volume"
-description: "Retrieve transaction volume broken down by asset and network"
+api: "GET https://crypto-sandbox.yativo.com/api/analytics/dashboard-analytics"
+description: "Get volume and chart analytics for your account."
 authMethod: "bearer"
 ---
 
@@ -43,7 +43,7 @@ interface VolumeAnalyticsResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/analytics/volume?from=2026-03-01&to=2026-03-31&group_by=asset' \
+curl -X GET 'https://crypto-api.yativo.com/api/analytics/dashboard-analytics' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -51,37 +51,22 @@ curl -X GET 'https://crypto-api.yativo.com/api/analytics/volume?from=2026-03-01&
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
   "data": {
-    "period": {
-      "from": "2026-03-01",
-      "to": "2026-03-31"
-    },
-    "breakdown": [
-      {
-        "asset": "USDC",
-        "volume_usd": "312400.00",
-        "volume_native": "312400.00",
-        "count": 842,
-        "percentage": 72.8
-      },
-      {
-        "asset": "ETH",
-        "volume_usd": "88200.00",
-        "volume_native": "29.4",
-        "count": 210,
-        "percentage": 20.6
-      },
-      {
-        "asset": "SOL",
-        "volume_usd": "28350.00",
-        "volume_native": "283.5",
-        "count": 232,
-        "percentage": 6.6
-      }
+    "totalAccountValue": 2.47,
+    "depositTransactions": [],
+    "chartTransactions": [
+      {"_id": {"year": 2026, "month": 1}, "totalAmount": 0, "count": 117},
+      {"_id": {"year": 2026, "month": 2}, "totalAmount": 0, "count": 304},
+      {"_id": {"year": 2026, "month": 3}, "totalAmount": 0, "count": 345}
     ],
-    "total_volume_usd": "428950.00"
-  }
+    "chartUsers": [
+      {"_id": {"year": 2026, "month": 1}, "count": 4},
+      {"_id": {"year": 2026, "month": 2}, "count": 3},
+      {"_id": {"year": 2026, "month": 3}, "count": 2}
+    ]
+  },
+  "status": true,
+  "message": "Analytics Listed Successfully"
 }
 ```
 </ResponseExample>

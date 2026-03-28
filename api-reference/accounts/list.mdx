@@ -19,22 +19,22 @@ curl -X GET 'https://crypto-api.yativo.com/api/accounts/get-accounts' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Accounts retrieved successfully",
   "data": [
     {
-      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
-      "account_name": "Main Treasury",
-      "account_type": "business",
-      "created_at": "2026-03-26T12:00:00Z"
-    },
-    {
-      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E6",
-      "account_name": "Customer Pool",
-      "account_type": "customer",
-      "created_at": "2026-03-26T13:00:00Z"
+      "_id": "acc_6615c3b2e55d9ff7bc0a5678",
+      "account_name": "Default Account",
+      "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
+      "assets": "1",
+      "account_value": 0.3,
+      "portfolio": "0.00",
+      "archived": "0",
+      "subaccount": false,
+      "createdAt": "2026-01-13T22:06:20.231Z",
+      "updatedAt": "2026-03-08T10:30:03.778Z"
     }
-  ]
+  ],
+  "status": true,
+  "message": "Accounts and assets listed successfully"
 }
 ```
 </ResponseExample>

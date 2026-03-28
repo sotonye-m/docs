@@ -1,6 +1,6 @@
 ---
 title: "Refresh Token"
-api: "GET https://crypto-sandbox.yativo.com/api/authentication/refresh-token"
+api: "POST https://crypto-sandbox.yativo.com/api/auth/refresh-token"
 description: "Exchange a refresh token for a new access token"
 authMethod: "bearer"
 ---
@@ -11,7 +11,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/authentication/refresh-token' \
+curl -X POST 'https://crypto-api.yativo.com/api/auth/refresh-token' \
   -H 'Authorization: Bearer YOUR_REFRESH_TOKEN'
 ```
 </RequestExample>
@@ -19,10 +19,9 @@ curl -X GET 'https://crypto-api.yativo.com/api/authentication/refresh-token' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Token refreshed successfully",
+  "status": true,
   "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }
 }
 ```

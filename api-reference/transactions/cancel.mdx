@@ -1,6 +1,6 @@
 ---
 title: "Cancel Transaction"
-api: "POST https://crypto-sandbox.yativo.com/api/transactions/cancel"
+api: "POST https://crypto-sandbox.yativo.com/api/transactions/get-transactions"
 description: "Cancel a pending transaction before it is confirmed on-chain"
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/transactions/cancel' \
+curl -X POST 'https://crypto-api.yativo.com/api/transactions/get-transactions' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -30,14 +30,6 @@ curl -X POST 'https://crypto-api.yativo.com/api/transactions/cancel' \
 
 <ResponseExample>
 ```json
-{
-  "status": "success",
-  "message": "Transaction cancelled successfully",
-  "data": {
-    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4EF",
-    "status": "cancelled",
-    "cancelled_at": "2026-03-26T12:01:00Z"
-  }
-}
+{"data":[],"status":true,"message":"No transactions found"}
 ```
 </ResponseExample>

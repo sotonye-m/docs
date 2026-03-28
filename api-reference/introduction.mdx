@@ -3,70 +3,107 @@ title: "API Reference"
 description: "Complete reference for all Yativo Crypto API endpoints"
 ---
 
-## Base URLs
+## Environments
+
+Use the environment switcher in the API playground (top-right of each page) to toggle between **Sandbox** and **Production**.
 
 | Environment | Base URL |
 |-------------|----------|
-| Production  | `https://crypto-api.yativo.com/api/` |
 | Sandbox     | `https://crypto-sandbox.yativo.com/api/` |
+| Production  | `https://crypto-api.yativo.com/api/` |
 
-The sandbox environment is fully functional for testing. All endpoint pages in this reference include a live API playground connected to the sandbox so you can make real test calls directly from the docs.
+The sandbox environment is fully isolated from production — all data is separate. Use it freely for integration testing. The API playground on every reference page is connected to **Sandbox** by default.
 
 ## Authentication
 
-Yativo Crypto supports two authentication methods depending on the context.
+Yativo Crypto supports two authentication methods.
 
-### Bearer Token (Session Auth)
+### 1. Bearer Token (Session Auth)
 
-Obtained by calling the [Login](/api-reference/authentication/login) or [Register](/api-reference/authentication/register) endpoints. Include it in every request:
+Obtained by calling [Login](/api-reference/authentication/login). Short-lived; expires in 1 hour.
 
 ```
 Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
 
-Access tokens are short-lived. Use the [Refresh Token](/api-reference/authentication/refresh) endpoint to obtain a new one when it expires.
+Use [Refresh Token](/api-reference/authentication/refresh) to get a new one before it expires.
 
-### API Key Auth
+### 2. API Key (Server-to-Server)
 
-For server-to-server integrations, create an API key via the [Create API Key](/api-reference/api-keys/create) endpoint. Pass the key in the header:
+API keys **never expire** and are the recommended method for backend integrations.
 
+**Step 1 — Create an API key** via [Create API Key](/api-reference/api-keys/create):
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/apikey/generate' \
+  -H 'Authorization: Bearer YOUR_SESSION_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Production Backend"}'
 ```
-X-API-Key: YOUR_API_KEY
+
+Response includes `api_key` and `api_secret` — **save the secret immediately, it is shown only once**.
+
+**Step 2 — Exchange for a Bearer token** via `POST /auth/token`:
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/auth/token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "api_key": "yativo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "api_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  }'
 ```
 
-Some sensitive operations (creating or revoking API keys) additionally require a two-factor token passed as:
+```json
+{
+  "success": true,
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "expires_at": "2026-03-28T11:00:00.000Z",
+  "scopes": ["read", "write", "transactions"]
+}
+```
 
-```
-X-2FA-Token: YOUR_2FA_TOKEN
-```
+Use the returned `access_token` as your `Authorization: Bearer` header. Refresh it every 55–60 minutes by calling `/auth/token` again.
 
 ## Common Headers
 
 | Header | Required | Description |
 |--------|----------|-------------|
-| `Authorization` | Yes (session auth) | `Bearer YOUR_ACCESS_TOKEN` |
-| `X-API-Key` | Yes (API key auth) | Your API key |
+| `Authorization` | Yes | `Bearer YOUR_ACCESS_TOKEN` |
 | `Content-Type` | Yes (POST/PUT) | `application/json` |
-| `X-2FA-Token` | Conditional | Required for API key management |
 | `Idempotency-Key` | Optional | Prevent duplicate transactions |
-
-## Content Type
-
-All request bodies must be sent as JSON with the `Content-Type: application/json` header.
 
 ## Response Format
 
-Every response follows this structure:
+All responses follow this structure:
 
 ```json
 {
-  "status": "success",
+  "status": true,
   "message": "Human-readable message",
   "data": { ... }
 }
 ```
 
-Error responses follow the same shape with `"status": "error"` and relevant HTTP status codes (400, 401, 403, 404, 422, 429, 500).
+Error responses include `"status": false` and relevant HTTP status codes (400, 401, 403, 404, 422, 429, 500).
+
+## Sandbox Testing
+
+The sandbox at `https://crypto-sandbox.yativo.com/api/` uses testnet blockchains — **no real funds, ever**. A shared sandbox account is pre-populated so you can test immediately:
+
+```bash
+# Generate a bearer token for the shared sandbox account
+curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "api_key": "yativo_e072b3ef7e30fcb420183aa86ddd8452abd28a9ac8f5d04d",
+    "api_secret": "df8da4d6b855c7e89bd3b4216dd0a1f4b30de1963c9bff0dcd666b15a0f836a5"
+  }'
+```
+
+For a private sandbox account with isolated data, register at [crypto.yativo.com/sign-up](https://crypto.yativo.com/sign-up). See [Sandbox Overview](/sandbox/overview) for full details.
 
 ## Further Reading
 
@@ -74,4 +111,3 @@ Error responses follow the same shape with `"status": "error"` and relevant HTTP
 - [API Keys](/yativo-crypto/api-keys)
 - [Webhooks](/yativo-crypto/webhooks)
 - [Error Codes](/yativo-crypto/errors)
-- [Rate Limits](/yativo/rate-limits)

@@ -1,7 +1,7 @@
 ---
-title: "Create Card"
-api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/create-card"
-description: "Issue a new virtual or physical card"
+title: "Get Card Account"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/my-account"
+description: "Get the authenticated user's Yativo Card account details, including all linked cards, wallet info, and onboarding status."
 authMethod: "bearer"
 ---
 
@@ -9,51 +9,54 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField body="card_type" type="string" required>
-  The type of card to create. One of: `virtual`, `physical`.
-</ParamField>
-
-<ParamField body="display_name" type="string" required>
-  A label for the card shown in the dashboard, e.g. `"Business Expenses"`.
-</ParamField>
-
-<ParamField body="spending_limit_amount" type="number" required>
-  The spending limit amount in USD.
-</ParamField>
-
-<ParamField body="spending_limit_frequency" type="string" required>
-  How often the spending limit resets. One of: `daily`, `weekly`, `monthly`, `yearly`, `lifetime`.
-</ParamField>
-
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/create-card' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "card_type": "virtual",
-    "display_name": "Business Expenses",
-    "spending_limit_amount": 2000,
-    "spending_limit_frequency": "monthly"
-  }'
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/my-account' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
 
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Card created successfully",
+  "success": true,
   "data": {
-    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
-    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
-    "card_type": "virtual",
-    "display_name": "Business Expenses",
-    "last_four": "4242",
-    "status": "active",
-    "spending_limit_amount": "2000.00",
-    "spending_limit_frequency": "monthly",
-    "created_at": "2026-03-26T12:00:00Z"
+    "account": {
+      "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+      "email": "merchant@example.com",
+      "flow_status": "safe_deployed",
+      "current_step": 4,
+      "progress_percentage": 100,
+      "steps": [
+        {"step": 1, "name": "Initiate Program", "completed": true},
+        {"step": 2, "name": "Verify Email", "completed": true},
+        {"step": 3, "name": "Start KYC", "completed": true},
+        {"step": 4, "name": "Complete KYC", "completed": true},
+        {"step": 5, "name": "Create Card", "completed": true}
+      ],
+      "kyc_status": "approved",
+      "source_of_funds_completed": true,
+      "phone_verified": true,
+      "terms_accepted": true,
+      "safe_deployed": true,
+      "safe_address": "0xBB4912ef83b5dcAE96f473Ba9e28Fd120bcd3412",
+      "wallet_address": "0xAB7a028c1c5483e9507C61F25335C64C52B9FBcc",
+      "funding_address": "DwPq8k2XbNmJhvRs5TcLu4Ye9AgFp3ZoVi7Bn1KqWMeS",
+      "funding_network": "solana",
+      "cards_count": 1,
+      "cards": [
+        {
+          "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
+          "last_four": "0892",
+          "type": "virtual",
+          "status": "Active",
+          "is_frozen": false,
+          "created_at": "2026-02-02T13:04:23.773Z"
+        }
+      ],
+      "created_at": "2026-01-21T21:35:32.076Z",
+      "updated_at": "2026-03-28T08:15:57.023Z"
+    }
   }
 }
 ```

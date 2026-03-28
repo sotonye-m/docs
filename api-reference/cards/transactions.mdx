@@ -47,24 +47,41 @@ curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Transactions retrieved successfully",
+  "success": true,
   "data": {
     "transactions": [
       {
-        "transaction_id": "ctxn_01HX9KZMB3F7VNQP8R2WDGT4EL",
-        "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
-        "merchant_name": "Amazon",
-        "merchant_category": "ecommerce",
-        "amount": "49.99",
+        "kind": "Payment",
+        "transaction_type": "Purchase",
+        "merchant_name": "Coffee Shop NYC",
+        "merchant_city": "New York",
+        "merchant_country": "United States",
+        "merchant_country_code": "US",
+        "mcc_code": "5812",
+        "mcc_description": "Eating Places, Restaurants",
+        "mcc_category": "Food & Beverage",
+        "billing_amount": 5.31,
+        "billing_currency": "USD",
+        "billing_formatted": "$5.31",
+        "transaction_amount": 5.31,
+        "transaction_currency": "USD",
+        "amount": 5.31,
         "currency": "USD",
-        "status": "completed",
-        "created_at": "2026-03-20T14:30:00Z"
+        "status": "approved",
+        "status_label": "Approved",
+        "status_note": "Payment settled successfully.",
+        "is_pending": false,
+        "authorized_at": "2026-03-10T20:54:34.501Z",
+        "cleared_at": "2026-03-13T16:25:58.395Z",
+        "blockchain_transactions": [
+          {
+            "status": "ExecSuccess",
+            "hash": "0xabc123def456789012345678901234567890abcdef1234567890abcdef123456"
+          }
+        ]
       }
     ],
-    "total": 1,
-    "limit": 20,
-    "offset": 0
+    "pagination": {"total": 1, "limit": 50, "offset": 0, "has_more": false}
   }
 }
 ```

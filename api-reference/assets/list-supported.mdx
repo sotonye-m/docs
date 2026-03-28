@@ -19,42 +19,41 @@ curl -X GET 'https://crypto-api.yativo.com/api/assets/get-all-assets' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Assets retrieved successfully",
   "data": [
     {
-      "ticker": "USDC_SOL",
-      "name": "USD Coin (Solana)",
-      "chain": "solana",
-      "decimals": 6,
-      "contract_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "is_native": false
-    },
-    {
-      "ticker": "ETH",
-      "name": "Ethereum",
-      "chain": "ethereum",
+      "_id": "67db59c4ebea822c360d5091",
+      "asset_name": "Binance Smart Chain",
+      "asset_short_name": "BNB",
+      "chain": "BSC",
+      "chain_id": 56,
+      "network_type": "mainnet",
+      "asset_type": "native",
       "decimals": 18,
-      "contract_address": null,
-      "is_native": true
+      "image": "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png",
+      "active": true,
+      "price": 613.45,
+      "ticker_name": "BNB",
+      "layer_type": "L1",
+      "parent_chain": null,
+      "suspended": false
     },
     {
-      "ticker": "BTC",
-      "name": "Bitcoin",
-      "chain": "bitcoin",
-      "decimals": 8,
-      "contract_address": null,
-      "is_native": true
-    },
-    {
-      "ticker": "USDC_ETH",
-      "name": "USD Coin (Ethereum)",
-      "chain": "ethereum",
+      "_id": "67db5f72ebea822c360d568d",
+      "asset_name": "USD Coin (Solana)",
+      "asset_short_name": "USDC",
+      "chain": "SOL",
+      "chain_id": null,
+      "network_type": "mainnet",
+      "asset_type": "token",
       "decimals": 6,
-      "contract_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      "is_native": false
+      "image": "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png",
+      "active": true,
+      "price": 1.00,
+      "ticker_name": "USDC_SOL",
+      "suspended": false
     }
-  ]
+  ],
+  "status": true
 }
 ```
 </ResponseExample>

@@ -1,6 +1,6 @@
 ---
 title: "Revoke API Key"
-api: "DELETE https://crypto-sandbox.yativo.com/api/api-keys/{keyId}"
+api: "DELETE https://crypto-sandbox.yativo.com/api/apikey/{keyId}"
 description: "Permanently revoke an API key. This action is immediate and irreversible."
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X DELETE 'https://crypto-api.yativo.com/api/api-keys/key_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+curl -X DELETE 'https://crypto-api.yativo.com/api/apikey/key_69c799d9f1fba3928d8a12ac' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -27,19 +27,13 @@ curl -X DELETE 'https://crypto-api.yativo.com/api/api-keys/key_01HX9KZMB3F7VNQP8
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
+  "success": true,
+  "message": "API key revoked successfully",
   "data": {
-    "key_id": "key_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "status": "revoked",
-    "revoked_at": "2026-03-26T11:00:00Z"
+    "id": "key_69c799d9f1fba3928d8a12ac",
+    "is_revoked": true,
+    "revoked_at": "2026-03-28T11:00:00.000Z"
   }
-}
-```
-
-```json Not Found
-{
-  "status": "error",
-  "message": "API key not found"
 }
 ```
 </ResponseExample>

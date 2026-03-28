@@ -23,14 +23,33 @@ curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Funding address retrieved successfully",
+  "success": true,
   "data": {
-    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
-    "funding_address": "0x3f4e5d6c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e",
-    "supported_tokens": ["USDC", "USDT"],
-    "supported_chains": ["ethereum", "polygon", "base", "arbitrum", "optimism"],
-    "minimum_deposit_usd": "10.00"
+    "address": "DwPq8k2XbNmJhvRs5TcLu4Ye9AgFp3ZoVi7Bn1KqWMeS",
+    "network": "solana",
+    "funding_method": "auto_bridge",
+    "card_currency": "USDCe",
+    "supported_tokens": [
+      {
+        "symbol": "USDC",
+        "name": "USD Coin",
+        "contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "decimals": 6,
+        "network": "solana"
+      }
+    ],
+    "funding_sources": {
+      "usdc_sol": {
+        "address": "DwPq8k2XbNmJhvRs5TcLu4Ye9AgFp3ZoVi7Bn1KqWMeS",
+        "network": "solana",
+        "token": "USDC_SOL",
+        "bridge_type": "automatic",
+        "bridge_time": "2-5 minutes",
+        "description": "Send USDC on Solana — automatically bridged to your card"
+      }
+    },
+    "minimum_deposit": "5.00",
+    "instructions": "Send USDC (SPL) on Solana to this address. Auto-bridge starts once balance reaches 5.00 USDC."
   }
 }
 ```

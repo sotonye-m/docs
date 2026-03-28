@@ -1,6 +1,6 @@
 ---
 title: "Initialize IBAN Onboarding"
-api: "POST https://crypto-sandbox.yativo.com/api/standalone-iban/onboarding/init"
+api: "POST https://crypto-sandbox.yativo.com/api/iban/onboarding/init"
 description: "Start the onboarding process for a standalone IBAN"
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/init' \
+curl -X POST 'https://crypto-api.yativo.com/api/iban/onboarding/init' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

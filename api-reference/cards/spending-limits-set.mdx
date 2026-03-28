@@ -31,12 +31,14 @@ curl -X PUT 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Spending limits updated successfully",
+  "success": true,
   "data": {
-    "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
-    "daily_limit": "3000.00",
-    "updated_at": "2026-03-26T12:00:00Z"
+    "currency": "USDCe",
+    "limits": {
+      "daily": {"limit": 7999, "used": 0, "remaining": 7999},
+      "monthly": {},
+      "per_transaction": {}
+    }
   }
 }
 ```

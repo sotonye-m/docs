@@ -1,6 +1,6 @@
 ---
 title: "Create Physical Card"
-api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/create"
+api: "POST https://crypto-sandbox.yativo.com/api/yativo-card/{id}/cards/physical/order"
 description: "Issue a new physical card that will be shipped to the provided address"
 authMethod: "bearer"
 ---
@@ -54,7 +54,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/create' \
+curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/cards/physical/order' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

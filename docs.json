@@ -2,6 +2,15 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Yativo",
+  "api": {
+    "baseUrl": [
+      "https://crypto-sandbox.yativo.com/api",
+      "https://crypto-api.yativo.com/api"
+    ],
+    "auth": {
+      "method": "bearer"
+    }
+  },
   "colors": {
     "primary": "#813AE3",
     "light": "#A855F7",
@@ -364,6 +373,7 @@
             "group": "API Keys",
             "pages": [
               "api-reference/api-keys/create",
+              "api-reference/api-keys/token",
               "api-reference/api-keys/list",
               "api-reference/api-keys/revoke"
             ]

@@ -1,6 +1,6 @@
 ---
 title: "Create Webhook"
-api: "POST https://crypto-sandbox.yativo.com/api/webhook/create"
+api: "POST https://crypto-sandbox.yativo.com/api/webhook/create-webhook"
 description: "Register a webhook endpoint to receive real-time event notifications"
 authMethod: "bearer"
 ---
@@ -28,7 +28,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/webhook/create' \
+curl -X POST 'https://crypto-api.yativo.com/api/webhook/create-webhook' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -42,16 +42,17 @@ curl -X POST 'https://crypto-api.yativo.com/api/webhook/create' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
+  "status": true,
   "message": "Webhook created successfully",
   "data": {
-    "webhook_id": "wbh_01HX9KZMB3F7VNQP8R2WDGT4ET",
-    "url": "https://your-app.com/webhooks/yativo",
-    "events": ["transaction.confirmed", "transaction.failed", "swap.completed"],
-    "description": "Production webhook for transaction events",
-    "secret": "whsec_01HX9KZMB3F7VNQP8R2WDGT4EU",
+    "_id": "whk_67e91cbe7747bdb0ba25abcd",
+    "webhook_name": "My Webhook",
+    "webhook_url": "https://your-app.com/webhooks/yativo",
+    "account_id": "acc_6615c3b2e55d9ff7bc0a5678",
+    "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
+    "receive_all_events": true,
     "status": "active",
-    "created_at": "2026-03-26T12:00:00Z"
+    "createdAt": "2026-03-28T10:00:00.000Z"
   }
 }
 ```

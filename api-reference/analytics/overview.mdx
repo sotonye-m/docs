@@ -1,7 +1,7 @@
 ---
 title: "Analytics Overview"
-api: "GET https://crypto-sandbox.yativo.com/api/analytics/overview"
-description: "Get a high-level summary of transaction volume, active accounts, and platform activity"
+api: "GET https://crypto-sandbox.yativo.com/api/analytics/dashboard-analytics"
+description: "Get dashboard analytics including total account value, transaction volume chart, and user growth."
 authMethod: "bearer"
 ---
 
@@ -48,7 +48,7 @@ interface AnalyticsOverviewResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/analytics/overview?from=2026-03-01&to=2026-03-31' \
+curl -X GET 'https://crypto-api.yativo.com/api/analytics/dashboard-analytics' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -56,39 +56,22 @@ curl -X GET 'https://crypto-api.yativo.com/api/analytics/overview?from=2026-03-0
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
   "data": {
-    "period": {
-      "from": "2026-03-01",
-      "to": "2026-03-31"
-    },
-    "transactions": {
-      "total_count": 1284,
-      "total_volume_usd": "428950.00",
-      "successful": 1251,
-      "failed": 18,
-      "pending": 15
-    },
-    "accounts": {
-      "total": 340,
-      "active": 218,
-      "new_this_period": 47
-    },
-    "top_assets": [
-      {
-        "symbol": "USDC",
-        "network": "polygon",
-        "volume_usd": "312400.00",
-        "count": 842
-      },
-      {
-        "symbol": "ETH",
-        "network": "ethereum",
-        "volume_usd": "88200.00",
-        "count": 210
-      }
+    "totalAccountValue": 2.47,
+    "depositTransactions": [],
+    "chartTransactions": [
+      {"_id": {"year": 2026, "month": 1}, "totalAmount": 0, "count": 117},
+      {"_id": {"year": 2026, "month": 2}, "totalAmount": 0, "count": 304},
+      {"_id": {"year": 2026, "month": 3}, "totalAmount": 0, "count": 345}
+    ],
+    "chartUsers": [
+      {"_id": {"year": 2026, "month": 1}, "count": 4},
+      {"_id": {"year": 2026, "month": 2}, "count": 3},
+      {"_id": {"year": 2026, "month": 3}, "count": 2}
     ]
-  }
+  },
+  "status": true,
+  "message": "Analytics Listed Successfully"
 }
 ```
 </ResponseExample>

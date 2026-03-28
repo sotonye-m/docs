@@ -1,6 +1,6 @@
 ---
 title: "List Cards"
-api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/list-cards"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/{yativoCardId}/cards"
 description: "Retrieve all cards issued under the authenticated user's card account"
 authMethod: "bearer"
 ---
@@ -11,7 +11,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/list-cards' \
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/cards' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -19,21 +19,31 @@ curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/list-cards' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
+  "success": true,
   "message": "Cards retrieved successfully",
-  "data": [
-    {
-      "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
-      "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
-      "card_type": "virtual",
-      "display_name": "My Crypto Card",
-      "last_four": "4242",
-      "status": "active",
-      "spending_limit_amount": "1000.00",
-      "spending_limit_frequency": "monthly",
-      "created_at": "2026-03-26T12:00:00Z"
-    }
-  ]
+  "data": {
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "cardholder_email": "merchant@example.com",
+    "cards": [
+      {
+        "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
+        "last_four_digits": "0892",
+        "card_type": "virtual",
+        "is_virtual": true,
+        "status_code": 1000,
+        "status_name": "Active",
+        "activated_at": "2026-02-02T13:04:23.704Z",
+        "holder_name": "JOHN MERCHANT",
+        "billing": {
+          "line1": "123 Test Street",
+          "city": "New York",
+          "postalCode": "10001",
+          "countryCode": "US"
+        }
+      }
+    ],
+    "total": 1
+  }
 }
 ```
 </ResponseExample>

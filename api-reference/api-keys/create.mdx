@@ -1,6 +1,6 @@
 ---
 title: "Create API Key"
-api: "POST https://crypto-sandbox.yativo.com/api/api-keys"
+api: "POST https://crypto-sandbox.yativo.com/api/apikey/generate"
 description: "Generate a new API key and secret for programmatic access"
 authMethod: "bearer"
 ---
@@ -24,6 +24,10 @@ authMethod: "bearer"
 <Warning>
   The `api_secret` is returned **only once** at creation. Store it securely — it cannot be retrieved again. If lost, revoke the key and create a new one.
 </Warning>
+
+<Note>
+  **Using your API key:** After generating a key, call `POST /auth/token` with your `api_key` and `api_secret` to generate a Bearer token. Bearer tokens expire in 60 minutes — refresh as needed. API keys themselves never expire unless you set `expires_at` at creation time.
+</Note>
 
 <Accordion title="Request/Response Type Definitions">
 ```typescript
@@ -50,7 +54,7 @@ interface CreateApiKeyResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/api-keys' \
+curl -X POST 'https://crypto-api.yativo.com/api/apikey/generate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -63,15 +67,21 @@ curl -X POST 'https://crypto-api.yativo.com/api/api-keys' \
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
+  "success": true,
+  "message": "API key generated successfully",
+  "warning": "Save the API Secret securely. It will not be shown again!",
   "data": {
-    "key_id": "key_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "api_key": "yk_live_AbCdEfGhIjKlMnOpQrStUvWxYz",
-    "api_secret": "ys_live_1234567890abcdef1234567890abcdef",
-    "name": "Production Backend",
-    "permissions": ["transactions:read", "transactions:write", "accounts:read"],
+    "api_key": "yativo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "api_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "key_name": "Production API Key",
+    "scopes": ["read", "write", "transactions"],
     "expires_at": null,
-    "created_at": "2026-03-26T10:00:00Z"
+    "rate_limit": {
+      "requests_per_minute": 60,
+      "requests_per_hour": 3000,
+      "requests_per_day": 50000
+    },
+    "token_expiry_minutes": 60
   }
 }
 ```

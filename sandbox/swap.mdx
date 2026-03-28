@@ -5,338 +5,232 @@ description: "Test token swap functionality in the Yativo Crypto sandbox"
 
 ## Overview
 
-The Yativo Crypto swap feature allows you to exchange one token for another across supported chains. Use the sandbox to test the full swap lifecycle — getting quotes, executing swaps, and checking swap status — without spending real funds.
+Test the full swap lifecycle — getting quotes and executing cross-chain or same-chain token swaps — without spending real funds.
 
 **Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/`
 
 <Note>
-  Swap rates in the sandbox are simulated. They reflect approximate market conditions but are not live market prices. Do not use sandbox swap rates for financial calculations.
+  Swap rates in the sandbox are simulated. They reflect approximate market conditions but are not live market prices.
 </Note>
 
 ---
 
-## Get a Swap Quote
+## Step 1 — Get a Swap Quote
 
-Before executing a swap, request a quote to see the expected output amount, rate, and fees.
+Request a price quote before executing. The quote includes the expected output amount, rate, and fees.
 
 ```
-GET https://crypto-sandbox.yativo.com/api/swap/quote
+POST https://crypto-sandbox.yativo.com/api/swap/quote
 ```
 
-<ParamField query="from_chain" type="string" required>
-  The source blockchain. Example: `solana`, `ethereum`, `polygon`.
+<ParamField body="from_chain" type="string" required>
+  Source blockchain: `solana`, `ethereum`, `base`, `polygon`, etc.
 </ParamField>
 
-<ParamField query="from_token" type="string" required>
-  The token to swap from. Example: `SOL`, `ETH`, `USDC`.
+<ParamField body="from_ticker" type="string" required>
+  Source token ticker: `USDC_SOL`, `ETH`, `SOL`, etc.
 </ParamField>
 
-<ParamField query="to_chain" type="string" required>
-  The destination blockchain. Can be the same as `from_chain` for same-chain swaps.
+<ParamField body="to_chain" type="string" required>
+  Destination blockchain. Can be the same as `from_chain` for same-chain swaps.
 </ParamField>
 
-<ParamField query="to_token" type="string" required>
-  The token to receive. Example: `USDC`, `SOL`.
+<ParamField body="to_ticker" type="string" required>
+  Destination token ticker: `USDC_ETH`, `USDC_SOL`, etc.
 </ParamField>
 
-<ParamField query="amount" type="number" required>
-  The input amount to swap.
+<ParamField body="amount" type="string" required>
+  Input amount in the source token's native units, e.g. `"100.00"`.
+</ParamField>
+
+<ParamField body="from_address" type="string" required>
+  Source wallet address sending the funds.
+</ParamField>
+
+<ParamField body="to_address" type="string" required>
+  Destination wallet address to receive the swapped funds.
 </ParamField>
 
 <CodeGroup>
-```bash SOL to USDC (same chain)
-curl -X GET 'https://crypto-sandbox.yativo.com/api/swap/quote?from_chain=solana&from_token=SOL&to_chain=solana&to_token=USDC&amount=1' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```bash USDC Solana → USDC Ethereum (cross-chain)
+curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/quote' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "sourceAsset": "USDC_SOL",
+    "destinationAsset": "ETH_Base",
+    "amount": "10"
+  }'
 ```
 
-```bash ETH to USDC (cross-chain)
-curl -X GET 'https://crypto-sandbox.yativo.com/api/swap/quote?from_chain=ethereum&from_token=ETH&to_chain=solana&to_token=USDC&amount=0.1' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
-```
-
-```bash USDC Solana to USDC Ethereum
-curl -X GET 'https://crypto-sandbox.yativo.com/api/swap/quote?from_chain=solana&from_token=USDC&to_chain=ethereum&to_token=USDC&amount=100' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```bash Same-chain swap
+curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/quote' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "sourceAsset": "USDC_SOL",
+    "destinationAsset": "SOL",
+    "amount": "50"
+  }'
 ```
 </CodeGroup>
 
-<ResponseExample>
-```json SOL to USDC Quote
+```json Response — Quote
 {
   "status": "success",
   "data": {
-    "quote_id": "quote_sandbox_01HX9KZMB3F7VNQP8R2WDGT200",
+    "quote_id": "qte_01HX9KZMB3F7VNQP8R2WDGT4EG",
     "from_chain": "solana",
-    "from_token": "SOL",
-    "from_amount": 1.0,
-    "to_chain": "solana",
-    "to_token": "USDC",
-    "to_amount": 174.82,
-    "exchange_rate": 174.82,
-    "fee": 0.87,
-    "fee_token": "USDC",
-    "fee_percentage": 0.5,
-    "price_impact": 0.02,
-    "quote_valid_until": "2026-03-25T11:03:00Z",
-    "estimated_execution_time_seconds": 30,
-    "network": "devnet"
+    "from_ticker": "USDC_SOL",
+    "from_amount": "10",
+    "to_chain": "base",
+    "to_ticker": "ETH_Base",
+    "to_amount": "0.00284",
+    "exchange_rate": "0.000284",
+    "fee": "0.05",
+    "fee_ticker": "USDC",
+    "price_impact": "0.01",
+    "quote_valid_until": "2026-03-28T11:02:00Z",
+    "estimated_execution_time_seconds": 120
   }
 }
 ```
-
-```json Cross-chain ETH to USDC Quote
-{
-  "status": "success",
-  "data": {
-    "quote_id": "quote_sandbox_01HX9KZMB3F7VNQP8R2WDGT201",
-    "from_chain": "ethereum",
-    "from_token": "ETH",
-    "from_amount": 0.1,
-    "to_chain": "solana",
-    "to_token": "USDC",
-    "to_amount": 351.24,
-    "exchange_rate": 3512.40,
-    "fee": 1.76,
-    "fee_token": "USDC",
-    "fee_percentage": 0.5,
-    "bridge_fee": 0.50,
-    "price_impact": 0.05,
-    "quote_valid_until": "2026-03-25T11:03:00Z",
-    "estimated_execution_time_seconds": 120,
-    "network": "testnet"
-  }
-}
-```
-</ResponseExample>
 
 <Warning>
-  Quotes expire quickly (typically 60–120 seconds). If the quote expires before you execute, request a new quote.
+  Quotes expire quickly (typically 60–120 seconds). If the quote expires before you execute, request a new one.
 </Warning>
 
 ---
 
-## Execute a Swap
+## Step 2 — Execute the Swap
 
-Execute a swap using a previously obtained quote.
+Execute a swap using a previously obtained quote ID.
 
 ```
 POST https://crypto-sandbox.yativo.com/api/swap/execute
 ```
 
 <ParamField body="quote_id" type="string" required>
-  The quote ID obtained from the quote endpoint.
+  The quote ID obtained from `POST /swap/quote`.
 </ParamField>
 
-<ParamField body="from_wallet_id" type="string" required>
-  The wallet ID to deduct the source tokens from.
+<ParamField body="from_asset_id" type="string" required>
+  The asset ID of the source wallet to deduct funds from.
 </ParamField>
 
-<ParamField body="to_wallet_id" type="string" required>
-  The wallet ID to credit the destination tokens to.
+<ParamField body="to_address" type="string" required>
+  Destination wallet address to receive the swapped tokens.
 </ParamField>
 
-<ParamField body="slippage_tolerance" type="number">
-  Maximum acceptable price slippage as a percentage. Default: `1.0` (1%). If actual slippage exceeds this, the swap will fail.
-</ParamField>
-
-<RequestExample>
-```bash Execute SOL to USDC Swap
+```bash Execute swap
 curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/execute' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "quote_id": "quote_sandbox_01HX9KZMB3F7VNQP8R2WDGT200",
-    "from_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT012",
-    "to_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
-    "slippage_tolerance": 1.0
+    "quote_id": "qte_01HX9KZMB3F7VNQP8R2WDGT4EG",
+    "from_asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4E6",
+    "to_address": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b"
   }'
 ```
-
-```bash Execute cross-chain swap
-curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/execute' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "quote_id": "quote_sandbox_01HX9KZMB3F7VNQP8R2WDGT201",
-    "from_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT011",
-    "to_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
-    "slippage_tolerance": 2.0
-  }'
-```
-</RequestExample>
 
 <ResponseExample>
 ```json Swap Initiated
 {
   "status": "success",
+  "message": "Swap initiated successfully",
   "data": {
-    "swap_id": "swp_sandbox_01HX9KZMB3F7VNQP8R2WDGT300",
-    "quote_id": "quote_sandbox_01HX9KZMB3F7VNQP8R2WDGT200",
+    "swap_id": "swp_01HX9KZMB3F7VNQP8R2WDGT4EH",
+    "quote_id": "qte_01HX9KZMB3F7VNQP8R2WDGT4EG",
     "from_chain": "solana",
-    "from_token": "SOL",
-    "from_amount": 1.0,
-    "to_chain": "solana",
-    "to_token": "USDC",
-    "expected_to_amount": 174.82,
-    "status": "processing",
-    "tx_hash": "5yMq8rLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5CxPQRSTUVWXYZAB",
-    "network": "devnet",
-    "created_at": "2026-03-25T11:02:00Z"
+    "from_ticker": "USDC_SOL",
+    "to_chain": "base",
+    "to_ticker": "ETH_Base",
+    "from_amount": "10",
+    "to_amount": "0.00284",
+    "status": "pending",
+    "from_tx_hash": "5KgF7hJ2mN4pQ8rT9vX1yC3bA6wD0eG2jL5nP8sU1z4",
+    "created_at": "2026-03-28T11:01:00Z"
   }
 }
 ```
 
 ```json Quote Expired
 {
-  "status": "error",
-  "message": "Quote has expired. Please request a new quote.",
-  "error_code": "QUOTE_EXPIRED"
+  "success": false,
+  "error": "Quote has expired. Please request a new quote."
 }
 ```
 </ResponseExample>
 
 ---
 
-## Get Swap Status
+## Step 3 — Check Swap History
 
-Check the status of an executed swap.
-
-```
-GET https://crypto-sandbox.yativo.com/api/swap/{swapId}
-```
-
-<ParamField path="swapId" type="string" required>
-  The swap ID returned when the swap was executed.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/swap/swp_sandbox_01HX9KZMB3F7VNQP8R2WDGT300' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Swap Completed
-{
-  "status": "success",
-  "data": {
-    "swap_id": "swp_sandbox_01HX9KZMB3F7VNQP8R2WDGT300",
-    "from_chain": "solana",
-    "from_token": "SOL",
-    "from_amount": 1.0,
-    "to_chain": "solana",
-    "to_token": "USDC",
-    "expected_to_amount": 174.82,
-    "actual_to_amount": 174.79,
-    "actual_exchange_rate": 174.79,
-    "fee_charged": 0.87,
-    "slippage": 0.017,
-    "status": "completed",
-    "tx_hash": "5yMq8rLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5CxPQRSTUVWXYZAB",
-    "network": "devnet",
-    "created_at": "2026-03-25T11:02:00Z",
-    "completed_at": "2026-03-25T11:02:35Z"
-  }
-}
-```
-</ResponseExample>
-
----
-
-## List Swap History
-
-Retrieve a list of all swaps for your sandbox account.
+Retrieve the history of your swaps.
 
 ```
-GET https://crypto-sandbox.yativo.com/api/swap
+GET https://crypto-sandbox.yativo.com/api/swap/history
 ```
 
 <ParamField query="limit" type="integer">
-  Results per page. Default: `20`.
+  Max results to return. Defaults to `20`.
 </ParamField>
 
 <ParamField query="offset" type="integer">
-  Pagination offset. Default: `0`.
+  Records to skip for pagination. Defaults to `0`.
 </ParamField>
 
 <ParamField query="status" type="string">
-  Filter by status: `pending`, `processing`, `completed`, `failed`.
+  Filter by status: `pending`, `completed`, `failed`.
 </ParamField>
 
-<RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/swap?limit=10&status=completed' \
+curl -X GET 'https://crypto-sandbox.yativo.com/api/swap/history?limit=10&status=completed' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
-</RequestExample>
 
-<ResponseExample>
-```json Success
+```json Response
 {
-  "status": "success",
-  "data": {
-    "swaps": [
-      {
-        "swap_id": "swp_sandbox_01HX9KZMB3F7VNQP8R2WDGT300",
-        "from_token": "SOL",
-        "from_chain": "solana",
-        "from_amount": 1.0,
-        "to_token": "USDC",
-        "to_chain": "solana",
-        "actual_to_amount": 174.79,
-        "status": "completed",
-        "created_at": "2026-03-25T11:02:00Z"
-      }
-    ],
-    "total": 1,
-    "limit": 10,
-    "offset": 0
-  }
+  "success": true,
+  "data": [
+    {
+      "swap_id": "swp_01HX9KZMB3F7VNQP8R2WDGT4EH",
+      "from_ticker": "USDC_SOL",
+      "from_chain": "solana",
+      "from_amount": "10",
+      "to_ticker": "ETH_Base",
+      "to_chain": "base",
+      "to_amount": "0.00284",
+      "status": "completed",
+      "created_at": "2026-03-28T11:01:00Z"
+    }
+  ]
 }
 ```
-</ResponseExample>
 
 ---
 
 ## Swap Status Values
 
 | Status | Description |
-|---|---|
-| `pending` | Swap has been submitted, awaiting processing. |
-| `processing` | Swap is in progress — tokens are being exchanged. |
-| `completed` | Swap completed successfully. Destination tokens credited. |
-| `failed` | Swap failed. Source tokens are returned (minus any gas fees). |
-| `refunded` | Swap was refunded due to failure. Check `refund_tx_hash` if applicable. |
+|--------|-------------|
+| `pending` | Swap submitted, awaiting processing. |
+| `processing` | Swap in progress — tokens are being exchanged. |
+| `completed` | Swap completed. Destination tokens credited. |
+| `failed` | Swap failed. Source tokens returned (minus gas fees). |
 
 ---
 
 ## Testing Scenarios
 
-<Accordion title="Test slippage rejection">
-  Set `slippage_tolerance` to `0.0` (no tolerance). In an active testnet environment, this may trigger a slippage exceeded error:
-
-  ```bash
-  curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/execute' \
-    -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
-    -H 'Content-Type: application/json' \
-    -d '{
-      "quote_id": "quote_sandbox_01HX9KZMB3F7VNQP8R2WDGT200",
-      "from_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT012",
-      "to_wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
-      "slippage_tolerance": 0.0
-    }'
-  ```
-</Accordion>
-
 <Accordion title="Test with an expired quote">
-  Wait for a quote to expire (typically 60–120 seconds after retrieval) before executing, to validate your application handles the `QUOTE_EXPIRED` error.
+  Wait 60–120 seconds after getting a quote, then try to execute it. Your application should receive an error and re-request a fresh quote.
 </Accordion>
 
 <Accordion title="Test insufficient balance">
-  Attempt to swap more than your available balance to test the `INSUFFICIENT_BALANCE` error handling in your application.
+  Request a quote for more than your available balance, then try to execute it. Verify your application handles the `INSUFFICIENT_BALANCE` error.
 </Accordion>
 
 <Tip>
-  After a swap completes, verify the balance update by calling `GET /wallets/{walletId}` on both the source and destination wallets. The source balance should decrease and the destination balance should increase by the swap amounts.
+  After a swap completes, verify the balance update by calling `POST /assets/get-user-assets`. The source asset balance should decrease and the destination asset balance should increase.
 </Tip>

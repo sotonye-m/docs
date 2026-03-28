@@ -27,32 +27,28 @@ curl -X POST 'https://crypto-api.yativo.com/api/assets/get-user-assets' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Assets retrieved successfully",
   "data": [
     {
-      "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA",
-      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
-      "chain": "solana",
-      "ticker": "USDC_SOL",
-      "wallet_address": "7nZ9X4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
-      "status": "active",
-      "balance": "1250.00",
-      "balance_usd": "1250.00",
-      "created_at": "2026-03-26T12:00:00Z"
-    },
-    {
-      "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EB",
-      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
-      "chain": "ethereum",
-      "ticker": "ETH",
-      "wallet_address": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
-      "status": "active",
-      "balance": "0.5",
-      "balance_usd": "1800.00",
-      "created_at": "2026-03-26T12:00:00Z"
+      "id": "ast_6615c3c3e55d9ff7bc0a9012",
+      "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
+      "account_id": "acc_6615c3b2e55d9ff7bc0a5678",
+      "asset_id": "67db5f72ebea822c360d568d",
+      "asset_name": "USD Coin (Solana)",
+      "asset_short_name": "USDC",
+      "ticker_name": "USDC_SOL",
+      "chain": "SOL",
+      "address": "7xKt3Bm4NZpQhsWn1YvJd2Lr8Pk5Cq9eAw6Fu0GiRHs",
+      "amount": "0.300000",
+      "token_type": "token",
+      "image": "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png",
+      "layer_type": null,
+      "parent_chain": null,
+      "created_at": "2026-01-13T22:06:33.284Z",
+      "updated_at": "2026-03-08T10:02:32.849Z"
     }
-  ]
+  ],
+  "status": true,
+  "message": "Assets Listed Successfully"
 }
 ```
 </ResponseExample>

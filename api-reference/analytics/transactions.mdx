@@ -1,7 +1,7 @@
 ---
 title: "Transaction Analytics"
-api: "GET https://crypto-sandbox.yativo.com/api/analytics/transactions"
-description: "Retrieve detailed transaction analytics broken down by time, asset, and status"
+api: "GET https://crypto-sandbox.yativo.com/api/analytics/transaction-analytics"
+description: "Get transaction analytics broken down by status: pending, processing, failed, and approved."
 authMethod: "bearer"
 ---
 
@@ -55,7 +55,7 @@ interface TransactionAnalyticsResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/analytics/transactions?from=2026-03-01&to=2026-03-31&granularity=day' \
+curl -X GET 'https://crypto-api.yativo.com/api/analytics/transaction-analytics' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -63,36 +63,12 @@ curl -X GET 'https://crypto-api.yativo.com/api/analytics/transactions?from=2026-
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
-  "data": {
-    "period": {
-      "from": "2026-03-01",
-      "to": "2026-03-31",
-      "granularity": "day"
-    },
-    "buckets": [
-      {
-        "timestamp": "2026-03-01T00:00:00Z",
-        "count": 42,
-        "volume_usd": "14200.00",
-        "successful": 40,
-        "failed": 2
-      },
-      {
-        "timestamp": "2026-03-02T00:00:00Z",
-        "count": 38,
-        "volume_usd": "12800.00",
-        "successful": 37,
-        "failed": 1
-      }
-    ],
-    "summary": {
-      "total_count": 1284,
-      "total_volume_usd": "428950.00",
-      "avg_transaction_usd": "334.07",
-      "success_rate": 97.4
-    }
-  }
+  "pendingTransactions": [],
+  "processingTransactions": [],
+  "failedTransactions": [],
+  "approvedTransactions": [],
+  "status": true,
+  "message": "Transaction Analytics Listed Successfully"
 }
 ```
 </ResponseExample>

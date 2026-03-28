@@ -19,37 +19,17 @@ curl -X GET 'https://crypto-api.yativo.com/api/swap/routes' \
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Swap routes retrieved successfully",
-  "data": [
-    {
-      "from_chain": "solana",
-      "from_ticker": "USDC_SOL",
-      "to_chain": "ethereum",
-      "to_ticker": "USDC_ETH",
-      "min_amount": "10.00",
-      "max_amount": "100000.00",
-      "estimated_time_seconds": 60
-    },
-    {
-      "from_chain": "ethereum",
-      "from_ticker": "ETH",
-      "to_chain": "solana",
-      "to_ticker": "SOL",
-      "min_amount": "0.01",
-      "max_amount": "500.00",
-      "estimated_time_seconds": 120
-    },
-    {
-      "from_chain": "ethereum",
-      "from_ticker": "USDC_ETH",
-      "to_chain": "polygon",
-      "to_ticker": "USDC_MATIC",
-      "min_amount": "10.00",
-      "max_amount": "50000.00",
-      "estimated_time_seconds": 30
-    }
-  ]
+  "success": true,
+  "data": {
+    "enabled_services": ["near_intents", "circle_cctp", "cow_protocol"],
+    "sources": [
+      {"ticker_name": "SOL", "asset_name": "Solana", "chain": "SOL", "services": ["near_intents"]},
+      {"ticker_name": "USDC_SOL", "asset_name": "USD Coin (Solana)", "chain": "SOL", "services": ["near_intents"]},
+      {"ticker_name": "ETH_Base", "asset_name": "Ethereum on Base", "chain": "Base", "services": ["near_intents"]},
+      {"ticker_name": "EURe_GNO", "asset_name": "Euro Bridged (GNO)", "chain": "GNO", "services": ["cow_protocol", "near_intents"]}
+    ]
+  },
+  "message": "Swap route catalog retrieved successfully"
 }
 ```
 </ResponseExample>

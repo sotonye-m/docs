@@ -1,6 +1,6 @@
 ---
 title: "Get Card"
-api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/get/{card_id}"
+api: "GET https://crypto-sandbox.yativo.com/api/yativo-card/my-account"
 description: "Retrieve full details for a specific card"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/get/crd_01HX9KZMB3F7VNQP8R2WDGT4EJ' \
+curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/my-account' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -23,21 +23,35 @@ curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/get/crd_01HX9KZMB3F7V
 <ResponseExample>
 ```json
 {
-  "status": "success",
+  "success": true,
   "data": {
-    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
-    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "card_type": "virtual",
-    "card_program": "VISA",
-    "currency": "USD",
-    "label": "Marketing Spend",
-    "status": "active",
-    "masked_pan": "4111 **** **** 7890",
-    "expiry_month": "03",
-    "expiry_year": "2029",
-    "balance": "450.00",
-    "created_at": "2026-03-26T12:00:00Z",
-    "updated_at": "2026-03-26T14:30:00Z"
+    "account": {
+      "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+      "email": "merchant@example.com",
+      "flow_status": "safe_deployed",
+      "current_step": 4,
+      "progress_percentage": 100,
+      "kyc_status": "approved",
+      "terms_accepted": true,
+      "safe_deployed": true,
+      "safe_address": "0xBB4912ef83b5dcAE96f473Ba9e28Fd120bcd3412",
+      "wallet_address": "0xAB7a028c1c5483e9507C61F25335C64C52B9FBcc",
+      "funding_address": "DwPq8k2XbNmJhvRs5TcLu4Ye9AgFp3ZoVi7Bn1KqWMeS",
+      "funding_network": "solana",
+      "cards_count": 1,
+      "cards": [
+        {
+          "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
+          "last_four": "0892",
+          "type": "virtual",
+          "status": "Active",
+          "is_frozen": false,
+          "created_at": "2026-02-02T13:04:23.773Z"
+        }
+      ],
+      "created_at": "2026-01-21T21:35:32.076Z",
+      "updated_at": "2026-03-28T08:15:57.023Z"
+    }
   }
 }
 ```

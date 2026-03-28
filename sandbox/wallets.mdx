@@ -1,322 +1,217 @@
 ---
-title: "Test: Wallets"
-description: "Test wallet creation, asset management, and balance checking in the sandbox"
+title: "Test: Wallets & Assets"
+description: "Test account creation, wallet (asset) creation, and balance checking in the sandbox"
 ---
 
 ## Overview
 
-Use the sandbox to test the full wallet lifecycle — creating accounts, adding crypto assets, checking balances, and managing wallet addresses. All wallet operations in the sandbox use testnet tokens and testnet blockchain networks.
+Use the sandbox to test the full wallet lifecycle — creating accounts, adding crypto assets, and checking balances. All wallet operations in the sandbox use testnet tokens on testnet blockchains.
 
 **Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/`
 
 <Note>
-  You must be authenticated with a sandbox access token before calling wallet endpoints. See [Sandbox Authentication](/sandbox/authentication) to obtain a token.
+  You must be authenticated with a sandbox access token before calling these endpoints. See [Sandbox Authentication](/sandbox/authentication) to obtain a token.
 </Note>
 
 ---
 
-## Available Testnet Tokens
+## Step 1 — Create an Account
 
-The following testnet tokens are available in the sandbox environment:
+Accounts are containers for your wallets and assets.
 
-| Token | Network | Testnet | Faucet |
-|---|---|---|---|
-| USDC | Solana Devnet | Devnet | [spl-token-faucet.com](https://spl-token-faucet.com) |
-| SOL | Solana Devnet | Devnet | [faucet.solana.com](https://faucet.solana.com) |
-| USDC | Ethereum Sepolia | Sepolia | [faucet.circle.com](https://faucet.circle.com) |
-| ETH | Ethereum Sepolia | Sepolia | [sepoliafaucet.com](https://sepoliafaucet.com) |
-| USDC | Polygon Amoy | Amoy | Polygon faucet |
-| MATIC | Polygon Amoy | Amoy | Polygon faucet |
+```
+POST https://crypto-sandbox.yativo.com/api/accounts/create-account
+```
+
+```bash cURL
+curl -X POST 'https://crypto-sandbox.yativo.com/api/accounts/create-account' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_name": "Sandbox Main",
+    "account_type": "business"
+  }'
+```
+
+```json Response
+{
+  "status": "success",
+  "message": "Account created successfully",
+  "data": {
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "account_name": "Sandbox Main",
+    "account_type": "business",
+    "created_at": "2026-03-28T10:00:00Z"
+  }
+}
+```
+
+---
+
+## Step 2 — Add a Wallet (Asset)
+
+Add a specific blockchain + token combination to your account. This generates a new wallet address on the sandbox testnet.
+
+```
+POST https://crypto-sandbox.yativo.com/api/assets/add-asset
+```
+
+<ParamField body="account_id" type="string" required>
+  The account to add the wallet to.
+</ParamField>
+
+<ParamField body="chain" type="string" required>
+  Blockchain network: `solana`, `ethereum`, `bitcoin`, `polygon`, `bsc`, `base`, `xdc`.
+</ParamField>
+
+<ParamField body="ticker" type="string" required>
+  Token ticker symbol: `USDC_SOL`, `ETH`, `BTC`, `USDC_ETH`, `BNB`, etc.
+</ParamField>
+
+<CodeGroup>
+```bash Add USDC on Solana (Devnet)
+curl -X POST 'https://crypto-sandbox.yativo.com/api/assets/add-asset' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "chain": "solana",
+    "ticker": "USDC_SOL"
+  }'
+```
+
+```bash Add ETH on Base (Sepolia)
+curl -X POST 'https://crypto-sandbox.yativo.com/api/assets/add-asset' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "chain": "base",
+    "ticker": "ETH"
+  }'
+```
+</CodeGroup>
+
+```json Response
+{
+  "status": "success",
+  "message": "Asset created successfully",
+  "data": {
+    "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4E6",
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "chain": "solana",
+    "ticker": "USDC_SOL",
+    "wallet_address": "GY1EZGdpiJNyx2BSKq8rfTDRe5K8Bb6Cf2Bn1pdmE2o1",
+    "status": "active",
+    "created_at": "2026-03-28T10:05:00Z"
+  }
+}
+```
+
+<Note>
+  The `wallet_address` is your deposit address for this asset on the testnet. Use a testnet faucet to fund it.
+</Note>
+
+---
+
+## Step 3 — List Your Assets
+
+Retrieve all wallets and their balances.
+
+```
+POST https://crypto-sandbox.yativo.com/api/assets/get-user-assets
+```
+
+<ParamField body="account_id" type="string">
+  Filter by a specific account. If omitted, returns all assets across all accounts.
+</ParamField>
+
+```bash cURL
+curl -X POST 'https://crypto-sandbox.yativo.com/api/assets/get-user-assets' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5"
+  }'
+```
+
+```json Response
+{
+  "data": [
+    {
+      "id": "ast_01HX9KZMB3F7VNQP8R2WDGT4E6",
+      "user_id": "usr_01HX9KZMB3F7VNQP8R2WDGT001",
+      "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "asset_name": "USD Coin (Solana)",
+      "asset_short_name": "USDC",
+      "ticker_name": "USDC_SOL",
+      "chain": "SOL",
+      "address": "GY1EZGdpiJNyx2BSKq8rfTDRe5K8Bb6Cf2Bn1pdmE2o1",
+      "amount": "0.000000",
+      "token_type": "token"
+    }
+  ],
+  "status": true,
+  "message": "Assets Listed Successfully"
+}
+```
+
+---
+
+## Step 4 — List Accounts
+
+Retrieve all accounts with their asset counts and total values.
+
+```
+GET https://crypto-sandbox.yativo.com/api/accounts/get-accounts
+```
+
+```bash cURL
+curl -X GET 'https://crypto-sandbox.yativo.com/api/accounts/get-accounts' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+```
+
+```json Response
+{
+  "data": [
+    {
+      "_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "account_name": "Sandbox Main",
+      "assets": "2",
+      "account_value": 0,
+      "portfolio": "0.00",
+      "archived": "0",
+      "subaccount": false,
+      "createdAt": "2026-03-28T10:00:00Z"
+    }
+  ],
+  "status": true,
+  "message": "Accounts and assets listed successfully"
+}
+```
+
+---
+
+## Available Testnet Networks
+
+| Network | Testnet Used | Faucet |
+|---------|-------------|--------|
+| Solana | Devnet | [faucet.solana.com](https://faucet.solana.com) |
+| Ethereum / Base | Sepolia | [sepoliafaucet.com](https://sepoliafaucet.com) |
+| Gnosis | Chiado | [faucets.buildwithsygma.com](https://faucets.buildwithsygma.com) |
+| Polygon | Amoy | Polygon faucet |
+| BNB Chain | BSC Testnet | BNB testnet faucet |
 
 <Info>
-  Testnet tokens have no monetary value. Use faucets to get free testnet tokens for testing.
+  Testnet tokens have no monetary value. Use the faucets above to get free testnet tokens and send them to your wallet `address` to fund your sandbox wallets.
 </Info>
 
 ---
 
-## Create a Wallet Account
+## Pre-Populated Shared Sandbox Account
 
-Create a new crypto wallet in the sandbox environment.
+The shared sandbox account (accessible via the [public API key](/sandbox/overview)) already has:
 
-```
-POST https://crypto-sandbox.yativo.com/api/accounts
-```
-
-<ParamField body="name" type="string" required>
-  A label for the wallet account.
-</ParamField>
-
-<ParamField body="currency" type="string" required>
-  The primary currency for the account (e.g., `"USD"`, `"EUR"`).
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X POST 'https://crypto-sandbox.yativo.com/api/accounts' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "name": "Test Wallet",
-    "currency": "USD"
-  }'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "account_id": "acc_sandbox_01HX9KZMB3F7VNQP8R2WDGT001",
-    "name": "Test Wallet",
-    "currency": "USD",
-    "balance": 0.00,
-    "created_at": "2026-03-25T10:00:00Z"
-  }
-}
-```
-</ResponseExample>
-
----
-
-## List Wallets
-
-Retrieve all wallets associated with your sandbox account.
-
-```
-GET https://crypto-sandbox.yativo.com/api/wallets
-```
-
-<RequestExample>
-```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/wallets' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "wallets": [
-      {
-        "wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
-        "chain": "solana",
-        "token": "USDC",
-        "address": "7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
-        "balance": 100.00,
-        "network": "devnet",
-        "created_at": "2026-03-25T10:05:00Z"
-      },
-      {
-        "wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT011",
-        "chain": "ethereum",
-        "token": "ETH",
-        "address": "0x742d35Cc6634C0532925a3b8D4C9E2a4D7f0b123",
-        "balance": 0.5,
-        "network": "sepolia",
-        "created_at": "2026-03-25T10:05:01Z"
-      },
-      {
-        "wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT012",
-        "chain": "solana",
-        "token": "SOL",
-        "address": "7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
-        "balance": 2.0,
-        "network": "devnet",
-        "created_at": "2026-03-25T10:05:02Z"
-      }
-    ],
-    "total": 3
-  }
-}
-```
-</ResponseExample>
-
----
-
-## Get Wallet by ID
-
-Retrieve a specific wallet's details and current balance.
-
-```
-GET https://crypto-sandbox.yativo.com/api/wallets/{walletId}
-```
-
-<ParamField path="walletId" type="string" required>
-  The wallet ID.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/wallets/wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
-    "chain": "solana",
-    "token": "USDC",
-    "address": "7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
-    "balance": 100.00,
-    "balance_usd_equivalent": 100.00,
-    "network": "devnet",
-    "token_contract": "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJR",
-    "created_at": "2026-03-25T10:05:00Z"
-  }
-}
-```
-</ResponseExample>
-
----
-
-## Add an Asset to a Wallet
-
-Add a crypto asset (chain + token combination) to your sandbox wallet collection.
-
-```
-POST https://crypto-sandbox.yativo.com/api/wallets/add-asset
-```
-
-<ParamField body="chain" type="string" required>
-  Blockchain network (e.g., `"solana"`, `"ethereum"`, `"polygon"`).
-</ParamField>
-
-<ParamField body="token" type="string" required>
-  Token symbol (e.g., `"USDC"`, `"ETH"`, `"SOL"`).
-</ParamField>
-
-<RequestExample>
-```bash Add USDC on Solana
-curl -X POST 'https://crypto-sandbox.yativo.com/api/wallets/add-asset' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "chain": "solana",
-    "token": "USDC"
-  }'
-```
-
-```bash Add ETH on Ethereum
-curl -X POST 'https://crypto-sandbox.yativo.com/api/wallets/add-asset' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "chain": "ethereum",
-    "token": "ETH"
-  }'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT013",
-    "chain": "solana",
-    "token": "USDC",
-    "address": "7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
-    "balance": 0.00,
-    "network": "devnet",
-    "created_at": "2026-03-25T10:10:00Z"
-  }
-}
-```
-</ResponseExample>
-
----
-
-## Get Deposit Address
-
-Retrieve the deposit address for a specific wallet to fund it from an external testnet source.
-
-```
-GET https://crypto-sandbox.yativo.com/api/wallets/{walletId}/deposit-address
-```
-
-<RequestExample>
-```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/wallets/wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010/deposit-address' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "wallet_id": "wlt_sandbox_01HX9KZMB3F7VNQP8R2WDGT010",
-    "chain": "solana",
-    "token": "USDC",
-    "deposit_address": "7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
-    "network": "devnet",
-    "qr_code_url": "https://crypto-sandbox.yativo.com/api/qr/7dRp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx"
-  }
-}
-```
-</ResponseExample>
-
-<Tip>
-  Use a Solana devnet faucet to send testnet USDC to your deposit address. After the devnet transaction confirms, the balance will update in your sandbox wallet.
-</Tip>
-
----
-
-## Get Portfolio Summary
-
-Get an overview of all wallets and their total USD-equivalent value.
-
-```
-GET https://crypto-sandbox.yativo.com/api/wallets/portfolio
-```
-
-<RequestExample>
-```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/wallets/portfolio' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "total_usd_value": 350.75,
-    "assets": [
-      {
-        "chain": "solana",
-        "token": "USDC",
-        "balance": 100.00,
-        "usd_value": 100.00
-      },
-      {
-        "chain": "solana",
-        "token": "SOL",
-        "balance": 2.0,
-        "usd_value": 350.00
-      },
-      {
-        "chain": "ethereum",
-        "token": "ETH",
-        "balance": 0.0001,
-        "usd_value": 0.75
-      }
-    ],
-    "last_updated": "2026-03-25T10:15:00Z"
-  }
-}
-```
-</ResponseExample>
-
-<Note>
-  Portfolio USD values in the sandbox use simulated exchange rates that are periodically refreshed from testnet price feeds. They do not reflect real market prices.
-</Note>
+| Asset | Ticker | Network | Address |
+|-------|--------|---------|---------|
+| USD Coin | USDC_SOL | Solana Devnet | `GY1EZGdpiJNyx2BSKq8rfTDRe5K8Bb6Cf2Bn1pdmE2o1` |

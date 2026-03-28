@@ -1,6 +1,6 @@
 ---
 title: "Update Customer"
-api: "PUT https://crypto-sandbox.yativo.com/api/customers/{customerId}"
+api: "POST https://crypto-sandbox.yativo.com/api/customers/create-customer"
 description: "Update a customer's profile information"
 authMethod: "bearer"
 ---
@@ -31,7 +31,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://crypto-api.yativo.com/api/customers/cust_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+curl -X POST 'https://crypto-api.yativo.com/api/customers/create-customer' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -44,15 +44,16 @@ curl -X PUT 'https://crypto-api.yativo.com/api/customers/cust_01HX9KZMB3F7VNQP8R
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
+  "status": true,
+  "message": "Customer created successfully",
   "data": {
-    "id": "cust_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "email": "jane@example.com",
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "phone": "+14155559999",
-    "metadata": { "plan": "enterprise" },
-    "updated_at": "2026-03-26T11:00:00Z"
+    "_id": "cust_67e54665e759c943cd376abc",
+    "username": "new_customer",
+    "email": "customer@example.com",
+    "phone_number": "",
+    "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
+    "createdAt": "2026-03-28T10:00:00.000Z",
+    "updatedAt": "2026-03-28T10:00:00.000Z"
   }
 }
 ```

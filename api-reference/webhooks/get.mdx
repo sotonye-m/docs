@@ -1,6 +1,6 @@
 ---
 title: "Get Webhook"
-api: "GET https://crypto-sandbox.yativo.com/api/webhook/{id}"
+api: "GET https://crypto-sandbox.yativo.com/api/webhook/get-webhooks"
 description: "Retrieve details of a specific webhook by its ID"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/webhook/wbh_01HX9KZMB3F7VNQP8R2WDGT4ET' \
+curl -X GET 'https://crypto-api.yativo.com/api/webhook/get-webhooks' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -23,17 +23,26 @@ curl -X GET 'https://crypto-api.yativo.com/api/webhook/wbh_01HX9KZMB3F7VNQP8R2WD
 <ResponseExample>
 ```json
 {
-  "status": "success",
-  "message": "Webhook retrieved successfully",
   "data": {
-    "webhook_id": "wbh_01HX9KZMB3F7VNQP8R2WDGT4ET",
-    "url": "https://your-app.com/webhooks/yativo",
-    "events": ["transaction.confirmed", "transaction.failed", "swap.completed"],
-    "description": "Production webhook for transaction events",
-    "status": "active",
-    "last_triggered_at": "2026-03-25T15:30:00Z",
-    "created_at": "2026-03-26T12:00:00Z"
-  }
+    "webhooks": [
+      {
+        "_id": "whk_67e91cbe7747bdb0ba25415f",
+        "webhook_name": "Production Webhook",
+        "webhook_url": "https://your-app.com/webhooks/yativo",
+        "account_id": "acc_6615c3b2e55d9ff7bc0a5678",
+        "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
+        "version_id": "1",
+        "receive_all_events": "true",
+        "whitelist_ips": [],
+        "status": "active",
+        "createdAt": "2026-01-30T10:28:14.829Z",
+        "updatedAt": "2026-03-28T10:04:41.998Z"
+      }
+    ],
+    "pagination": {"total": 1, "page": 1, "limit": 20, "pages": 1}
+  },
+  "status": true,
+  "message": "Webhooks retrieved successfully"
 }
 ```
 </ResponseExample>
