@@ -24,22 +24,217 @@
   "navbar": {
     "links": [
       {
-        "label": "Dashboard",
+        "label": "Fiat Dashboard",
+        "href": "https://app.yativo.com"
+      },
+      {
+        "label": "Crypto Dashboard",
         "href": "https://crypto.yativo.com"
       },
       {
+        "label": "Get Started — Crypto",
+        "href": "https://crypto.yativo.com/sign-up"
+      },
+      {
         "label": "Support",
-        "href": "https://crypto.yativo.com/support"
+        "href": "https://yativo.com/support"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Get Started",
-      "href": "https://crypto.yativo.com/sign-up"
+      "label": "Get Started — Fiat",
+      "href": "https://app.yativo.com"
     }
   },
   "navigation": {
     "tabs": [
+      {
+        "tab": "Yativo",
+        "groups": [
+          {
+            "group": "Company",
+            "pages": [
+              "yativo/introduction"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Yativo Fiat",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "yativo-fiat/introduction",
+              "yativo-fiat/quickstart",
+              "yativo-fiat/authentication"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "yativo-fiat/accept-payments",
+              "yativo-fiat/send-money",
+              "yativo-fiat/exchange-rates",
+              "yativo-fiat/deposits",
+              "yativo-fiat/virtual-accounts",
+              "yativo-fiat/virtual-cards"
+            ]
+          },
+          {
+            "group": "Wallets",
+            "pages": [
+              "yativo-fiat/wallets",
+              "yativo-fiat/accounts",
+              "yativo-fiat/assets"
+            ]
+          },
+          {
+            "group": "Customers & Compliance",
+            "pages": [
+              "yativo-fiat/customers",
+              "yativo-fiat/kyc",
+              "yativo-fiat/kyc-frontend-guide",
+              "yativo-fiat/beneficiaries"
+            ]
+          },
+          {
+            "group": "Transactions",
+            "pages": [
+              "yativo-fiat/transactions"
+            ]
+          },
+          {
+            "group": "Developer Tools",
+            "pages": [
+              "yativo-fiat/developer",
+              "yativo-fiat/webhooks",
+              "yativo-fiat/sandbox",
+              "yativo-fiat/security"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Fiat API References",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["fiat-api-reference/introduction"]
+          },
+          {
+            "group": "Authentication",
+            "pages": ["fiat-api-reference/auth/token"]
+          },
+          {
+            "group": "Customers",
+            "pages": [
+              "fiat-api-reference/customers/create",
+              "fiat-api-reference/customers/list",
+              "fiat-api-reference/customers/get",
+              "fiat-api-reference/customers/update"
+            ]
+          },
+          {
+            "group": "KYC / KYB",
+            "pages": [
+              "fiat-api-reference/kyc/submit-individual",
+              "fiat-api-reference/kyc/submit-business",
+              "fiat-api-reference/kyc/status",
+              "fiat-api-reference/kyc/update",
+              "fiat-api-reference/kyc/occupation-codes",
+              "fiat-api-reference/kyc/verification-locations",
+              "fiat-api-reference/kyc/endorsement-regenerate"
+            ]
+          },
+          {
+            "group": "Payments & Transfers",
+            "pages": [
+              "fiat-api-reference/payments/exchange-rate",
+              "fiat-api-reference/payments/send-money-quote",
+              "fiat-api-reference/payments/send-money",
+              "fiat-api-reference/payments/methods",
+              "fiat-api-reference/payments/methods-form",
+              "fiat-api-reference/payments/countries",
+              "fiat-api-reference/payments/payout"
+            ]
+          },
+          {
+            "group": "Deposits",
+            "pages": ["fiat-api-reference/deposits/list"]
+          },
+          {
+            "group": "Virtual Accounts",
+            "pages": [
+              "fiat-api-reference/virtual-accounts/create",
+              "fiat-api-reference/virtual-accounts/list",
+              "fiat-api-reference/virtual-accounts/get",
+              "fiat-api-reference/virtual-accounts/delete",
+              "fiat-api-reference/virtual-accounts/history"
+            ]
+          },
+          {
+            "group": "Wallets",
+            "pages": [
+              "fiat-api-reference/wallets/balance",
+              "fiat-api-reference/wallets/create"
+            ]
+          },
+          {
+            "group": "Beneficiaries",
+            "pages": [
+              "fiat-api-reference/beneficiaries/create",
+              "fiat-api-reference/beneficiaries/list",
+              "fiat-api-reference/beneficiaries/get",
+              "fiat-api-reference/beneficiaries/update",
+              "fiat-api-reference/beneficiaries/delete",
+              "fiat-api-reference/beneficiaries/payment-methods-create",
+              "fiat-api-reference/beneficiaries/payment-methods-list",
+              "fiat-api-reference/beneficiaries/payment-methods-update",
+              "fiat-api-reference/beneficiaries/payment-methods-delete"
+            ]
+          },
+          {
+            "group": "Transactions",
+            "pages": [
+              "fiat-api-reference/transactions/list",
+              "fiat-api-reference/transactions/get",
+              "fiat-api-reference/transactions/track",
+              "fiat-api-reference/transactions/receipt"
+            ]
+          },
+          {
+            "group": "Virtual Cards",
+            "pages": [
+              "fiat-api-reference/virtual-cards/activate",
+              "fiat-api-reference/virtual-cards/create",
+              "fiat-api-reference/virtual-cards/list",
+              "fiat-api-reference/virtual-cards/get",
+              "fiat-api-reference/virtual-cards/topup",
+              "fiat-api-reference/virtual-cards/update",
+              "fiat-api-reference/virtual-cards/transactions",
+              "fiat-api-reference/virtual-cards/withdraw",
+              "fiat-api-reference/virtual-cards/terminate"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "fiat-api-reference/webhooks/create",
+              "fiat-api-reference/webhooks/list"
+            ]
+          },
+          {
+            "group": "Developer",
+            "pages": [
+              "fiat-api-reference/developer/generate-secret",
+              "fiat-api-reference/developer/logs",
+              "fiat-api-reference/developer/events",
+              "fiat-api-reference/developer/event-get"
+            ]
+          }
+        ]
+      },
       {
         "tab": "Yativo Crypto",
         "groups": [
@@ -290,201 +485,19 @@
             ]
           }
         ]
-      },
-      {
-        "tab": "Fiat API References",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": ["fiat-api-reference/introduction"]
-          },
-          {
-            "group": "Authentication",
-            "pages": ["fiat-api-reference/auth/token"]
-          },
-          {
-            "group": "Customers",
-            "pages": [
-              "fiat-api-reference/customers/create",
-              "fiat-api-reference/customers/list",
-              "fiat-api-reference/customers/get",
-              "fiat-api-reference/customers/update"
-            ]
-          },
-          {
-            "group": "KYC / KYB",
-            "pages": [
-              "fiat-api-reference/kyc/submit-individual",
-              "fiat-api-reference/kyc/submit-business",
-              "fiat-api-reference/kyc/status",
-              "fiat-api-reference/kyc/update",
-              "fiat-api-reference/kyc/occupation-codes",
-              "fiat-api-reference/kyc/verification-locations",
-              "fiat-api-reference/kyc/endorsement-regenerate"
-            ]
-          },
-          {
-            "group": "Payments & Transfers",
-            "pages": [
-              "fiat-api-reference/payments/exchange-rate",
-              "fiat-api-reference/payments/send-money-quote",
-              "fiat-api-reference/payments/send-money",
-              "fiat-api-reference/payments/methods",
-              "fiat-api-reference/payments/methods-form",
-              "fiat-api-reference/payments/countries",
-              "fiat-api-reference/payments/payout"
-            ]
-          },
-          {
-            "group": "Deposits",
-            "pages": ["fiat-api-reference/deposits/list"]
-          },
-          {
-            "group": "Virtual Accounts",
-            "pages": [
-              "fiat-api-reference/virtual-accounts/create",
-              "fiat-api-reference/virtual-accounts/list",
-              "fiat-api-reference/virtual-accounts/get",
-              "fiat-api-reference/virtual-accounts/delete",
-              "fiat-api-reference/virtual-accounts/history"
-            ]
-          },
-          {
-            "group": "Wallets",
-            "pages": [
-              "fiat-api-reference/wallets/balance",
-              "fiat-api-reference/wallets/create"
-            ]
-          },
-          {
-            "group": "Beneficiaries",
-            "pages": [
-              "fiat-api-reference/beneficiaries/create",
-              "fiat-api-reference/beneficiaries/list",
-              "fiat-api-reference/beneficiaries/get",
-              "fiat-api-reference/beneficiaries/update",
-              "fiat-api-reference/beneficiaries/delete",
-              "fiat-api-reference/beneficiaries/payment-methods-create",
-              "fiat-api-reference/beneficiaries/payment-methods-list",
-              "fiat-api-reference/beneficiaries/payment-methods-update",
-              "fiat-api-reference/beneficiaries/payment-methods-delete"
-            ]
-          },
-          {
-            "group": "Transactions",
-            "pages": [
-              "fiat-api-reference/transactions/list",
-              "fiat-api-reference/transactions/get",
-              "fiat-api-reference/transactions/track",
-              "fiat-api-reference/transactions/receipt"
-            ]
-          },
-          {
-            "group": "Virtual Cards",
-            "pages": [
-              "fiat-api-reference/virtual-cards/activate",
-              "fiat-api-reference/virtual-cards/create",
-              "fiat-api-reference/virtual-cards/list",
-              "fiat-api-reference/virtual-cards/get",
-              "fiat-api-reference/virtual-cards/topup",
-              "fiat-api-reference/virtual-cards/update",
-              "fiat-api-reference/virtual-cards/transactions",
-              "fiat-api-reference/virtual-cards/withdraw",
-              "fiat-api-reference/virtual-cards/terminate"
-            ]
-          },
-          {
-            "group": "Webhooks",
-            "pages": [
-              "fiat-api-reference/webhooks/create",
-              "fiat-api-reference/webhooks/list"
-            ]
-          },
-          {
-            "group": "Developer",
-            "pages": [
-              "fiat-api-reference/developer/generate-secret",
-              "fiat-api-reference/developer/logs",
-              "fiat-api-reference/developer/events",
-              "fiat-api-reference/developer/event-get"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Yativo Fiat",
-        "groups": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "yativo-fiat/introduction",
-              "yativo-fiat/quickstart",
-              "yativo-fiat/authentication"
-            ]
-          },
-          {
-            "group": "Payments",
-            "pages": [
-              "yativo-fiat/accept-payments",
-              "yativo-fiat/send-money",
-              "yativo-fiat/exchange-rates",
-              "yativo-fiat/deposits",
-              "yativo-fiat/virtual-accounts",
-              "yativo-fiat/virtual-cards"
-            ]
-          },
-          {
-            "group": "Wallets",
-            "pages": [
-              "yativo-fiat/wallets",
-              "yativo-fiat/accounts",
-              "yativo-fiat/assets"
-            ]
-          },
-          {
-            "group": "Customers & Compliance",
-            "pages": [
-              "yativo-fiat/customers",
-              "yativo-fiat/kyc",
-              "yativo-fiat/kyc-frontend-guide",
-              "yativo-fiat/beneficiaries"
-            ]
-          },
-          {
-            "group": "Transactions",
-            "pages": [
-              "yativo-fiat/transactions"
-            ]
-          },
-          {
-            "group": "Developer Tools",
-            "pages": [
-              "yativo-fiat/developer",
-              "yativo-fiat/webhooks",
-              "yativo-fiat/sandbox",
-              "yativo-fiat/security"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Yativo",
-        "groups": [
-          {
-            "group": "Company",
-            "pages": [
-              "yativo/introduction"
-            ]
-          }
-        ]
       }
     ],
     "global": {
       "anchors": [
         {
-          "anchor": "Dashboard",
+          "anchor": "Fiat Dashboard",
+          "href": "https://app.yativo.com",
+          "icon": "building-columns"
+        },
+        {
+          "anchor": "Crypto Dashboard",
           "href": "https://crypto.yativo.com",
-          "icon": "chart-line"
+          "icon": "bitcoin"
         },
         {
           "anchor": "Status",
@@ -493,7 +506,7 @@
         },
         {
           "anchor": "Support",
-          "href": "https://crypto.yativo.com/support",
+          "href": "https://yativo.com/support",
           "icon": "headset"
         }
       ]
