@@ -3,14 +3,14 @@ title: "Create / Update Webhook"
 description: "Set or update your webhook endpoint to receive real-time event notifications"
 ---
 
-Set a URL to receive webhook notifications for events in your Yativo account. Yativo sends a POST request to your endpoint whenever a matching event occurs.
+Set a URL to receive webhook notifications for events in your Yativo account. Yativo sends a `POST` request to your endpoint whenever a matching event occurs and signs every request with an `X-Yativo-Signature` header for verification.
 
 ```
 POST /business/webhook
 ```
 
 <Note>
-  Requires an `Idempotency-Key` header. You can also update an existing webhook URL using `PUT /business/webhook`.
+  Requires an `Idempotency-Key` header. Update an existing webhook URL with `PUT /business/webhook`.
 </Note>
 
 ## Request Body
@@ -54,8 +54,145 @@ curl -X POST 'https://api.yativo.com/api/v1/business/webhook' \
   "message": "Webhook configured successfully",
   "data": {
     "url": "https://your-app.com/webhooks/yativo",
+    "secret": "whsec_a1b2c3d4e5f6...",
     "created_at": "2026-04-01T10:00:00.000000Z"
   }
 }
 ```
 </ResponseExample>
+
+---
+
+## Signature Verification
+
+Every webhook delivery includes an `X-Yativo-Signature` header — an HMAC SHA256 hex digest of the raw request body signed with your webhook secret.
+
+**Algorithm:**
+```
+X-Yativo-Signature = HMAC-SHA256(webhookSecret, rawRequestBody) → hex
+```
+
+<Warning>
+  Always verify the signature before processing any event. Use **constant-time comparison** to prevent timing attacks — never a plain string equality check.
+</Warning>
+
+<Warning>
+  Compute the HMAC over the **raw request body bytes** — not a re-serialized version of parsed JSON. Parsing and re-stringifying can change whitespace or key ordering, causing signature mismatches.
+</Warning>
+
+### Verification examples
+
+<CodeGroup>
+
+```javascript Node.js
+const crypto = require('crypto');
+
+app.post('/webhooks/yativo', express.raw({ type: 'application/json' }), (req, res) => {
+  const secret = process.env.YATIVO_WEBHOOK_SECRET;
+  const receivedSignature = req.headers['x-yativo-signature'];
+
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(req.body)
+    .digest('hex');
+
+  if (!crypto.timingSafeEqual(
+    Buffer.from(expectedSignature),
+    Buffer.from(receivedSignature)
+  )) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  const event = JSON.parse(req.body);
+  // safe to process
+  res.status(200).send('OK');
+});
+```
+
+```python Python
+import hmac, hashlib, os
+from flask import Flask, request, abort
+
+@app.route('/webhooks/yativo', methods=['POST'])
+def webhook():
+    secret = os.environ['YATIVO_WEBHOOK_SECRET']
+    received = request.headers.get('X-Yativo-Signature', '')
+
+    expected = hmac.new(
+        secret.encode(),
+        request.data,
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, received):
+        abort(401)
+
+    event = request.get_json()
+    return 'OK', 200
+```
+
+```php PHP
+$secret = getenv('YATIVO_WEBHOOK_SECRET');
+$received = $_SERVER['HTTP_X_YATIVO_SIGNATURE'] ?? '';
+$payload  = file_get_contents('php://input');
+$expected = hash_hmac('sha256', $payload, $secret);
+
+if (!hash_equals($expected, $received)) {
+    http_response_code(401);
+    exit('Invalid signature');
+}
+
+$event = json_decode($payload, true);
+```
+
+```go Go
+func webhookHandler(w http.ResponseWriter, r *http.Request) {
+    secret := []byte(os.Getenv("YATIVO_WEBHOOK_SECRET"))
+    received := r.Header.Get("X-Yativo-Signature")
+    body, _ := io.ReadAll(r.Body)
+
+    mac := hmac.New(sha256.New, secret)
+    mac.Write(body)
+    expected := hex.EncodeToString(mac.Sum(nil))
+
+    if !hmac.Equal([]byte(expected), []byte(received)) {
+        http.Error(w, "Invalid signature", http.StatusUnauthorized)
+        return
+    }
+    w.WriteHeader(http.StatusOK)
+}
+```
+
+```java Java
+Mac mac = Mac.getInstance("HmacSHA256");
+mac.init(new SecretKeySpec(secret.getBytes(), "HmacSHA256"));
+byte[] rawHmac = mac.doFinal(rawBody);
+
+StringBuilder hex = new StringBuilder();
+for (byte b : rawHmac) hex.append(String.format("%02x", b));
+String expected = hex.toString();
+
+if (!MessageDigest.isEqual(expected.getBytes(), received.getBytes())) {
+    return ResponseEntity.status(401).body("Invalid signature");
+}
+```
+
+```ruby Ruby
+expected = OpenSSL::HMAC.hexdigest('SHA256', secret, payload)
+unless Rack::Utils.secure_compare(expected, received)
+  halt 401, 'Invalid signature'
+end
+```
+
+```csharp C# (.NET)
+using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody));
+var expected = BitConverter.ToString(hash).Replace("-", "").ToLower();
+
+if (!CryptographicOperations.FixedTimeEquals(
+    Encoding.UTF8.GetBytes(expected),
+    Encoding.UTF8.GetBytes(received)
+)) return Unauthorized();
+```
+
+</CodeGroup>
