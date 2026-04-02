@@ -54,7 +54,8 @@
           {
             "group": "Company",
             "pages": [
-              "yativo/introduction"
+              "yativo/introduction",
+              "yativo/changelog"
             ]
           }
         ]

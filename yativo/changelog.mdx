@@ -1,0 +1,75 @@
+---
+title: "Changelog"
+description: "Latest updates, improvements, and fixes across all Yativo platforms"
+---
+
+<Update label="April 2026" description="Developer experience, documentation, and monitoring improvements">
+  ### Docs
+  - Comprehensive Yativo Fiat documentation with guides, API references, KYC/KYB docs
+  - Added HMAC SHA256 webhook signature verification examples in 7 languages
+  - Docs reordered: Yativo → Yativo Fiat → Fiat API References → Yativo Crypto → Crypto API References
+  - Changelog page added
+
+  ### Monitoring
+  - Betterstack status page live at [status.yativo.com](https://status.yativo.com) with 12 monitors
+  - Upptime open-source status page at [status2.yativo.com](https://status2.yativo.com)
+  - Per-service health monitoring for crypto backend (Balance Service, RPC Nodes, XDC WebSocket)
+  - Fiat backend health check endpoints added (`/api/health`, `/api/health/ping`)
+
+  ### Yativo Crypto SDK
+  - 2FA enforcement on all critical operations: send funds, API key management, swaps, card freeze/unfreeze, auto-forwarding rules
+  - TypeScript SDK updated with `twoFactorCode` parameter on sensitive endpoints
+  - Chrome extension updated with 2FA modal prompt for sensitive actions
+
+  ### Security
+  - Webhook HMAC SHA256 signature verification documented with multi-language examples
+  - Removed API registration/login from public docs — onboarding exclusively via dashboard
+  - Hardcoded test keys removed from codebase
+</Update>
+
+<Update label="March 2026" description="Auto-forwarding, XSS hardening, and SDK improvements">
+  ### Yativo Crypto
+  - Auto-forwarding rules API: create, list, update, delete rules for automatic fund forwarding
+  - Auto-forwarding supports `twoFactorCode` for create/update/delete operations
+
+  ### Security
+  - XSS sanitization added to all user-facing string inputs across crypto API
+  - Browser extension hardened against XSS injection vectors
+
+  ### Yativo Fiat
+  - Virtual card operations: activate, create, topup, freeze, withdraw, terminate
+  - Send money quote endpoint: `/sendmoney/quote` for pre-flight rate checks
+  - Wallet creation API: `POST /wallet/create`
+  - PDF transaction receipts: `GET /business/transaction/receipt/{id}`
+</Update>
+
+<Update label="February 2026" description="Multi-platform SDK release and KYC platform">
+  ### SDKs
+  - TypeScript/Node.js SDK released with full crypto API coverage
+  - Python SDK released
+  - PHP SDK released
+  - Java SDK released
+  - Chrome extension with full wallet management UI
+
+  ### KYC/KYB Platform
+  - Individual KYC submission API at kyc.yativo.com
+  - Business KYB submission with document upload support
+  - Hosted KYC links for no-code integration
+  - Webhook notifications on KYC status changes
+
+  ### Yativo Fiat
+  - Magic link passwordless authentication
+  - API key generation with PIN protection
+  - Business virtual accounts (SEPA, SPEI, Brazil, USD LatAm)
+  - Service endorsements for regional payment rails
+</Update>
+
+<Update label="January 2026" description="Platform launch">
+  ### Launch
+  - Yativo Fiat platform launched at [app.yativo.com](https://app.yativo.com)
+  - Yativo Crypto platform launched at [crypto.yativo.com](https://crypto.yativo.com)
+  - Multi-currency wallets with support for 30+ currencies
+  - Real-time exchange rates and FX conversion
+  - Developer API with sandbox environment at smtp.yativo.com
+  - Webhook infrastructure for real-time event notifications
+</Update>
