@@ -1,7 +1,9 @@
 ---
-title: "Wallet Balances"
-description: "Retrieve multi-currency wallet balances and total portfolio value"
+title: "Wallets"
+description: "Manage multi-currency wallet balances and initiate payouts"
 ---
+
+Your Yativo wallet holds balances in multiple currencies. Fund payouts from your wallet, and receive deposits into it. The wallet API lets you check balances, create new currency wallets, and initiate quick payouts.
 
 <Accordion title="Type Definitions">
 ```typescript
@@ -27,7 +29,7 @@ interface TotalBalance {
 
 ---
 
-## Get all wallet balances
+## Get Wallet Balance
 
 Returns detailed balance information for every currency wallet on your account.
 
@@ -35,9 +37,18 @@ Returns detailed balance information for every currency wallet on your account.
 GET /wallet/balance
 ```
 
+<ParamField query="currency" type="string">
+  Optional: filter by a specific currency code (e.g. `USD`, `BRL`). Omit to return all.
+</ParamField>
+
 <RequestExample>
-```bash cURL
+```bash All balances
 curl -X GET 'https://api.yativo.com/api/v1/wallet/balance' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash Single currency
+curl -X GET 'https://api.yativo.com/api/v1/wallet/balance?currency=USD' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -74,19 +85,6 @@ curl -X GET 'https://api.yativo.com/api/v1/wallet/balance' \
         "fullname": "Brazilian Real",
         "precision": "2"
       }
-    },
-    {
-      "name": "ARS",
-      "slug": "ars",
-      "balance": "0",
-      "currency": "ARS",
-      "decimal_places": 2,
-      "meta": {
-        "logo": "https://cdn.yativo.com/ars.svg",
-        "symbol": "$",
-        "fullname": "Argentine Peso",
-        "precision": "2"
-      }
     }
   ]
 }
@@ -97,9 +95,9 @@ curl -X GET 'https://api.yativo.com/api/v1/wallet/balance' \
 
 ---
 
-## Get total balance in USD
+## Get Total Balance
 
-Returns the sum of all wallet balances converted to USD at current exchange rates.
+Returns the sum of all wallet balances converted to USD at current exchange rates:
 
 ```
 GET /wallet/balance/total
@@ -127,7 +125,95 @@ curl -X GET 'https://api.yativo.com/api/v1/wallet/balance/total' \
 
 ---
 
-## Display tips
+## Create a Wallet
+
+Create a new currency wallet for your account:
+
+```
+POST /wallet/create
+```
+
+<ParamField body="currency" type="string" required>
+  The currency code for the new wallet (e.g. `COP`, `PEN`, `ARS`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/wallet/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{ "currency": "COP" }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "currency": "COP",
+    "balance": "0.00"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Quick Wallet Payout
+
+Initiate a payout directly from your wallet balance without the full send money flow:
+
+```
+POST /wallet/payout
+```
+
+<ParamField body="debit_wallet" type="string" required>
+  Currency to debit from your balance (e.g. `"USD"`).
+</ParamField>
+
+<ParamField body="payment_method_id" type="number" required>
+  The saved beneficiary payment method ID.
+</ParamField>
+
+<ParamField body="quote_id" type="string">
+  Quote ID from `POST /sendmoney/quote` or `POST /exchange-rate`. Locks the rate for 5 minutes. Recommended — amount is taken from the quote.
+</ParamField>
+
+<ParamField body="amount" type="number">
+  Amount to send. Required if `quote_id` is not provided. Uses current market rate.
+</ParamField>
+
+<RequestExample>
+```bash With quote (recommended)
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-payout-key' \
+  -d '{
+    "debit_wallet": "USD",
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "payment_method_id": 21
+  }'
+```
+
+```bash Without quote (market rate)
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-payout-key' \
+  -d '{
+    "debit_wallet": "USD",
+    "amount": 500,
+    "payment_method_id": 21
+  }'
+```
+</RequestExample>
+
+---
+
+## Display Tips
 
 ```javascript
 // Format a wallet balance for display

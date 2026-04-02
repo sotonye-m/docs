@@ -1,0 +1,46 @@
+---
+title: "Terminate Card"
+description: "Permanently cancel a virtual card"
+---
+
+Permanently terminates a virtual card. This action is irreversible. Withdraw any remaining balance before terminating.
+
+```
+POST /customer/virtual/cards/terminate
+```
+
+## Request Body
+
+<ParamField body="card_id" type="string" required>
+  The virtual card ID to terminate.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/terminate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Card terminated successfully",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "terminated"
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Card termination is permanent and cannot be undone. Withdraw remaining funds before terminating.
+</Warning>

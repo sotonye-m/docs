@@ -1,0 +1,70 @@
+---
+title: "List Virtual Accounts"
+description: "Retrieve all virtual accounts associated with your business"
+---
+
+Returns all virtual accounts for your business with optional filtering.
+
+```
+GET /business/virtual-account
+```
+
+## Query Parameters
+
+<ParamField query="currency" type="string">
+  Filter by currency code (e.g. `BRL`, `USD`).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by account status.
+</ParamField>
+
+<ParamField query="start_date" type="string">
+  From date (ISO 8601).
+</ParamField>
+
+<ParamField query="q" type="string">
+  Search query — account number, customer name, etc.
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account?currency=BRL&per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "account_id": "va_xxxxxx",
+      "account_number": "9900123456",
+      "account_type": "savings",
+      "currency": "BRL",
+      "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+      "status": "active",
+      "created_at": "2026-04-01T10:00:00Z"
+    }
+  ],
+  "meta": {
+    "total": 8,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 1
+  }
+}
+```
+</ResponseExample>

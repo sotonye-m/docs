@@ -1,0 +1,32 @@
+---
+title: "Get Webhook"
+description: "Retrieve the current webhook configuration"
+---
+
+Returns the configured webhook endpoint for your business account.
+
+```
+GET /business/webhook
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/webhook' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "url": "https://your-app.com/webhooks/yativo",
+    "created_at": "2026-04-01T10:00:00.000000Z",
+    "updated_at": "2026-04-01T12:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>

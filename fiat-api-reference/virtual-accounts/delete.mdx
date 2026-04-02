@@ -1,0 +1,38 @@
+---
+title: "Delete Virtual Account"
+description: "Permanently delete a virtual account"
+---
+
+Permanently deletes a virtual account. This action is irreversible.
+
+```
+DELETE /business/virtual-account/delete-virtual-account/{id}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The virtual account ID to delete.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://api.yativo.com/api/v1/business/virtual-account/delete-virtual-account/va_xxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Virtual account deleted successfully",
+  "data": null
+}
+```
+</ResponseExample>
+
+<Warning>
+  Deleting a virtual account is permanent and cannot be undone. Ensure any pending transactions are resolved before deleting.
+</Warning>

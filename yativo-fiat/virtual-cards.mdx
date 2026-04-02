@@ -1,0 +1,285 @@
+---
+title: "Virtual Cards"
+description: "Issue virtual Visa/Mastercard cards to your customers"
+---
+
+Issue prepaid virtual cards to your customers for online spending. Cards are funded from your wallet balance and can be frozen, unfrozen, topped up, or terminated via the API.
+
+<Note>
+  Before issuing cards, customers must be activated for virtual card usage. Activation is separate from KYC — it enrolls the customer in the card program.
+</Note>
+
+---
+
+## Step 1: Activate Customer for Virtual Cards
+
+Enroll a customer in the virtual card program:
+
+```
+POST /customer/virtual/cards/activate
+```
+
+<ParamField body="customer_id" type="string" required>
+  The ID of the customer to activate.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/activate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
+  }'
+```
+</RequestExample>
+
+---
+
+## Step 2: Issue a Card
+
+Create a virtual card for an activated customer:
+
+```
+POST /customer/virtual/cards/create
+```
+
+<ParamField body="customer_id" type="string" required>
+  The ID of the activated customer.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Card currency (e.g. `USD`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "currency": "USD"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "card_number": "4111 **** **** 1234",
+    "expiry": "04/29",
+    "cvv": "***",
+    "currency": "USD",
+    "balance": "0.00",
+    "status": "active",
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## List Cards
+
+Retrieve all virtual cards with pagination:
+
+```
+GET /customer/virtual/cards/list
+```
+
+<ParamField query="page" type="number">
+  Page number.
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/list?page=1&per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Get Card Details
+
+Retrieve a specific virtual card, including sensitive details:
+
+```
+GET /customer/virtual/cards/get/{cardId}
+```
+
+<ParamField path="cardId" type="string" required>
+  The virtual card ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/get/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Fund a Card
+
+Top up a card from your wallet balance:
+
+```
+POST /customer/virtual/cards/topup
+```
+
+<ParamField body="card_id" type="string" required>
+  The virtual card ID.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to add to the card.
+</ParamField>
+
+<ParamField body="debit_wallet" type="string" required>
+  Wallet currency to debit from (e.g. `USD`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/topup' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "amount": 100,
+    "debit_wallet": "USD"
+  }'
+```
+</RequestExample>
+
+---
+
+## Freeze / Unfreeze a Card
+
+Temporarily freeze or unfreeze a card:
+
+```
+PUT /customer/virtual/cards/update/{cardId}
+```
+
+<ParamField path="cardId" type="string" required>
+  The virtual card ID.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  `"freeze"` to block the card, `"unfreeze"` to re-enable it.
+</ParamField>
+
+<RequestExample>
+```bash Freeze
+curl -X PUT 'https://api.yativo.com/api/v1/customer/virtual/cards/update/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{ "action": "freeze" }'
+```
+
+```bash Unfreeze
+curl -X PUT 'https://api.yativo.com/api/v1/customer/virtual/cards/update/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{ "action": "unfreeze" }'
+```
+</RequestExample>
+
+---
+
+## Get Card Transactions
+
+Retrieve transaction history for a specific card:
+
+```
+GET /customer/virtual/cards/transactions/{cardId}
+```
+
+<ParamField path="cardId" type="string" required>
+  The virtual card ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/transactions/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Withdraw from Card
+
+Move funds from a card back to your wallet:
+
+```
+POST /customer/virtual/cards/withdraw
+```
+
+<ParamField body="card_id" type="string" required>
+  The virtual card ID.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to withdraw from the card.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/withdraw' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "amount": 50
+  }'
+```
+</RequestExample>
+
+---
+
+## Terminate a Card
+
+Permanently cancel a card. This action is irreversible:
+
+```
+POST /customer/virtual/cards/terminate
+```
+
+<ParamField body="card_id" type="string" required>
+  The virtual card ID to terminate.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/terminate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5"
+  }'
+```
+</RequestExample>
+
+<Warning>
+  Card termination is permanent. Withdraw remaining funds before terminating.
+</Warning>

@@ -1,0 +1,54 @@
+---
+title: "Events"
+description: "Retrieve all webhook events sent by Yativo"
+---
+
+Returns a log of all events sent to your configured webhook endpoint.
+
+```
+GET /business/events/all
+```
+
+## Query Parameters
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/events/all?per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": "evt_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "event_type": "virtual_account.deposit",
+      "status": "delivered",
+      "webhook_url": "https://your-app.com/webhooks/yativo",
+      "created_at": "2026-04-01T10:00:00.000000Z"
+    },
+    {
+      "id": "evt_01HX9KZMB3F7VNQP8R2WDGT4E4",
+      "event_type": "customer.kyc.approved",
+      "status": "delivered",
+      "webhook_url": "https://your-app.com/webhooks/yativo",
+      "created_at": "2026-04-01T09:30:00.000000Z"
+    }
+  ],
+  "meta": {
+    "total": 58,
+    "per_page": 20,
+    "current_page": 1
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,292 @@
+---
+title: "Accept Payments"
+description: "Receive deposits and payments from customers via local payment methods and virtual accounts"
+---
+
+To receive money, create virtual accounts for your customers. Customers pay into their assigned virtual account using local payment rails (bank transfer, PIX, SPEI, SEPA, etc.). You receive a webhook notification when funds arrive.
+
+<Note>
+  Customers must have KYC approved (`is_va_approved: true`) before you can issue them a virtual account.
+</Note>
+
+---
+
+## Step 1: Get Supported Pay-in Countries
+
+Retrieve the list of countries where Yativo supports incoming payments:
+
+```
+GET /payment-methods/payin/countries
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/countries' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    { "country": "Brazil", "iso3": "BRA", "iso2": "BR" },
+    { "country": "Mexico", "iso3": "MEX", "iso2": "MX" },
+    { "country": "Chile", "iso3": "CHL", "iso2": "CL" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Step 2: Get Supported Currencies for a Country
+
+Once you know the destination country, retrieve which currencies are available for deposits:
+
+```
+GET /payment-methods/payin/currency?country={countryCode}
+```
+
+<ParamField query="country" type="string" required>
+  ISO 3166-1 alpha-2 country code (e.g. `BR`, `MX`, `CL`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/currency?country=BR' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Step 3: Create a Virtual Account for a Customer
+
+Issue a local bank account number to your customer for a specific currency:
+
+```
+POST /business/virtual-account/create
+```
+
+<ParamField body="customer_id" type="string" required>
+  The ID of the KYC-approved customer to issue the account to.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Currency for the virtual account. Supported values: `USDBASE`, `EURBASE`, `EURDE`, `MXN`, `MXNBASE`, `MXNUSD`, `BRL`.
+</ParamField>
+
+<RequestExample>
+```bash Brazil (PIX / BRL)
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "currency": "BRL"
+  }'
+```
+
+```bash Mexico (SPEI / MXN)
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "currency": "MXNBASE"
+  }'
+```
+
+```bash USD (ACH / Wire)
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "currency": "USDBASE"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Virtual account creation in progress",
+  "data": {
+    "account_id": "va_xxxxxx",
+    "account_number": "9900123456",
+    "account_type": "savings",
+    "currency": "BRL",
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "created_at": "2026-04-01T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Step 4: List Virtual Accounts
+
+Retrieve all virtual accounts, with optional filters:
+
+```
+GET /business/virtual-account
+```
+
+<ParamField query="currency" type="string">
+  Filter by currency code (e.g. `BRL`, `USD`).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by account status.
+</ParamField>
+
+<ParamField query="start_date" type="string">
+  From date (ISO 8601).
+</ParamField>
+
+<ParamField query="q" type="string">
+  Search query (account number, customer name, etc.).
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account?currency=BRL&per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Step 5: Get Virtual Account Transaction History
+
+Retrieve payment history for a specific virtual account:
+
+```
+POST /business/virtual-account/history/{account_number}
+```
+
+<ParamField path="account_number" type="string" required>
+  The account number (not the account ID).
+</ParamField>
+
+<ParamField query="customer_id" type="string">
+  Filter by customer.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by payment status.
+</ParamField>
+
+<ParamField query="start_date" type="string">
+  From date (ISO 8601).
+</ParamField>
+
+<ParamField query="end_date" type="string">
+  To date (ISO 8601).
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number.
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/history/9900123456?start_date=2026-04-01&end_date=2026-04-30' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": [
+    {
+      "amount": 1000,
+      "currency": "BRL",
+      "status": "completed",
+      "credited_amount": 950,
+      "transaction_id": "TXNMP2HK81BHJ",
+      "sender_name": "John Smith",
+      "account_number": "9900123456",
+      "transaction_fees": 50
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Alternative: Crypto Deposits
+
+To accept cryptocurrency deposits, retrieve your crypto wallet addresses:
+
+```
+GET /crypto/get-wallets
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/crypto/get-wallets' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Webhooks for Deposit Notifications
+
+Configure a webhook endpoint to be notified in real-time when a deposit arrives. See the [Webhooks](/yativo-fiat/webhooks) guide for setup.
+
+Key events for deposits:
+
+| Event | Triggered when |
+|-------|---------------|
+| `virtual_account.deposit` | Payment arrives at a customer's virtual account |
+| `deposit.created` | A new deposit is initiated |
+| `deposit.updated` | A deposit status changes (e.g. `pending` → `success`) |
+
+Example `virtual_account.deposit` payload:
+
+```json
+{
+  "event.type": "virtual_account.deposit",
+  "payload": {
+    "amount": 1000,
+    "currency": "BRL",
+    "status": "completed",
+    "credited_amount": 950,
+    "transaction_id": "TXNMP2HK81BHJ",
+    "customer": {
+      "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+      "customer_name": "Jane Doe"
+    }
+  }
+}
+```
+
+<Note>
+  Respond with a `2xx` status within 10 seconds to acknowledge receipt. Failed deliveries are retried automatically.
+</Note>

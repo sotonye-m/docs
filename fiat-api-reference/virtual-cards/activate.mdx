@@ -1,0 +1,42 @@
+---
+title: "Activate Customer for Virtual Cards"
+description: "Enroll a customer in the virtual card program"
+---
+
+Activates a customer for the virtual card program. This enrollment step is required before issuing any virtual cards to the customer.
+
+```
+POST /customer/virtual/cards/activate
+```
+
+## Request Body
+
+<ParamField body="customer_id" type="string" required>
+  The ID of the customer to activate for virtual cards.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/activate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Customer activated for virtual cards",
+  "data": {
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "card_program_active": true
+  }
+}
+```
+</ResponseExample>

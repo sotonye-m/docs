@@ -1,0 +1,119 @@
+---
+title: "Add Payment Method"
+description: "Add a payment method (bank account, wallet) to a beneficiary"
+---
+
+Add a payment method to a beneficiary. The `account_details` object fields vary by country and payment method — use `GET /beneficiary/form/show/{payment_method_id}` to retrieve the required fields.
+
+```
+POST /beneficiaries/payment-methods/
+```
+
+<Note>
+  Requires `Idempotency-Key` header.
+</Note>
+
+## Request body
+
+<ParamField body="beneficiary_id" type="string" required>
+  The UUID of the beneficiary to add the payment method to.
+</ParamField>
+
+<ParamField body="payment_method_id" type="number" required>
+  The ID of the payment method. Obtained from `GET /payment-methods/payout`.
+</ParamField>
+
+<ParamField body="account_details" type="object" required>
+  Key/value pairs of account details required for this payment method. Fields vary by country and payment method — retrieve the required fields from `GET /beneficiary/form/show/{payment_method_id}`.
+</ParamField>
+
+## Account details examples
+
+<Accordion title="Chile — Bank Transfer">
+```json
+{
+  "account_number": "12345678",
+  "bank_code": "001",
+  "account_type": "checking",
+  "rut": "12.345.678-9"
+}
+```
+</Accordion>
+
+<Accordion title="Mexico — SPEI">
+```json
+{
+  "clabe": "012345678901234567"
+}
+```
+</Accordion>
+
+<Accordion title="Brazil — PIX / Bank Transfer">
+```json
+{
+  "account_number": "12345-6",
+  "branch_number": "0001",
+  "bank_code": "341",
+  "account_type": "checking",
+  "cpf": "123.456.789-00"
+}
+```
+</Accordion>
+
+<RequestExample>
+```bash cURL — Chile Bank Transfer
+curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: add-pm-maria-chl-001' \
+  -d '{
+    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "payment_method_id": 42,
+    "account_details": {
+      "account_number": "12345678",
+      "bank_code": "001",
+      "account_type": "checking",
+      "rut": "12.345.678-9"
+    }
+  }'
+```
+
+```bash cURL — Mexico SPEI
+curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: add-pm-tech-mex-001' \
+  -d '{
+    "beneficiary_id": "ben-8b9c0d1e-2f3a-4b5c-6d7e-8f9a0b1c2d3e",
+    "payment_method_id": 15,
+    "account_details": {
+      "clabe": "012345678901234567"
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Payment method added successfully",
+  "data": {
+    "id": 101,
+    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "payment_method_id": 42,
+    "method_name": "Bank Transfer",
+    "currency": "CLP",
+    "country": "CHL",
+    "account_details": {
+      "account_number": "12345678",
+      "bank_code": "001",
+      "account_type": "checking",
+      "rut": "12.345.678-9"
+    },
+    "created_at": "2026-04-02T10:30:00.000000Z"
+  }
+}
+```
+</ResponseExample>

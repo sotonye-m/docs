@@ -1,0 +1,96 @@
+---
+title: "Get Wallet Balance"
+description: "Retrieve current balances across all currency wallets"
+---
+
+Returns the current balance for all wallets on your account. Use the `currency` query parameter to filter to a specific currency, or omit it to return all.
+
+```
+GET /wallet/balance
+```
+
+## Query Parameters
+
+<ParamField query="currency" type="string">
+  Optional. Filter by a specific currency code (e.g. `USD`, `BRL`, `CLP`).
+</ParamField>
+
+<RequestExample>
+```bash All balances
+curl -X GET 'https://api.yativo.com/api/v1/wallet/balance' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash Single currency
+curl -X GET 'https://api.yativo.com/api/v1/wallet/balance?currency=USD' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "name": "USD",
+      "slug": "usd",
+      "balance": "35585.00",
+      "currency": "USD",
+      "decimal_places": 2,
+      "meta": {
+        "logo": "https://cdn.yativo.com/usd.svg",
+        "symbol": "$",
+        "fullname": "US Dollar",
+        "precision": 2
+      }
+    },
+    {
+      "name": "BRL",
+      "slug": "brl",
+      "balance": "14200.00",
+      "currency": "BRL",
+      "decimal_places": 2,
+      "meta": {
+        "logo": "https://cdn.yativo.com/brl.svg",
+        "symbol": "R$",
+        "fullname": "Brazilian Real",
+        "precision": "2"
+      }
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Get Total Balance
+
+Returns the sum of all wallet balances converted to USD:
+
+```
+GET /wallet/balance/total
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/wallet/balance/total' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "total_balance": 37629.18
+  }
+}
+```
+</ResponseExample>

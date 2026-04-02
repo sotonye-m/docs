@@ -1,0 +1,233 @@
+---
+title: "Exchange Rates"
+description: "Get real-time exchange rates and generate locked quotes before executing payments"
+---
+
+Yativo provides two ways to get exchange rates:
+
+1. **Live rate** — `POST /exchange-rate` for a current rate with fee breakdown
+2. **Send money quote** — `POST /sendmoney/quote` which locks the rate for 5 minutes and returns a `quote_id` to use when executing the transfer
+
+Using a `quote_id` guarantees the displayed rate and fee through execution time.
+
+<Accordion title="Type Definitions">
+```typescript
+interface ExchangeRateRequest {
+  from_currency: string;   // source currency (ISO 4217)
+  to_currency: string;     // target currency (ISO 4217)
+  amount: number;          // amount in the source currency
+}
+
+interface Quote {
+  quote_id: string;        // valid for 5 minutes
+  from_currency: string;
+  to_currency: string;
+  rate: string;
+  amount: string;
+  payout_data: {
+    total_transaction_fee_in_from_currency: string;
+    total_transaction_fee_in_to_currency: string;
+    customer_sent_amount: string;
+    customer_receive_amount: string;
+    customer_total_amount_due: string;
+  };
+  calculator: {
+    fee_breakdown: {
+      float: { wallet_currency: number; payout_currency: number };
+      fixed: { wallet_currency: number; payout_currency: number };
+      total: number;
+    };
+    exchange_rate: number;
+    customer_receive_amount: { wallet_currency: number; payout_currency: number };
+  };
+}
+```
+</Accordion>
+
+---
+
+## Get Live Exchange Rate
+
+Returns the current rate and fee breakdown. Does **not** lock the rate.
+
+```
+POST /exchange-rate
+```
+
+<ParamField body="from_currency" type="string" required>
+  Source currency code (ISO 4217), e.g. `"USD"`, `"EUR"`.
+</ParamField>
+
+<ParamField body="to_currency" type="string" required>
+  Target currency code (ISO 4217), e.g. `"CLP"`, `"BRL"`, `"MXN"`.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount in the source currency to convert.
+</ParamField>
+
+<RequestExample>
+```bash USD → CLP
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "CLP",
+    "amount": 500
+  }'
+```
+
+```bash USD → BRL
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "BRL",
+    "amount": 1000
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "from_currency": "USD",
+    "to_currency": "CLP",
+    "rate": "950.00000000",
+    "amount": "500.00000000",
+    "payout_data": {
+      "total_transaction_fee_in_from_currency": "11.15000000",
+      "total_transaction_fee_in_to_currency": "10592.50",
+      "customer_sent_amount": "500.00",
+      "customer_receive_amount": "462925.00",
+      "customer_total_amount_due": "511.15"
+    },
+    "calculator": {
+      "fee_breakdown": {
+        "float": { "wallet_currency": 10.15, "payout_currency": 9642.50 },
+        "fixed": { "wallet_currency": 1, "payout_currency": 950 },
+        "total": 11.15
+      },
+      "exchange_rate": 950,
+      "customer_receive_amount": { "wallet_currency": 500, "payout_currency": 475000 }
+    }
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Get a Locked Quote for Send Money
+
+Lock a rate for 5 minutes when preparing a payment. The returned `quote_id` guarantees the rate when used in `POST /sendmoney`.
+
+```
+POST /sendmoney/quote
+```
+
+<ParamField body="from_currency" type="string" required>
+  Source currency code (e.g. `"USD"`).
+</ParamField>
+
+<ParamField body="to_currency" type="string" required>
+  Destination currency code (e.g. `"CLP"`, `"MXN"`, `"BRL"`).
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount in the source currency.
+</ParamField>
+
+<RequestExample>
+```bash USD → MXN
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "MXN",
+    "amount": 200
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd",
+    "from_currency": "USD",
+    "to_currency": "MXN",
+    "rate": "17.20",
+    "amount": "200.00",
+    "payout_data": {
+      "total_transaction_fee_in_from_currency": "8.00",
+      "customer_sent_amount": "200.00",
+      "customer_receive_amount": "3268.00",
+      "customer_total_amount_due": "208.00"
+    }
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Quotes are valid for **5 minutes**. Execute the payment with `POST /sendmoney` within this window using the `quote_id`.
+</Warning>
+
+---
+
+## Using the Quote ID
+
+Use the `quote_id` in a send money request to guarantee the locked rate:
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-payout-key' \
+  -d '{
+    "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd"
+  }'
+```
+
+Or use it in a wallet payout:
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-payout-key' \
+  -d '{
+    "debit_wallet": "USD",
+    "payment_method_id": 21,
+    "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd"
+  }'
+```
+
+---
+
+## Recommended Workflow
+
+```
+1. POST /sendmoney/quote                → get quote_id (5-min window)
+2. POST /sendmoney  (or /wallet/payout) → execute with quote_id
+3. GET /transaction/tracking/{id}       → monitor payment progress
+```
+
+Without a `quote_id`, the live market rate applies at execution time and may differ from the rate you quoted to your customer.
+
+---
+
+## Rate Limits
+
+Maximum **100 requests per minute** per API key.

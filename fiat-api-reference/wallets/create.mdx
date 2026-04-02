@@ -1,0 +1,41 @@
+---
+title: "Create Wallet"
+description: "Create a new currency wallet for your account"
+---
+
+Create a new wallet to hold a specific currency. Once created, the wallet appears in your balance list with a zero balance.
+
+```
+POST /wallet/create
+```
+
+## Request Body
+
+<ParamField body="currency" type="string" required>
+  The currency code for the new wallet (e.g. `COP`, `PEN`, `ARS`, `CLP`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/wallet/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{ "currency": "COP" }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Wallet created successfully",
+  "data": {
+    "currency": "COP",
+    "balance": "0.00",
+    "created_at": "2026-04-01T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

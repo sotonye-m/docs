@@ -1,0 +1,53 @@
+---
+title: "Create Virtual Card"
+description: "Issue a virtual prepaid card to an activated customer"
+---
+
+Creates a virtual card for a customer who has been activated for the virtual card program.
+
+```
+POST /customer/virtual/cards/create
+```
+
+## Request Body
+
+<ParamField body="customer_id" type="string" required>
+  The ID of the activated customer.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Card currency (e.g. `"USD"`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "currency": "USD"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Virtual card created successfully",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "card_number": "4111 **** **** 1234",
+    "expiry": "04/29",
+    "currency": "USD",
+    "balance": "0.00",
+    "status": "active",
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "created_at": "2026-04-01T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

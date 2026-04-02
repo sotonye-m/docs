@@ -1,0 +1,54 @@
+---
+title: "Freeze / Unfreeze Card"
+description: "Temporarily freeze or unfreeze a virtual card"
+---
+
+Freeze or unfreeze a virtual card. A frozen card declines all transactions until it is unfrozen.
+
+```
+PUT /customer/virtual/cards/update/{cardId}
+```
+
+## Path Parameters
+
+<ParamField path="cardId" type="string" required>
+  The virtual card ID.
+</ParamField>
+
+## Request Body
+
+<ParamField body="action" type="string" required>
+  `"freeze"` to block the card, or `"unfreeze"` to re-enable it.
+</ParamField>
+
+<RequestExample>
+```bash Freeze
+curl -X PUT 'https://api.yativo.com/api/v1/customer/virtual/cards/update/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{ "action": "freeze" }'
+```
+
+```bash Unfreeze
+curl -X PUT 'https://api.yativo.com/api/v1/customer/virtual/cards/update/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{ "action": "unfreeze" }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success (freeze)
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Card frozen successfully",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "frozen"
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,66 @@
+---
+title: "Get Payout Methods"
+description: "Retrieve available payout methods for a specific destination country"
+---
+
+Returns the list of payout methods (banks, mobile wallets, etc.) available for a given country. Use the returned `id` as `payment_method_id` when creating payouts or adding beneficiary payment methods.
+
+```
+GET /payment-methods/payout?country={iso3}
+```
+
+## Query parameters
+
+<ParamField query="country" type="string" required>
+  The destination country in ISO 3166-1 alpha-3 format (e.g. `CHL` for Chile, `MEX` for Mexico, `PER` for Peru).
+</ParamField>
+
+<RequestExample>
+```bash cURL — Chile
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout?country=CHL' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success — Chile
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": 42,
+      "method_name": "Bank Transfer",
+      "country": "CHL",
+      "currency": "CLP",
+      "base_currency": "USD"
+    },
+    {
+      "id": 43,
+      "method_name": "Khipu",
+      "country": "CHL",
+      "currency": "CLP",
+      "base_currency": "USD"
+    }
+  ]
+}
+```
+
+```json Success — Mexico
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": 15,
+      "method_name": "SPEI",
+      "country": "MEX",
+      "currency": "MXN",
+      "base_currency": "USD"
+    }
+  ]
+}
+```
+</ResponseExample>

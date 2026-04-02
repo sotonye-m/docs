@@ -1,0 +1,73 @@
+---
+title: "List Deposits"
+description: "Retrieve all deposit records for your account"
+---
+
+Returns a list of all incoming deposits received into your virtual accounts and wallets.
+
+```
+GET /deposits
+```
+
+## Query parameters
+
+<ParamField query="page" type="number">
+  Page number for pagination (default: 1).
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Number of records per page (default: 15).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by deposit status: `"pending"`, `"completed"`, `"failed"`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/deposits' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "deposit_id": "dep_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+      "amount": "500.00",
+      "currency": "USD",
+      "status": "completed",
+      "virtual_account_id": "va-001",
+      "reference": "REF-2026040201",
+      "sender_name": "John Sender",
+      "created_at": "2026-04-02T09:30:00.000000Z",
+      "completed_at": "2026-04-02T09:32:00.000000Z"
+    },
+    {
+      "deposit_id": "dep_b2c3d4e5-f6a7-8901-bcde-fg2345678901",
+      "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+      "amount": "1200.00",
+      "currency": "EUR",
+      "status": "completed",
+      "virtual_account_id": "va-002",
+      "reference": "REF-2026040202",
+      "sender_name": "Marie Dupont",
+      "created_at": "2026-04-01T14:00:00.000000Z",
+      "completed_at": "2026-04-01T14:05:00.000000Z"
+    }
+  ],
+  "pagination": {
+    "total": 28,
+    "per_page": 15,
+    "current_page": 1,
+    "last_page": 2
+  }
+}
+```
+</ResponseExample>

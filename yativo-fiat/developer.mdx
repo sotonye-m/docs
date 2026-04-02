@@ -1,0 +1,230 @@
+---
+title: "Developer Tools"
+description: "API keys, transaction PIN, 2FA, event logs, and request logs"
+---
+
+The Developer section of your Yativo dashboard provides all the tools you need to manage API access, audit usage, and secure your integration.
+
+---
+
+## API Keys
+
+Your API credentials consist of:
+
+- **Account ID** — found in Dashboard → Settings → Account
+- **App Secret** — generated in Dashboard → Developer → API Key
+
+### Generate App Secret
+
+A 4-digit transaction PIN is required before generating a new App Secret.
+
+```
+GET /generate-secret
+```
+
+<RequestExample>
+```bash cURL
+# First verify your PIN
+curl -X POST 'https://api.yativo.com/api/v1/pin/verify' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "pin": "1234" }'
+
+# Then generate a new secret
+curl -X GET 'https://api.yativo.com/api/v1/generate-secret' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "app_secret": "sk_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789"
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Generating a new secret invalidates your previous App Secret immediately. Update all systems that use the old secret before regenerating.
+</Warning>
+
+---
+
+## Transaction PIN
+
+The 4-digit transaction PIN is required for sensitive operations: generating a new App Secret, initiating large transfers, and certain administrative actions.
+
+### Set or Update PIN
+
+```
+POST /pin/update
+```
+
+<ParamField body="pin" type="string" required>
+  Your new 4-digit numeric PIN.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/pin/update' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "pin": "5678" }'
+```
+</RequestExample>
+
+### Verify PIN
+
+```
+POST /pin/verify
+```
+
+<ParamField body="pin" type="string" required>
+  Your current 4-digit PIN.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/pin/verify' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "pin": "5678" }'
+```
+</RequestExample>
+
+---
+
+## Two-Factor Authentication (2FA)
+
+Enable 2FA on your dashboard account for additional security (Dashboard → Developer → Security → 2FA).
+
+### Step 1: Generate a 2FA Secret
+
+```
+POST /generate-2fa-secret
+```
+
+Returns a secret to enter into your authenticator app (Google Authenticator, Authy, etc.):
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/generate-2fa-secret' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Idempotency-Key: unique-key-here'
+```
+
+### Step 2: Enable 2FA
+
+```
+POST /enable-2fa
+```
+
+After scanning the QR code in your authenticator app:
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/enable-2fa' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Idempotency-Key: unique-key-here'
+```
+
+### Step 3: Verify a 2FA Code
+
+```
+POST /verify-2fa
+```
+
+<ParamField body="otp" type="string" required>
+  The 6-digit OTP from your authenticator app.
+</ParamField>
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/verify-2fa' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "otp": "123456" }'
+```
+
+---
+
+## Webhooks
+
+Configure and manage webhook endpoints for real-time event notifications. See the [Webhooks](/yativo-fiat/webhooks) guide for full details.
+
+- `GET /business/webhook` — get current webhook configuration
+- `POST /business/webhook` — set webhook URL
+- `PUT /business/webhook` — update webhook URL
+
+---
+
+## API Request Logs
+
+Audit every API call made against your account:
+
+```
+GET /business/logs/all
+```
+
+<ParamField query="status" type="string">
+  Filter by HTTP status code (e.g. `200`, `400`, `500`).
+</ParamField>
+
+<ParamField query="method" type="string">
+  Filter by HTTP method: `GET`, `POST`, `PUT`, `DELETE`.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number.
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/logs/all?method=POST&status=400&per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Events
+
+View all events sent to your webhook endpoint and inspect individual event payloads.
+
+### List All Events
+
+```
+GET /business/events/all
+```
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/events/all?per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+### Get Single Event
+
+```
+GET /business/events/show/{id}
+```
+
+<ParamField path="id" type="string" required>
+  The event ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/events/show/evt_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>

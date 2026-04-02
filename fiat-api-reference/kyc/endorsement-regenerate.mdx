@@ -1,0 +1,58 @@
+---
+title: "Regenerate Endorsement Link"
+description: "Generate a fresh verification link for an expired service endorsement"
+---
+
+When a customer's endorsement verification link has expired, use this endpoint to generate a new one. Share the new link with the customer to complete verification for the specific payment service.
+
+```
+GET https://kyc.yativo.com/api/kyc/regenerate/{customerId}/{service}
+```
+
+## Path parameters
+
+<ParamField path="customerId" type="string" required>
+  The UUID of the customer.
+</ParamField>
+
+<ParamField path="service" type="string" required>
+  The service endorsement to regenerate. One of: `base`, `sepa`, `spei`, `brazil`, `eurde`, `usd_latam`, `eur_latam`, `virtual_card`, `asian`, `native`, `cobo_pobo`.
+</ParamField>
+
+## Service reference
+
+| Service | Description |
+|---|---|
+| `base` | USD base payments |
+| `sepa` | European SEPA transfers |
+| `spei` | Mexico SPEI transfers |
+| `brazil` | Brazilian payment rails |
+| `eurde` | EUR/DE virtual accounts |
+| `usd_latam` | USD Latin America transfers |
+| `eur_latam` | EUR Latin America transfers |
+| `virtual_card` | Virtual card issuance |
+| `asian` | Asian region payments |
+| `native` | Native payment rails |
+| `cobo_pobo` | Collection/Payment-on-behalf-of |
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://kyc.yativo.com/api/kyc/regenerate/c586066b-0f29-468f-b775-15483871a202/sepa' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "message": "Endorsement link regenerated successfully",
+  "data": {
+    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "service": "sepa",
+    "link": "https://kyc.yativo.com/endorsement/sepa/c586066b-0f29-468f-b775-15483871a202?token=abc123xyz",
+    "expires_at": "2026-04-03T10:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>

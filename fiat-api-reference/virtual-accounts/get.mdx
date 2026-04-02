@@ -1,0 +1,51 @@
+---
+title: "Get Virtual Account"
+description: "Retrieve details for a specific virtual account"
+---
+
+Returns full details for a specific virtual account by its ID.
+
+```
+GET /business/virtual-account/show/{id}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The virtual account ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/show/va_xxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "account_id": "va_xxxxxx",
+    "account_number": "9900123456",
+    "account_type": "savings",
+    "currency": "BRL",
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "status": "active",
+    "created_at": "2026-04-01T10:00:00Z"
+  }
+}
+```
+
+```json Not Found
+{
+  "status": "error",
+  "status_code": 404,
+  "message": "Virtual account not found",
+  "data": null
+}
+```
+</ResponseExample>

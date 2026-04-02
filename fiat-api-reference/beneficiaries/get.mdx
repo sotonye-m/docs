@@ -1,0 +1,56 @@
+---
+title: "Get Beneficiary"
+description: "Retrieve details for a specific beneficiary"
+---
+
+Returns full details for a specific beneficiary, including their saved payment methods.
+
+```
+GET /beneficiaries/{beneficiary_id}
+```
+
+## Path parameters
+
+<ParamField path="beneficiary_id" type="string" required>
+  The UUID of the beneficiary to retrieve.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/beneficiaries/ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "name": "Maria Gonzalez",
+    "email": "maria.gonzalez@example.com",
+    "type": "individual",
+    "country": "CHL",
+    "payment_methods": [
+      {
+        "id": 101,
+        "payment_method_id": 42,
+        "method_name": "Bank Transfer",
+        "currency": "CLP",
+        "account_details": {
+          "account_number": "12345678",
+          "bank_code": "001",
+          "account_type": "checking",
+          "rut": "12.345.678-9"
+        },
+        "created_at": "2026-04-02T10:30:00.000000Z"
+      }
+    ],
+    "created_at": "2026-04-02T10:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>

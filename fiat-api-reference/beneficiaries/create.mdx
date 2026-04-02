@@ -1,0 +1,65 @@
+---
+title: "Create Beneficiary"
+description: "Create a new beneficiary for sending payments"
+---
+
+Create a beneficiary record to store recipient information for future payouts. After creating a beneficiary, add their payment method details using the payment methods endpoint.
+
+```
+POST /beneficiaries
+```
+
+<Note>
+  Requires `Idempotency-Key` header.
+</Note>
+
+## Request body
+
+<ParamField body="name" type="string" required>
+  Full name of the beneficiary (individual) or legal business name.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Beneficiary's email address.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Beneficiary type: `"individual"` or `"business"`.
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Beneficiary's country in ISO 3166-1 alpha-3 format (e.g. `CHL`, `MEX`, `BRA`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/beneficiaries' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: create-beneficiary-maria-gonzalez-001' \
+  -d '{
+    "name": "Maria Gonzalez",
+    "email": "maria.gonzalez@example.com",
+    "type": "individual",
+    "country": "CHL"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Beneficiary created successfully",
+  "data": {
+    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "name": "Maria Gonzalez",
+    "email": "maria.gonzalez@example.com",
+    "type": "individual",
+    "country": "CHL",
+    "created_at": "2026-04-02T10:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,47 @@
+---
+title: "Delete Payment Method"
+description: "Remove a saved payment method from a beneficiary"
+---
+
+Permanently delete a saved payment method from a beneficiary. This action is irreversible.
+
+```
+DELETE /beneficiaries/payment-methods/delete/{id}
+```
+
+## Path parameters
+
+<ParamField path="id" type="number" required>
+  The numeric ID of the beneficiary payment method to delete.
+</ParamField>
+
+<Warning>
+  Deleting a payment method is permanent. If this method is referenced in any pending payouts, those payouts may be affected.
+</Warning>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/delete/101' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Payment method deleted successfully",
+  "data": null
+}
+```
+
+```json Not Found
+{
+  "status": "error",
+  "status_code": 404,
+  "message": "Payment method not found",
+  "data": null
+}
+```
+</ResponseExample>

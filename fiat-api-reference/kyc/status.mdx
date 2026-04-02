@@ -1,0 +1,106 @@
+---
+title: "Check KYC Status"
+description: "Retrieve the current KYC or KYB verification status for a customer"
+---
+
+Poll this endpoint after a KYC/KYB submission to check the current verification status. When `status` is `"approved"` and `is_va_approved` is `true`, the customer can use payment services.
+
+```
+GET /customer/kyc/{customer_id}
+```
+
+## Path parameters
+
+<ParamField path="customer_id" type="string" required>
+  The UUID of the customer whose verification status you want to check.
+</ParamField>
+
+## Status values
+
+| Status | Description |
+|---|---|
+| `not_started` | No KYC submission has been made yet |
+| `submitted` | Submission received, awaiting review |
+| `manual_review` | Under manual review by compliance team |
+| `approved` | Customer is fully verified |
+| `rejected` | Submission was rejected (see `kyc_rejection_reasons`) |
+| `under_review` | Additional review in progress |
+
+<Note>
+  When `is_va_approved` is `true`, the customer can use virtual accounts and payment services. Check both `status === "approved"` and `is_va_approved === true` before enabling payment features.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/kyc/c586066b-0f29-468f-b775-15483871a202' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Approved
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "first_name": "Alex",
+    "last_name": "Smith",
+    "status": "approved",
+    "kyc_rejection_reasons": [],
+    "kyc_requirements_due": [],
+    "bio_data": {
+      "customer_kyc_status": "approved",
+      "kyc_verified_date": "2026-04-02T12:00:00.000000Z"
+    },
+    "kyc_link": "https://kyc.yativo.com/individual/c586066b-0f29-468f-b775-15483871a202",
+    "is_va_approved": true
+  }
+}
+```
+
+```json Submitted
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "first_name": "Alex",
+    "last_name": "Smith",
+    "status": "submitted",
+    "kyc_rejection_reasons": [],
+    "kyc_requirements_due": [],
+    "bio_data": {
+      "customer_kyc_status": "submitted",
+      "kyc_verified_date": null
+    },
+    "kyc_link": "https://kyc.yativo.com/individual/c586066b-0f29-468f-b775-15483871a202",
+    "is_va_approved": false
+  }
+}
+```
+
+```json Rejected
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "first_name": "Alex",
+    "last_name": "Smith",
+    "status": "rejected",
+    "kyc_rejection_reasons": [
+      "Document image quality is too low",
+      "Selfie does not match ID photo"
+    ],
+    "kyc_requirements_due": ["selfie_image", "identifying_information"],
+    "bio_data": {
+      "customer_kyc_status": "rejected",
+      "kyc_verified_date": null
+    },
+    "kyc_link": "https://kyc.yativo.com/individual/c586066b-0f29-468f-b775-15483871a202",
+    "is_va_approved": false
+  }
+}
+```
+</ResponseExample>

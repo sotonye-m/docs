@@ -1,0 +1,83 @@
+---
+title: "Create Customer"
+description: "Create a new customer profile for an individual or business"
+---
+
+Create a customer record before initiating any KYC verification or payments for that customer.
+
+```
+POST /customer
+```
+
+<Note>
+  Requires `Idempotency-Key` header.
+</Note>
+
+## Request body
+
+<ParamField body="customer_name" type="string" required>
+  Full name of the customer (individual) or legal business name (business).
+</ParamField>
+
+<ParamField body="customer_email" type="string" required>
+  Customer's email address. Must be unique per account.
+</ParamField>
+
+<ParamField body="customer_phone" type="string" required>
+  Customer's phone number in E.164 format (e.g. `+15551234567`).
+</ParamField>
+
+<ParamField body="customer_country" type="string" required>
+  Customer's country of residence in ISO 3166-1 alpha-3 format (e.g. `USA`, `BRA`, `MEX`).
+</ParamField>
+
+<ParamField body="customer_type" type="string">
+  Customer type: `"individual"` or `"business"`. Defaults to `"individual"`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: create-customer-alex-smith-001' \
+  -d '{
+    "customer_name": "Alex Smith",
+    "customer_email": "alex.smith@example.com",
+    "customer_phone": "+15551234567",
+    "customer_country": "USA",
+    "customer_type": "individual"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Customer created successfully",
+  "data": {
+    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_name": "Alex Smith",
+    "customer_email": "alex.smith@example.com",
+    "customer_phone": "+15551234567",
+    "customer_country": "USA",
+    "customer_type": "individual",
+    "customer_status": "active",
+    "created_at": "2026-04-02T10:00:00.000000Z"
+  }
+}
+```
+
+```json Validation Error
+{
+  "status": "error",
+  "status_code": 422,
+  "message": "Validation failed",
+  "errors": {
+    "customer_email": ["The customer email has already been taken."]
+  }
+}
+```
+</ResponseExample>

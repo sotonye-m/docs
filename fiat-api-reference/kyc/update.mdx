@@ -1,0 +1,66 @@
+---
+title: "Update KYC Submission"
+description: "Update an existing KYC or KYB submission with corrected or additional information"
+---
+
+Update a previously submitted KYC or KYB record. Use this endpoint when a customer needs to correct information or provide additional documents after a rejection.
+
+```
+PUT /customer/kyc/update
+```
+
+<Note>
+  Requires `Idempotency-Key` header. Uses the same schema as the initial submission — include `customer_id` and `type`, plus any fields you wish to update.
+</Note>
+
+## Request body
+
+<ParamField body="customer_id" type="string" required>
+  The UUID of the customer whose KYC you are updating.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  `"individual"` or `"business"` — must match the original submission type.
+</ParamField>
+
+All other fields from the original submission schema can be included to update their values. Only include fields you want to change.
+
+<RequestExample>
+```bash cURL — Update individual KYC
+curl -X PUT 'https://api.yativo.com/api/v1/customer/kyc/update' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: kyc-update-alex-smith-2026-002' \
+  -d '{
+    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "type": "individual",
+    "selfie_image": "https://example.com/docs/selfie-v2.jpg",
+    "identifying_information": [
+      {
+        "type": "passport",
+        "issuing_country": "US",
+        "number": "P00012345",
+        "date_issued": "2020-01-01",
+        "expiration_date": "2030-01-01",
+        "image_front_file": "https://example.com/docs/front-highres.jpg"
+      }
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "KYC submission updated successfully",
+  "data": {
+    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "type": "individual",
+    "status": "submitted",
+    "updated_at": "2026-04-02T15:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>

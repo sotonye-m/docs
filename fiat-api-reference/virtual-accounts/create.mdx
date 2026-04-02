@@ -1,0 +1,66 @@
+---
+title: "Create Virtual Account"
+description: "Issue a virtual bank account to a customer to receive funds"
+---
+
+Create a virtual bank account for a customer. The customer must have KYC approved (`is_va_approved: true`) before a virtual account can be issued.
+
+```
+POST /business/virtual-account/create
+```
+
+<Note>
+  Requires an `Idempotency-Key` header. Each customer can hold one virtual account per currency.
+</Note>
+
+## Request Body
+
+<ParamField body="customer_id" type="string" required>
+  The UUID of the KYC-approved customer.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Currency for the virtual account. Supported values: `USDBASE`, `EURBASE`, `EURDE`, `MXN`, `MXNBASE`, `MXNUSD`, `BRL`.
+</ParamField>
+
+<RequestExample>
+```bash Brazil (PIX / BRL)
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "currency": "BRL"
+  }'
+```
+
+```bash USD (ACH)
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "currency": "USDBASE"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Virtual account creation in progress",
+  "data": {
+    "account_id": "va_xxxxxx",
+    "account_number": "9900123456",
+    "account_type": "savings",
+    "currency": "BRL",
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "created_at": "2026-04-01T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

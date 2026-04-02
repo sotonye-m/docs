@@ -1,0 +1,53 @@
+---
+title: "Card Transactions"
+description: "Retrieve transaction history for a virtual card"
+---
+
+Returns all transactions made with a specific virtual card.
+
+```
+GET /customer/virtual/cards/transactions/{cardId}
+```
+
+## Path Parameters
+
+<ParamField path="cardId" type="string" required>
+  The virtual card ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/transactions/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "amount": "29.99",
+      "currency": "USD",
+      "merchant_name": "Amazon",
+      "merchant_category": "Online Retail",
+      "status": "completed",
+      "created_at": "2026-04-01T14:22:00Z"
+    },
+    {
+      "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E4",
+      "amount": "12.50",
+      "currency": "USD",
+      "merchant_name": "Spotify",
+      "merchant_category": "Digital Services",
+      "status": "completed",
+      "created_at": "2026-04-01T08:00:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>

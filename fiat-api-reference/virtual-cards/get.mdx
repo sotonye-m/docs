@@ -1,0 +1,44 @@
+---
+title: "Get Virtual Card"
+description: "Retrieve details for a specific virtual card"
+---
+
+Returns full details for a specific virtual card by its ID.
+
+```
+GET /customer/virtual/cards/get/{cardId}
+```
+
+## Path Parameters
+
+<ParamField path="cardId" type="string" required>
+  The virtual card ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/get/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "card_number": "4111111111111234",
+    "expiry": "04/29",
+    "cvv": "123",
+    "currency": "USD",
+    "balance": "150.00",
+    "status": "active",
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "created_at": "2026-04-01T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

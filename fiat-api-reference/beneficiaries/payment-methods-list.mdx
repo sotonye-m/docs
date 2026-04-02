@@ -1,0 +1,57 @@
+---
+title: "List Payment Methods"
+description: "Retrieve all saved payment methods across all beneficiaries"
+---
+
+Returns all payment methods saved for all beneficiaries in your account.
+
+```
+GET /beneficiaries/payment-methods/all
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/all' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": 101,
+      "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+      "beneficiary_name": "Maria Gonzalez",
+      "payment_method_id": 42,
+      "method_name": "Bank Transfer",
+      "currency": "CLP",
+      "country": "CHL",
+      "account_details": {
+        "account_number": "12345678",
+        "bank_code": "001",
+        "account_type": "checking"
+      },
+      "created_at": "2026-04-02T10:30:00.000000Z"
+    },
+    {
+      "id": 102,
+      "beneficiary_id": "ben-8b9c0d1e-2f3a-4b5c-6d7e-8f9a0b1c2d3e",
+      "beneficiary_name": "Tech Solutions SA",
+      "payment_method_id": 15,
+      "method_name": "SPEI",
+      "currency": "MXN",
+      "country": "MEX",
+      "account_details": {
+        "clabe": "012345678901234567"
+      },
+      "created_at": "2026-03-20T09:30:00.000000Z"
+    }
+  ]
+}
+```
+</ResponseExample>

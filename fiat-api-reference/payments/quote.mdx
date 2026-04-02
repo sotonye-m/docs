@@ -1,0 +1,56 @@
+---
+title: "Get Exchange Rate / Quote"
+description: "Get a locked exchange rate quote for currency conversion before initiating a payout"
+---
+
+Get a real-time exchange rate quote for converting between currencies. The returned `quote_id` locks the rate for **5 minutes** and can be used in the payout endpoint to guarantee the shown rate.
+
+```
+GET /exchange-rate
+```
+
+## Query parameters
+
+<ParamField query="from" type="string" required>
+  Source currency code (e.g. `USD`, `EUR`).
+</ParamField>
+
+<ParamField query="to" type="string" required>
+  Destination currency code (e.g. `CLP`, `MXN`, `BRL`).
+</ParamField>
+
+<ParamField query="amount" type="number" required>
+  Amount in the source currency to convert.
+</ParamField>
+
+<Note>
+  Quotes are locked for 5 minutes. After expiry, request a new quote before initiating the payout. Using a `quote_id` in a payout guarantees the exchange rate shown — without it, the live rate at execution time is used.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/exchange-rate?from=USD&to=CLP&amount=100' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "quote_id": "qte_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "from_currency": "USD",
+    "to_currency": "CLP",
+    "from_amount": 100.00,
+    "to_amount": 95240.00,
+    "exchange_rate": 952.40,
+    "fee": 2.50,
+    "fee_currency": "USD",
+    "expires_at": "2026-04-02T10:05:00.000000Z"
+  }
+}
+```
+</ResponseExample>

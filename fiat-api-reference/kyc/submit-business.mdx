@@ -1,0 +1,277 @@
+---
+title: "Submit Business KYB"
+description: "Submit identity and compliance verification data for a business customer"
+---
+
+Submit KYB (Know Your Business) data for a business customer. The customer must already exist with `customer_type: "business"`.
+
+```
+POST https://kyc.yativo.com/api/business-kyc/submit
+```
+
+<Note>
+  This endpoint is on the KYC platform (`https://kyc.yativo.com`). Requires `Idempotency-Key` header.
+</Note>
+
+## Business identity fields
+
+<ParamField body="customer_id" type="string" required>
+  The customer UUID from `POST /customer`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Must be `"business"`.
+</ParamField>
+
+<ParamField body="business_legal_name" type="string" required>
+  The official registered legal name of the business.
+</ParamField>
+
+<ParamField body="business_description" type="string" required>
+  Description of what the business does.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Business contact email address.
+</ParamField>
+
+<ParamField body="business_type" type="string" required>
+  One of: `"cooperative"`, `"corporation"`, `"llc"`, `"partnership"`, `"sole_prop"`, `"trust"`, `"other"`.
+</ParamField>
+
+<ParamField body="registration_number" type="string" required>
+  Official government registration or incorporation number.
+</ParamField>
+
+<ParamField body="incorporation_date" type="string" required>
+  Date of incorporation in ISO 8601 format (e.g. `"2015-06-15"`).
+</ParamField>
+
+<ParamField body="business_trade_name" type="string">
+  Trade name or DBA (optional).
+</ParamField>
+
+<ParamField body="tax_id" type="string">
+  Business tax identification number (optional).
+</ParamField>
+
+<ParamField body="statement_descriptor" type="string">
+  How the business name appears on customer statements (optional).
+</ParamField>
+
+<ParamField body="phone_calling_code" type="string">
+  Country calling code for business phone (optional).
+</ParamField>
+
+<ParamField body="phone_number" type="string">
+  Business phone number (optional).
+</ParamField>
+
+<ParamField body="business_industry" type="string">
+  Industry category (optional).
+</ParamField>
+
+<ParamField body="primary_website" type="string">
+  Business website URL (optional).
+</ParamField>
+
+<ParamField body="is_dao" type="boolean">
+  Whether the business is a DAO (optional).
+</ParamField>
+
+<ParamField body="has_material_intermediary_ownership" type="boolean">
+  Whether there is material intermediary ownership (optional).
+</ParamField>
+
+## Business addresses
+
+<ParamField body="registered_address" type="object" required>
+  The official registered address of the business.
+  <Expandable title="registered_address fields">
+    <ParamField body="street_line_1" type="string" required>Street address line 1.</ParamField>
+    <ParamField body="street_line_2" type="string">Street address line 2 (optional).</ParamField>
+    <ParamField body="city" type="string" required>City.</ParamField>
+    <ParamField body="state" type="string" required>State or province.</ParamField>
+    <ParamField body="postal_code" type="string" required>Postal or ZIP code.</ParamField>
+    <ParamField body="country" type="string" required>ISO 3166-1 alpha-2 country code.</ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="physical_address" type="object" required>
+  The physical operating address of the business.
+  <Expandable title="physical_address fields">
+    <ParamField body="street_line_1" type="string" required>Street address line 1.</ParamField>
+    <ParamField body="street_line_2" type="string">Street address line 2 (optional).</ParamField>
+    <ParamField body="city" type="string" required>City.</ParamField>
+    <ParamField body="state" type="string" required>State or province.</ParamField>
+    <ParamField body="postal_code" type="string" required>Postal or ZIP code.</ParamField>
+    <ParamField body="country" type="string" required>ISO 3166-1 alpha-2 country code.</ParamField>
+    <ParamField body="proof_of_address_file" type="string" required>URL or base64-encoded proof of address document.</ParamField>
+  </Expandable>
+</ParamField>
+
+## Associated persons
+
+<ParamField body="associated_persons" type="array" required>
+  Minimum 1 associated person (beneficial owner, director, or signer).
+  <Expandable title="associated_persons item fields">
+    <ParamField body="first_name" type="string" required>Person's first name.</ParamField>
+    <ParamField body="last_name" type="string" required>Person's last name.</ParamField>
+    <ParamField body="birth_date" type="string" required>Date of birth in `YYYY-MM-DD` format.</ParamField>
+    <ParamField body="nationality" type="string" required>ISO 3166-1 alpha-2 country code.</ParamField>
+    <ParamField body="email" type="string" required>Person's email address.</ParamField>
+    <ParamField body="title" type="string" required>Job title, e.g. `"CEO"`, `"Director"`.</ParamField>
+    <ParamField body="ownership_percentage" type="number" required>Percentage of ownership (0–100).</ParamField>
+    <ParamField body="residential_address" type="object" required>Person's residential address.</ParamField>
+    <ParamField body="identifying_information" type="array">Government-issued ID (optional).</ParamField>
+    <ParamField body="has_ownership" type="boolean" required>Whether this person has ownership.</ParamField>
+    <ParamField body="has_control" type="boolean" required>Whether this person has control.</ParamField>
+    <ParamField body="is_signer" type="boolean" required>Whether this person is an authorized signer.</ParamField>
+    <ParamField body="is_director" type="boolean" required>Whether this person is a director.</ParamField>
+  </Expandable>
+</ParamField>
+
+## Financial information
+
+<ParamField body="account_purpose" type="string" required>
+  Purpose of the business account.
+</ParamField>
+
+<ParamField body="source_of_funds" type="string" required>
+  Source of business funds.
+</ParamField>
+
+<ParamField body="estimated_annual_revenue_usd" type="string" required>
+  Estimated annual revenue range, e.g. `"LessThan100K"`, `"100KTo1M"`, `"MoreThan1M"`.
+</ParamField>
+
+<ParamField body="expected_monthly_payments_usd" type="string" required>
+  Expected monthly payment volume: `"LessThan5K"`, `"5KTo50K"`, or `"MoreThan50K"`.
+</ParamField>
+
+<ParamField body="high_risk_activities" type="array" required>
+  Array of high-risk activity strings the business is involved in (can be empty).
+</ParamField>
+
+<ParamField body="high_risk_activities_explanation" type="string">
+  Explanation of any high-risk activities listed above.
+</ParamField>
+
+## Business documents
+
+<ParamField body="documents" type="array" required>
+  Minimum 1 business document required.
+  <Expandable title="documents item fields">
+    <ParamField body="purpose" type="string" required>One of: `"business_registration"`, `"tax_documents"`, `"compliance_documents"`, `"financial_statements"`.</ParamField>
+    <ParamField body="description" type="string" required>Description of the document.</ParamField>
+    <ParamField body="file" type="string" required>URL or base64-encoded document file.</ParamField>
+  </Expandable>
+</ParamField>
+
+## Optional fields
+
+<ParamField body="identifying_information" type="array">
+  Business-level identifying documents (optional).
+</ParamField>
+
+<ParamField body="extra_documents" type="array">
+  Additional supporting documents (optional).
+</ParamField>
+
+<ParamField body="extra_business_info" type="object">
+  Additional business information (optional).
+</ParamField>
+
+<ParamField body="collections_data" type="object">
+  Collections configuration data (optional).
+</ParamField>
+
+<ParamField body="payouts_data" type="object">
+  Payouts configuration data (optional).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: kyb-acme-corp-2026' \
+  -d '{
+    "customer_id": "d47f8a2b-1c3e-4f5a-9b8c-7d6e5f4a3b2c",
+    "type": "business",
+    "business_legal_name": "Acme Corporation LLC",
+    "business_description": "International payment processing services",
+    "email": "compliance@acme.com",
+    "business_type": "llc",
+    "registration_number": "LLC-2015-987654",
+    "incorporation_date": "2015-06-15",
+    "tax_id": "47-1234567",
+    "primary_website": "https://acme.com",
+    "registered_address": {
+      "street_line_1": "100 Corporate Blvd",
+      "city": "Miami",
+      "state": "FL",
+      "postal_code": "33101",
+      "country": "US"
+    },
+    "physical_address": {
+      "street_line_1": "100 Corporate Blvd",
+      "city": "Miami",
+      "state": "FL",
+      "postal_code": "33101",
+      "country": "US",
+      "proof_of_address_file": "https://example.com/docs/office-lease.pdf"
+    },
+    "associated_persons": [
+      {
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "birth_date": "1975-03-20",
+        "nationality": "US",
+        "email": "jane.doe@acme.com",
+        "title": "CEO",
+        "ownership_percentage": 51,
+        "residential_address": {
+          "street_line_1": "456 Oak Avenue",
+          "city": "Miami",
+          "state": "FL",
+          "postal_code": "33102",
+          "country": "US"
+        },
+        "has_ownership": true,
+        "has_control": true,
+        "is_signer": true,
+        "is_director": true
+      }
+    ],
+    "account_purpose": "BusinessPayments",
+    "source_of_funds": "Business",
+    "estimated_annual_revenue_usd": "100KTo1M",
+    "expected_monthly_payments_usd": "5KTo50K",
+    "high_risk_activities": [],
+    "documents": [
+      {
+        "purpose": "business_registration",
+        "description": "Articles of Incorporation",
+        "file": "https://example.com/docs/articles.pdf"
+      }
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "message": "Business KYC submission received successfully",
+  "business_data": {
+    "customer_id": "d47f8a2b-1c3e-4f5a-9b8c-7d6e5f4a3b2c",
+    "type": "business",
+    "business_legal_name": "Acme Corporation LLC",
+    "status": "in_progress",
+    "created_at": "2026-04-02T10:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>

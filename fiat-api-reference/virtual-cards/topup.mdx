@@ -1,0 +1,54 @@
+---
+title: "Top Up Card"
+description: "Fund a virtual card from your wallet balance"
+---
+
+Adds funds to a virtual card by debiting from your wallet balance.
+
+```
+POST /customer/virtual/cards/topup
+```
+
+## Request Body
+
+<ParamField body="card_id" type="string" required>
+  The virtual card ID to fund.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to add to the card.
+</ParamField>
+
+<ParamField body="debit_wallet" type="string" required>
+  The wallet currency to debit from (e.g. `"USD"`).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/topup' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "amount": 100,
+    "debit_wallet": "USD"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Card topped up successfully",
+  "data": {
+    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "amount_added": "100.00",
+    "new_balance": "250.00",
+    "currency": "USD"
+  }
+}
+```
+</ResponseExample>

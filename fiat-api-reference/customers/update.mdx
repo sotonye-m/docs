@@ -1,0 +1,70 @@
+---
+title: "Update Customer"
+description: "Update an existing customer's profile information"
+---
+
+Update mutable fields on a customer record. Only include the fields you want to change.
+
+```
+PUT /customer/customer/{customer_id}
+```
+
+<Note>
+  Requires `Idempotency-Key` header.
+</Note>
+
+## Path parameters
+
+<ParamField path="customer_id" type="string" required>
+  The UUID of the customer to update.
+</ParamField>
+
+## Request body
+
+<ParamField body="customer_name" type="string">
+  Updated customer name.
+</ParamField>
+
+<ParamField body="customer_email" type="string">
+  Updated email address.
+</ParamField>
+
+<ParamField body="customer_phone" type="string">
+  Updated phone number in E.164 format.
+</ParamField>
+
+<ParamField body="customer_country" type="string">
+  Updated country in ISO 3166-1 alpha-3 format.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://api.yativo.com/api/v1/customer/customer/c586066b-0f29-468f-b775-15483871a202' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: update-customer-alex-smith-002' \
+  -d '{
+    "customer_phone": "+15559876543"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Customer updated successfully",
+  "data": {
+    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_name": "Alex Smith",
+    "customer_email": "alex.smith@example.com",
+    "customer_phone": "+15559876543",
+    "customer_country": "USA",
+    "customer_type": "individual",
+    "customer_status": "active",
+    "updated_at": "2026-04-02T14:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>

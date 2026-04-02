@@ -1,0 +1,43 @@
+---
+title: "Delete Webhook"
+description: "Remove a registered webhook endpoint"
+---
+
+Delete a webhook endpoint. Yativo will stop sending events to this URL immediately.
+
+```
+DELETE /webhook/{webhook_id}
+```
+
+## Path parameters
+
+<ParamField path="webhook_id" type="string" required>
+  The ID of the webhook to delete.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://api.yativo.com/api/v1/webhook/wh_a1b2c3d4-e5f6-7890-abcd-ef1234567890' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Webhook deleted successfully",
+  "data": null
+}
+```
+
+```json Not Found
+{
+  "status": "error",
+  "status_code": 404,
+  "message": "Webhook not found",
+  "data": null
+}
+```
+</ResponseExample>

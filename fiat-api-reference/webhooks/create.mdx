@@ -1,0 +1,61 @@
+---
+title: "Create / Update Webhook"
+description: "Set or update your webhook endpoint to receive real-time event notifications"
+---
+
+Set a URL to receive webhook notifications for events in your Yativo account. Yativo sends a POST request to your endpoint whenever a matching event occurs.
+
+```
+POST /business/webhook
+```
+
+<Note>
+  Requires an `Idempotency-Key` header. You can also update an existing webhook URL using `PUT /business/webhook`.
+</Note>
+
+## Request Body
+
+<ParamField body="url" type="string" required>
+  The HTTPS URL of your webhook endpoint. Must be publicly accessible.
+</ParamField>
+
+## Supported Events
+
+| Event | Description |
+|-------|-------------|
+| `deposit.created` | A deposit was initiated |
+| `deposit.updated` | A deposit status changed |
+| `deposit.completed` | A deposit was received and credited |
+| `payout.updated` | A payout status changed |
+| `payout.completed` | A payout was delivered successfully |
+| `customer.created` | A new customer was created |
+| `customer.kyc.approved` | Customer KYC was approved |
+| `customer.kyc.rejected` | Customer KYC was rejected |
+| `virtual_account.deposit` | A payment arrived at a virtual account |
+| `virtual_account.funded` | A virtual account received settled funds |
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/webhook' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "url": "https://your-app.com/webhooks/yativo"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Webhook configured successfully",
+  "data": {
+    "url": "https://your-app.com/webhooks/yativo",
+    "created_at": "2026-04-01T10:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,77 @@
+---
+title: "Virtual Account Transaction History"
+description: "Retrieve payment history for a specific virtual account"
+---
+
+Returns all payments received into a specific virtual account, with filtering and pagination.
+
+```
+POST /business/virtual-account/history/{account_number}
+```
+
+## Path Parameters
+
+<ParamField path="account_number" type="string" required>
+  The account number (not the account ID).
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="customer_id" type="string">
+  Filter by customer ID.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by payment status.
+</ParamField>
+
+<ParamField query="start_date" type="string">
+  From date (ISO 8601), e.g. `2026-04-01`.
+</ParamField>
+
+<ParamField query="end_date" type="string">
+  To date (ISO 8601), e.g. `2026-04-30`.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number.
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/history/9900123456?start_date=2026-04-01&end_date=2026-04-30&per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "amount": 1000,
+      "currency": "BRL",
+      "status": "completed",
+      "credited_amount": 950,
+      "transaction_id": "TXNMP2HK81BHJ",
+      "sender_name": "John Smith",
+      "account_number": "9900123456",
+      "transaction_fees": 50,
+      "created_at": "2026-04-01T10:00:00Z"
+    }
+  ],
+  "pagination": {
+    "total": 12,
+    "per_page": 20,
+    "current_page": 1
+  }
+}
+```
+</ResponseExample>

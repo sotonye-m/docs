@@ -1,0 +1,42 @@
+---
+title: "Get Occupation Codes"
+description: "Retrieve the list of valid occupation codes for KYC submissions"
+---
+
+Returns all valid occupation codes to use in the `most_recent_occupation_code` field of individual KYC submissions.
+
+```
+GET /auth/occupation-codes
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/auth/occupation-codes' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    { "display_name": "Accountant and auditor", "code": "132011" },
+    { "display_name": "Actor", "code": "272011" },
+    { "display_name": "Actuary", "code": "152011" },
+    { "display_name": "Administrative services manager", "code": "113011" },
+    { "display_name": "Advertising and promotions manager", "code": "112011" },
+    { "display_name": "Aerospace engineer", "code": "172011" },
+    { "display_name": "Agricultural engineer", "code": "172021" },
+    { "display_name": "Air traffic controller", "code": "532021" },
+    { "display_name": "Architect", "code": "171011" },
+    { "display_name": "Financial manager", "code": "113031" },
+    { "display_name": "Software developer", "code": "151252" },
+    { "display_name": "Physician", "code": "291062" },
+    { "display_name": "Teacher", "code": "251099" }
+  ]
+}
+```
+</ResponseExample>

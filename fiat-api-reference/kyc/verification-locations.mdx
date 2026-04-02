@@ -1,0 +1,43 @@
+---
+title: "Get Verification Locations"
+description: "Retrieve the list of supported countries for customer registration and verification"
+---
+
+Returns all countries where Yativo supports customer registration and KYC/KYB verification. Use this to validate customer country selections in your onboarding flow.
+
+```
+GET /auth/verification-locations
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/auth/verification-locations' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    { "country": "United States", "code": "US" },
+    { "country": "Brazil", "code": "BR" },
+    { "country": "Mexico", "code": "MX" },
+    { "country": "Colombia", "code": "CO" },
+    { "country": "Chile", "code": "CL" },
+    { "country": "Peru", "code": "PE" },
+    { "country": "Argentina", "code": "AR" },
+    { "country": "United Kingdom", "code": "GB" },
+    { "country": "Germany", "code": "DE" },
+    { "country": "France", "code": "FR" },
+    { "country": "Spain", "code": "ES" },
+    { "country": "Canada", "code": "CA" },
+    { "country": "Nigeria", "code": "NG" },
+    { "country": "Ghana", "code": "GH" }
+  ]
+}
+```
+</ResponseExample>

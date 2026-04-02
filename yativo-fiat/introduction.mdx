@@ -1,0 +1,103 @@
+---
+title: "Welcome to Yativo Fiat"
+description: "Cross-border payments, virtual accounts, and financial infrastructure for businesses"
+---
+
+Yativo Fiat is a cross-border payment infrastructure platform for businesses. Send money globally, receive deposits via local payment rails, issue virtual accounts to your customers, manage KYC/KYB compliance, and access multiple payment networks — all through a single unified API.
+
+---
+
+## What You Can Build
+
+<CardGroup cols={2}>
+  <Card title="Accept Payments" icon="arrow-down-to-line" href="/yativo-fiat/accept-payments">
+    Issue virtual accounts so customers can pay via local bank transfer, PIX, SPEI, SEPA, and more. Receive webhook notifications when funds arrive.
+  </Card>
+  <Card title="Send Money" icon="paper-plane" href="/yativo-fiat/send-money">
+    Send cross-border payments to beneficiaries via local bank transfers, SPEI, ACH, SEPA, and LATAM rails. Lock exchange rates with quotes before executing.
+  </Card>
+  <Card title="Virtual Accounts" icon="building-columns" href="/yativo-fiat/virtual-accounts">
+    Issue dedicated local bank account numbers per customer for automatic payment matching and reconciliation.
+  </Card>
+  <Card title="Virtual Cards" icon="credit-card" href="/yativo-fiat/virtual-cards">
+    Issue prepaid virtual Visa/Mastercard cards to your customers for online spending, funded from your wallet balance.
+  </Card>
+  <Card title="Wallets" icon="wallet" href="/yativo-fiat/wallets">
+    Manage multi-currency wallet balances. Hold USD, EUR, BRL, CLP, MXN, COP, PEN, ARS and more.
+  </Card>
+  <Card title="Customers & KYC" icon="user-check" href="/yativo-fiat/customers">
+    Create and manage customer profiles. Submit KYC/KYB for compliance and unlock features like virtual accounts and virtual cards.
+  </Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+<Steps>
+  <Step title="Create your account">
+    Sign up at [app.yativo.com](https://app.yativo.com). Authentication is passwordless — enter your email, receive a 5-digit OTP, and you're in.
+  </Step>
+  <Step title="Complete Business KYC">
+    Submit your company details, upload required documents, and verify your UBOs (Ultimate Beneficial Owners). This unlocks full API access.
+  </Step>
+  <Step title="Get your API credentials">
+    Go to **Developer → API Key** in your dashboard. Generate your App Secret (PIN verification required). Note your Account ID.
+  </Step>
+  <Step title="Generate a Bearer token">
+    Call `POST /auth/login` with your Account ID and App Secret to get a Bearer token (valid 10 minutes). Use this token in all API requests.
+  </Step>
+  <Step title="Start building">
+    Create customers, issue virtual accounts, send money, and receive payments — all via the API.
+  </Step>
+</Steps>
+
+---
+
+## Supported Regions & Payment Rails
+
+| Region | Countries | Rails |
+|--------|-----------|-------|
+| Latin America | Brazil | PIX |
+| Latin America | Mexico | SPEI |
+| Latin America | Chile, Peru, Colombia, Argentina | Local bank transfer |
+| North America | United States | ACH, Wire |
+| Europe | Eurozone | SEPA Credit Transfer |
+
+Contact your integration team for additional corridors not listed here.
+
+---
+
+## Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Customers** | End users your business serves. Must pass KYC before receiving virtual accounts or cards. |
+| **Virtual Accounts** | Local bank account numbers assigned to a customer for receiving funds on specific rails. |
+| **Beneficiaries** | Recipients for outbound payments. Save their bank details for reuse. |
+| **Wallets** | Your multi-currency balance pools. Fund payouts from your wallet. |
+| **Quotes** | Rate-locked exchange calculations valid for 5 minutes. Use quote IDs when executing payments. |
+| **Webhooks** | Real-time event notifications sent to your server (e.g. deposit completed, KYC approved). |
+
+---
+
+## Environments
+
+| Environment | URL |
+|-------------|-----|
+| **Dashboard** | [app.yativo.com](https://app.yativo.com) |
+| **Production API** | `https://api.yativo.com/api/v1` |
+| **Sandbox API** | `https://smtp.yativo.com/api/v1` |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/yativo-fiat/quickstart">
+    Get your first payment working in under 10 minutes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/yativo-fiat/authentication">
+    Learn how to authenticate and secure your API calls.
+  </Card>
+</CardGroup>

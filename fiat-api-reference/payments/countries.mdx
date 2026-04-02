@@ -1,0 +1,39 @@
+---
+title: "Get Supported Countries"
+description: "Retrieve the full list of countries supported for payout destinations"
+---
+
+Returns all countries where Yativo supports outgoing payments. Use this to power country selectors in your application's payout flow.
+
+```
+GET /payment-methods/payout/countries
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout/countries' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    { "name": "Argentina", "code": "ARG", "currency": "ARS" },
+    { "name": "Brazil", "code": "BRA", "currency": "BRL" },
+    { "name": "Chile", "code": "CHL", "currency": "CLP" },
+    { "name": "Colombia", "code": "COL", "currency": "COP" },
+    { "name": "Ecuador", "code": "ECU", "currency": "USD" },
+    { "name": "Mexico", "code": "MEX", "currency": "MXN" },
+    { "name": "Panama", "code": "PAN", "currency": "USD" },
+    { "name": "Peru", "code": "PER", "currency": "PEN" },
+    { "name": "United States", "code": "USA", "currency": "USD" },
+    { "name": "Uruguay", "code": "URY", "currency": "UYU" }
+  ]
+}
+```
+</ResponseExample>

@@ -1,0 +1,81 @@
+---
+title: "Get Exchange Rate"
+description: "Get the current exchange rate and fee breakdown between two currencies"
+---
+
+Returns the current exchange rate between two currencies along with a full fee breakdown. This does **not** lock the rate — use `POST /sendmoney/quote` for a locked quote.
+
+```
+POST /exchange-rate
+```
+
+## Request Body
+
+<ParamField body="from_currency" type="string" required>
+  Source currency code (ISO 4217), e.g. `"USD"`, `"EUR"`.
+</ParamField>
+
+<ParamField body="to_currency" type="string" required>
+  Target currency code (ISO 4217), e.g. `"CLP"`, `"BRL"`, `"MXN"`.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount in the source currency to convert.
+</ParamField>
+
+<RequestExample>
+```bash USD → CLP
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "CLP",
+    "amount": 500
+  }'
+```
+
+```bash USD → BRL
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "BRL",
+    "amount": 1000
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "from_currency": "USD",
+    "to_currency": "CLP",
+    "rate": "950.00000000",
+    "amount": "500.00000000",
+    "payout_data": {
+      "total_transaction_fee_in_from_currency": "11.15000000",
+      "total_transaction_fee_in_to_currency": "10592.50",
+      "customer_sent_amount": "500.00",
+      "customer_receive_amount": "462925.00",
+      "customer_total_amount_due": "511.15"
+    },
+    "calculator": {
+      "fee_breakdown": {
+        "float": { "wallet_currency": 10.15, "payout_currency": 9642.50 },
+        "fixed": { "wallet_currency": 1, "payout_currency": 950 },
+        "total": 11.15
+      },
+      "exchange_rate": 950,
+      "customer_receive_amount": { "wallet_currency": 500, "payout_currency": 475000 }
+    }
+  }
+}
+```
+</ResponseExample>

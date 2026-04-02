@@ -1,0 +1,57 @@
+---
+title: "List Customers"
+description: "Retrieve a paginated list of all customers in your account"
+---
+
+Returns all customers associated with your account, with support for pagination.
+
+```
+GET /customer/customer
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/customer' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+      "customer_name": "Alex Smith",
+      "customer_email": "alex.smith@example.com",
+      "customer_phone": "+15551234567",
+      "customer_country": "USA",
+      "customer_type": "individual",
+      "customer_status": "active",
+      "customer_kyc_status": "approved",
+      "created_at": "2026-04-02T10:00:00.000000Z"
+    },
+    {
+      "customer_id": "d47f8a2b-1c3e-4f5a-9b8c-7d6e5f4a3b2c",
+      "customer_name": "Acme Corporation LLC",
+      "customer_email": "compliance@acme.com",
+      "customer_phone": "+13055559876",
+      "customer_country": "USA",
+      "customer_type": "business",
+      "customer_status": "active",
+      "customer_kyc_status": "submitted",
+      "created_at": "2026-03-15T08:30:00.000000Z"
+    }
+  ],
+  "pagination": {
+    "total": 42,
+    "per_page": 15,
+    "current_page": 1,
+    "last_page": 3
+  }
+}
+```
+</ResponseExample>

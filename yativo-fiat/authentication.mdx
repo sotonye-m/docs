@@ -1,6 +1,16 @@
 ---
 title: "Authentication"
-description: "Authenticate with the Yativo API using your account credentials"
+description: "Sign up at app.yativo.com and authenticate with your API credentials"
+---
+
+## Get Started
+
+Create your Yativo account at [app.yativo.com](https://app.yativo.com). The dashboard uses **passwordless authentication** — enter your email, receive a 5-digit OTP, and you're in. Google OAuth is also supported.
+
+After signing up, complete the **Business KYC** onboarding to unlock API access. This includes submitting your company details, uploading documents, and verifying UBOs (Ultimate Beneficial Owners).
+
+Once approved, retrieve your **Account ID** and generate your **App Secret** from the **Developer** section of the dashboard (Developer → API Key).
+
 ---
 
 ## Environments
@@ -8,30 +18,26 @@ description: "Authenticate with the Yativo API using your account credentials"
 | Environment | Base URL |
 |-------------|----------|
 | Production | `https://api.yativo.com/api/v1` |
-| Sandbox | `https://test-api.yativo.com/api/v1` |
+| Sandbox | `https://smtp.yativo.com/api/v1` |
+
+Use the sandbox environment for development and testing. No real funds are moved in sandbox.
 
 ---
 
-## Onboarding
+## Generate a Bearer Token
 
-Before making API calls, complete the onboarding process via the [Yativo dashboard](https://app.yativo.com). This includes providing your business details and UBO (Ultimate Beneficial Owner) verification. Contact support if you need help with this step.
-
----
-
-## Generate a bearer token
-
-All API requests require a bearer token. Generate one by sending your **Account ID** and **App Secret** — both available under **Developer** in your dashboard.
+All API requests require a Bearer token. For **server-to-server / programmatic API access**, authenticate with your Account ID and App Secret:
 
 ```
 POST /auth/login
 ```
 
 <ParamField body="account_id" type="string" required>
-  Your Account ID from the Yativo dashboard.
+  Your Account ID from the Yativo dashboard (Settings → Account).
 </ParamField>
 
 <ParamField body="app_secret" type="string" required>
-  Your App Secret from the Yativo dashboard.
+  Your App Secret generated from Developer → API Key. Treat this like a password.
 </ParamField>
 
 <RequestExample>
@@ -74,18 +80,81 @@ const token = data.access_token;
 </ResponseExample>
 
 <Note>
-  Tokens expire in **600 seconds** (10 minutes). Re-authenticate before expiry to maintain uninterrupted access.
+  Tokens expire in **600 seconds** (10 minutes). Refresh before expiry to maintain uninterrupted API access.
 </Note>
 
 ---
 
-## Using the bearer token
+## Get Your API Keys
+
+1. Log in to [app.yativo.com](https://app.yativo.com)
+2. Go to **Developer → API Key**
+3. Click **Generate Secret**
+4. Enter your 4-digit **transaction PIN** when prompted
+5. Copy and securely store your **App Secret** — it is shown only once
+
+Your **Account ID** is displayed in the same section. It looks like:
+
+```
+Account ID:  acct_01HXAB3F7VNQP8R2WDGT4E5
+App Secret:  sk_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789
+```
+
+<Warning>
+  The App Secret is displayed only once. If you lose it, generate a new one — this invalidates the previous secret.
+</Warning>
+
+You can also programmatically generate a new secret after verifying your PIN:
+
+```
+GET /generate-secret
+```
+
+---
+
+## Using the Bearer Token
 
 Include the token in the `Authorization` header for all subsequent requests:
 
 ```
 Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...
 ```
+
+```bash
+curl -X GET 'https://api.yativo.com/api/v1/wallet/balance' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+---
+
+## Refresh Token
+
+Refresh an expiring token without re-authenticating with your credentials:
+
+```
+GET /auth/refresh-token
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/auth/refresh-token' \
+  -H 'Authorization: Bearer YOUR_CURRENT_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
+    "expires_in": 600
+  }
+}
+```
+</ResponseExample>
 
 ---
 
@@ -97,7 +166,7 @@ All `POST`, `PUT`, and `PATCH` requests require an `Idempotency-Key` header. Thi
 Idempotency-Key: <unique-string-per-request>
 ```
 
-Use a UUID or any unique identifier you generate. On retry, Yativo returns the original response without re-processing the request.
+Use a UUID or any unique identifier you generate per request. On retry, Yativo returns the original response without re-processing.
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
@@ -109,8 +178,22 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
 
 ---
 
-## Security best practices
+## Two-Factor Authentication (2FA)
 
-- Store `account_id` and `app_secret` as environment variables — never hardcode them.
-- Rotate your `app_secret` immediately if you suspect it has been exposed.
-- Use the sandbox (`https://test-api.yativo.com/api/v1`) for development and testing.
+2FA is optional but strongly recommended for your dashboard account. Enable it under **Developer → Security → 2FA**.
+
+To set up 2FA programmatically:
+
+1. **Generate a 2FA secret** — `POST /generate-2fa-secret` → returns a secret to add to your authenticator app
+2. **Enable 2FA** — `POST /enable-2fa` → activates 2FA on your account
+3. **Verify a 2FA code** — `POST /verify-2fa` with `{ "otp": "6-digit" }` → returns your app secret after 2FA confirmation
+
+---
+
+## Security Best Practices
+
+- Store `account_id` and `app_secret` in environment variables or a secrets manager — never hardcode them or commit to source control.
+- Rotate your `app_secret` immediately if you suspect it has been compromised.
+- Use the sandbox environment (`https://smtp.yativo.com/api/v1`) for all development and testing.
+- Enable 2FA on your dashboard account.
+- Use short-lived tokens and refresh them proactively before expiry (before 600 seconds).

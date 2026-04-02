@@ -1,0 +1,78 @@
+---
+title: "Get Send Money Quote"
+description: "Get a locked exchange rate quote for a send money transaction"
+---
+
+Generates a rate-locked quote for a cross-border payment. The quote guarantees the displayed rate and fee for **5 minutes**. Use the returned `quote_id` when executing the payment with `POST /sendmoney`.
+
+```
+POST /sendmoney/quote
+```
+
+## Request Body
+
+<ParamField body="from_currency" type="string" required>
+  Source currency code (e.g. `"USD"`, `"EUR"`).
+</ParamField>
+
+<ParamField body="to_currency" type="string" required>
+  Destination currency code (e.g. `"CLP"`, `"MXN"`, `"BRL"`).
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount in the source currency to send.
+</ParamField>
+
+<RequestExample>
+```bash USD → CLP
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "CLP",
+    "amount": 500
+  }'
+```
+
+```bash USD → MXN
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "MXN",
+    "amount": 200
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd",
+    "from_currency": "USD",
+    "to_currency": "MXN",
+    "rate": "17.20",
+    "amount": "200.00",
+    "payout_data": {
+      "total_transaction_fee_in_from_currency": "8.00",
+      "total_transaction_fee_in_to_currency": "137.60",
+      "customer_sent_amount": "200.00",
+      "customer_receive_amount": "3268.00",
+      "customer_total_amount_due": "208.00"
+    }
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Quotes are valid for **5 minutes**. Execute `POST /sendmoney` with the `quote_id` within this window to guarantee the rate.
+</Warning>

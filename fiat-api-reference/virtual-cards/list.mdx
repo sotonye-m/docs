@@ -1,0 +1,54 @@
+---
+title: "List Virtual Cards"
+description: "Retrieve all virtual cards issued to customers"
+---
+
+Returns all virtual cards issued under your business account.
+
+```
+GET /customer/virtual/cards/list
+```
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number.
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/list?page=1&per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "card_number": "4111 **** **** 1234",
+      "expiry": "04/29",
+      "currency": "USD",
+      "balance": "150.00",
+      "status": "active",
+      "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+      "created_at": "2026-04-01T10:00:00Z"
+    }
+  ],
+  "meta": {
+    "total": 5,
+    "per_page": 20,
+    "current_page": 1
+  }
+}
+```
+</ResponseExample>

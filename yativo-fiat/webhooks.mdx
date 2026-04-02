@@ -7,7 +7,7 @@ Webhooks push event notifications to your server the moment something happens â€
 
 ---
 
-## Set webhook URL
+## Set Webhook URL
 
 ```
 POST /business/webhook
@@ -31,7 +31,7 @@ curl -X POST 'https://api.yativo.com/api/v1/business/webhook' \
 
 ---
 
-## Get webhook URL
+## Get Webhook Configuration
 
 ```
 GET /business/webhook
@@ -46,7 +46,7 @@ curl -X GET 'https://api.yativo.com/api/v1/business/webhook' \
 
 ---
 
-## Update webhook URL
+## Update Webhook URL
 
 ```
 PUT /business/webhook
@@ -70,39 +70,26 @@ curl -X PUT 'https://api.yativo.com/api/v1/business/webhook' \
 
 ---
 
-## Webhook event types
+## Webhook Event Types
 
 Your endpoint receives `POST` requests with a JSON body containing an `event.type` field.
 
 | Event type | Triggered when |
 |------------|---------------|
-| `payout.updated` | A payout status changes (e.g. completed or failed) |
 | `deposit.created` | A new deposit is initiated |
 | `deposit.updated` | A deposit status changes (e.g. `pending` â†’ `success`) |
+| `deposit.completed` | A deposit is successfully completed |
+| `payout.updated` | A payout status changes (e.g. completed or failed) |
+| `payout.completed` | A payout is successfully completed |
 | `customer.created` | A new customer is created |
+| `customer.kyc.approved` | A customer's KYC is approved |
+| `customer.kyc.rejected` | A customer's KYC is rejected |
 | `virtual_account.deposit` | A payment arrives at a virtual account |
+| `virtual_account.funded` | A virtual account receives funds (settled) |
 
 ---
 
-## Event payloads
-
-### `payout.updated`
-
-```json
-{
-  "event.type": "payout.updated",
-  "payload": {
-    "payout_id": "4533bb23-0f2d-4c00-8ce3-a2b4ab727b0e",
-    "amount": "20.00",
-    "currency": "ARS",
-    "debit_wallet": "USD",
-    "beneficiary_id": 5,
-    "status": "failed",
-    "created_at": "2026-02-20T21:32:46.000000Z",
-    "updated_at": "2026-02-20T21:43:59.000000Z"
-  }
-}
-```
+## Event Payloads
 
 ### `deposit.created`
 
@@ -117,7 +104,7 @@ Your endpoint receives `POST` requests with a JSON body containing an `event.typ
     "status": "pending",
     "deposit_currency": "USD",
     "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "created_at": "2026-05-19T17:19:56.000000Z"
+    "created_at": "2026-04-01T17:19:56.000000Z"
   }
 }
 ```
@@ -136,7 +123,25 @@ Your endpoint receives `POST` requests with a JSON body containing an `event.typ
     "deposit_currency": "USD",
     "receive_amount": 2681,
     "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "updated_at": "2026-05-19T17:22:10.000000Z"
+    "updated_at": "2026-04-01T17:22:10.000000Z"
+  }
+}
+```
+
+### `payout.updated`
+
+```json
+{
+  "event.type": "payout.updated",
+  "payload": {
+    "payout_id": "4533bb23-0f2d-4c00-8ce3-a2b4ab727b0e",
+    "amount": "20.00",
+    "currency": "ARS",
+    "debit_wallet": "USD",
+    "beneficiary_id": 5,
+    "status": "completed",
+    "created_at": "2026-04-01T21:32:46.000000Z",
+    "updated_at": "2026-04-01T21:43:59.000000Z"
   }
 }
 ```
@@ -154,7 +159,7 @@ Your endpoint receives `POST` requests with a JSON body containing an `event.typ
     "customer_country": "BRA",
     "customer_status": "active",
     "customer_kyc_status": "approved",
-    "created_at": "2026-05-17T16:15:20.000000Z"
+    "created_at": "2026-04-01T16:15:20.000000Z"
   }
 }
 ```
@@ -166,7 +171,7 @@ Your endpoint receives `POST` requests with a JSON body containing an `event.typ
   "event.type": "virtual_account.deposit",
   "payload": {
     "amount": 1000,
-    "currency": "USD",
+    "currency": "BRL",
     "status": "completed",
     "credited_amount": 950,
     "transaction_type": "virtual_account_topup",
@@ -189,7 +194,7 @@ Your endpoint receives `POST` requests with a JSON body containing an `event.typ
 
 ---
 
-## Webhook handler example
+## Webhook Handler Example
 
 ```javascript Node.js (Express)
 app.post('/webhooks/yativo', express.json(), (req, res) => {
@@ -198,19 +203,20 @@ app.post('/webhooks/yativo', express.json(), (req, res) => {
   switch (event['event.type']) {
     case 'deposit.updated':
       if (event.payload.status === 'success') {
-        // Credit customer account
         creditCustomer(event.payload.customer_id, event.payload.receive_amount);
       }
       break;
 
     case 'payout.updated':
-      // Update payout status in your database
       updatePayoutStatus(event.payload.payout_id, event.payload.status);
       break;
 
     case 'virtual_account.deposit':
-      // Notify customer of received funds
       notifyCustomer(event.payload.customer.customer_id, event.payload.credited_amount);
+      break;
+
+    case 'customer.kyc.approved':
+      enableCustomerFeatures(event.payload.customer_id);
       break;
   }
 
@@ -224,28 +230,65 @@ app.post('/webhooks/yativo', express.json(), (req, res) => {
 
 ---
 
-## Logs and events
+## Event Log
 
-### All webhook logs
-
-```
-GET /business/logs/all
-```
-
-### Single log
-
-```
-GET /business/logs/show/{log_id}
-```
-
-### All events
+Retrieve all webhook events sent to your endpoint:
 
 ```
 GET /business/events/all
 ```
 
-### Single event
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/events/all?per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+### Get Single Event
 
 ```
-GET /business/events/show/{event_id}
+GET /business/events/show/{id}
 ```
+
+```bash
+curl -X GET 'https://api.yativo.com/api/v1/business/events/show/evt_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+---
+
+## API Request Logs
+
+Audit all API calls made against your account:
+
+```
+GET /business/logs/all
+```
+
+<ParamField query="status" type="string">
+  Filter by HTTP status code (e.g. `200`, `400`).
+</ParamField>
+
+<ParamField query="method" type="string">
+  Filter by HTTP method (`GET`, `POST`, `PUT`, `DELETE`).
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number.
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Results per page.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/logs/all?method=POST&per_page=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>

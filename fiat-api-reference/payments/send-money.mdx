@@ -1,0 +1,91 @@
+---
+title: "Send Money"
+description: "Execute a cross-border payment using a locked quote"
+---
+
+Execute a cross-border payment using a quote ID obtained from `POST /sendmoney/quote`. The quote locks the exchange rate for 5 minutes.
+
+```
+POST /sendmoney
+```
+
+<Note>
+  Requires an `Idempotency-Key` header. Get a quote first using `POST /sendmoney/quote` to lock your rate.
+</Note>
+
+## Request Body
+
+<ParamField body="quote_id" type="string" required>
+  The quote ID from `POST /sendmoney/quote`. Valid for 5 minutes.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-sendmoney-key' \
+  -d '{
+    "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Payment initiated successfully",
+  "data": {
+    "transaction_id": "a0e9e50e-81be-4bd0-9941-0151e68b9e97",
+    "status": "pending",
+    "from_currency": "USD",
+    "to_currency": "MXN",
+    "amount": "200.00",
+    "rate": "17.20",
+    "created_at": "2026-04-01T10:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Wallet Payout (Alternative)
+
+For a quicker payout without the full send money flow:
+
+```
+POST /wallet/payout
+```
+
+<ParamField body="debit_wallet" type="string" required>
+  Currency to debit from your wallet (e.g. `"USD"`).
+</ParamField>
+
+<ParamField body="payment_method_id" type="number" required>
+  Saved beneficiary payment method ID.
+</ParamField>
+
+<ParamField body="quote_id" type="string">
+  Quote ID to lock the rate. Recommended.
+</ParamField>
+
+<ParamField body="amount" type="number">
+  Amount to send. Required if `quote_id` is not provided.
+</ParamField>
+
+<RequestExample>
+```bash With quote
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-payout-key' \
+  -d '{
+    "debit_wallet": "USD",
+    "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd",
+    "payment_method_id": 21
+  }'
+```
+</RequestExample>

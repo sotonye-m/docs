@@ -1,0 +1,55 @@
+---
+title: "Get Event"
+description: "Retrieve the full payload of a specific webhook event"
+---
+
+Returns complete details and payload for a specific event.
+
+```
+GET /business/events/show/{id}
+```
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The event ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/events/show/evt_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "id": "evt_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "event_type": "virtual_account.deposit",
+    "status": "delivered",
+    "webhook_url": "https://your-app.com/webhooks/yativo",
+    "payload": {
+      "event.type": "virtual_account.deposit",
+      "payload": {
+        "amount": 1000,
+        "currency": "BRL",
+        "status": "completed",
+        "credited_amount": 950,
+        "transaction_id": "TXNMP2HK81BHJ",
+        "customer": {
+          "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+          "customer_name": "Jane Doe"
+        }
+      }
+    },
+    "delivered_at": "2026-04-01T10:00:01.000000Z",
+    "created_at": "2026-04-01T10:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>

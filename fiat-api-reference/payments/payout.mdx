@@ -1,0 +1,100 @@
+---
+title: "Initiate Payout"
+description: "Send money to a beneficiary using a payment method"
+---
+
+Initiate an outgoing payment to a beneficiary. Use a `quote_id` to lock the exchange rate for 5 minutes and ensure the recipient receives the quoted amount.
+
+```
+POST /wallet/payout
+```
+
+<Note>
+  Requires `Idempotency-Key` header. Use a unique key per payout to prevent duplicate transactions.
+</Note>
+
+## Request body
+
+<ParamField body="debit_wallet" type="string" required>
+  The source wallet currency to debit (e.g. `"USD"`, `"EUR"`).
+</ParamField>
+
+<ParamField body="payment_method_id" type="number" required>
+  The ID of the beneficiary payment method to use. Obtained from `GET /payment-methods/payout` or saved beneficiary payment methods.
+</ParamField>
+
+<ParamField body="quote_id" type="string">
+  A quote ID from `GET /exchange-rate`. When provided, the exchange rate is locked and `amount` is taken from the quote. Recommended to guarantee rates.
+</ParamField>
+
+<ParamField body="amount" type="number">
+  Amount to send in the source wallet currency. Required if `quote_id` is not provided. If `quote_id` is provided, the amount is taken from the quote.
+</ParamField>
+
+<ParamField body="beneficiary_id" type="string">
+  The UUID of a saved beneficiary to pay. Either `beneficiary_id` or inline recipient details must be provided.
+</ParamField>
+
+<Warning>
+  Using a `quote_id` is strongly recommended for cross-currency payouts to protect both you and your customers from exchange rate fluctuations during processing.
+</Warning>
+
+<RequestExample>
+```bash cURL — With quote
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: payout-c586066b-2026-04-02-001' \
+  -d '{
+    "debit_wallet": "USD",
+    "payment_method_id": 42,
+    "quote_id": "qte_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d"
+  }'
+```
+
+```bash cURL — Without quote
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: payout-c586066b-2026-04-02-002' \
+  -d '{
+    "debit_wallet": "USD",
+    "payment_method_id": 15,
+    "amount": 500.00,
+    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Payout initiated successfully",
+  "data": {
+    "transaction_id": "txn_f1e2d3c4-b5a6-7890-cdef-123456789abc",
+    "status": "processing",
+    "debit_wallet": "USD",
+    "debit_amount": 100.00,
+    "credit_currency": "CLP",
+    "credit_amount": 95240.00,
+    "exchange_rate": 952.40,
+    "fee": 2.50,
+    "payment_method_id": 42,
+    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "created_at": "2026-04-02T10:00:00.000000Z"
+  }
+}
+```
+
+```json Insufficient Funds
+{
+  "status": "error",
+  "status_code": 400,
+  "message": "Insufficient wallet balance",
+  "data": null
+}
+```
+</ResponseExample>

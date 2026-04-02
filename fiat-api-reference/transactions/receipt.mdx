@@ -1,0 +1,47 @@
+---
+title: "Download Receipt"
+description: "Download a PDF receipt for a completed transaction"
+---
+
+Returns a base64-encoded PDF receipt for any completed transaction.
+
+```
+GET /business/transaction/{transactionId}/pdf/receipt
+```
+
+## Path Parameters
+
+<ParamField path="transactionId" type="string" required>
+  The transaction UUID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/transaction/a0e9e50e-81be-4bd0-9941-0151e68b9e97/pdf/receipt' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```javascript Node.js
+const response = await client.get(
+  `/business/transaction/${transactionId}/pdf/receipt`
+);
+// Decode and save the PDF
+const pdfBuffer = Buffer.from(response.data.data, 'base64');
+fs.writeFileSync('receipt.pdf', pdfBuffer);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": "JVBERi0xLjQKJeLjz9MKMiAwIG9iago8PC9MZW5ndGggMTM4Ni9GaWx0ZXIvRmxhdGVEZWNvZGU+Pg..."
+}
+```
+</ResponseExample>
+
+<Note>
+  The `data` field contains the PDF as a base64-encoded string. Decode it before writing to disk or serving to a client.
+</Note>

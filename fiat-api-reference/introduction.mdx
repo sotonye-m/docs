@@ -1,0 +1,88 @@
+---
+title: "Fiat API References"
+description: "Complete API reference for the Yativo Fiat payment platform"
+---
+
+The Yativo Fiat API enables you to send and receive money globally, manage virtual accounts, perform currency exchange, and verify customer identities. All endpoints return JSON responses.
+
+## Base URLs
+
+| Environment | Base URL |
+|---|---|
+| Production | `https://api.yativo.com/api/v1` |
+| Sandbox | `https://smtp.yativo.com/api/v1` |
+
+Use the sandbox environment for development and testing. Sandbox transactions do not move real funds.
+
+## Authentication
+
+All API requests require a Bearer token obtained from the authentication endpoint. Tokens expire after **600 seconds** (10 minutes).
+
+```bash
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+See [Generate Token](/fiat-api-reference/auth/token) for details on obtaining a token.
+
+## Idempotency
+
+All `POST`, `PUT`, and `PATCH` requests require an `Idempotency-Key` header. This ensures that duplicate requests (e.g. due to network retries) are not processed twice.
+
+```bash
+Idempotency-Key: your-unique-key-here
+```
+
+Use a UUID or a deterministic string based on the operation (e.g. `payout-{customer_id}-{timestamp}`). Keys are scoped to your account.
+
+## Rate limits
+
+Requests are rate-limited per API key. If you exceed the limit, you will receive a `429 Too Many Requests` response. Implement exponential backoff when retrying after rate limit errors.
+
+## Standard response format
+
+All successful responses follow this structure:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": { ... }
+}
+```
+
+## Error codes
+
+| Status Code | Meaning |
+|---|---|
+| `200` | OK — Request succeeded |
+| `201` | Created — Resource created successfully |
+| `400` | Bad Request — Invalid request parameters |
+| `401` | Unauthorized — Missing or invalid token |
+| `404` | Not Found — Resource does not exist |
+| `422` | Unprocessable Entity — Validation failed |
+| `429` | Too Many Requests — Rate limit exceeded |
+| `500` | Internal Server Error — Something went wrong on our end |
+
+### Error response format
+
+```json
+{
+  "status": "error",
+  "status_code": 422,
+  "message": "Validation failed",
+  "errors": {
+    "customer_email": ["The customer email field is required."]
+  }
+}
+```
+
+## KYC platform
+
+Certain KYC submission endpoints are hosted on a separate platform:
+
+| Platform | Base URL |
+|---|---|
+| KYC API | `https://kyc.yativo.com` |
+| Individual KYC | `https://kyc.yativo.com/individual/{customer_id}` |
+| Business KYB | `https://kyc.yativo.com/business/{customer_id}` |

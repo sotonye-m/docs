@@ -1,0 +1,143 @@
+---
+title: "Sandbox Environment"
+description: "Test your integration without real money"
+---
+
+The Yativo sandbox lets you develop and test your integration without moving real funds. Payments are simulated, KYC approves automatically, and virtual accounts work end-to-end.
+
+---
+
+## Sandbox Base URL
+
+```
+https://smtp.yativo.com/api/v1
+```
+
+All other endpoints remain the same — just swap the base URL.
+
+---
+
+## Getting Started
+
+You use the **same Yativo account** for both sandbox and production. Switch between environments by changing the base URL in your requests.
+
+1. **Sign up** at [app.yativo.com](https://app.yativo.com) (if you haven't already)
+2. **Get your credentials** — Dashboard → Developer → API Key
+3. **Authenticate** using the sandbox base URL:
+
+```bash
+curl -X POST 'https://smtp.yativo.com/api/v1/auth/login' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account_id": "YOUR_ACCOUNT_ID",
+    "app_secret": "YOUR_APP_SECRET"
+  }'
+```
+
+---
+
+## Sandbox Behavior
+
+| Feature | Sandbox | Production |
+|---------|---------|------------|
+| Payments | Simulated — no real funds | Real money moves |
+| KYC | Auto-approves instantly | Takes minutes to hours |
+| Virtual accounts | Work end-to-end | Live bank accounts |
+| Exchange rates | Live rates returned | Live rates |
+| Webhooks | Fired normally | Fired normally |
+| API logs | Recorded | Recorded |
+
+---
+
+## How to Test
+
+<Steps>
+  <Step title="Use the sandbox base URL">
+    Set `https://smtp.yativo.com/api/v1` as your base URL in all requests.
+  </Step>
+  <Step title="Authenticate">
+    Use the same Account ID and App Secret. Call `POST /auth/login` against the sandbox URL to get a token.
+  </Step>
+  <Step title="Create test customers">
+    Use `POST /customer` to create customers. KYC auto-approves in sandbox — no documents needed.
+  </Step>
+  <Step title="Create virtual accounts">
+    Once a customer is created (KYC auto-approved), call `POST /business/virtual-account/create`.
+  </Step>
+  <Step title="Simulate deposits">
+    Use the sandbox dashboard or API to trigger test deposits to your virtual accounts.
+  </Step>
+  <Step title="Test payouts">
+    Call `POST /sendmoney` or `POST /wallet/payout` — payments are simulated and will transition through statuses.
+  </Step>
+</Steps>
+
+---
+
+## Example: Full Sandbox Test Flow
+
+```javascript Node.js
+const BASE = 'https://smtp.yativo.com/api/v1';
+
+// 1. Authenticate
+const { data: auth } = await fetch(`${BASE}/auth/login`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    account_id: process.env.YATIVO_ACCOUNT_ID,
+    app_secret: process.env.YATIVO_APP_SECRET,
+  }),
+}).then(r => r.json());
+
+const token = auth.data.access_token;
+const headers = {
+  Authorization: `Bearer ${token}`,
+  'Content-Type': 'application/json',
+  'Idempotency-Key': crypto.randomUUID(),
+};
+
+// 2. Create customer (KYC auto-approves in sandbox)
+const { data: customer } = await fetch(`${BASE}/customer`, {
+  method: 'POST', headers,
+  body: JSON.stringify({
+    first_name: 'Test', last_name: 'User',
+    email: 'test@example.com', country: 'BRA',
+  }),
+}).then(r => r.json());
+
+// 3. Create virtual account
+const { data: account } = await fetch(`${BASE}/business/virtual-account/create`, {
+  method: 'POST',
+  headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() },
+  body: JSON.stringify({
+    customer_id: customer.data.customer_id,
+    currency: 'BRL',
+  }),
+}).then(r => r.json());
+
+console.log('Test account number:', account.data.account_number);
+```
+
+---
+
+## Differences from Production
+
+- **KYC is instant** — submit a customer and `is_kyc_submitted` / `is_va_approved` are set immediately
+- **No real funds** — wallet balances may be pre-funded in sandbox; payouts simulate the full transaction lifecycle
+- **Some payment methods may be limited** — not all live corridors are available in sandbox; contact your integration team if you need a specific one
+- **Webhooks fire normally** — you'll receive all webhook events in sandbox; make sure your test endpoint is reachable
+
+---
+
+## Switching to Production
+
+When you're ready to go live:
+
+1. Change your base URL from `https://smtp.yativo.com/api/v1` to `https://api.yativo.com/api/v1`
+2. Ensure your business KYC is approved in the dashboard
+3. Real customers will need to complete KYC (not auto-approved)
+4. Update your webhook URL to point to your production endpoint
+
+<Note>
+  Your Account ID and App Secret are the same for both environments. Only the base URL changes.
+</Note>

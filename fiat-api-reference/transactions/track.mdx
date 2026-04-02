@@ -1,0 +1,55 @@
+---
+title: "Track Transaction"
+description: "Get a live status timeline for a transaction"
+---
+
+Returns a step-by-step timeline of a transaction's progress from initiation through completion.
+
+```
+GET /transaction/tracking/{transactionId}
+```
+
+## Path Parameters
+
+<ParamField path="transactionId" type="string" required>
+  The transaction UUID (`transaction_id` field from the transaction object).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/transaction/tracking/a0e9e50e-81be-4bd0-9941-0151e68b9e97' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "tracking_status": "Payment credited to beneficiary",
+      "transaction_type": "withdrawal",
+      "created_at": "2026-04-01T10:03:22.000000Z"
+    },
+    {
+      "tracking_status": "With Beneficiary's Bank/Rail",
+      "transaction_type": "withdrawal",
+      "created_at": "2026-04-01T10:02:54.000000Z"
+    },
+    {
+      "tracking_status": "Processed by Yativo",
+      "transaction_type": "withdrawal",
+      "created_at": "2026-04-01T10:01:45.000000Z"
+    },
+    {
+      "tracking_status": "Send money initiated",
+      "transaction_type": "withdrawal",
+      "created_at": "2026-04-01T10:00:00.000000Z"
+    }
+  ]
+}
+```
+</ResponseExample>

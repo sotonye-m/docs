@@ -1,0 +1,64 @@
+---
+title: "Update Beneficiary"
+description: "Update an existing beneficiary's profile information"
+---
+
+Update mutable fields on a beneficiary record. Only include the fields you want to change.
+
+```
+PUT /beneficiaries/{beneficiary_id}
+```
+
+<Note>
+  Requires `Idempotency-Key` header.
+</Note>
+
+## Path parameters
+
+<ParamField path="beneficiary_id" type="string" required>
+  The UUID of the beneficiary to update.
+</ParamField>
+
+## Request body
+
+<ParamField body="name" type="string">
+  Updated beneficiary name.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Updated email address.
+</ParamField>
+
+<ParamField body="country" type="string">
+  Updated country in ISO 3166-1 alpha-3 format.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: update-beneficiary-maria-001' \
+  -d '{
+    "email": "maria.g@newemail.com"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Beneficiary updated successfully",
+  "data": {
+    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "name": "Maria Gonzalez",
+    "email": "maria.g@newemail.com",
+    "type": "individual",
+    "country": "CHL",
+    "updated_at": "2026-04-02T14:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>
