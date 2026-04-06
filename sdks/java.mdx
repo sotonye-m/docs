@@ -90,9 +90,9 @@ yativo.crypto.webhook.secret=${YATIVO_WEBHOOK_SECRET}
 ```java
 import com.yativo.service.CustomerService;
 import com.yativo.model.Customer;
-import com.yativo.model.CreateCustomerRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
 
 @Service
 public class OnboardingService {
@@ -100,25 +100,21 @@ public class OnboardingService {
     @Autowired
     private CustomerService customerService;
 
-    public Customer createCustomer(String externalId, String email,
-                                    String firstName, String lastName) {
-        CreateCustomerRequest request = CreateCustomerRequest.builder()
-            .externalId(externalId)
-            .email(email)
-            .firstName(firstName)
-            .lastName(lastName)
-            .kycLevel("BASIC")
-            .build();
+    public Customer createCustomer(String customerId, String email, String name) {
+        return customerService.createCustomer(customerId, email, name);
+    }
 
-        return customerService.create(request);
+    public Customer createCustomerWithPhone(String customerId, String email,
+                                             String name, String phone) {
+        return customerService.createCustomer(customerId, email, name, phone, null);
     }
 
     public Customer getCustomer(String customerId) {
-        return customerService.get(customerId);
+        return customerService.getCustomer(customerId);
     }
 
-    public Page<Customer> listCustomers(int page, int limit) {
-        return customerService.list(page, limit);
+    public List<Customer> listCustomers(int page, int limit) {
+        return customerService.listCustomers(page, limit);
     }
 }
 ```
@@ -224,9 +220,10 @@ public class PaymentService {
 ```java
 import com.yativo.service.TransactionService;
 import com.yativo.model.Transaction;
-import com.yativo.model.TransactionListRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class TransactionHistoryService {
@@ -234,21 +231,26 @@ public class TransactionHistoryService {
     @Autowired
     private TransactionService transactionService;
 
-    public Page<Transaction> listTransactions(String accountId) {
-        TransactionListRequest request = TransactionListRequest.builder()
-            .accountId(accountId)
-            .page(1)
-            .limit(25)
-            .status("COMPLETED")
-            .startDate("2026-01-01")
-            .endDate("2026-03-31")
-            .build();
+    public List<Transaction> searchTransactions(String accountId) {
+        Map<String, Object> filters = Map.of(
+            "account_id", accountId,
+            "page",       1,
+            "limit",      25,
+            "status",     "COMPLETED"
+        );
+        return transactionService.searchTransactions(filters);
+    }
 
-        return transactionService.list(request);
+    public List<Transaction> getWalletTransactions(String walletAddress) {
+        return transactionService.getWalletTransactions(walletAddress, 1, 25);
+    }
+
+    public List<Transaction> getCustomerTransactions(String customerId) {
+        return transactionService.getCustomerTransactions(customerId, 1, 25);
     }
 
     public Transaction getTransaction(String transactionId) {
-        return transactionService.get(transactionId);
+        return transactionService.getTransaction(transactionId);
     }
 }
 ```

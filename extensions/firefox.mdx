@@ -5,7 +5,7 @@ description: "Install and use the Yativo Crypto Firefox extension — wallet mon
 
 # Firefox Extension
 
-The Yativo Crypto Firefox extension provides the same feature set as the Chrome extension — wallet monitoring, real-time deposit notifications, card management, price alerts, and swap — adapted for Firefox using Manifest v2 and a persistent background script.
+The Yativo Crypto Firefox extension provides the same feature set as the Chrome extension — wallet monitoring, real-time deposit notifications, card management, price alerts, and swap — powered by Manifest v3 and an event-driven background service worker.
 
 ## Installation
 
@@ -15,7 +15,7 @@ The Yativo Crypto Firefox extension provides the same feature set as the Chrome 
 4. The Yativo icon appears in your Firefox toolbar.
 
 <Note>
-  The extension is compatible with Firefox 78+ (ESR and standard releases). It also works in Firefox for Android, though the popup UI is optimised for desktop.
+  The extension requires Firefox 128 or later. It also works in Firefox for Android, though the popup UI is optimised for desktop.
 </Note>
 
 ---
@@ -51,7 +51,7 @@ Balances are refreshed on every popup open, or manually via the **Refresh** butt
 
 ### 2. Real-Time Deposit Notifications
 
-The Firefox extension uses a **persistent background script** (Manifest v2) with `setInterval` to poll the Yativo API every **30 seconds**.
+The Firefox extension uses a **service worker** (Manifest v3) with `browser.alarms` to poll the Yativo API every **30 seconds**.
 
 When a new deposit is detected:
 
@@ -70,7 +70,7 @@ Open the popup → **Settings** tab to configure:
 | Sound alerts | Play a chime when a notification fires |
 
 <Note>
-  Unlike Chrome's Manifest v3 service worker, the Firefox background script remains persistent as long as the browser is running. This means deposit polling is more reliable in Firefox because the script is never suspended between polls.
+  The service worker is woken by `browser.alarms` on schedule. Firefox's implementation respects the alarm interval reliably across Firefox 128+.
 </Note>
 
 ---
@@ -128,20 +128,21 @@ The **IBAN** tab lists all standalone IBANs on your account:
 ## How Notifications Work
 
 ```
-Persistent Background Script (background.js)
+Background Service Worker (service-worker.js)
     │
-    ├─ setInterval(poll, 30_000)
+    ├─ browser.alarms.create("checkDeposits", { periodInMinutes: 0.5 })
+    ├─ browser.alarms.create("priceAlerts",   { periodInMinutes: 5 })
     │
-    └─ Every 30 seconds:
-         ├─ Fetch latest deposits via Yativo API
-         ├─ Compare against last-seen deposit IDs in browser.storage.local
-         ├─ For each new deposit → browser.notifications.create(...)
-         └─ Update stored deposit IDs
+    └─ browser.alarms.onAlarm.addListener(alarm => {
+         if alarm === "checkDeposits":
+             ├─ Fetch latest transactions via Yativo API
+             ├─ Compare against last-seen IDs in browser.storage.local
+             ├─ For each new deposit → browser.notifications.create(...)
+             └─ Update stored IDs
+         else if alarm === "priceAlerts":
+             └─ Fetch SOL/XDC prices from CoinGecko → evaluate thresholds
+       })
 ```
-
-<Note>
-  **Manifest v2 vs v3:** The Firefox extension uses Manifest v2, which supports a persistent background page/script. This is intentional: Firefox's implementation of Manifest v3 service workers does not yet match Chrome's, and using Manifest v2 ensures reliable background polling across all supported Firefox versions.
-</Note>
 
 Notifications require the `notifications` permission declared in the manifest. Firefox prompts for this on install.
 
@@ -151,12 +152,12 @@ Notifications require the `notifications` permission declared in the manifest. F
 
 | Aspect | Firefox | Chrome |
 |---|---|---|
-| Manifest version | v2 | v3 |
-| Background process | Persistent background script | Service worker (can be suspended) |
+| Manifest version | v3 | v3 |
+| Background process | Service worker (`browser.*` namespace) | Service worker (`chrome.*` namespace) |
 | Storage API | `browser.storage.local` | `chrome.storage.local` |
 | Notifications API | `browser.notifications` | `chrome.notifications` |
-| Polling mechanism | `setInterval` in background script | `chrome.alarms` |
-| Polling reliability | Very reliable (script always running) | May have minor delays if worker sleeps |
+| Polling mechanism | `browser.alarms` | `chrome.alarms` |
+| Polling reliability | Reliable (alarm-driven) | Reliable (alarm-driven) |
 | Installation source | Firefox Add-ons (AMO) | Chrome Web Store |
 
 Both extensions share the same feature set and connect to the same Yativo API endpoints.
@@ -171,7 +172,7 @@ Both extensions share the same feature set and connect to the same Yativo API en
 | Data in transit | All API calls use HTTPS to `https://crypto-api.yativo.com/api/` |
 | No third parties | The extension communicates only with `crypto-api.yativo.com` for account data |
 | Price data | Prices for alerts are fetched from the CoinGecko public API (no auth required) |
-| Minimal permissions | `storage`, `notifications` — no broad host permissions |
+| Minimal permissions | `storage`, `notifications`, `alarms` — no broad host permissions |
 
 ---
 
