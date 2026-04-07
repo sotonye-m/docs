@@ -24,16 +24,12 @@
   "navbar": {
     "links": [
       {
-        "label": "Fiat Dashboard",
-        "href": "https://app.yativo.com"
-      },
-      {
-        "label": "Crypto Dashboard",
-        "href": "https://crypto.yativo.com"
+        "label": "Yativo Website",
+        "href": "https://yativo.com"
       },
       {
         "label": "Get Started — Crypto",
-        "href": "https://crypto.yativo.com/sign-up"
+        "href": "https://crypto.yativo.com"
       },
       {
         "label": "Support",
