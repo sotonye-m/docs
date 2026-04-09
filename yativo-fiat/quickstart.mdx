@@ -88,12 +88,11 @@ curl -X POST 'https://api.yativo.com/api/v1/customer' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-001' \
   -d '{
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "email": "jane@example.com",
-    "phone": "+5511999999999",
-    "country": "BRA",
-    "date_of_birth": "1990-05-15"
+    "customer_name": "Jane Doe",
+    "customer_email": "jane@example.com",
+    "customer_phone": "+5511999999999",
+    "customer_country": "BRA",
+    "customer_type": "individual"
   }'
 ```
 
@@ -103,10 +102,11 @@ curl -X POST 'https://api.yativo.com/api/v1/customer' \
   "status": "success",
   "data": {
     "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "email": "jane@example.com",
-    "kyc_status": "pending"
+    "customer_name": "Jane Doe",
+    "customer_email": "jane@example.com",
+    "customer_phone": "+5511999999999",
+    "customer_status": "active",
+    "customer_country": "BRA"
   }
 }
 ```
@@ -129,14 +129,49 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
   -H 'Idempotency-Key: unique-key-002' \
   -d '{
     "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "type": "individual",
     "first_name": "Jane",
     "last_name": "Doe",
-    "date_of_birth": "1990-05-15",
-    "nationality": "BRA",
-    "document_type": "passport",
-    "document_number": "AB123456"
+    "email": "jane@example.com",
+    "phone": "11999999999",
+    "calling_code": "+55",
+    "gender": "female",
+    "birth_date": "1990-05-15",
+    "nationality": "BR",
+    "taxId": "12345678901",
+    "selfie_image": "https://example.com/kyc/selfie.jpg",
+    "residential_address": {
+      "street_line_1": "Av. Paulista, 1000",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "postal_code": "01310-100",
+      "country": "BR",
+      "proof_of_address_file": "https://example.com/kyc/proof-of-address.pdf"
+    },
+    "identifying_information": [
+      {
+        "type": "passport",
+        "issuing_country": "BR",
+        "number": "AB123456",
+        "date_issued": "2020-01-01",
+        "expiration_date": "2030-01-01",
+        "image_front_file": "https://example.com/kyc/passport-front.jpg"
+      }
+    ],
+    "employment_status": "Employed",
+    "most_recent_occupation_code": "132011",
+    "expected_monthly_payments_usd": "LessThan5K",
+    "source_of_funds": "Salary",
+    "account_purpose": "ReceiveSalary",
+    "acting_as_intermediary": false,
+    "usd_virtual_account": false,
+    "eur_virtual_account": false,
+    "eurde_virtual_account": false,
+    "gbp_virtual_account": false
   }'
 ```
+
+See the full field reference at [/yativo-fiat/kyc](/yativo-fiat/kyc), including optional fields such as `account_purpose_other`, `uploaded_documents`, and `sumsub_token`.
 
 In sandbox, KYC approves automatically. In production, allow up to a few minutes for verification.
 
@@ -208,12 +243,11 @@ async function createCustomer(token) {
       'Idempotency-Key': crypto.randomUUID(),
     },
     body: JSON.stringify({
-      first_name: 'Jane',
-      last_name: 'Doe',
-      email: 'jane@example.com',
-      phone: '+5511999999999',
-      country: 'BRA',
-      date_of_birth: '1990-05-15',
+      customer_name: 'Jane Doe',
+      customer_email: 'jane@example.com',
+      customer_phone: '+5511999999999',
+      customer_country: 'BRA',
+      customer_type: 'individual',
     }),
   });
   const { data } = await res.json();

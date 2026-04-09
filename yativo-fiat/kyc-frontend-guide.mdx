@@ -410,13 +410,20 @@ async function submitKYC(token, customerId, formData) {
   const payload = {
     customer_id: customerId,
     type: 'individual',
+    // Optional: include signed_agreement_id when your workflow tracks agreement records.
+    signed_agreement_id: formData.signedAgreementId,
     ...formData.personal,
     residential_address: formData.address,
     identifying_information: formData.documents,
     ...formData.financial,
+    // Include only when account_purpose is "other".
+    account_purpose_other: formData.financial.account_purpose_other,
     usd_virtual_account: true,
     eur_virtual_account: false,
     eurde_virtual_account: false,
+    gbp_virtual_account: false,
+    // Optional: pass a Sumsub token when using Sumsub-assisted liveness checks.
+    sumsub_token: formData.sumsubToken,
   };
 
   const response = await fetch('https://kyc.yativo.com/api/individual-kyc/submit', {
