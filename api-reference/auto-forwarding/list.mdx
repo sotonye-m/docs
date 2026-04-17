@@ -1,0 +1,40 @@
+---
+title: "List Rules"
+api: "GET https://crypto-sandbox.yativo.com/api/v1/auto-forwarding"
+description: "List all auto-forwarding rules"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/auto-forwarding' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "rules": [
+      {
+        "rule_id": "af_01abc123",
+        "asset_id": "asset_01xyz789",
+        "destination_address": "0x9F8b...",
+        "destination_chain": "ethereum",
+        "min_amount": "10.00",
+        "enabled": true,
+        "total_forwarded": "500.00",
+        "forward_count": 12,
+        "created_at": "2026-04-01T12:00:00Z"
+      }
+    ]
+  }
+}
+```
+</ResponseExample>

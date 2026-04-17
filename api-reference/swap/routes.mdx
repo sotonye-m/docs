@@ -21,12 +21,11 @@ curl -X GET 'https://crypto-api.yativo.com/api/swap/routes' \
 {
   "success": true,
   "data": {
-    "enabled_services": ["near_intents", "circle_cctp", "cow_protocol"],
     "sources": [
-      {"ticker_name": "SOL", "asset_name": "Solana", "chain": "SOL", "services": ["near_intents"]},
-      {"ticker_name": "USDC_SOL", "asset_name": "USD Coin (Solana)", "chain": "SOL", "services": ["near_intents"]},
-      {"ticker_name": "ETH_Base", "asset_name": "Ethereum on Base", "chain": "Base", "services": ["near_intents"]},
-      {"ticker_name": "EURe_GNO", "asset_name": "Euro Bridged (GNO)", "chain": "GNO", "services": ["cow_protocol", "near_intents"]}
+      {"ticker_name": "SOL", "asset_name": "Solana", "chain": "SOL"},
+      {"ticker_name": "USDC_SOL", "asset_name": "USD Coin (Solana)", "chain": "SOL"},
+      {"ticker_name": "ETH_Base", "asset_name": "Ethereum on Base", "chain": "Base"},
+      {"ticker_name": "EURe_GNO", "asset_name": "Euro Bridged (GNO)", "chain": "GNO"}
     ]
   },
   "message": "Swap route catalog retrieved successfully"

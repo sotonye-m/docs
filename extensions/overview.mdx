@@ -1,91 +1,44 @@
 ---
-title: "Browser Extensions Overview"
-description: "Yativo Crypto browser extensions for Chrome and Firefox — wallet monitoring, real-time notifications, card management, price alerts, and swap"
+title: "Browser Extensions"
+description: "Yativo Crypto browser extensions for Chrome and Firefox — coming soon"
 ---
 
 # Browser Extensions
 
-The Yativo Crypto browser extensions bring your crypto dashboard into your browser toolbar. Monitor wallet balances, receive real-time deposit notifications, manage virtual cards, set price alerts, and execute swaps — all without leaving your current tab.
+<Note>
+  The Yativo Crypto browser extensions are currently in development and will be available soon. Stay tuned for updates.
+</Note>
+
+The Yativo browser extensions will bring your crypto dashboard directly into your browser toolbar. Monitor wallet balances, receive real-time deposit notifications, manage virtual cards, set price alerts, and execute swaps — without leaving your current tab.
 
 <CardGroup cols={2}>
   <Card title="Chrome Extension" icon="chrome" href="/extensions/chrome">
-    Install from the Chrome Web Store. Built on Manifest v3.
+    Coming soon — Chrome Web Store. Built on Manifest v3.
   </Card>
   <Card title="Firefox Extension" icon="firefox" href="/extensions/firefox">
-    Install from Firefox Add-ons (AMO). Built on Manifest v3.
+    Coming soon — Firefox Add-ons (AMO). Built on Manifest v3.
   </Card>
 </CardGroup>
 
 ---
 
-## What the Extensions Do
+## Planned Features
 
 ### Wallet Monitoring
-
-View all your Yativo wallet balances at a glance directly from the browser popup. Balances are fetched fresh each time you open the popup so you always see current figures.
+View all your Yativo wallet balances at a glance directly from the browser popup.
 
 ### Real-Time Deposit Notifications
-
-The extension runs a background service worker that polls the Yativo API every **30 seconds** and fires a browser notification the moment a new deposit is detected on any monitored wallet.
+Receive instant browser notifications the moment a new deposit arrives on any monitored wallet.
 
 ### Yativo Card Management
-
-View your virtual card details, check card balances, see recent card transactions, and freeze or unfreeze cards — all from the extension popup.
+View card details, check balances, see recent transactions, and freeze or unfreeze cards from the popup.
 
 ### Price Alerts
+Set threshold-based alerts for supported assets. Get notified when prices cross your target.
 
-Set threshold-based alerts for supported assets (currently **SOL** and **XDC**). The extension notifies you when the price crosses your target, helping you time swaps and deposits.
-
-### Swap Functionality
-
-Get a live swap quote and execute a swap between supported assets without navigating away from your current page. The extension connects directly to the Yativo Swap API.
-
-### Standalone IBAN Management
-
-View and copy your dedicated IBAN accounts straight from the popup.
+### Swap
+Get a live quote and execute a swap between supported assets without navigating away from your page.
 
 ---
 
-## Feature Comparison
-
-| Feature | Chrome | Firefox |
-|---|---|---|
-| Wallet monitoring | Yes | Yes |
-| Deposit notifications | Yes | Yes |
-| Card management | Yes | Yes |
-| Price alerts (SOL, XDC) | Yes | Yes |
-| Swap | Yes | Yes |
-| Standalone IBAN | Yes | Yes |
-| Manifest version | v3 | v2 |
-| Service worker (background) | Yes | No (background script) |
-
----
-
-## Authentication
-
-Both extensions authenticate using your Yativo **API key and API secret**. These credentials are entered once in the extension's setup popup and stored in the browser's local extension storage — they are never transmitted to any third-party server.
-
-<Warning>
-  Never share your API key or secret publicly. If you suspect your credentials have been compromised, revoke them immediately from the Yativo dashboard or via `sdk.apiKeys.revoke()`.
-</Warning>
-
----
-
-## Privacy & Security
-
-- Credentials are stored in the browser's sandboxed extension storage (`chrome.storage.local` / `browser.storage.local`).
-- All API calls go directly from the extension to `https://crypto-api.yativo.com/api/` — no proxy or intermediary server.
-- The extension requests only the permissions it needs: `storage`, `notifications`, and `alarms` (for polling).
-
----
-
-## Getting Started
-
-<CardGroup cols={2}>
-  <Card title="Install Chrome Extension" href="/extensions/chrome" icon="chrome">
-    Step-by-step setup guide for Chrome and Chromium-based browsers.
-  </Card>
-  <Card title="Install Firefox Extension" href="/extensions/firefox" icon="firefox">
-    Step-by-step setup guide for Firefox.
-  </Card>
-</CardGroup>
+Want early access? [Contact us](mailto:support@yativo.com) to join the beta list.

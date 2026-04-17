@@ -1,0 +1,66 @@
+---
+title: "Add Connector"
+api: "POST https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/{walletId}/connectors"
+description: "Create a new connector (API key) for an agentic wallet"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="walletId" type="string" required>
+  The wallet ID to add a connector to.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Human-readable name for the connector (e.g., "Claude Agent", "GPT Agent").
+</ParamField>
+
+<ParamField body="per_transaction_limit" type="number">
+  Maximum USD amount per single transaction. Defaults to the wallet's global limit.
+</ParamField>
+
+<ParamField body="daily_limit" type="number">
+  Maximum USD amount per 24-hour period.
+</ParamField>
+
+<ParamField body="monthly_limit" type="number">
+  Maximum USD amount per calendar month.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/aw_01abc123/connectors' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Claude Agent",
+    "per_transaction_limit": 50,
+    "daily_limit": 500,
+    "monthly_limit": 5000
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "connector_id": "conn_01abc123",
+    "name": "Claude Agent",
+    "api_key": "yac_a1b2c3d4e5f6...",
+    "per_transaction_limit": 50,
+    "daily_limit": 500,
+    "monthly_limit": 5000,
+    "status": "active",
+    "created_at": "2026-04-01T12:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  The `api_key` is shown **only once** in this response. Store it securely. If lost, revoke the connector and create a new one.
+</Warning>

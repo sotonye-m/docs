@@ -1,0 +1,41 @@
+---
+title: "Transaction Analytics"
+api: "GET https://crypto-sandbox.yativo.com/api/unified-transactions/analytics-with-fees"
+description: "Get aggregated transaction analytics with fee breakdowns"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/unified-transactions/analytics-with-fees' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "total_transactions": 450,
+    "total_volume_usd": 125000.00,
+    "total_fees_usd": 312.50,
+    "by_type": {
+      "deposit": { "count": 200, "volume": 80000, "fees": 0 },
+      "withdrawal": { "count": 100, "volume": 30000, "fees": 150 },
+      "swap": { "count": 80, "volume": 10000, "fees": 125 },
+      "card_transaction": { "count": 50, "volume": 3000, "fees": 22.50 },
+      "agentic_transaction": { "count": 20, "volume": 2000, "fees": 15 }
+    },
+    "period": {
+      "from": "2026-03-01T00:00:00Z",
+      "to": "2026-04-01T00:00:00Z"
+    }
+  }
+}
+```
+</ResponseExample>

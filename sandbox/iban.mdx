@@ -5,12 +5,12 @@ description: "Test the IBAN onboarding flow in the Yativo Crypto sandbox"
 
 ## Overview
 
-Use the sandbox to test the complete IBAN onboarding flow. The sandbox uses Monerium on the **Chiado testnet** (Gnosis testnet) — no real IBAN is provisioned, and no real bank transfers can be sent to sandbox IBANs.
+Use the sandbox to test the complete IBAN onboarding flow. The sandbox runs on a **testnet** — no real IBAN is provisioned, and no real bank transfers can be sent to sandbox IBANs.
 
 **Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/`
 
 <Note>
-  In the sandbox, IBAN operations run on Chiado testnet. No real IBANs are assigned and no real bank transfers can be received. Use the sandbox to verify your integration logic and status-handling code.
+  In the sandbox, IBAN operations run on a testnet. No real IBANs are assigned and no real bank transfers can be received. Use the sandbox to verify your integration logic and status-handling code.
 </Note>
 
 ---
@@ -37,7 +37,7 @@ curl -X GET 'https://crypto-sandbox.yativo.com/api/iban/options' \
     "kyc_required": true,
     "supported_payout_tokens": ["USDC", "USDT"],
     "supported_payout_chains": ["ethereum", "polygon", "solana"],
-    "sandbox_note": "IBAN options in sandbox mirror production. Uses Chiado testnet (Gnosis). No real IBANs provisioned."
+    "sandbox_note": "IBAN options in sandbox mirror production. Uses testnet. No real IBANs provisioned."
   }
 }
 ```
@@ -221,7 +221,7 @@ curl -X GET 'https://crypto-sandbox.yativo.com/api/iban/status?customer_id=cus_s
     "payout_chain": "solana",
     "payout_address": "GY1EZGdpiJNyx2BSKq8rfTDRe5K8Bb6Cf2Bn1pdmE2o1",
     "activated_at": "2026-03-28T21:07:00Z",
-    "sandbox_note": "Chiado testnet IBAN. Cannot receive real bank transfers."
+    "sandbox_note": "Testnet IBAN. Cannot receive real bank transfers."
   }
 }
 ```
@@ -243,8 +243,8 @@ curl -X GET 'https://crypto-sandbox.yativo.com/api/iban/status?customer_id=cus_s
 
 ## Sandbox Limitations
 
-- IBANs run on **Chiado testnet** (Gnosis testnet) via Monerium
-- Cannot receive transfers from real banks — testnet Monerium only
+- IBANs run on a **testnet** — no real banking connectivity
+- Cannot receive transfers from real banks — testnet only
 - The IBAN number returned is a testnet IBAN with no real banking connectivity
 
 ---

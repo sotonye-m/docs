@@ -1,0 +1,64 @@
+---
+title: "Create Rule"
+api: "POST https://crypto-sandbox.yativo.com/api/v1/auto-forwarding"
+description: "Create an auto-forwarding rule for automatic deposit forwarding"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="asset_id" type="string" required>
+  The source asset/wallet to monitor for deposits.
+</ParamField>
+
+<ParamField body="destination_address" type="string" required>
+  The address to forward funds to.
+</ParamField>
+
+<ParamField body="destination_chain" type="string" required>
+  The chain of the destination address.
+</ParamField>
+
+<ParamField body="min_amount" type="string">
+  Minimum deposit amount (in token units) required to trigger forwarding. Deposits below this threshold are not forwarded.
+</ParamField>
+
+<ParamField body="enabled" type="boolean">
+  Whether the rule is active. Defaults to `true`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/auto-forwarding' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "asset_id": "asset_01xyz789",
+    "destination_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "destination_chain": "ethereum",
+    "min_amount": "10.00",
+    "enabled": true
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "rule_id": "af_01abc123",
+    "asset_id": "asset_01xyz789",
+    "destination_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "destination_chain": "ethereum",
+    "min_amount": "10.00",
+    "enabled": true,
+    "total_forwarded": "0.00",
+    "forward_count": 0,
+    "created_at": "2026-04-01T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

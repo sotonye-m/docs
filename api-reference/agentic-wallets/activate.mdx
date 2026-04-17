@@ -1,0 +1,46 @@
+---
+title: "Activate Wallet"
+api: "POST https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/{walletId}/activation/activate"
+description: "Activate an agentic wallet after OTP verification"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="walletId" type="string" required>
+  The wallet ID to activate.
+</ParamField>
+
+<ParamField body="email_otp" type="string" required>
+  The email OTP code received after calling the send-email-otp endpoint.
+</ParamField>
+
+<ParamField body="totp_code" type="string">
+  TOTP code from your authenticator app (required if 2FA is enabled on your account).
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/aw_01abc123/activation/activate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email_otp": "123456"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Wallet activated successfully",
+  "data": {
+    "wallet_id": "aw_01abc123",
+    "status": "active"
+  }
+}
+```
+</ResponseExample>

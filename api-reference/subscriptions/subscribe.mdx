@@ -1,0 +1,42 @@
+---
+title: "Subscribe"
+api: "POST https://crypto-sandbox.yativo.com/api/subscription/subscribe"
+description: "Subscribe to a pricing tier"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="tier_id" type="string" required>
+  The tier ID to subscribe to (e.g., `tier_pro`, `tier_enterprise`).
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/subscription/subscribe' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "tier_id": "tier_pro"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "message": "Subscription activated",
+  "data": {
+    "tier_id": "tier_pro",
+    "tier_name": "Pro",
+    "status": "active",
+    "auto_renew": true,
+    "current_period_start": "2026-04-01T00:00:00Z",
+    "current_period_end": "2026-05-01T00:00:00Z"
+  }
+}
+```
+</ResponseExample>

@@ -7,7 +7,7 @@ sidebarTitle: "Card Issuer Program"
 The Yativo Card Issuer Program lets businesses issue Visa/Mastercard virtual and physical cards directly to their own customers — under your brand. This guide covers the full setup: applying for issuer status, creating customers, issuing cards, and funding card balances programmatically.
 
 <Note>
-  The Issuer Program requires approval from Yativo's compliance team. Apply using the steps below — approvals typically take 2–5 business days. You can develop and test against the Sandbox at `https://crypto-sandbox.yativo.com/api/` while waiting.
+  The Issuer Program requires an invitation from Yativo. Contact your account manager or [support@yativo.com](mailto:support@yativo.com) to get started. The program section will not appear in your dashboard or API until your account has been enabled.
 </Note>
 
 ## Who This Is For
@@ -21,7 +21,7 @@ The Yativo Card Issuer Program lets businesses issue Visa/Mastercard virtual and
 
 <Step title="Apply for the issuer program">
 
-Submit your business details and intended use case. Yativo's team will review your application.
+Once your account manager has enabled the Card Issuer Program on your account, the section appears in your dashboard and the apply endpoint becomes available. Choose your funding network and optional IBAN add-on.
 
 <CodeGroup>
 
@@ -30,18 +30,8 @@ curl -X POST https://crypto-api.yativo.com/api/card-issuer/apply \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
-    "businessName": "Acme Financial Inc.",
-    "businessType": "fintech",
-    "website": "https://acmefinancial.com",
-    "estimatedMonthlyCards": 500,
-    "useCase": "We provide crypto-funded expense cards to our B2B customers for cross-border payments.",
-    "contact": {
-      "name": "James Okafor",
-      "email": "james@acmefinancial.com",
-      "phone": "+14085559821"
-    },
-    "country": "US",
-    "incorporationNumber": "7821934-DE"
+    "funding_structure": "master_wallet",
+    "iban_enabled": false
   }'
 ```
 
@@ -54,23 +44,11 @@ const client = new YativoCrypto({
 });
 
 const application = await client.cardIssuer.apply({
-  businessName: "Acme Financial Inc.",
-  businessType: "fintech",
-  website: "https://acmefinancial.com",
-  estimatedMonthlyCards: 500,
-  useCase:
-    "We provide crypto-funded expense cards to our B2B customers for cross-border payments.",
-  contact: {
-    name: "James Okafor",
-    email: "james@acmefinancial.com",
-    phone: "+14085559821",
-  },
-  country: "US",
-  incorporationNumber: "7821934-DE",
+  funding_structure: "master_wallet", // "master_wallet" = SOL | "non_master" = XDC
+  iban_enabled: false,
 });
 
-console.log(application.applicationId); // app_01J2KM3MNPQ7R4S5T6U7VAPP01
-console.log(application.status);        // "under_review"
+console.log(application.status); // "pending"
 ```
 
 ```python Python
@@ -82,36 +60,21 @@ client = YativoCrypto(
 )
 
 application = client.card_issuer.apply(
-    business_name="Acme Financial Inc.",
-    business_type="fintech",
-    website="https://acmefinancial.com",
-    estimated_monthly_cards=500,
-    use_case="We provide crypto-funded expense cards to our B2B customers.",
-    contact={
-        "name": "James Okafor",
-        "email": "james@acmefinancial.com",
-        "phone": "+14085559821",
-    },
-    country="US",
-    incorporation_number="7821934-DE",
+    funding_structure="master_wallet",
+    iban_enabled=False,
 )
 
-print(application.application_id)  # app_01J2KM3MNPQ7R4S5T6U7VAPP01
-print(application.status)          # "under_review"
+print(application.status)  # "pending"
 ```
 
 </CodeGroup>
 
-**Response:**
+**Funding structure options:**
 
-```json
-{
-  "applicationId": "app_01J2KM3MNPQ7R4S5T6U7VAPP01",
-  "status": "under_review",
-  "submittedAt": "2026-03-26T13:00:00Z",
-  "estimatedReviewDays": 3
-}
-```
+| Value | Network | Best for |
+|---|---|---|
+| `master_wallet` | Solana | High volume, ~2–5 s settlement |
+| `non_master` | XDC Network | Enterprise, near-zero fees, ~2 s settlement |
 
 </Step>
 
@@ -304,71 +267,78 @@ print(card.status)    # "active"
 
 <Step title="Fund the customer's card">
 
-Top up a customer's card balance directly from your issuer account's USDC balance.
+Transfer funds from your master wallet balance to a customer's card. Identify the customer by **email**, **Yativo card ID** (`yc_...`), or your own **external reference** — no need to look up IDs first.
 
 <CodeGroup>
 
-```bash cURL
-curl -X POST "https://crypto-api.yativo.com/api/card-issuer/customers/cst_01J2KP3MNPQ7R4S5T6U7VCST55/fund" \
+```bash cURL — fund by email
+curl -X POST "https://crypto-api.yativo.com/api/card-issuer/fund" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: topup_cst55_20260326_001" \
   -d '{
-    "cardId": "crd_01J2KQ3MNPQ7R4S5T6U7VCRD99",
-    "amount": "250.00",
-    "currency": "USD",
-    "memo": "Monthly expense allowance - March 2026"
+    "identifier": "priya@yourapp.com",
+    "amount": 250.00,
+    "currency": "USD"
+  }'
+```
+
+```bash cURL — fund by external reference
+curl -X POST "https://crypto-api.yativo.com/api/card-issuer/fund" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "identifier": "your_user_id_8821",
+    "amount": 100.00,
+    "currency": "EUR"
   }'
 ```
 
 ```typescript TypeScript
-const funding = await client.cardIssuer.fundCustomerCard(
-  {
-    customerId: "cst_01J2KP3MNPQ7R4S5T6U7VCST55",
-    cardId: "crd_01J2KQ3MNPQ7R4S5T6U7VCRD99",
-    amount: "250.00",
-    currency: "USD",
-    memo: "Monthly expense allowance - March 2026",
-  },
-  { idempotencyKey: "topup_cst55_20260326_001" }
-);
+// Fund by email
+const funding = await client.cardIssuer.fundCustomer({
+  identifier: "priya@yourapp.com",
+  amount: 250.00,
+  currency: "USD",
+});
 
-console.log(funding.fundingId);  // fnd_01J2KR3MNPQ7R4S5T6U7VFND12
-console.log(funding.status);     // "completed"
-console.log(funding.newBalance); // "250.00"
+// Fund by your own user ID (external_reference set at onboarding)
+const funding = await client.cardIssuer.fundCustomer({
+  identifier: "your_user_id_8821",
+  amount: 100.00,
+  currency: "EUR",
+});
+
+console.log(funding.status); // "completed"
 ```
 
 ```python Python
-funding = client.card_issuer.fund_customer_card(
-    customer_id="cst_01J2KP3MNPQ7R4S5T6U7VCST55",
-    card_id="crd_01J2KQ3MNPQ7R4S5T6U7VCRD99",
-    amount="250.00",
+# Fund by email
+funding = client.card_issuer.fund_customer(
+    identifier="priya@yourapp.com",
+    amount=250.00,
     currency="USD",
-    memo="Monthly expense allowance - March 2026",
-    idempotency_key="topup_cst55_20260326_001",
 )
 
-print(funding.funding_id)   # fnd_01J2KR3MNPQ7R4S5T6U7VFND12
-print(funding.status)       # "completed"
-print(funding.new_balance)  # "250.00"
+print(funding.status)  # "completed"
 ```
 
 </CodeGroup>
+
+**Currency options:** `USD` (deducted from your USDC balance), `EUR` (from EURe balance), `GBP` (from GBPe balance).
 
 **Response:**
 
 ```json
 {
-  "fundingId": "fnd_01J2KR3MNPQ7R4S5T6U7VFND12",
-  "customerId": "cst_01J2KP3MNPQ7R4S5T6U7VCST55",
-  "cardId": "crd_01J2KQ3MNPQ7R4S5T6U7VCRD99",
-  "amount": "250.00",
-  "currency": "USD",
-  "previousBalance": "0.00",
-  "newBalance": "250.00",
-  "status": "completed",
-  "memo": "Monthly expense allowance - March 2026",
-  "completedAt": "2026-03-26T13:30:00Z"
+  "success": true,
+  "data": {
+    "funding_id": "fund_01HX9ABC",
+    "customer_id": "yc_01HXABC123",
+    "amount": 250.00,
+    "currency": "USD",
+    "status": "completed",
+    "funded_at": "2026-04-16T10:30:00Z"
+  }
 }
 ```
 

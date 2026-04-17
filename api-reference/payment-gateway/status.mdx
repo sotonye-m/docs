@@ -1,0 +1,34 @@
+---
+title: "Payment Status"
+api: "GET https://crypto-sandbox.yativo.com/api/crypto-gateway/pay/{paymentId}/status"
+description: "Check the status of a payment (public, no auth required)"
+---
+
+<ParamField path="paymentId" type="string" required>
+  The payment ID returned when the payment intent was created.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/crypto-gateway/pay/pi_01abc123/status'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": "pi_01abc123",
+    "status": "paid",
+    "amount": 49.99,
+    "currency": "USD",
+    "paid_amount": 50.00,
+    "paid_asset": "USDC",
+    "paid_chain": "base",
+    "tx_hash": "0xdef456...",
+    "confirmed_at": "2026-04-01T11:05:00Z"
+  }
+}
+```
+</ResponseExample>

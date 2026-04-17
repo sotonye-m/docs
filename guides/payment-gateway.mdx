@@ -1,0 +1,123 @@
+---
+title: "Accept Crypto Payments (Gateway)"
+description: "Set up a crypto payment gateway to accept payments from anyone via hosted checkout"
+---
+
+This guide walks you through setting up the Yativo Crypto Payment Gateway to accept payments. By the end, you'll have a working payment flow: create a payment intent, share a link, and receive crypto.
+
+---
+
+<Steps>
+  <Step title="Authenticate">
+    Get a Bearer token using your API key:
+
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/auth/token' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "api_key": "yativo_...",
+        "api_secret": "..."
+      }'
+    ```
+  </Step>
+
+  <Step title="Create a payment intent">
+    Create a payment intent with the amount and currency:
+
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/crypto-gateway/payments' \
+      -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "amount": 49.99,
+        "currency": "USD",
+        "description": "Pro Plan - Monthly",
+        "metadata": {
+          "order_id": "ord_123"
+        }
+      }'
+    ```
+
+    You'll receive a `checkout_url` in the response.
+  </Step>
+
+  <Step title="Share the checkout link">
+    Redirect your customer to the `checkout_url`, or embed it in:
+    - An email invoice
+    - A QR code
+    - A "Pay with Crypto" button on your site
+    - A Telegram/Discord bot message
+
+    The hosted checkout page handles chain selection, wallet connection, and payment confirmation.
+  </Step>
+
+  <Step title="Listen for webhook">
+    Set up a webhook to get notified when the payment is confirmed:
+
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/webhook/create-webhook' \
+      -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "url": "https://your-server.com/webhooks/yativo",
+        "events": ["gateway.payment.paid"]
+      }'
+    ```
+  </Step>
+
+  <Step title="Verify and fulfill">
+    When your webhook endpoint receives the `gateway.payment.paid` event, verify the payment amount and fulfill the order:
+
+    ```javascript
+    app.post('/webhooks/yativo', (req, res) => {
+      const { event, data } = req.body;
+      
+      if (event === 'gateway.payment.paid') {
+        const { payment_id, amount, metadata } = data;
+        // Fulfill the order using metadata.order_id
+        fulfillOrder(metadata.order_id);
+      }
+      
+      res.status(200).send('ok');
+    });
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Full Example (TypeScript)
+
+```typescript
+import { YativoCrypto } from '@yativo/crypto-sdk';
+
+const client = new YativoCrypto({
+  apiKey: process.env.YATIVO_API_KEY!,
+  apiSecret: process.env.YATIVO_API_SECRET!,
+});
+
+// Create a payment for a customer's order
+async function createPayment(orderId: string, amount: number) {
+  const payment = await client.gateway.createPayment({
+    amount,
+    currency: 'USD',
+    description: `Order #${orderId}`,
+    metadata: { order_id: orderId },
+  });
+
+  return payment.checkout_url; // Send this to your customer
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Payment Gateway" icon="credit-card" href="/yativo-crypto/payment-gateway">
+    Full Payment Gateway documentation.
+  </Card>
+  <Card title="Webhook Integration" icon="bell" href="/guides/webhook-integration">
+    Set up and verify webhooks.
+  </Card>
+</CardGroup>

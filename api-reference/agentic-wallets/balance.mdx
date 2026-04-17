@@ -1,0 +1,38 @@
+---
+title: "Agent Balance"
+api: "GET https://crypto-sandbox.yativo.com/api/v1/agent/balance"
+description: "Check the balance of an agentic wallet (used by AI agents)"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Connector API key: `Bearer yac_...`
+</ParamField>
+
+<ParamField query="wallet_id" type="string" required>
+  The agentic wallet ID to check.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/agent/balance?wallet_id=aw_01abc123' \
+  -H 'Authorization: Bearer yac_connector_api_key'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "wallet_id": "aw_01abc123",
+    "wallet_address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
+    "chain": "base",
+    "balance": 250.00,
+    "assets": {
+      "USDC": 250.00
+    }
+  }
+}
+```
+</ResponseExample>

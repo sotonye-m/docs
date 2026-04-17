@@ -1,0 +1,33 @@
+---
+title: "Gateway Overview"
+api: "GET https://crypto-sandbox.yativo.com/api/crypto-gateway/overview"
+description: "Get a summary of your payment gateway activity"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/crypto-gateway/overview' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "total_payments": 150,
+    "total_volume_usd": 25000.00,
+    "paid_count": 120,
+    "pending_count": 10,
+    "expired_count": 20,
+    "conversion_rate": "80%"
+  }
+}
+```
+</ResponseExample>

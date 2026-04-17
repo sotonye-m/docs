@@ -1,0 +1,71 @@
+---
+title: "Sandbox: Agentic Wallets"
+description: "Test agentic wallets with simulated agent transactions on testnet"
+---
+
+## Agentic Wallets in Sandbox
+
+The sandbox agentic wallet system runs on testnet chains. Create wallets, add connectors, and simulate agent transactions without real funds.
+
+---
+
+## Create and Activate a Test Wallet
+
+```bash
+# 1. Create a wallet
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "name": "Test Agent Wallet" }'
+
+# 2. Send activation OTP
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/aw_.../activation/send-email-otp' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+
+# 3. Activate (enter the OTP from your email)
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/aw_.../activation/activate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "email_otp": "123456" }'
+```
+
+---
+
+## Simulate Agent Transactions
+
+In sandbox, simulate a transaction from an agentic wallet:
+
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/sandbox/simulate-agentic-transaction' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "wallet_id": "aw_01abc123"
+  }'
+```
+
+This creates a mock transaction with realistic data including service name, payment category, and audit trail fields.
+
+---
+
+## Test the MCP Server
+
+Point the MCP server at the sandbox:
+
+```json
+{
+  "mcpServers": {
+    "yativo-wallet": {
+      "command": "npx",
+      "args": ["-y", "@yativo/mcp-server"],
+      "env": {
+        "YATIVO_API_KEY": "yac_sandbox_connector_key",
+        "YATIVO_WALLET_ID": "aw_sandbox_wallet_id",
+        "YATIVO_API_URL": "https://crypto-sandbox.yativo.com/api/v1"
+      }
+    }
+  }
+}
+```
+
+The MCP server works identically against sandbox — all transactions use testnet chains.

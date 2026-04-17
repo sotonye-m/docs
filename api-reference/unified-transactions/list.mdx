@@ -1,0 +1,75 @@
+---
+title: "List Unified Transactions"
+api: "GET https://crypto-sandbox.yativo.com/api/unified-transactions/list"
+description: "List all transactions across all types in a single unified view"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number. Defaults to 1.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page. Defaults to 20.
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by transaction type: `deposit`, `withdrawal`, `swap`, `fee`, `auto_forwarding`, `card_transaction`, `iban_transfer`, `gateway_payment`, `agentic_transaction`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status: `pending`, `processing`, `completed`, `failed`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/unified-transactions/list?page=1&limit=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "transaction_id": "utx_01abc123",
+        "type": "deposit",
+        "status": "completed",
+        "amount": "500.00",
+        "asset": "USDC",
+        "chain": "solana",
+        "from_address": "7xKXtg2CW87d...",
+        "to_address": "GY1EZGdpiJNyx...",
+        "tx_hash": "5xYz...",
+        "fee_amount": "0.00",
+        "created_at": "2026-03-26T10:00:00Z"
+      },
+      {
+        "transaction_id": "utx_02def456",
+        "type": "card_transaction",
+        "status": "completed",
+        "amount": "25.99",
+        "asset": "EUR",
+        "service_data": {
+          "merchant_name": "Amazon",
+          "card_last_four": "4242"
+        },
+        "created_at": "2026-03-26T11:00:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 150
+    }
+  }
+}
+```
+</ResponseExample>

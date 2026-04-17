@@ -1,0 +1,53 @@
+---
+title: "List Plans"
+api: "GET https://crypto-sandbox.yativo.com/api/subscription/plans"
+description: "List all available subscription pricing tiers"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/subscription/plans' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "tiers": [
+      {
+        "id": "tier_free",
+        "name": "Free",
+        "price_usd": 0,
+        "billing_period": "monthly",
+        "features": {
+          "rate_limit": 60,
+          "wallets": 5,
+          "api_keys": 2,
+          "webhooks": 3
+        }
+      },
+      {
+        "id": "tier_pro",
+        "name": "Pro",
+        "price_usd": 49,
+        "billing_period": "monthly",
+        "features": {
+          "rate_limit": 300,
+          "wallets": 50,
+          "api_keys": 10,
+          "webhooks": 20
+        }
+      }
+    ]
+  }
+}
+```
+</ResponseExample>

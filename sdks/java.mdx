@@ -1,11 +1,13 @@
 ---
 title: "Java / Spring Boot SDK"
-description: "Complete guide for yativo-crypto-spring-boot-starter — auto-configuration, service injection, webhook events, and error handling"
+description: "Complete guide for yativo-crypto-sdk-spring-boot-starter — auto-configuration, service injection, webhook events, and error handling"
 ---
 
 # Java / Spring Boot SDK
 
-The `yativo-crypto-spring-boot-starter` is a Spring Boot auto-configuration library that wires up all Yativo service beans automatically from your `application.yml`. Just add the dependency, set your credentials, and `@Autowired` the service you need.
+The `yativo-crypto-sdk-spring-boot-starter` is a Spring Boot auto-configuration library that wires up all Yativo service beans automatically from your `application.yml`. Just add the dependency, set your credentials, and `@Autowired` the service you need.
+
+[![Maven Central](https://img.shields.io/maven-central/v/com.yativo/yativo-crypto-sdk-spring-boot-starter?label=Maven%20Central&color=C71A36)](https://central.sonatype.com/artifact/com.yativo/yativo-crypto-sdk-spring-boot-starter)
 
 ## Installation
 
@@ -14,24 +16,24 @@ The `yativo-crypto-spring-boot-starter` is a Spring Boot auto-configuration libr
     ```xml
     <dependency>
       <groupId>com.yativo</groupId>
-      <artifactId>yativo-crypto-spring-boot-starter</artifactId>
-      <version>LATEST</version>
+      <artifactId>yativo-crypto-sdk-spring-boot-starter</artifactId>
+      <version>1.0.1</version>
     </dependency>
     ```
   </Tab>
   <Tab title="Gradle (Kotlin DSL)">
     ```kotlin
-    implementation("com.yativo:yativo-crypto-spring-boot-starter:LATEST")
+    implementation("com.yativo:yativo-crypto-sdk-spring-boot-starter:1.0.1")
     ```
   </Tab>
   <Tab title="Gradle (Groovy DSL)">
     ```groovy
-    implementation 'com.yativo:yativo-crypto-spring-boot-starter:LATEST'
+    implementation 'com.yativo:yativo-crypto-sdk-spring-boot-starter:1.0.1'
     ```
   </Tab>
 </Tabs>
 
-**Requirements:** Java 11+, Spring Boot 2.7+ or 3.x.
+**Package:** [`com.yativo:yativo-crypto-sdk-spring-boot-starter`](https://central.sonatype.com/artifact/com.yativo/yativo-crypto-sdk-spring-boot-starter) · **Latest:** `1.0.1` · **Requirements:** Java 11+, Spring Boot 2.7+ or 3.x.
 
 ---
 

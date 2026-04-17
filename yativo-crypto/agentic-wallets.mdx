@@ -1,0 +1,229 @@
+---
+title: "Agentic Wallets"
+description: "Programmable wallets for AI agents — send crypto, pay for x402 APIs, and track spending with full audit trails"
+---
+
+Agentic Wallets give AI agents their own self-custodial crypto wallets. Each wallet is a programmable spending account that AI services can use to send payments, pay for x402 paywalled APIs, and keep an immutable audit trail of every dollar spent.
+
+Built for the agentic economy — where AI agents need to pay for services, tools, and data autonomously.
+
+---
+
+## How It Works
+
+<Steps>
+  <Step title="Create a wallet">
+    Create an agentic wallet from the dashboard or via API. Each wallet gets its own on-chain address with USDC funding support.
+  </Step>
+  <Step title="Activate with 2FA">
+    Activate the wallet using email OTP and/or TOTP verification. This ensures only the wallet owner can authorize the wallet for agent use.
+  </Step>
+  <Step title="Add connectors">
+    Generate API keys (connectors) that your AI agent uses to authenticate. Each connector can have its own spending limits and permissions.
+  </Step>
+  <Step title="Fund the wallet">
+    Deposit USDC into the wallet's on-chain address, or use the manual funding endpoint to top up from your main account.
+  </Step>
+  <Step title="Let your agent transact">
+    The agent uses its connector API key to send payments, pay for x402 APIs, and check balances — all with per-transaction audit trails.
+  </Step>
+</Steps>
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Per-Agent API Keys" icon="key">
+    Each connector gets a unique API key (`yac_...`) with configurable spending limits. Revoke a connector without affecting the wallet.
+  </Card>
+  <Card title="x402 Protocol Support" icon="money-bill-wave">
+    Built-in support for the x402 payment protocol. Your agent can fetch paywalled APIs and the wallet auto-pays the 402 response.
+  </Card>
+  <Card title="Spending Limits" icon="shield">
+    Set per-transaction, daily, and monthly limits at the wallet level and per connector. Enforce budget controls before the agent can overspend.
+  </Card>
+  <Card title="Full Audit Trail" icon="receipt">
+    Every transaction records the service name, URL, payment reason, and category. Built for compliance and cost attribution.
+  </Card>
+  <Card title="Auto-Funding" icon="arrows-rotate">
+    Configure automatic top-ups when the wallet balance drops below a threshold. Funds are pulled from your main account.
+  </Card>
+  <Card title="Multi-Chain Support" icon="link">
+    Wallets support USDC across multiple chains. Pay services on any supported network.
+  </Card>
+</CardGroup>
+
+---
+
+## Wallet Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Created: POST /agentic-wallets/create
+    Created --> Activating: Send OTP
+    Activating --> Active: Verify OTP + Activate
+    Active --> Active: Transact, fund, add connectors
+    Active --> Deactivated: POST /deactivate
+    Deactivated --> [*]
+```
+
+| Status | Description |
+|--------|-------------|
+| `created` | Wallet exists but cannot transact until activated |
+| `activating` | OTP verification in progress |
+| `active` | Fully operational — agents can transact |
+| `suspended` | Temporarily halted by admin (e.g., suspicious activity) |
+| `deactivated` | Permanently disabled by the owner |
+
+---
+
+## Connectors
+
+Connectors are API keys tied to a specific wallet. Think of them as "agent credentials" — each AI agent or service integration gets its own connector.
+
+| Field | Description |
+|-------|-------------|
+| `name` | Human-readable label (e.g., "Production Agent") |
+| `api_key` | Starts with `yac_` — used by the agent for authentication |
+| `per_transaction_limit` | Max USD amount per single transaction |
+| `daily_limit` | Max USD amount per 24-hour period |
+| `monthly_limit` | Max USD amount per calendar month |
+| `status` | `active` or `revoked` |
+
+You can have multiple connectors per wallet for different agents or environments.
+
+---
+
+## Agent API
+
+Once a connector is active, the agent authenticates with its API key and hits the Agent API directly:
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /agent/transact` | Send a crypto payment |
+| `GET /agent/balance` | Check wallet balance |
+| `GET /agent/transactions` | List recent transactions |
+| `POST /agent/x402-fetch` | Fetch a URL with automatic x402 payment |
+
+### Send a Payment
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/agent/transact' \
+  -H 'Authorization: Bearer yac_connector_api_key' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "wallet_id": "aw_01abc123",
+    "amount": 5.00,
+    "asset": "USDC",
+    "recipient_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "service_name": "OpenAI API",
+    "service_url": "https://api.openai.com",
+    "payment_reason": "GPT-4 inference for customer support bot",
+    "payment_category": "ai_service"
+  }'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "transaction_id": "atx_01pqr456",
+    "tx_hash": "0xabc123...",
+    "amount": 5.00,
+    "asset": "USDC",
+    "recipient_address": "0x9F8b...",
+    "chain": "base",
+    "status": "completed",
+    "fee": 0.00,
+    "is_free_transaction": true
+  }
+}
+```
+
+### x402 Protocol Fetch
+
+The x402 protocol enables HTTP-native micropayments. When your agent fetches a URL that returns HTTP 402 (Payment Required), the wallet automatically pays and retries:
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/agent/x402-fetch' \
+  -H 'Authorization: Bearer yac_connector_api_key' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "wallet_id": "aw_01abc123",
+    "url": "https://api.example.com/premium-data",
+    "method": "GET"
+  }'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "status": 200,
+    "paid": true,
+    "payment": {
+      "amount_usd": 0.01,
+      "asset": "USDC",
+      "network": "base",
+      "pay_to": "0x..."
+    },
+    "body": { "premium_data": "..." }
+  }
+}
+```
+
+---
+
+## Payment Categories
+
+Every agent transaction requires a `payment_category` for audit and analytics:
+
+| Category | Use Case |
+|----------|----------|
+| `ai_service` | Paying for AI model inference, embeddings, etc. |
+| `prediction_market` | Placing bets or funding prediction contracts |
+| `legal_escrow` | Escrow payments for legal or contractual obligations |
+| `subscription` | Recurring service subscriptions |
+| `purchase` | One-time purchases or API credits |
+| `transfer` | Wallet-to-wallet transfers |
+| `settlement` | Settling invoices or outstanding balances |
+| `other` | Anything not covered above |
+
+---
+
+## Pricing
+
+Agentic wallet pricing is tier-based. Check the current pricing:
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/v1/agentic-wallets/pricing' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+Each plan includes a number of free transactions per month. Transactions beyond the free tier incur a small per-transaction fee.
+
+---
+
+## MCP Server Integration
+
+For AI agents using the Model Context Protocol, install the [`@yativo/mcp-server`](/sdks/mcp) package. It exposes agentic wallet operations as MCP tools that any MCP-compatible AI agent can call directly.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference/agentic-wallets/create">
+    Full endpoint reference for all agentic wallet operations.
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/sdks/mcp">
+    Connect AI agents via the Model Context Protocol.
+  </Card>
+  <Card title="Sandbox" icon="flask" href="/sandbox/agentic-wallets">
+    Test agentic wallets in the sandbox environment.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/yativo-crypto/webhooks">
+    Get notified on agent transaction events.
+  </Card>
+</CardGroup>

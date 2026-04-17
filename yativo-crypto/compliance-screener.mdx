@@ -1,0 +1,134 @@
+---
+title: "Compliance Screener"
+description: "Screen blockchain addresses against sanctions, fraud, and risk databases before transacting"
+---
+
+The Compliance Screener checks blockchain addresses against sanctions lists, known fraud databases, and risk scoring services. Use it before processing transactions to flag high-risk addresses and maintain regulatory compliance.
+
+The screener is available as a **public API** — no authentication required.
+
+---
+
+## Check an Address
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/screener/check' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4"
+  }'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "risk_level": "low",
+    "flagged": false,
+    "checks": {
+      "sanctions": false,
+      "fraud": false,
+      "darknet": false,
+      "mixer": false
+    },
+    "checked_at": "2026-04-01T12:00:00Z"
+  }
+}
+```
+
+---
+
+## Risk Levels
+
+| Level | Description |
+|-------|-------------|
+| `low` | Address has no known risk indicators |
+| `medium` | Address has some indirect exposure to flagged entities |
+| `high` | Address is directly associated with sanctioned or fraudulent activity |
+| `critical` | Address is on an active sanctions list — **do not transact** |
+
+---
+
+## Batch Check
+
+Screen multiple addresses in a single request:
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/screener/batch-check' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "addresses": [
+      "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+      "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
+      "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+    ]
+  }'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "results": [
+      { "address": "0x9F8b...", "risk_level": "low", "flagged": false },
+      { "address": "0x742d...", "risk_level": "low", "flagged": false },
+      { "address": "7xKXt...", "risk_level": "low", "flagged": false }
+    ],
+    "checked_at": "2026-04-01T12:00:00Z"
+  }
+}
+```
+
+---
+
+## Service Info
+
+Get the screener's current capabilities and usage information:
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/screener/info'
+```
+
+---
+
+## Health Check
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/screener/health'
+```
+
+---
+
+## Integration Pattern
+
+Screen addresses before sending funds or accepting deposits:
+
+```typescript
+// Before sending funds
+const screen = await fetch('https://crypto-api.yativo.com/api/screener/check', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ address: recipientAddress }),
+});
+const { data } = await screen.json();
+
+if (data.risk_level === 'critical' || data.risk_level === 'high') {
+  throw new Error(`Address ${recipientAddress} is flagged: ${data.risk_level}`);
+}
+
+// Safe to proceed with the transaction
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference/screener/check">
+    Full endpoint reference for the screener.
+  </Card>
+  <Card title="Transactions" icon="arrow-right-arrow-left" href="/yativo-crypto/transactions">
+    Send funds after screening the recipient.
+  </Card>
+</CardGroup>

@@ -1,0 +1,47 @@
+---
+title: "Batch Screen"
+api: "POST https://crypto-sandbox.yativo.com/api/screener/batch-check"
+description: "Screen multiple blockchain addresses in one request"
+---
+
+No authentication required — this is a public endpoint.
+
+<ParamField body="addresses" type="string[]" required>
+  Array of blockchain addresses to screen. Maximum 100 addresses per request.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/screener/batch-check' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "addresses": [
+      "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+      "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1"
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "results": [
+      {
+        "address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+        "risk_level": "low",
+        "flagged": false
+      },
+      {
+        "address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
+        "risk_level": "low",
+        "flagged": false
+      }
+    ],
+    "checked_at": "2026-04-01T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

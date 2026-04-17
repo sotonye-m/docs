@@ -1,0 +1,153 @@
+---
+title: "Subscriptions & Plans"
+description: "Manage subscription tiers, subscribe to plans, and handle billing automatically"
+---
+
+The Subscriptions API lets you manage your Yativo account subscription tier. Different tiers unlock higher rate limits, more features, and lower fees.
+
+---
+
+## How It Works
+
+1. **View available plans** — `GET /subscription/plans` returns all pricing tiers
+2. **Subscribe** — `POST /subscription/subscribe` to upgrade or change your tier
+3. **Manage** — Toggle auto-renewal, view payment history, or cancel
+
+---
+
+## List Plans
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/subscription/plans' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "tiers": [
+      {
+        "id": "tier_free",
+        "name": "Free",
+        "price_usd": 0,
+        "billing_period": "monthly",
+        "features": {
+          "rate_limit": 60,
+          "wallets": 5,
+          "api_keys": 2,
+          "webhooks": 3
+        }
+      },
+      {
+        "id": "tier_pro",
+        "name": "Pro",
+        "price_usd": 49,
+        "billing_period": "monthly",
+        "features": {
+          "rate_limit": 300,
+          "wallets": 50,
+          "api_keys": 10,
+          "webhooks": 20
+        }
+      },
+      {
+        "id": "tier_enterprise",
+        "name": "Enterprise",
+        "price_usd": 299,
+        "billing_period": "monthly",
+        "features": {
+          "rate_limit": 1000,
+          "wallets": "unlimited",
+          "api_keys": "unlimited",
+          "webhooks": "unlimited"
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Get Current Subscription
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/subscription/current' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "tier_id": "tier_pro",
+    "tier_name": "Pro",
+    "status": "active",
+    "auto_renew": true,
+    "current_period_start": "2026-03-01T00:00:00Z",
+    "current_period_end": "2026-04-01T00:00:00Z"
+  }
+}
+```
+
+---
+
+## Subscribe to a Plan
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/subscription/subscribe' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "tier_id": "tier_pro"
+  }'
+```
+
+---
+
+## Toggle Auto-Renewal
+
+```bash
+curl -X PUT 'https://crypto-api.yativo.com/api/subscription/auto-renew' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "auto_renew": false
+  }'
+```
+
+---
+
+## Cancel Subscription
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/subscription/cancel' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+Cancellation takes effect at the end of the current billing period. You retain access to your current tier's features until then.
+
+---
+
+## Payment History
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/subscription/history' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+Returns a list of past subscription payments with amounts, dates, and receipt details.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Keys" icon="key" href="/yativo-crypto/api-keys">
+    Manage the API keys included in your plan.
+  </Card>
+  <Card title="Analytics" icon="chart-line" href="/yativo-crypto/analytics">
+    Track your usage against plan limits.
+  </Card>
+</CardGroup>

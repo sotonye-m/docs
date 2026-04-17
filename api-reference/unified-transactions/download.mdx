@@ -1,0 +1,30 @@
+---
+title: "Download Export"
+api: "GET https://crypto-sandbox.yativo.com/api/unified-transactions/export/{exportId}/download"
+description: "Download a previously requested transaction export"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="exportId" type="string" required>
+  The export ID returned when the export was requested.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/unified-transactions/export/exp_01abc123/download' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  --output transactions.pdf
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "info": "Returns the file directly as application/pdf or text/csv depending on the export format. Save the response body to a file."
+}
+```
+</ResponseExample>

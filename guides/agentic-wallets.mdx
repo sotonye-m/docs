@@ -1,0 +1,130 @@
+---
+title: "Set Up Agentic Wallets"
+description: "Create a programmable wallet for your AI agent in under 10 minutes"
+---
+
+This guide walks you through creating an agentic wallet, generating a connector API key, and making your first agent-initiated payment.
+
+---
+
+<Steps>
+  <Step title="Create a wallet">
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/agentic-wallets/create' \
+      -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+      -H 'Content-Type: application/json' \
+      -d '{ "name": "My AI Agent Wallet" }'
+    ```
+
+    Save the `wallet_id` from the response.
+  </Step>
+
+  <Step title="Activate the wallet">
+    Request an activation OTP:
+
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/agentic-wallets/aw_.../activation/send-email-otp' \
+      -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+    ```
+
+    Enter the OTP from your email to activate:
+
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/agentic-wallets/aw_.../activation/activate' \
+      -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+      -H 'Content-Type: application/json' \
+      -d '{ "email_otp": "123456" }'
+    ```
+  </Step>
+
+  <Step title="Add a connector">
+    Create an API key for your agent:
+
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/agentic-wallets/aw_.../connectors' \
+      -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "name": "Production Agent",
+        "per_transaction_limit": 50,
+        "daily_limit": 500,
+        "monthly_limit": 5000
+      }'
+    ```
+
+    Save the `api_key` (starts with `yac_`) — it's shown only once.
+  </Step>
+
+  <Step title="Fund the wallet">
+    Deposit USDC to the wallet's on-chain address, or use manual funding:
+
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/agentic-wallets/aw_.../fund' \
+      -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+      -H 'Content-Type: application/json' \
+      -d '{ "amount": 100 }'
+    ```
+  </Step>
+
+  <Step title="Make your first agent payment">
+    Using the connector API key, send a payment:
+
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/agent/transact' \
+      -H 'Authorization: Bearer yac_your_connector_key' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "wallet_id": "aw_...",
+        "amount": 5.00,
+        "recipient_address": "0x9F8b...",
+        "service_name": "OpenAI",
+        "payment_reason": "GPT-4 inference"
+      }'
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Using with the MCP Server
+
+For AI agents that support the Model Context Protocol, skip the API calls and use the MCP server:
+
+```bash
+npm install -g @yativo/mcp-server
+```
+
+Then configure it in your AI client (e.g., Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "yativo-wallet": {
+      "command": "npx",
+      "args": ["-y", "@yativo/mcp-server"],
+      "env": {
+        "YATIVO_API_KEY": "yac_your_connector_key",
+        "YATIVO_WALLET_ID": "aw_your_wallet_id"
+      }
+    }
+  }
+}
+```
+
+Your agent can now say "check my balance" or "send $5 to 0x..." and it works.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Agentic Wallets" icon="robot" href="/yativo-crypto/agentic-wallets">
+    Full Agentic Wallets documentation.
+  </Card>
+  <Card title="MCP Server" icon="terminal" href="/sdks/mcp">
+    MCP server setup and tool reference.
+  </Card>
+  <Card title="Sandbox" icon="flask" href="/sandbox/agentic-wallets">
+    Test in sandbox first.
+  </Card>
+</CardGroup>

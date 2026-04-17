@@ -28,6 +28,15 @@ To get started immediately without registering, use the **shared sandbox API key
 
 ### Step 1 — Generate a Bearer Token
 
+For quick documentation testing, use the **long-lived docs token** (valid 1 year):
+
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/sandbox/docs-token'
+```
+
+This returns a bearer token you can use immediately in the API playground above — no API key or secret needed.
+
+<Accordion title="Alternative — Generate a standard 60-minute token">
 ```bash
 curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
   -H 'Content-Type: application/json' \
@@ -36,8 +45,9 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
     "api_secret": "df8da4d6b855c7e89bd3b4216dd0a1f4b30de1963c9bff0dcd666b15a0f836a5"
   }'
 ```
+</Accordion>
 
-You'll get back an `access_token` valid for 60 minutes. Call `/auth/token` again at any time to refresh — the API key never expires.
+You'll get back an `access_token`. The docs token is valid for 1 year; the standard token lasts 60 minutes (call `/auth/token` again to refresh).
 
 ### Step 2 — Start calling the API
 
@@ -54,6 +64,12 @@ The shared sandbox account is pre-populated with:
 | Assets | USDC (SOL testnet) at address `GY1EZGdpiJNyx2BSKq8rfTDRe5K8Bb6Cf2Bn1pdmE2o1` |
 | Customers | 2 customers — alice@example.com, bob@example.com |
 | Webhooks | 1 active webhook |
+| Agentic Wallets | 1 test wallet with connector |
+| Payment Gateway | Simulated checkout available |
+
+<Tip>
+  The shared sandbox credentials above can also be used in the **API playground** on every API reference page in these docs. The docs default to the sandbox base URL — just paste your Bearer token and try any endpoint.
+</Tip>
 
 ---
 
@@ -75,10 +91,12 @@ For private integration testing with dedicated credentials:
 | Base URL | `https://crypto-sandbox.yativo.com/api/` | `https://crypto-api.yativo.com/api/` |
 | API Keys | Same keys work on both | Same |
 | Wallets | Testnet only — no real value | Mainnet, real funds |
-| Blockchains | Testnets (Solana Devnet, Sepolia, Chiado…) | Mainnets |
+| Blockchains | Testnets (Solana Devnet, Sepolia, etc.) | Mainnets |
 | Swap rates | Simulated | Live market rates |
-| IBAN | Testnet Monerium (Chiado) | Live EUR IBAN |
-| Card program | Test-mode card provider | Live card issuer |
+| IBAN | Testnet IBAN (no real banking) | Live EUR IBAN |
+| Card program | Test-mode card provider with simulated transactions | Live card issuer |
+| Payment Gateway | Simulated payments via sandbox endpoint | Live on-chain payments |
+| Agentic Wallets | Testnet wallets with simulated transactions | Real wallets, real funds |
 | Data | Isolated from production | Live data |
 
 <Note>
@@ -102,9 +120,24 @@ For private integration testing with dedicated credentials:
 ## Sandbox Limitations
 
 - **Yativo Card KYC**: Uses a test-mode KYC and card provider. Transactions are simulated.
-- **IBAN bank transfers**: Cannot receive transfers from real banks — testnet Monerium only.
+- **IBAN bank transfers**: Cannot receive transfers from real banks — testnet only.
 - **Swap rates**: Simulated, not live market prices.
 - **Email OTPs**: Delivered to real email addresses, same as production.
+- **Payment Gateway**: Use the sandbox simulation endpoint to trigger payment confirmation.
+- **Agentic Wallets**: Testnet chains only. Use the simulation endpoint to generate mock agent transactions.
+
+---
+
+## Sandbox Simulation Endpoints
+
+These endpoints are only available in the sandbox environment and let you simulate events that normally require on-chain activity:
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /sandbox/simulate-card-spend` | Simulate a card purchase |
+| `POST /sandbox/generate-card-history` | Generate mock card transaction history |
+| `POST /sandbox/simulate-gateway-payment` | Mark a gateway payment as paid |
+| `POST /sandbox/simulate-agentic-transaction` | Create a mock agent transaction |
 
 ---
 

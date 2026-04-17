@@ -1,0 +1,198 @@
+---
+title: "MCP Server"
+description: "Model Context Protocol server for AI agents — manage crypto wallets, send payments, and pay for x402 APIs"
+---
+
+# @yativo/mcp-server
+
+The Yativo MCP Server exposes [Agentic Wallet](/yativo-crypto/agentic-wallets) operations as [Model Context Protocol](https://modelcontextprotocol.io) tools. Any MCP-compatible AI agent (Claude, GPT, custom agents) can manage crypto wallets, send payments, and interact with x402-paywalled APIs through a standardized tool interface.
+
+<Info>
+  **Package**: [`@yativo/mcp-server`](https://www.npmjs.com/package/@yativo/mcp-server) on npm
+</Info>
+
+---
+
+## Installation
+
+```bash
+npm install -g @yativo/mcp-server
+```
+
+Or add it to your project:
+
+```bash
+npm install @yativo/mcp-server
+```
+
+---
+
+## Configuration
+
+The MCP server is configured via environment variables:
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `YATIVO_API_KEY` | Yes | — | Connector API key (starts with `yac_`) from your agentic wallet |
+| `YATIVO_WALLET_ID` | No | — | Default wallet ID (starts with `aw_`). Can be overridden per tool call |
+| `YATIVO_API_URL` | No | `https://crypto-api.yativo.com/api/v1` | API base URL. Change for sandbox testing |
+
+---
+
+## Setup with Claude Desktop
+
+Add to your Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "yativo-wallet": {
+      "command": "npx",
+      "args": ["-y", "@yativo/mcp-server"],
+      "env": {
+        "YATIVO_API_KEY": "yac_your_connector_api_key",
+        "YATIVO_WALLET_ID": "aw_your_wallet_id"
+      }
+    }
+  }
+}
+```
+
+For sandbox testing, add the sandbox URL:
+
+```json
+{
+  "mcpServers": {
+    "yativo-wallet": {
+      "command": "npx",
+      "args": ["-y", "@yativo/mcp-server"],
+      "env": {
+        "YATIVO_API_KEY": "yac_your_sandbox_connector_key",
+        "YATIVO_WALLET_ID": "aw_your_sandbox_wallet_id",
+        "YATIVO_API_URL": "https://crypto-sandbox.yativo.com/api/v1"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Available Tools
+
+### `get_balance`
+
+Check the balance and address of your agentic wallet.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `wallet_id` | string | No | Wallet ID (uses `YATIVO_WALLET_ID` default) |
+
+**Example prompt**: *"What's my wallet balance?"*
+
+---
+
+### `send_payment`
+
+Send a crypto payment with full audit trail fields.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `recipient_address` | string | Yes | Destination wallet address |
+| `amount` | number | Yes | Amount in USD |
+| `asset` | string | No | Asset to send (default: `USDC`) |
+| `chain` | string | No | Chain override (e.g., `base`, `ethereum`) |
+| `service_name` | string | Yes | Name of the service being paid |
+| `service_url` | string | No | URL of the service |
+| `payment_reason` | string | Yes | Why this payment is being made |
+| `payment_category` | string | No | Category: `ai_service`, `subscription`, `purchase`, `transfer`, etc. |
+| `wallet_id` | string | No | Wallet ID (uses default) |
+
+**Example prompt**: *"Send $5 USDC to 0x9F8b... for the OpenAI API subscription"*
+
+---
+
+### `x402_fetch`
+
+Fetch a URL with automatic x402 payment support. If the URL returns HTTP 402 (Payment Required), the wallet auto-pays and retries.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `url` | string | Yes | URL to fetch |
+| `method` | string | No | HTTP method (default: `GET`) |
+| `headers` | object | No | Additional request headers |
+| `body` | any | No | Request body for POST/PUT/PATCH |
+| `wallet_id` | string | No | Wallet ID (uses default) |
+
+**Example prompt**: *"Fetch the premium data from https://api.example.com/data — pay if it requires x402"*
+
+---
+
+### `get_transactions`
+
+Get recent transaction history for the wallet.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `wallet_id` | string | No | Wallet ID (uses default) |
+| `page` | number | No | Page number (default: 1) |
+| `limit` | number | No | Results per page (default: 10, max: 100) |
+
+**Example prompt**: *"Show me my last 5 transactions"*
+
+---
+
+## Resources
+
+The server exposes an MCP resource for wallet information:
+
+| Resource URI | Description |
+|-------------|-------------|
+| `wallet://info` | JSON snapshot of the default wallet's balance and address |
+
+---
+
+## Running Directly
+
+```bash
+# Set environment variables
+export YATIVO_API_KEY="yac_your_connector_key"
+export YATIVO_WALLET_ID="aw_your_wallet_id"
+
+# Run the server
+npx @yativo/mcp-server
+```
+
+The server communicates over stdio using the MCP protocol.
+
+---
+
+## Prerequisites
+
+Before using the MCP server, you need:
+
+1. A Yativo account with an [agentic wallet](/yativo-crypto/agentic-wallets)
+2. An activated wallet with at least one connector
+3. The connector's API key (`yac_...`)
+4. Funds (USDC) in the wallet
+
+See the [Agentic Wallets guide](/yativo-crypto/agentic-wallets) for setup instructions.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Agentic Wallets" icon="robot" href="/yativo-crypto/agentic-wallets">
+    Create and configure agentic wallets via the API.
+  </Card>
+  <Card title="x402 Protocol" icon="money-bill-wave">
+    Learn more about HTTP-native micropayments.
+  </Card>
+  <Card title="TypeScript SDK" icon="js" href="/sdks/typescript">
+    For programmatic (non-MCP) integration, use the TypeScript SDK.
+  </Card>
+  <Card title="Sandbox" icon="flask" href="/sandbox/overview">
+    Test the MCP server against the sandbox environment.
+  </Card>
+</CardGroup>

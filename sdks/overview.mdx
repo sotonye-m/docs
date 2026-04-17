@@ -1,11 +1,11 @@
 ---
 title: "SDK Overview"
-description: "Official Yativo Crypto SDKs for TypeScript/Node.js, Python, PHP, Java/Spring Boot, and React"
+description: "Official Yativo Crypto SDKs for TypeScript/Node.js, Python, PHP, Java/Spring Boot, React, and MCP"
 ---
 
 # Yativo Crypto SDKs
 
-Yativo provides official SDKs for the most popular languages and frameworks. Every SDK wraps the same underlying [Yativo Crypto API](https://crypto-api.yativo.com/api/) and provides a consistent, idiomatic interface for your platform.
+Yativo provides official SDKs for the most popular languages and frameworks, plus an MCP server for AI agents. Every SDK wraps the same underlying [Yativo Crypto API](https://crypto-api.yativo.com/api/) and provides a consistent, idiomatic interface for your platform.
 
 <CardGroup cols={3}>
   <Card title="TypeScript / Node.js" icon="js" href="/sdks/typescript">
@@ -23,21 +23,26 @@ Yativo provides official SDKs for the most popular languages and frameworks. Eve
   <Card title="React" icon="react" href="/sdks/react">
     Hooks and pre-built components built on top of the TypeScript SDK.
   </Card>
+  <Card title="MCP Server" icon="robot" href="/sdks/mcp">
+    Model Context Protocol server for AI agents — manage agentic wallets via Claude, GPT, or any MCP-compatible agent.
+  </Card>
 </CardGroup>
 
 ---
 
 ## Quick Comparison
 
-| Feature | TypeScript | Python | PHP | Java | React |
-|---|---|---|---|---|---|
-| Package manager | npm | pip | Composer | Maven / Gradle | npm |
-| Package name | `@yativo/crypto-sdk` | `yativo-crypto-sdk` | `yativo/crypto-sdk` | `yativo-crypto-spring-boot-starter` | `@yativo/crypto-sdk-react` |
-| Min runtime | Node 16 / modern browser | Python 3.8 | PHP 7.4 | Java 11 / Spring Boot 2.7+ | React 17+ |
-| Auto token refresh | Yes | Yes | Yes | Yes | Yes |
-| Webhook verification | Yes | Yes | Yes (static) | Yes (@EventListener) | Via TypeScript SDK |
-| Card widget / embed | YativoCardEmbed | — | — | — | YativoCardWidget |
-| UI components | — | — | — | — | Yes |
+| Feature | TypeScript | Python | PHP | Java | React | MCP |
+|---|---|---|---|---|---|---|
+| Package manager | npm | pip | Composer | Maven / Gradle | npm | npm |
+| Package name | [`@yativo/crypto-sdk`](https://www.npmjs.com/package/@yativo/crypto-sdk) | [`yativo-crypto-sdk`](https://pypi.org/project/yativo-crypto-sdk/) | [`yativo/crypto-sdk`](https://packagist.org/packages/yativo/crypto-sdk) | [`com.yativo:yativo-crypto-sdk-spring-boot-starter`](https://central.sonatype.com/artifact/com.yativo/yativo-crypto-sdk-spring-boot-starter) | [`@yativo/crypto-sdk-react`](https://www.npmjs.com/package/@yativo/crypto-sdk-react) | [`@yativo/mcp-server`](https://www.npmjs.com/package/@yativo/mcp-server) |
+| Latest version | `1.0.3` | `1.0.1` | `1.0.0` | `1.0.1` | `1.0.2` | `1.0.1` |
+| Min runtime | Node 16 / modern browser | Python 3.8 | PHP 7.4 | Java 11 / Spring Boot 2.7+ | React 17+ | Node 18+ |
+| Auto token refresh | Yes | Yes | Yes | Yes | Yes | N/A (API key auth) |
+| Webhook verification | Yes | Yes | Yes (static) | Yes (@EventListener) | Via TypeScript SDK | — |
+| Card widget / embed | YativoCardEmbed | — | — | — | YativoCardWidget | — |
+| UI components | — | — | — | — | Yes | — |
+| Agentic wallets | Via API | Via API | Via API | Via API | Via API | Built-in MCP tools |
 
 ---
 
@@ -85,8 +90,8 @@ Yativo provides official SDKs for the most popular languages and frameworks. Eve
     <!-- Maven -->
     <dependency>
       <groupId>com.yativo</groupId>
-      <artifactId>yativo-crypto-spring-boot-starter</artifactId>
-      <version>LATEST</version>
+      <artifactId>yativo-crypto-sdk-spring-boot-starter</artifactId>
+      <version>1.0.1</version>
     </dependency>
     ```
   </Tab>

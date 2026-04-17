@@ -1,0 +1,62 @@
+---
+title: "Create Payment"
+api: "POST https://crypto-sandbox.yativo.com/api/crypto-gateway/payments"
+description: "Create a new payment intent with a hosted checkout URL"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Payment amount in the specified currency.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Currency code (e.g., `USD`, `EUR`).
+</ParamField>
+
+<ParamField body="description" type="string">
+  Description shown on the checkout page.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary key-value pairs attached to the payment for your reference (e.g., `order_id`, `customer_email`).
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/crypto-gateway/payments' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "amount": 49.99,
+    "currency": "USD",
+    "description": "Pro Plan - Monthly",
+    "metadata": {
+      "order_id": "ord_123",
+      "customer_email": "alice@example.com"
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": "pi_01abc123",
+    "amount": 49.99,
+    "currency": "USD",
+    "status": "pending",
+    "checkout_url": "https://crypto-api.yativo.com/api/crypto-gateway/pay/pi_01abc123",
+    "description": "Pro Plan - Monthly",
+    "metadata": { "order_id": "ord_123", "customer_email": "alice@example.com" },
+    "expires_at": "2026-04-01T12:00:00Z",
+    "created_at": "2026-04-01T11:00:00Z"
+  }
+}
+```
+</ResponseExample>

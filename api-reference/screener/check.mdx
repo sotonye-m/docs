@@ -1,0 +1,41 @@
+---
+title: "Screen Address"
+api: "POST https://crypto-sandbox.yativo.com/api/screener/check"
+description: "Check a blockchain address against sanctions and risk databases"
+---
+
+No authentication required — this is a public endpoint.
+
+<ParamField body="address" type="string" required>
+  The blockchain address to screen.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/screener/check' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "risk_level": "low",
+    "flagged": false,
+    "checks": {
+      "sanctions": false,
+      "fraud": false,
+      "darknet": false,
+      "mixer": false
+    },
+    "checked_at": "2026-04-01T12:00:00Z"
+  }
+}
+```
+</ResponseExample>

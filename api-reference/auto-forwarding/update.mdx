@@ -1,0 +1,52 @@
+---
+title: "Update Rule"
+api: "PUT https://crypto-sandbox.yativo.com/api/v1/auto-forwarding/{rule_id}"
+description: "Update an auto-forwarding rule"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="rule_id" type="string" required>
+  The rule ID to update.
+</ParamField>
+
+<ParamField body="destination_address" type="string">
+  New destination address.
+</ParamField>
+
+<ParamField body="min_amount" type="string">
+  New minimum amount threshold.
+</ParamField>
+
+<ParamField body="enabled" type="boolean">
+  Enable or disable the rule.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X PUT 'https://crypto-sandbox.yativo.com/api/v1/auto-forwarding/af_01abc123' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "min_amount": "50.00",
+    "enabled": false
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "rule_id": "af_01abc123",
+    "min_amount": "50.00",
+    "enabled": false,
+    "updated_at": "2026-04-01T13:00:00Z"
+  }
+}
+```
+</ResponseExample>

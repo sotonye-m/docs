@@ -1,0 +1,142 @@
+---
+title: "Auto-Forwarding"
+description: "Automatically forward incoming deposits to a destination address based on configurable rules"
+---
+
+Auto-Forwarding lets you create rules that automatically send incoming deposits from one wallet to another address. When crypto lands in a monitored wallet, the forwarding rule triggers and moves the funds to the destination — no manual intervention required.
+
+Use cases: treasury sweeping, payment collection, fund aggregation, and automated payouts.
+
+---
+
+## How It Works
+
+1. **Create a rule** — Specify the source asset, destination address, and forwarding conditions
+2. **Deposits arrive** — When crypto is deposited to the source wallet, the rule evaluates
+3. **Funds forward** — If the deposit matches the rule conditions, funds are automatically sent to the destination
+
+---
+
+## Create a Forwarding Rule
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/auto-forwarding' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "asset_id": "asset_01xyz789",
+    "destination_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "destination_chain": "ethereum",
+    "min_amount": "10.00",
+    "enabled": true
+  }'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "rule_id": "af_01abc123",
+    "asset_id": "asset_01xyz789",
+    "destination_address": "0x9F8b...",
+    "destination_chain": "ethereum",
+    "min_amount": "10.00",
+    "enabled": true,
+    "created_at": "2026-03-26T12:00:00Z"
+  }
+}
+```
+
+---
+
+## Rule Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `asset_id` | string | The source wallet asset to monitor for deposits |
+| `destination_address` | string | Where to forward funds |
+| `destination_chain` | string | The chain of the destination address |
+| `min_amount` | string | Minimum deposit amount to trigger forwarding (optional) |
+| `enabled` | boolean | Whether the rule is active |
+
+---
+
+## List Rules
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/v1/auto-forwarding' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+---
+
+## Get Rule Details
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/v1/auto-forwarding/af_01abc123' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+---
+
+## Update a Rule
+
+```bash
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/auto-forwarding/af_01abc123' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "min_amount": "50.00",
+    "enabled": false
+  }'
+```
+
+---
+
+## Delete a Rule
+
+```bash
+curl -X DELETE 'https://crypto-api.yativo.com/api/v1/auto-forwarding/af_01abc123' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+---
+
+## Trigger Manual Forward
+
+Force an immediate forward for a rule, regardless of deposit conditions:
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/auto-forwarding/forward' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rule_id": "af_01abc123"
+  }'
+```
+
+---
+
+## Webhook Events
+
+| Event | Trigger |
+|-------|---------|
+| `auto_forwarding.triggered` | A forwarding rule was triggered by a deposit |
+| `auto_forwarding.completed` | The forwarded transaction was confirmed on-chain |
+| `auto_forwarding.failed` | The forwarding transaction failed |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference/auto-forwarding/create">
+    Full endpoint reference for auto-forwarding.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/yativo-crypto/webhooks">
+    Set up notifications for forwarding events.
+  </Card>
+  <Card title="Transactions" icon="arrow-right-arrow-left" href="/yativo-crypto/transactions">
+    View forwarded transactions in your transaction history.
+  </Card>
+</CardGroup>

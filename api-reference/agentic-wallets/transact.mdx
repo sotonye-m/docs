@@ -1,0 +1,85 @@
+---
+title: "Agent Transact"
+api: "POST https://crypto-sandbox.yativo.com/api/v1/agent/transact"
+description: "Send a crypto payment from an agentic wallet (used by AI agents)"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Connector API key: `Bearer yac_...`
+</ParamField>
+
+<ParamField body="wallet_id" type="string" required>
+  The agentic wallet ID to send from.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount in USD to send.
+</ParamField>
+
+<ParamField body="asset" type="string">
+  Asset to send. Defaults to `USDC`.
+</ParamField>
+
+<ParamField body="chain" type="string">
+  Chain override (e.g., `base`, `ethereum`, `solana`).
+</ParamField>
+
+<ParamField body="recipient_address" type="string" required>
+  The destination wallet address.
+</ParamField>
+
+<ParamField body="service_name" type="string" required>
+  Name of the service being paid (for audit trail).
+</ParamField>
+
+<ParamField body="service_url" type="string">
+  URL of the service being paid.
+</ParamField>
+
+<ParamField body="payment_reason" type="string" required>
+  Why this payment is being made (for audit trail).
+</ParamField>
+
+<ParamField body="payment_category" type="string">
+  Category: `ai_service`, `prediction_market`, `legal_escrow`, `subscription`, `purchase`, `transfer`, `settlement`, `other`. Defaults to `other`.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agent/transact' \
+  -H 'Authorization: Bearer yac_connector_api_key' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "wallet_id": "aw_01abc123",
+    "amount": 5.00,
+    "asset": "USDC",
+    "recipient_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "service_name": "OpenAI API",
+    "service_url": "https://api.openai.com",
+    "payment_reason": "GPT-4 inference for customer support bot",
+    "payment_category": "ai_service"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "transaction_id": "atx_01pqr456",
+    "tx_hash": "0xabc123def456...",
+    "amount": 5.00,
+    "asset": "USDC",
+    "recipient_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
+    "chain": "base",
+    "status": "completed",
+    "fee": 0.00,
+    "is_free_transaction": true,
+    "service_name": "OpenAI API",
+    "payment_category": "ai_service"
+  }
+}
+```
+</ResponseExample>

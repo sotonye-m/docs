@@ -256,7 +256,8 @@
             "group": "Transactions",
             "pages": [
               "yativo-crypto/transactions",
-              "yativo-crypto/swap"
+              "yativo-crypto/swap",
+              "yativo-crypto/unified-transactions"
             ]
           },
           {
@@ -276,9 +277,34 @@
             ]
           },
           {
+            "group": "Payment Gateway",
+            "pages": [
+              "yativo-crypto/payment-gateway"
+            ]
+          },
+          {
+            "group": "Agentic Wallets",
+            "pages": [
+              "yativo-crypto/agentic-wallets"
+            ]
+          },
+          {
             "group": "IBAN",
             "pages": [
               "yativo-crypto/iban"
+            ]
+          },
+          {
+            "group": "Automation",
+            "pages": [
+              "yativo-crypto/auto-forwarding",
+              "yativo-crypto/subscriptions"
+            ]
+          },
+          {
+            "group": "Compliance",
+            "pages": [
+              "yativo-crypto/compliance-screener"
             ]
           },
           {
@@ -301,6 +327,8 @@
             "pages": [
               "guides/overview",
               "guides/accept-crypto-payments",
+              "guides/payment-gateway",
+              "guides/agentic-wallets",
               "guides/send-crypto",
               "guides/issue-crypto-cards",
               "guides/b2b-card-issuer",
@@ -318,11 +346,12 @@
               "sdks/python",
               "sdks/php",
               "sdks/java",
-              "sdks/react"
+              "sdks/react",
+              "sdks/mcp"
             ]
           },
           {
-            "group": "Browser Extensions",
+            "group": "Browser Extensions (Coming Soon)",
             "pages": [
               "extensions/overview",
               "extensions/chrome",
@@ -338,7 +367,9 @@
               "sandbox/transactions",
               "sandbox/swap",
               "sandbox/cards",
-              "sandbox/iban"
+              "sandbox/iban",
+              "sandbox/payment-gateway",
+              "sandbox/agentic-wallets"
             ]
           }
         ]
@@ -436,6 +467,62 @@
               "api-reference/issuer/apply",
               "api-reference/issuer/program",
               "api-reference/issuer/fund-customer"
+            ]
+          },
+          {
+            "group": "Payment Gateway",
+            "pages": [
+              "api-reference/payment-gateway/create",
+              "api-reference/payment-gateway/list",
+              "api-reference/payment-gateway/status",
+              "api-reference/payment-gateway/overview"
+            ]
+          },
+          {
+            "group": "Agentic Wallets",
+            "pages": [
+              "api-reference/agentic-wallets/create",
+              "api-reference/agentic-wallets/list",
+              "api-reference/agentic-wallets/get",
+              "api-reference/agentic-wallets/activate",
+              "api-reference/agentic-wallets/add-connector",
+              "api-reference/agentic-wallets/transact",
+              "api-reference/agentic-wallets/balance",
+              "api-reference/agentic-wallets/x402-fetch"
+            ]
+          },
+          {
+            "group": "Unified Transactions",
+            "pages": [
+              "api-reference/unified-transactions/list",
+              "api-reference/unified-transactions/get",
+              "api-reference/unified-transactions/analytics",
+              "api-reference/unified-transactions/export",
+              "api-reference/unified-transactions/download"
+            ]
+          },
+          {
+            "group": "Auto-Forwarding",
+            "pages": [
+              "api-reference/auto-forwarding/create",
+              "api-reference/auto-forwarding/list",
+              "api-reference/auto-forwarding/update",
+              "api-reference/auto-forwarding/delete"
+            ]
+          },
+          {
+            "group": "Compliance Screener",
+            "pages": [
+              "api-reference/screener/check",
+              "api-reference/screener/batch-check"
+            ]
+          },
+          {
+            "group": "Subscriptions",
+            "pages": [
+              "api-reference/subscriptions/plans",
+              "api-reference/subscriptions/current",
+              "api-reference/subscriptions/subscribe"
             ]
           },
           {

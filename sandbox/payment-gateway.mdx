@@ -1,0 +1,53 @@
+---
+title: "Sandbox: Payment Gateway"
+description: "Test the crypto payment gateway with simulated payments"
+---
+
+## Payment Gateway in Sandbox
+
+The sandbox payment gateway works exactly like production, but payments are simulated on testnet chains. You can create payment intents, view the hosted checkout page, and simulate payment confirmation.
+
+---
+
+## Create a Test Payment
+
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/crypto-gateway/payments' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "amount": 25.00,
+    "currency": "USD",
+    "description": "Test payment"
+  }'
+```
+
+The response includes a `checkout_url` you can open in a browser to see the hosted checkout page.
+
+---
+
+## Simulate a Payment
+
+In sandbox, you can simulate a successful payment without actually sending on-chain funds:
+
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/sandbox/simulate-gateway-payment' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "payment_id": "pi_01abc123"
+  }'
+```
+
+This marks the payment as `paid` and triggers any configured webhooks, just as if a real on-chain payment was confirmed.
+
+---
+
+## Test Webhook Flow
+
+1. Create a [webhook](/yativo-crypto/webhooks) listening for `gateway.payment.paid`
+2. Create a payment intent
+3. Simulate the payment using the endpoint above
+4. Your webhook receives the payment confirmation event
+
+This lets you test your full checkout integration without any real blockchain transactions.

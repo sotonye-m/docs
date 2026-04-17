@@ -1,0 +1,40 @@
+---
+title: "Current Subscription"
+api: "GET https://crypto-sandbox.yativo.com/api/subscription/current"
+description: "Get the current subscription status"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X GET 'https://crypto-sandbox.yativo.com/api/subscription/current' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "tier_id": "tier_pro",
+    "tier_name": "Pro",
+    "status": "active",
+    "auto_renew": true,
+    "current_period_start": "2026-04-01T00:00:00Z",
+    "current_period_end": "2026-05-01T00:00:00Z",
+    "price_usd": 49,
+    "features": {
+      "rate_limit": 300,
+      "wallets": 50,
+      "api_keys": 10,
+      "webhooks": 20
+    }
+  }
+}
+```
+</ResponseExample>

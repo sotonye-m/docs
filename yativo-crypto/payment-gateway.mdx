@@ -1,0 +1,189 @@
+---
+title: "Payment Gateway"
+description: "Accept crypto payments with hosted checkout — create payment intents, share a payment link, get paid"
+---
+
+The Crypto Payment Gateway lets you accept cryptocurrency payments from anyone. Create a payment intent, share the hosted checkout link, and receive funds directly into your wallet. No frontend integration required — the hosted checkout page handles chain selection, wallet connection, and payment confirmation.
+
+---
+
+## How It Works
+
+<Steps>
+  <Step title="Create a payment intent">
+    Call `POST /crypto-gateway/payments` with the amount, currency, and optional metadata. You get back a payment ID and a hosted checkout URL.
+  </Step>
+  <Step title="Share the payment link">
+    Redirect your customer to the hosted checkout page, or embed the payment link in an invoice, email, or QR code.
+  </Step>
+  <Step title="Customer pays">
+    The customer selects a chain and token, confirms the transaction from their wallet, and the payment is verified on-chain.
+  </Step>
+  <Step title="You get notified">
+    A webhook fires when the payment is confirmed. The funds land in your designated wallet.
+  </Step>
+</Steps>
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Hosted Checkout" icon="browser">
+    A branded checkout page — no frontend code needed. Share a URL and get paid.
+  </Card>
+  <Card title="Multi-Chain" icon="link">
+    Accept payments in USDC, ETH, SOL, and other tokens across all supported chains.
+  </Card>
+  <Card title="Instant Settlement" icon="bolt">
+    Payments settle directly to your wallet. No holding periods, no intermediaries.
+  </Card>
+  <Card title="Webhook Notifications" icon="bell">
+    Real-time webhook events when payments are confirmed, expired, or failed.
+  </Card>
+  <Card title="Payment Dashboard" icon="chart-line">
+    View all payments, track conversions, and monitor revenue from the gateway overview.
+  </Card>
+  <Card title="Embeddable" icon="code">
+    Use the payment link in emails, invoices, QR codes, or redirect from your checkout flow.
+  </Card>
+</CardGroup>
+
+---
+
+## Create a Payment Intent
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/crypto-gateway/payments' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "amount": 49.99,
+    "currency": "USD",
+    "description": "Pro Plan - Monthly",
+    "metadata": {
+      "order_id": "ord_123",
+      "customer_email": "alice@example.com"
+    }
+  }'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "payment_id": "pi_01abc123",
+    "amount": 49.99,
+    "currency": "USD",
+    "status": "pending",
+    "checkout_url": "https://crypto-api.yativo.com/api/crypto-gateway/pay/pi_01abc123",
+    "description": "Pro Plan - Monthly",
+    "metadata": { "order_id": "ord_123" },
+    "expires_at": "2026-04-01T12:00:00Z",
+    "created_at": "2026-04-01T11:00:00Z"
+  }
+}
+```
+
+Share the `checkout_url` with your customer. The hosted page handles everything from there.
+
+---
+
+## Hosted Checkout Flow
+
+The hosted checkout page at `checkout_url` lets the payer:
+
+1. See the payment amount and description
+2. Select their preferred chain and token
+3. Connect their wallet or copy the payment address
+4. Confirm the transaction
+5. See a confirmation once the payment is verified on-chain
+
+No integration code required on your side.
+
+---
+
+## Check Payment Status
+
+Poll the payment status or wait for a webhook:
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/crypto-gateway/pay/pi_01abc123/status'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "payment_id": "pi_01abc123",
+    "status": "paid",
+    "amount": 49.99,
+    "paid_amount": 50.00,
+    "paid_asset": "USDC",
+    "paid_chain": "base",
+    "tx_hash": "0xdef456...",
+    "confirmed_at": "2026-04-01T11:05:00Z"
+  }
+}
+```
+
+---
+
+## Payment Statuses
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Payment intent created, awaiting customer action |
+| `paid` | Payment confirmed on-chain |
+| `expired` | Customer didn't pay before the expiration time |
+| `failed` | Transaction was attempted but failed on-chain |
+
+---
+
+## List Payments
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/crypto-gateway/payments' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+Returns all payment intents with their current status, amounts, and metadata.
+
+---
+
+## Gateway Overview
+
+Get a summary of your payment gateway activity:
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/crypto-gateway/overview' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+---
+
+## Webhook Events
+
+Subscribe to gateway events via the [Webhooks API](/yativo-crypto/webhooks):
+
+| Event | Trigger |
+|-------|---------|
+| `gateway.payment.paid` | Payment confirmed on-chain |
+| `gateway.payment.expired` | Payment expired without completion |
+| `gateway.payment.failed` | On-chain transaction failed |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference/payment-gateway/create">
+    Full endpoint reference for the payment gateway.
+  </Card>
+  <Card title="Sandbox" icon="flask" href="/sandbox/payment-gateway">
+    Test payment flows in the sandbox environment.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/yativo-crypto/webhooks">
+    Set up webhook notifications for payment events.
+  </Card>
+</CardGroup>

@@ -1,0 +1,64 @@
+---
+title: "x402 Fetch"
+api: "POST https://crypto-sandbox.yativo.com/api/v1/agent/x402-fetch"
+description: "Fetch a URL with automatic x402 payment — if the URL returns HTTP 402, the wallet pays and retries"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Connector API key: `Bearer yac_...`
+</ParamField>
+
+<ParamField body="wallet_id" type="string" required>
+  The agentic wallet ID to pay from.
+</ParamField>
+
+<ParamField body="url" type="string" required>
+  The URL to fetch. If it returns HTTP 402, payment is made automatically.
+</ParamField>
+
+<ParamField body="method" type="string">
+  HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`. Defaults to `GET`.
+</ParamField>
+
+<ParamField body="headers" type="object">
+  Additional headers to include in the request.
+</ParamField>
+
+<ParamField body="body" type="any">
+  Request body (for POST/PUT/PATCH requests).
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agent/x402-fetch' \
+  -H 'Authorization: Bearer yac_connector_api_key' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "wallet_id": "aw_01abc123",
+    "url": "https://api.example.com/premium-data",
+    "method": "GET"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "status": 200,
+    "paid": true,
+    "payment": {
+      "amount_usd": 0.01,
+      "asset": "USDC",
+      "network": "base",
+      "pay_to": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4"
+    },
+    "body": {
+      "premium_data": "..."
+    }
+  }
+}
+```
+</ResponseExample>

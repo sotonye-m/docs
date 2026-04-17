@@ -1,11 +1,11 @@
 ---
 title: "Yativo Crypto"
-description: "Multi-chain crypto infrastructure for businesses — wallets, cards, IBAN, and more"
+description: "Multi-chain crypto infrastructure for businesses — wallets, cards, payments, IBAN, agentic AI wallets, and more"
 ---
 
-Yativo Crypto is the crypto infrastructure division of Yativo. It gives businesses and developers a complete stack for building crypto-powered financial products: multi-chain wallet management, crypto-funded debit cards, IBAN accounts, cross-chain token swaps, and a B2B customer layer for managing your own users.
+Yativo Crypto is the crypto infrastructure division of Yativo. It gives businesses and developers a complete stack for building crypto-powered financial products: multi-chain wallet management, crypto-funded debit cards, IBAN accounts, cross-chain token swaps, a crypto payment gateway, agentic wallets for AI agents, and a B2B customer layer for managing your own users.
 
-Everything is accessible via a single REST API with SDK support for TypeScript, Python, PHP, Java, and React.
+Everything is accessible via a single REST API with SDK support for TypeScript, Python, PHP, Java, React, and an MCP server for AI agents.
 
 ---
 
@@ -13,20 +13,29 @@ Everything is accessible via a single REST API with SDK support for TypeScript, 
 
 - **Crypto wallets as a service** — Generate deposit addresses on multiple chains for your users, track balances, and move funds programmatically
 - **Crypto-funded payment cards** — Issue virtual and physical debit cards that spend directly from crypto balances
+- **Crypto payment gateway** — Accept crypto payments with a hosted checkout page — no frontend integration needed
 - **IBAN accounts** — Assign European bank account numbers to crypto wallets for fiat on/off-ramp flows
 - **Token swap** — Let users swap between tokens and chains without leaving your product
+- **Agentic wallets for AI** — Give AI agents their own wallets to send payments, pay for x402 APIs, and maintain audit trails
+- **Auto-forwarding** — Automatically sweep deposits to a destination address based on configurable rules
 - **B2B sub-accounts** — Manage wallets and cards for your own business customers under a single Yativo account
 
 ---
 
 ## Key Features
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="Multi-Chain Wallets" icon="wallet" href="/yativo-crypto/assets">
     Generate and manage wallet addresses across 9+ blockchains from a single API. Automatic deposit detection with webhook notifications.
   </Card>
   <Card title="Yativo Card" icon="credit-card" href="/yativo-crypto/cards/overview">
     Issue virtual and physical Visa debit cards funded from crypto balances. Full KYC onboarding, spending limits, and dispute management.
+  </Card>
+  <Card title="Payment Gateway" icon="cash-register" href="/yativo-crypto/payment-gateway">
+    Accept crypto payments with hosted checkout. Create a payment intent, share a link, get paid. Multi-chain support.
+  </Card>
+  <Card title="Agentic Wallets" icon="robot" href="/yativo-crypto/agentic-wallets">
+    Programmable wallets for AI agents with spending limits, connectors, x402 protocol support, and full audit trails.
   </Card>
   <Card title="IBAN" icon="building-columns" href="/yativo-crypto/iban">
     European IBAN accounts linked to crypto wallets. Receive EUR transfers directly into a wallet-backed bank account.
@@ -34,14 +43,29 @@ Everything is accessible via a single REST API with SDK support for TypeScript, 
   <Card title="Token Swap" icon="arrows-rotate" href="/yativo-crypto/swap">
     Cross-chain and same-chain token swaps with real-time quotes and slippage control.
   </Card>
+  <Card title="Auto-Forwarding" icon="forward" href="/yativo-crypto/auto-forwarding">
+    Automatically sweep incoming deposits to a destination address. Configure rules, thresholds, and destinations.
+  </Card>
+  <Card title="Compliance Screener" icon="shield-check" href="/yativo-crypto/compliance-screener">
+    Screen blockchain addresses against sanctions lists and risk databases before transacting.
+  </Card>
   <Card title="Gas Station" icon="gas-pump" href="/yativo-crypto/gas-station">
-    Pre-fund a gas station to cover network fees on behalf of your users. Eliminates the UX friction of requiring users to hold native tokens.
+    Pre-fund a gas station to cover network fees on behalf of your users.
   </Card>
   <Card title="B2B Customers" icon="users" href="/yativo-crypto/customers">
-    Create and manage sub-accounts for your business customers. Each customer gets their own wallets and cards under your platform.
+    Create and manage sub-accounts for your business customers with their own wallets and cards.
+  </Card>
+  <Card title="Unified Transactions" icon="list-check" href="/yativo-crypto/unified-transactions">
+    Single view of all transaction types with PDF/CSV export support and fee analytics.
+  </Card>
+  <Card title="MCP Server" icon="terminal" href="/sdks/mcp">
+    Model Context Protocol server for AI agents. Install [`@yativo/mcp-server`](https://www.npmjs.com/package/@yativo/mcp-server) from npm.
   </Card>
   <Card title="Real-Time Webhooks" icon="bell" href="/yativo-crypto/webhooks">
     Get notified instantly on deposits, withdrawals, swaps, card transactions, and more.
+  </Card>
+  <Card title="Subscriptions" icon="receipt" href="/yativo-crypto/subscriptions">
+    Manage your plan tier with rate limits, wallet quotas, and feature access.
   </Card>
   <Card title="Sandbox" icon="flask" href="/sandbox/overview">
     A full-featured sandbox environment for testing your integration without touching real funds.
