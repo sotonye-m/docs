@@ -1,6 +1,6 @@
 ---
 title: "Screen Address"
-api: "POST https://crypto-sandbox.yativo.com/api/screener/check"
+api: "POST /screener/check"
 description: "Check a blockchain address against sanctions and risk databases"
 ---
 
@@ -12,7 +12,7 @@ No authentication required — this is a public endpoint.
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/screener/check' \
+curl -X POST '/screener/check' \
   -H 'Content-Type: application/json' \
   -d '{
     "address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4"

@@ -1,6 +1,6 @@
 ---
 title: "Create Agentic Wallet"
-api: "POST https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/create"
+api: "POST /v1/agentic-wallets/create"
 description: "Create a new agentic wallet for AI agent use"
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/create' \
+curl -X POST '/v1/agentic-wallets/create' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

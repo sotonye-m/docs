@@ -1,6 +1,6 @@
 ---
 title: "Update Rule"
-api: "PUT https://crypto-sandbox.yativo.com/api/v1/auto-forwarding/{rule_id}"
+api: "PUT /v1/auto-forwarding/{rule_id}"
 description: "Update an auto-forwarding rule"
 authMethod: "bearer"
 ---
@@ -27,7 +27,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X PUT 'https://crypto-sandbox.yativo.com/api/v1/auto-forwarding/af_01abc123' \
+curl -X PUT '/v1/auto-forwarding/af_01abc123' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

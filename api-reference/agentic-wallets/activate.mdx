@@ -1,6 +1,6 @@
 ---
 title: "Activate Wallet"
-api: "POST https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/{walletId}/activation/activate"
+api: "POST /v1/agentic-wallets/{walletId}/activation/activate"
 description: "Activate an agentic wallet after OTP verification"
 authMethod: "bearer"
 ---
@@ -23,7 +23,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/aw_01abc123/activation/activate' \
+curl -X POST '/v1/agentic-wallets/aw_01abc123/activation/activate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

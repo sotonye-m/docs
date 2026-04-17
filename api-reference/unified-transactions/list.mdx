@@ -1,6 +1,6 @@
 ---
 title: "List Unified Transactions"
-api: "GET https://crypto-sandbox.yativo.com/api/unified-transactions/list"
+api: "GET /unified-transactions/list"
 description: "List all transactions across all types in a single unified view"
 authMethod: "bearer"
 ---
@@ -27,7 +27,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-sandbox.yativo.com/api/unified-transactions/list?page=1&limit=20' \
+curl -X GET '/unified-transactions/list?page=1&limit=20' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

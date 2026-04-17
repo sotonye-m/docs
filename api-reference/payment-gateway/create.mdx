@@ -1,6 +1,6 @@
 ---
 title: "Create Payment"
-api: "POST https://crypto-sandbox.yativo.com/api/crypto-gateway/payments"
+api: "POST /crypto-gateway/payments"
 description: "Create a new payment intent with a hosted checkout URL"
 authMethod: "bearer"
 ---
@@ -27,7 +27,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/crypto-gateway/payments' \
+curl -X POST '/crypto-gateway/payments' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

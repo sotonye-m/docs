@@ -1,6 +1,6 @@
 ---
 title: "Add Connector"
-api: "POST https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/{walletId}/connectors"
+api: "POST /v1/agentic-wallets/{walletId}/connectors"
 description: "Create a new connector (API key) for an agentic wallet"
 authMethod: "bearer"
 ---
@@ -31,7 +31,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/aw_01abc123/connectors' \
+curl -X POST '/v1/agentic-wallets/aw_01abc123/connectors' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

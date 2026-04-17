@@ -1,6 +1,6 @@
 ---
 title: "Get Transaction"
-api: "GET https://crypto-sandbox.yativo.com/api/unified-transactions/{transaction_id}"
+api: "GET /unified-transactions/{transaction_id}"
 description: "Get details of a unified transaction"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-sandbox.yativo.com/api/unified-transactions/utx_01abc123' \
+curl -X GET '/unified-transactions/utx_01abc123' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

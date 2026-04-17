@@ -1,6 +1,6 @@
 ---
 title: "Subscribe"
-api: "POST https://crypto-sandbox.yativo.com/api/subscription/subscribe"
+api: "POST /subscription/subscribe"
 description: "Subscribe to a pricing tier"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/subscription/subscribe' \
+curl -X POST '/subscription/subscribe' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

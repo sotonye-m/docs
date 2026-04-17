@@ -1,6 +1,6 @@
 ---
 title: "Create Rule"
-api: "POST https://crypto-sandbox.yativo.com/api/v1/auto-forwarding"
+api: "POST /v1/auto-forwarding"
 description: "Create an auto-forwarding rule for automatic deposit forwarding"
 authMethod: "bearer"
 ---
@@ -31,7 +31,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/auto-forwarding' \
+curl -X POST '/v1/auto-forwarding' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

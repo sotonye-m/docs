@@ -1,6 +1,6 @@
 ---
 title: "Batch Screen"
-api: "POST https://crypto-sandbox.yativo.com/api/screener/batch-check"
+api: "POST /screener/batch-check"
 description: "Screen multiple blockchain addresses in one request"
 ---
 
@@ -12,7 +12,7 @@ No authentication required — this is a public endpoint.
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/screener/batch-check' \
+curl -X POST '/screener/batch-check' \
   -H 'Content-Type: application/json' \
   -d '{
     "addresses": [

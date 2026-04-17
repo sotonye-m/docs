@@ -1,6 +1,6 @@
 ---
 title: "Agent Balance"
-api: "GET https://crypto-sandbox.yativo.com/api/v1/agent/balance"
+api: "GET /v1/agent/balance"
 description: "Check the balance of an agentic wallet (used by AI agents)"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/agent/balance?wallet_id=aw_01abc123' \
+curl -X GET '/v1/agent/balance?wallet_id=aw_01abc123' \
   -H 'Authorization: Bearer yac_connector_api_key'
 ```
 </RequestExample>

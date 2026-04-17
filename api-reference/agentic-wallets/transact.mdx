@@ -1,6 +1,6 @@
 ---
 title: "Agent Transact"
-api: "POST https://crypto-sandbox.yativo.com/api/v1/agent/transact"
+api: "POST /v1/agent/transact"
 description: "Send a crypto payment from an agentic wallet (used by AI agents)"
 authMethod: "bearer"
 ---
@@ -47,7 +47,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agent/transact' \
+curl -X POST '/v1/agent/transact' \
   -H 'Authorization: Bearer yac_connector_api_key' \
   -H 'Content-Type: application/json' \
   -d '{

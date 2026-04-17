@@ -1,6 +1,6 @@
 ---
 title: "Delete Rule"
-api: "DELETE https://crypto-sandbox.yativo.com/api/v1/auto-forwarding/{rule_id}"
+api: "DELETE /v1/auto-forwarding/{rule_id}"
 description: "Delete an auto-forwarding rule"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X DELETE 'https://crypto-sandbox.yativo.com/api/v1/auto-forwarding/af_01abc123' \
+curl -X DELETE '/v1/auto-forwarding/af_01abc123' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

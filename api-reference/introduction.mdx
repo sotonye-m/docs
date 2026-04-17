@@ -3,6 +3,10 @@ title: "Crypto API References"
 description: "Complete reference for all Yativo Crypto API endpoints"
 ---
 
+<Info>
+  The **Try It** panel on every endpoint page defaults to **Sandbox** (testnet, no real funds). Use the Base URL dropdown to switch to Production when you're ready to go live. [Jump to playground instructions →](#using-the-api-playground)
+</Info>
+
 ## Before you start
 
 **Account creation and login happen at the dashboard — not through the API.**
@@ -10,7 +14,7 @@ description: "Complete reference for all Yativo Crypto API endpoints"
 | Environment | Dashboard | API Base URL |
 |-------------|-----------|--------------|
 | Live | [crypto.yativo.com](https://crypto.yativo.com) | `https://crypto-api.yativo.com/api` |
-| Sandbox | [sandbox-crypto.yativo.com](https://sandbox-crypto.yativo.com) | `https://crypto-sandbox.yativo.com/api` |
+| Sandbox | [sandbox-crypto.yativo.com](https://sandbox-crypto.yativo.com) | `` |
 
 Sign up is **passwordless** — enter your email, confirm the one-time code, and you're in. Once logged in, go to **Settings → API Keys** to generate credentials for API access.
 
@@ -79,12 +83,36 @@ Errors return `"status": false` with an appropriate HTTP status code (400, 401, 
 
 ## Sandbox
 
-The sandbox at `https://crypto-sandbox.yativo.com/api` uses testnet blockchains — **no real funds**. Use the environment switcher at the top-right of each API reference page to toggle between Sandbox and Production.
+The sandbox at `https://crypto-sandbox.yativo.com/api` uses testnet blockchains — **no real funds**.
 
-A shared sandbox account is pre-populated for immediate testing:
+### Using the API playground
+
+Every endpoint page has a **Try It** panel on the right. Here's how to use it:
+
+<Steps>
+  <Step title="Choose your environment">
+    Use the **Base URL** dropdown at the top of the panel to switch between:
+    - `https://crypto-sandbox.yativo.com/api` — **Sandbox** (testnet, no real funds)
+    - `https://crypto-api.yativo.com/api` — **Production** (mainnet, real funds)
+    
+    The playground defaults to **Sandbox** so you can experiment safely.
+  </Step>
+  <Step title="Enter your Bearer token">
+    Paste your access token into the **Authorization** field. The playground adds the `Bearer` prefix automatically.
+    
+    Don't have a token yet? See [Getting a Bearer token](#getting-a-bearer-token) below, or use the shared sandbox credentials.
+  </Step>
+  <Step title="Fill in parameters and send">
+    Populate the required fields, then click **Send** to execute the request against the selected environment.
+  </Step>
+</Steps>
+
+### Shared sandbox credentials
+
+A pre-populated sandbox account is available for immediate testing:
 
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
+curl -X POST '/auth/token' \
   -H 'Content-Type: application/json' \
   -d '{
     "api_key":    "yativo_e072b3ef7e30fcb420183aa86ddd8452abd28a9ac8f5d04d",

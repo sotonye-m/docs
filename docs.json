@@ -8,7 +8,12 @@
       "https://crypto-api.yativo.com/api"
     ],
     "auth": {
-      "method": "bearer"
+      "method": "bearer",
+      "name": "Authorization",
+      "inputPrefix": "Bearer"
+    },
+    "playground": {
+      "mode": "simple"
     }
   },
   "colors": {

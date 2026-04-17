@@ -1,6 +1,6 @@
 ---
 title: "x402 Fetch"
-api: "POST https://crypto-sandbox.yativo.com/api/v1/agent/x402-fetch"
+api: "POST /v1/agent/x402-fetch"
 description: "Fetch a URL with automatic x402 payment — if the URL returns HTTP 402, the wallet pays and retries"
 authMethod: "bearer"
 ---
@@ -31,7 +31,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agent/x402-fetch' \
+curl -X POST '/v1/agent/x402-fetch' \
   -H 'Authorization: Bearer yac_connector_api_key' \
   -H 'Content-Type: application/json' \
   -d '{

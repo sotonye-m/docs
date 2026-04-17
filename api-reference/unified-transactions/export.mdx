@@ -1,6 +1,6 @@
 ---
 title: "Export Transactions"
-api: "POST https://crypto-sandbox.yativo.com/api/unified-transactions/export"
+api: "POST /unified-transactions/export"
 description: "Request a PDF or CSV export of transaction history"
 authMethod: "bearer"
 ---
@@ -27,7 +27,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/unified-transactions/export' \
+curl -X POST '/unified-transactions/export' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
