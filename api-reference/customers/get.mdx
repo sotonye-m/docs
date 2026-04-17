@@ -1,7 +1,7 @@
 ---
 title: "Get Customer"
 api: "POST https://crypto-sandbox.yativo.com/api/customers/get-customers"
-description: "Retrieve a single customer by ID"
+description: "Retrieve a single customer by ID. Uses the same list endpoint with a filter."
 authMethod: "bearer"
 ---
 
@@ -9,8 +9,8 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField path="customerId" type="string" required>
-  The unique customer ID.
+<ParamField body="customerId" type="string" required>
+  The unique customer ID to retrieve.
 </ParamField>
 
 <Accordion title="Response Type Definitions">
@@ -23,7 +23,6 @@ interface CustomerDetail {
   phone?: string;
   status: "active" | "suspended" | "pending";
   kyc_status: "not_started" | "pending" | "approved" | "rejected";
-  wallets?: Array<{ address: string; network: string; balance: string }>;
   created_at: string;
   updated_at: string;
 }
@@ -35,7 +34,9 @@ interface CustomerDetail {
 curl -X POST 'https://crypto-api.yativo.com/api/customers/get-customers' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -d '{}'
+  -d '{
+    "customerId": "cust_67d01994740754bbf304abcd"
+  }'
 ```
 </RequestExample>
 

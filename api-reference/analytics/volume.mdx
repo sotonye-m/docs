@@ -1,72 +1,10 @@
 ---
 title: "Volume Analytics"
-api: "GET https://crypto-sandbox.yativo.com/api/analytics/dashboard-analytics"
-description: "Get volume and chart analytics for your account."
-authMethod: "bearer"
+description: "Volume analytics are included in the Dashboard Analytics endpoint."
 ---
 
-<ParamField header="Authorization" type="string" required>
-  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
-</ParamField>
-
-<ParamField query="from" type="string" required>
-  Start date. ISO 8601 format: `2026-03-01`
-</ParamField>
-
-<ParamField query="to" type="string" required>
-  End date. ISO 8601 format: `2026-03-31`
-</ParamField>
-
-<ParamField query="group_by" type="string">
-  Dimension to group by. Accepted values: `asset`, `network`, `asset_network`. Default: `asset`
-</ParamField>
-
-<Accordion title="Response Type Definitions">
-```typescript
-interface VolumeAnalyticsResponse {
-  status: "success";
-  data: {
-    period: { from: string; to: string };
-    breakdown: Array<{
-      asset?: string;
-      network?: string;
-      volume_usd: string;
-      volume_native: string;
-      count: number;
-      percentage: number;
-    }>;
-    total_volume_usd: string;
-  };
-}
-```
-</Accordion>
-
-<RequestExample>
-```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/analytics/dashboard-analytics' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "data": {
-    "totalAccountValue": 2.47,
-    "depositTransactions": [],
-    "chartTransactions": [
-      {"_id": {"year": 2026, "month": 1}, "totalAmount": 0, "count": 117},
-      {"_id": {"year": 2026, "month": 2}, "totalAmount": 0, "count": 304},
-      {"_id": {"year": 2026, "month": 3}, "totalAmount": 0, "count": 345}
-    ],
-    "chartUsers": [
-      {"_id": {"year": 2026, "month": 1}, "count": 4},
-      {"_id": {"year": 2026, "month": 2}, "count": 3},
-      {"_id": {"year": 2026, "month": 3}, "count": 2}
-    ]
-  },
-  "status": true,
-  "message": "Analytics Listed Successfully"
-}
-```
-</ResponseExample>
+<Info>
+  Volume and chart data are returned as part of the [Analytics Overview](/api-reference/analytics/overview) endpoint
+  (`GET /api/analytics/dashboard-analytics`). The `chartTransactions` array in the response contains monthly
+  volume breakdowns including `totalAmount` and `count`.
+</Info>

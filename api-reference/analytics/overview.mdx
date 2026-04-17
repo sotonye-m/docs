@@ -20,28 +20,21 @@ authMethod: "bearer"
 <Accordion title="Response Type Definitions">
 ```typescript
 interface AnalyticsOverviewResponse {
-  status: "success";
   data: {
-    period: { from: string; to: string };
-    transactions: {
-      total_count: number;
-      total_volume_usd: string;
-      successful: number;
-      failed: number;
-      pending: number;
-    };
-    accounts: {
-      total: number;
-      active: number;
-      new_this_period: number;
-    };
-    top_assets: Array<{
-      symbol: string;
-      network: string;
-      volume_usd: string;
+    totalAccountValue: number;
+    depositTransactions: any[];
+    chartTransactions: Array<{
+      _id: { year: number; month: number };
+      totalAmount: number;
+      count: number;
+    }>;
+    chartUsers: Array<{
+      _id: { year: number; month: number };
       count: number;
     }>;
   };
+  status: boolean;
+  message: string;
 }
 ```
 </Accordion>

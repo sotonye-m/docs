@@ -9,32 +9,24 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField body="from_chain" type="string" required>
-  The source blockchain network, e.g. `solana`, `ethereum`.
+<ParamField body="sourceAsset" type="string" required>
+  The source asset identifier, e.g. `USDC_SOL`, `ETH`.
 </ParamField>
 
-<ParamField body="from_ticker" type="string" required>
-  The source token ticker symbol, e.g. `USDC_SOL`, `ETH`.
-</ParamField>
-
-<ParamField body="to_chain" type="string" required>
-  The destination blockchain network, e.g. `ethereum`, `polygon`.
-</ParamField>
-
-<ParamField body="to_ticker" type="string" required>
-  The destination token ticker symbol, e.g. `USDC_ETH`, `MATIC`.
+<ParamField body="destinationAsset" type="string" required>
+  The destination asset identifier, e.g. `USDC_ETH`, `MATIC`.
 </ParamField>
 
 <ParamField body="amount" type="string" required>
   The amount to swap in the source token's native units, e.g. `"100.00"`.
 </ParamField>
 
-<ParamField body="from_address" type="string" required>
-  The source wallet address sending the funds.
+<ParamField body="sourceAddress" type="string">
+  The source wallet address. Optional — defaults to the user's wallet for the source asset.
 </ParamField>
 
-<ParamField body="to_address" type="string" required>
-  The destination wallet address to receive the swapped funds.
+<ParamField body="destinationAddress" type="string">
+  The destination wallet address. Optional — defaults to the user's wallet for the destination asset.
 </ParamField>
 
 <RequestExample>
@@ -45,7 +37,8 @@ curl -X POST 'https://crypto-api.yativo.com/api/swap/quote' \
   -d '{
     "sourceAsset": "USDC_SOL",
     "destinationAsset": "ETH_Base",
-    "amount": "10"
+    "amount": "10",
+    "destinationAddress": "0xAbCd1234EfGh5678IjKl9012MnOp3456QrSt7890"
   }'
 ```
 </RequestExample>
@@ -53,8 +46,20 @@ curl -X POST 'https://crypto-api.yativo.com/api/swap/quote' \
 <ResponseExample>
 ```json
 {
-  "success": false,
-  "error": "Insufficient balance. Required: 10, Available: 0.300000"
+  "success": true,
+  "data": {
+    "quoteId": "qt_abc123def456",
+    "sourceAsset": "USDC_SOL",
+    "destinationAsset": "ETH_Base",
+    "inputAmount": "10",
+    "estimatedOutput": "0.003812",
+    "exchangeRate": "0.0003812",
+    "fee": {
+      "amount": "0.15",
+      "currency": "USDC"
+    },
+    "expiresAt": "2026-03-28T10:05:00.000Z"
+  }
 }
 ```
 </ResponseExample>

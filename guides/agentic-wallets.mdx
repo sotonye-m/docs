@@ -16,6 +16,18 @@ This guide walks you through creating an agentic wallet, generating a connector 
       -d '{ "name": "My AI Agent Wallet" }'
     ```
 
+    ```json Response
+    {
+      "success": true,
+      "data": {
+        "wallet_id": "aw_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "name": "My AI Agent Wallet",
+        "status": "pending_activation",
+        "created_at": "2026-03-25T10:00:00Z"
+      }
+    }
+    ```
+
     Save the `wallet_id` from the response.
   </Step>
 
@@ -27,6 +39,13 @@ This guide walks you through creating an agentic wallet, generating a connector 
       -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
     ```
 
+    ```json Response
+    {
+      "success": true,
+      "message": "OTP sent to your registered email"
+    }
+    ```
+
     Enter the OTP from your email to activate:
 
     ```bash
@@ -34,6 +53,19 @@ This guide walks you through creating an agentic wallet, generating a connector 
       -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
       -H 'Content-Type: application/json' \
       -d '{ "email_otp": "123456" }'
+    ```
+
+    ```json Response
+    {
+      "success": true,
+      "data": {
+        "wallet_id": "aw_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "status": "active",
+        "address": "0x9F8b2E...a4C7",
+        "chain": "solana",
+        "activated_at": "2026-03-25T10:05:00Z"
+      }
+    }
     ```
   </Step>
 
@@ -52,6 +84,21 @@ This guide walks you through creating an agentic wallet, generating a connector 
       }'
     ```
 
+    ```json Response
+    {
+      "success": true,
+      "data": {
+        "connector_id": "conn_01HX9KZMB3F7VNQP8R2WDGT",
+        "name": "Production Agent",
+        "api_key": "yac_e072b3ef7e30fcb420183aa86ddd8452",
+        "per_transaction_limit": 50,
+        "daily_limit": 500,
+        "monthly_limit": 5000,
+        "created_at": "2026-03-25T10:10:00Z"
+      }
+    }
+    ```
+
     Save the `api_key` (starts with `yac_`) — it's shown only once.
   </Step>
 
@@ -63,6 +110,18 @@ This guide walks you through creating an agentic wallet, generating a connector 
       -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
       -H 'Content-Type: application/json' \
       -d '{ "amount": 100 }'
+    ```
+
+    ```json Response
+    {
+      "success": true,
+      "data": {
+        "wallet_id": "aw_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "funded_amount": 100,
+        "balance": 100,
+        "currency": "USDC"
+      }
+    }
     ```
   </Step>
 
@@ -80,6 +139,22 @@ This guide walks you through creating an agentic wallet, generating a connector 
         "service_name": "OpenAI",
         "payment_reason": "GPT-4 inference"
       }'
+    ```
+
+    ```json Response
+    {
+      "success": true,
+      "data": {
+        "transaction_id": "atx_01HX9KZMB3F7VNQP8R2WDGT",
+        "wallet_id": "aw_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "amount": 5.00,
+        "recipient_address": "0x9F8b...",
+        "service_name": "OpenAI",
+        "status": "confirmed",
+        "tx_hash": "0xabc123...",
+        "created_at": "2026-03-25T10:15:00Z"
+      }
+    }
     ```
   </Step>
 </Steps>

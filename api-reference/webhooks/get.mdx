@@ -1,16 +1,12 @@
 ---
-title: "Get Webhook"
+title: "List Webhooks"
 api: "GET https://crypto-sandbox.yativo.com/api/webhook/get-webhooks"
-description: "Retrieve details of a specific webhook by its ID"
+description: "Retrieve all webhooks configured for your account"
 authMethod: "bearer"
 ---
 
 <ParamField header="Authorization" type="string" required>
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
-</ParamField>
-
-<ParamField path="id" type="string" required>
-  The ID of the webhook to retrieve.
 </ParamField>
 
 <RequestExample>

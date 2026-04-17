@@ -9,7 +9,7 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField path="customerId" type="string" required>
+<ParamField body="customer_id" type="string" required>
   The ID of the customer to fund.
 </ParamField>
 
@@ -31,6 +31,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/fund-customer' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
+    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP",
     "amount": 500,
     "source_chain": "polygon",
     "pricing_mode": "exact_usd"

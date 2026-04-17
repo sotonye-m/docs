@@ -32,23 +32,12 @@ authMethod: "bearer"
 <Accordion title="Response Type Definitions">
 ```typescript
 interface TransactionAnalyticsResponse {
-  status: "success";
-  data: {
-    period: { from: string; to: string; granularity: string };
-    buckets: Array<{
-      timestamp: string;
-      count: number;
-      volume_usd: string;
-      successful: number;
-      failed: number;
-    }>;
-    summary: {
-      total_count: number;
-      total_volume_usd: string;
-      avg_transaction_usd: string;
-      success_rate: number;
-    };
-  };
+  pendingTransactions: any[];
+  processingTransactions: any[];
+  failedTransactions: any[];
+  approvedTransactions: any[];
+  status: boolean;
+  message: string;
 }
 ```
 </Accordion>

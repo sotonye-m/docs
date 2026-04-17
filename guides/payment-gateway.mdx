@@ -19,6 +19,17 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
         "api_secret": "..."
       }'
     ```
+
+    ```json Response
+    {
+      "success": true,
+      "data": {
+        "access_token": "eyJhbGciOi...",
+        "token_type": "Bearer",
+        "expires_in": 86400
+      }
+    }
+    ```
   </Step>
 
   <Step title="Create a payment intent">
@@ -38,7 +49,22 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
       }'
     ```
 
-    You'll receive a `checkout_url` in the response.
+    ```json Response
+    {
+      "success": true,
+      "data": {
+        "payment_id": "gw_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "amount": 49.99,
+        "currency": "USD",
+        "status": "pending",
+        "checkout_url": "https://pay.yativo.com/gw_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "expires_at": "2026-03-25T11:00:00Z",
+        "created_at": "2026-03-25T10:00:00Z"
+      }
+    }
+    ```
+
+    Redirect your customer to the `checkout_url`.
   </Step>
 
   <Step title="Share the checkout link">
@@ -62,6 +88,26 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
         "url": "https://your-server.com/webhooks/yativo",
         "events": ["gateway.payment.paid"]
       }'
+    ```
+
+    ```json Webhook Payload
+    {
+      "event": "gateway.payment.paid",
+      "data": {
+        "payment_id": "gw_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "amount": 49.99,
+        "currency": "USD",
+        "crypto_amount": "49.99",
+        "crypto_currency": "USDC",
+        "chain": "solana",
+        "tx_hash": "5UxR7Kq...",
+        "status": "paid",
+        "metadata": {
+          "order_id": "ord_123"
+        },
+        "paid_at": "2026-03-25T10:05:00Z"
+      }
+    }
     ```
   </Step>
 

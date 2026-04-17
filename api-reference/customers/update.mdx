@@ -1,60 +1,9 @@
 ---
 title: "Update Customer"
-api: "POST https://crypto-sandbox.yativo.com/api/customers/create-customer"
 description: "Update a customer's profile information"
-authMethod: "bearer"
 ---
 
-<ParamField header="Authorization" type="string" required>
-  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
-</ParamField>
-
-<ParamField path="customerId" type="string" required>
-  The unique customer ID to update.
-</ParamField>
-
-<ParamField body="first_name" type="string">
-  Updated first name.
-</ParamField>
-
-<ParamField body="last_name" type="string">
-  Updated last name.
-</ParamField>
-
-<ParamField body="phone" type="string">
-  Updated phone number in E.164 format.
-</ParamField>
-
-<ParamField body="metadata" type="object">
-  Updated metadata key-value pairs. Merges with existing metadata.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/customers/create-customer' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "phone": "+14155559999",
-    "metadata": { "plan": "enterprise" }
-  }'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": true,
-  "message": "Customer created successfully",
-  "data": {
-    "_id": "cust_67e54665e759c943cd376abc",
-    "username": "new_customer",
-    "email": "customer@example.com",
-    "phone_number": "",
-    "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
-    "createdAt": "2026-03-28T10:00:00.000Z",
-    "updatedAt": "2026-03-28T10:00:00.000Z"
-  }
-}
-```
-</ResponseExample>
+<Info>
+  The Update Customer endpoint is coming soon. To modify customer details, create a new customer
+  with the updated information using the [Create Customer](/api-reference/customers/create) endpoint.
+</Info>
