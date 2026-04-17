@@ -1,6 +1,6 @@
 ---
 title: "Create API Key"
-api: "POST /apikey/generate"
+api: "POST /v1/apikey/generate"
 description: "Generate a new API key and secret for programmatic access"
 authMethod: "bearer"
 ---
@@ -54,7 +54,7 @@ interface CreateApiKeyResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/apikey/generate' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/apikey/generate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

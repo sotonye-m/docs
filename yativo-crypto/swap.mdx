@@ -14,7 +14,7 @@ The Swap API lets your users exchange tokens within and across chains. Get a quo
 Returns all tokens that can be used as swap sources or destinations.
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/swap/assets \
+curl -X GET https://crypto-api.yativo.com/api/v1/swap/assets \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -38,7 +38,7 @@ curl -X GET https://crypto-api.yativo.com/api/swap/assets \
 Returns all valid swap routes — which chain/token pairs can be swapped into which other pairs.
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/swap/routes \
+curl -X GET https://crypto-api.yativo.com/api/v1/swap/routes \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -80,7 +80,7 @@ Request a swap quote. Returns the expected output amount, exchange rate, slippag
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/swap/quote \
+curl -X POST https://crypto-api.yativo.com/api/v1/swap/quote \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -165,7 +165,7 @@ Executes a previously quoted swap.
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/swap/execute \
+curl -X POST https://crypto-api.yativo.com/api/v1/swap/execute \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -223,7 +223,7 @@ Returns a list of past swaps.
 </ParamField>
 
 ```bash cURL
-curl -X GET "https://crypto-api.yativo.com/api/swap/history?limit=20&offset=0&status=completed" \
+curl -X GET "https://crypto-api.yativo.com/api/v1/swap/history?limit=20&offset=0&status=completed" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 

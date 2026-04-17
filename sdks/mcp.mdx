@@ -35,7 +35,7 @@ The MCP server is configured via environment variables:
 |----------|----------|---------|-------------|
 | `YATIVO_API_KEY` | Yes | — | Connector API key (starts with `yac_`) from your agentic wallet |
 | `YATIVO_WALLET_ID` | No | — | Default wallet ID (starts with `aw_`). Can be overridden per tool call |
-| `YATIVO_API_URL` | No | `https://crypto-api.yativo.com/api/v1` | API base URL. Change for sandbox testing |
+| `YATIVO_API_URL` | No | `https://crypto-api.yativo.com/api/v1/v1` | API base URL. Change for sandbox testing |
 
 ---
 
@@ -69,7 +69,7 @@ For sandbox testing, add the sandbox URL:
       "env": {
         "YATIVO_API_KEY": "yac_your_sandbox_connector_key",
         "YATIVO_WALLET_ID": "aw_your_sandbox_wallet_id",
-        "YATIVO_API_URL": "https://crypto-sandbox.yativo.com/api/v1"
+        "YATIVO_API_URL": "https://crypto-sandbox.yativo.com/api/v1/v1"
       }
     }
   }

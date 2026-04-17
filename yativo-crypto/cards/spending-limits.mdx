@@ -44,7 +44,7 @@ GET /yativo-card/{yativoCardId}/wallet/limits
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/limits' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/limits' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -85,7 +85,7 @@ PUT /yativo-card/{yativoCardId}/wallet/limits
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/limits' \
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/limits' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -116,7 +116,7 @@ To remove the daily spending limit entirely, set `daily_limit` to `null`:
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/limits' \
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/limits' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -161,7 +161,7 @@ GET /yativo-card/customers/{yativoCardId}/wallet/limits
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/wallet/limits' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yc_customer_01HX9KZMB3F7/wallet/limits' \
   -H 'Authorization: Bearer YOUR_ISSUER_API_KEY'
 ```
 </RequestExample>
@@ -198,7 +198,7 @@ PUT /yativo-card/customers/{yativoCardId}/wallet/limits
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_customer_01HX9KZMB3F7/wallet/limits' \
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yc_customer_01HX9KZMB3F7/wallet/limits' \
   -H 'Authorization: Bearer YOUR_ISSUER_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{

@@ -30,7 +30,7 @@ Returns an estimated network fee for a transaction before committing to it.
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/transactions/get-gas-price \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-gas-price \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -85,7 +85,7 @@ Initiates an outbound crypto transfer. An idempotency key is automatically gener
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/transactions/send-funds \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/send-funds \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -159,7 +159,7 @@ If you need to supply your own idempotency key, include it in the request body a
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/transactions/get-transaction \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-transaction \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"transaction_id": "txn_01pqr456"}'
@@ -206,7 +206,7 @@ curl -X POST https://crypto-api.yativo.com/api/transactions/get-transaction \
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/transactions/list \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/list \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -238,7 +238,7 @@ Returns all transactions for a specific wallet asset.
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/transactions/asset-history \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/asset-history \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -261,7 +261,7 @@ Attempts to cancel a transaction that is still in `pending` status. Once a trans
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/transactions/cancel \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/cancel \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"transaction_id": "txn_01pqr456"}'

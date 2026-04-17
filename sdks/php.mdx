@@ -30,7 +30,7 @@ composer require yativo/crypto-sdk
     use Yativo\YativoSDK;
 
     $sdk = new YativoSDK([
-        'base_url' => 'https://crypto-api.yativo.com/api/',
+        'base_url' => 'https://crypto-api.yativo.com/api/v1/',
     ]);
 
     // Register
@@ -61,7 +61,7 @@ composer require yativo/crypto-sdk
     $sdk = new YativoSDK([
         'api_key'    => getenv('YATIVO_API_KEY'),
         'api_secret' => getenv('YATIVO_API_SECRET'),
-        'base_url'   => 'https://crypto-api.yativo.com/api/',
+        'base_url'   => 'https://crypto-api.yativo.com/api/v1/',
     ]);
 
     // No login needed — requests are signed automatically
@@ -79,7 +79,7 @@ composer require yativo/crypto-sdk
 new \Yativo\YativoSDK([
     'api_key'                 => 'your_api_key',       // optional
     'api_secret'              => 'your_api_secret',    // optional
-    'base_url'                => 'https://crypto-api.yativo.com/api/',
+    'base_url'                => 'https://crypto-api.yativo.com/api/v1/',
     'timeout'                 => 30,                   // seconds, default 30
     'standalone_iban_enabled' => false,                // default false
 ]);
@@ -548,7 +548,7 @@ try {
 return [
     'api_key'        => env('YATIVO_API_KEY'),
     'api_secret'     => env('YATIVO_API_SECRET'),
-    'base_url'       => env('YATIVO_BASE_URL', 'https://crypto-api.yativo.com/api/'),
+    'base_url'       => env('YATIVO_BASE_URL', 'https://crypto-api.yativo.com/api/v1/'),
     'webhook_secret' => env('YATIVO_WEBHOOK_SECRET'),
 ];
 

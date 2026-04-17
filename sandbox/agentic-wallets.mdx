@@ -36,7 +36,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/agentic-wallets/aw_.../ac
 In sandbox, simulate a transaction from an agentic wallet:
 
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/sandbox/simulate-agentic-transaction' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/sandbox/simulate-agentic-transaction' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -61,7 +61,7 @@ Point the MCP server at the sandbox:
       "env": {
         "YATIVO_API_KEY": "yac_sandbox_connector_key",
         "YATIVO_WALLET_ID": "aw_sandbox_wallet_id",
-        "YATIVO_API_URL": "https://crypto-sandbox.yativo.com/api/v1"
+        "YATIVO_API_URL": "https://crypto-sandbox.yativo.com/api/v1/v1"
       }
     }
   }

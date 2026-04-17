@@ -32,7 +32,7 @@ pnpm add @yativo/crypto-sdk
     import { YativoSDK } from "@yativo/crypto-sdk";
 
     const sdk = new YativoSDK({
-      baseURL: "https://crypto-api.yativo.com/api/",
+      baseURL: "https://crypto-api.yativo.com/api/v1/",
     });
 
     // Register a new user
@@ -60,7 +60,7 @@ pnpm add @yativo/crypto-sdk
     const sdk = new YativoSDK({
       apiKey: process.env.YATIVO_API_KEY,
       apiSecret: process.env.YATIVO_API_SECRET,
-      baseURL: "https://crypto-api.yativo.com/api/",
+      baseURL: "https://crypto-api.yativo.com/api/v1/",
     });
 
     // No login needed — the SDK signs every request automatically
@@ -80,7 +80,7 @@ interface YativoSDKOptions {
   apiKey?: string;
   /** API secret for key-based authentication */
   apiSecret?: string;
-  /** Override the base URL (default: https://crypto-api.yativo.com/api/) */
+  /** Override the base URL (default: https://crypto-api.yativo.com/api/v1/) */
   baseURL?: string;
   /** Request timeout in milliseconds (default: 30000) */
   timeout?: number;

@@ -1,6 +1,6 @@
 ---
 title: "Onboard Card User"
-api: "POST /yativo-card/onboard"
+api: "POST /v1/yativo-card/onboard"
 description: "Register a user for the Yativo Card program"
 authMethod: "bearer"
 ---
@@ -23,7 +23,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/onboard' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/onboard' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

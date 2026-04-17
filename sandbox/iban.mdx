@@ -7,7 +7,7 @@ description: "Test the IBAN onboarding flow in the Yativo Crypto sandbox"
 
 Use the sandbox to test the complete IBAN onboarding flow. The sandbox runs on a **testnet** — no real IBAN is provisioned, and no real bank transfers can be sent to sandbox IBANs.
 
-**Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/`
+**Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/v1/`
 
 <Note>
   In the sandbox, IBAN operations run on a testnet. No real IBANs are assigned and no real bank transfers can be received. Use the sandbox to verify your integration logic and status-handling code.
@@ -20,11 +20,11 @@ Use the sandbox to test the complete IBAN onboarding flow. The sandbox runs on a
 Retrieve available options and requirements for standalone IBAN onboarding.
 
 ```
-GET https://crypto-sandbox.yativo.com/api/iban/options
+GET https://crypto-sandbox.yativo.com/api/v1/iban/options
 ```
 
 ```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/iban/options' \
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/iban/options' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
 
@@ -47,7 +47,7 @@ curl -X GET 'https://crypto-sandbox.yativo.com/api/iban/options' \
 ## Step 2 — Initialize Onboarding
 
 ```
-POST https://crypto-sandbox.yativo.com/api/iban/onboarding/init
+POST https://crypto-sandbox.yativo.com/api/v1/iban/onboarding/init
 ```
 
 <ParamField body="email" type="string" required>
@@ -59,7 +59,7 @@ POST https://crypto-sandbox.yativo.com/api/iban/onboarding/init
 </ParamField>
 
 ```bash cURL
-curl -X POST 'https://crypto-sandbox.yativo.com/api/iban/onboarding/init' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/iban/onboarding/init' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -88,7 +88,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/iban/onboarding/init' \
 ## Step 3 — Submit KYC
 
 ```
-POST https://crypto-sandbox.yativo.com/api/iban/onboarding/kyc
+POST https://crypto-sandbox.yativo.com/api/v1/iban/onboarding/kyc
 ```
 
 <ParamField body="customer_id" type="string" required>
@@ -100,7 +100,7 @@ POST https://crypto-sandbox.yativo.com/api/iban/onboarding/kyc
 </ParamField>
 
 ```bash cURL
-curl -X POST 'https://crypto-sandbox.yativo.com/api/iban/onboarding/kyc' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/iban/onboarding/kyc' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -133,7 +133,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/iban/onboarding/kyc' \
 Once KYC is approved, request IBAN provisioning.
 
 ```
-POST https://crypto-sandbox.yativo.com/api/iban/iban/request
+POST https://crypto-sandbox.yativo.com/api/v1/iban/iban/request
 ```
 
 <ParamField body="customer_id" type="string" required>
@@ -153,7 +153,7 @@ POST https://crypto-sandbox.yativo.com/api/iban/iban/request
 </ParamField>
 
 ```bash cURL
-curl -X POST 'https://crypto-sandbox.yativo.com/api/iban/iban/request' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/iban/iban/request' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -192,7 +192,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/iban/iban/request' \
 Poll the status endpoint to track the flow.
 
 ```
-GET https://crypto-sandbox.yativo.com/api/iban/status
+GET https://crypto-sandbox.yativo.com/api/v1/iban/status
 ```
 
 <ParamField query="customer_id" type="string" required>
@@ -200,7 +200,7 @@ GET https://crypto-sandbox.yativo.com/api/iban/status
 </ParamField>
 
 ```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/iban/status?customer_id=cus_sandbox_iban_001' \
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/iban/status?customer_id=cus_sandbox_iban_001' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
 

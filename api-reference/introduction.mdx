@@ -13,8 +13,8 @@ description: "Complete reference for all Yativo Crypto API endpoints"
 
 | Environment | Dashboard | API Base URL |
 |-------------|-----------|--------------|
-| Live | [crypto.yativo.com](https://crypto.yativo.com) | `https://crypto-api.yativo.com/api` |
-| Sandbox | [sandbox-crypto.yativo.com](https://sandbox-crypto.yativo.com) | `` |
+| Live | [crypto.yativo.com](https://crypto.yativo.com) | `https://crypto-api.yativo.com/api/v1` |
+| Sandbox | [sandbox-crypto.yativo.com](https://sandbox-crypto.yativo.com) | `https://crypto-sandbox.yativo.com/api/v1` |
 
 Sign up is **passwordless** — enter your email, confirm the one-time code, and you're in. Once logged in, go to **Settings → API Keys** to generate credentials for API access.
 
@@ -33,7 +33,7 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 Exchange your API key and secret for a short-lived token. Tokens expire after **60 minutes**; API keys never expire.
 
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/auth/token' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/auth/token' \
   -H 'Content-Type: application/json' \
   -d '{
     "api_key":    "yativo_...",

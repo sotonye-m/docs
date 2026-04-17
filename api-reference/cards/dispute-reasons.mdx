@@ -1,6 +1,6 @@
 ---
 title: "Get Dispute Reasons"
-api: "GET /yativo-card/{yativoCardId}/transactions/dispute-reasons"
+api: "GET /v1/yativo-card/{yativoCardId}/transactions/dispute-reasons"
 description: "Retrieve the list of available reason codes for filing a transaction dispute"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/transactions/dispute-reasons' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/transactions/dispute-reasons' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

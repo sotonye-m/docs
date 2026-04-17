@@ -1,6 +1,6 @@
 ---
 title: "Get Spending Limits"
-api: "GET /yativo-card/{yativoCardId}/wallet/limits"
+api: "GET /v1/yativo-card/{yativoCardId}/wallet/limits"
 description: "Retrieve the current spending limits for the card wallet"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet/limits' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet/limits' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

@@ -49,7 +49,7 @@ Before you can create or use Yativo Cards, every user must complete a four-step 
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/onboard' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/onboard' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -88,7 +88,7 @@ After registration, KYC verification is initiated. Poll this endpoint to track p
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/kyc-status' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/kyc-status' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -127,7 +127,7 @@ Once KYC is approved, the user must explicitly accept the cardholder terms befor
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/accept-terms' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/accept-terms' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{}'
@@ -159,7 +159,7 @@ The final step initializes your card wallet for funding and transactions.
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/deploy-safe' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/deploy-safe' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{}'
@@ -190,7 +190,7 @@ The following example shows the full onboarding sequence as a series of API call
 
 <CodeGroup>
 ```bash Step 1: Register
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/onboard' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/onboard' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -202,20 +202,20 @@ curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/onboard' \
 ```
 
 ```bash Step 2: Poll KYC Status
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/kyc-status' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/kyc-status' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 # Repeat until kyc_status == "approved"
 ```
 
 ```bash Step 3: Accept Terms
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/accept-terms' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/accept-terms' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{}'
 ```
 
 ```bash Step 4: Initialize Card Wallet
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/deploy-safe' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/deploy-safe' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{}'

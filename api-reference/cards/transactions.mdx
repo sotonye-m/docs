@@ -1,6 +1,6 @@
 ---
 title: "Card Transactions"
-api: "GET /yativo-card/{yativoCardId}/cards/{cardId}/transactions"
+api: "GET /v1/yativo-card/{yativoCardId}/cards/{cardId}/transactions"
 description: "Retrieve the transaction history for a specific card"
 authMethod: "bearer"
 ---
@@ -39,7 +39,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/cards/crd_01HX9KZMB3F7VNQP8R2WDGT4EJ/transactions?limit=20&status=completed&from_date=2026-03-01T00:00:00Z' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/cards/crd_01HX9KZMB3F7VNQP8R2WDGT4EJ/transactions?limit=20&status=completed&from_date=2026-03-01T00:00:00Z' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

@@ -1,6 +1,6 @@
 ---
 title: "Check Balance"
-api: "POST /balance/check"
+api: "POST /v1/balance/check"
 description: "Check the current balance of a specific asset wallet"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/balance/check' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/balance/check' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

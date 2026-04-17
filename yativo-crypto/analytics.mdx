@@ -36,7 +36,7 @@ interface DashboardAnalytics {
 Returns aggregated transaction data — volumes, counts, success rates, and trends over time.
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/analytics/transaction-analytics \
+curl -X GET https://crypto-api.yativo.com/api/v1/analytics/transaction-analytics \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -95,7 +95,7 @@ curl -X GET https://crypto-api.yativo.com/api/analytics/transaction-analytics \
 Returns a high-level snapshot for dashboard display: current balances, recent activity, customer counts, and key performance indicators.
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/analytics/dashboard-analytics \
+curl -X GET https://crypto-api.yativo.com/api/v1/analytics/dashboard-analytics \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 

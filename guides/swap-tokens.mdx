@@ -6,7 +6,7 @@ description: "Exchange one crypto asset for another across chains"
 This guide covers the full token swap flow: browsing available assets, finding valid swap routes, getting a quote, executing the swap, and monitoring the result.
 
 <Note>
-  Test swaps in the Sandbox at `https://crypto-sandbox.yativo.com/api/`. Sandbox swaps simulate the full flow with test assets.
+  Test swaps in the Sandbox at `https://crypto-sandbox.yativo.com/api/v1/`. Sandbox swaps simulate the full flow with test assets.
 </Note>
 
 <Steps>
@@ -18,7 +18,7 @@ Retrieve the list of assets supported for swapping. Use this to populate asset s
 <CodeGroup>
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/swap/assets \
+curl -X GET https://crypto-api.yativo.com/api/v1/swap/assets \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
 ```
 
@@ -27,7 +27,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/",
+  baseUrl: "https://crypto-api.yativo.com/api/v1/",
 });
 
 const assets = await client.swap.getAssets();
@@ -45,7 +45,7 @@ from yativo_crypto import YativoCrypto
 
 client = YativoCrypto(
     api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-api.yativo.com/api/",
+    base_url="https://crypto-api.yativo.com/api/v1/",
 )
 
 assets = client.swap.get_assets()
@@ -92,7 +92,7 @@ Retrieve the available routes for a given asset pair. Routes describe the path t
 <CodeGroup>
 
 ```bash cURL
-curl -X GET "https://crypto-api.yativo.com/api/swap/routes?fromAsset=eth-usdc&toAsset=pol-usdc" \
+curl -X GET "https://crypto-api.yativo.com/api/v1/swap/routes?fromAsset=eth-usdc&toAsset=pol-usdc" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
 ```
 
@@ -131,7 +131,7 @@ for route in routes:
     "routeId": "rte_01J2KV3MNPQ7R4S5T6U7VRTE01",
     "fromAsset": "eth-usdc",
     "toAsset": "pol-usdc",
-    "protocol": "stargate",
+    "protocol": "bridge-standard",
     "estimatedTimeSeconds": 180,
     "estimatedFeeUsd": "2.40",
     "tags": ["cross-chain", "bridge"]
@@ -140,7 +140,7 @@ for route in routes:
     "routeId": "rte_01J2KV3MNPQ7R4S5T6U7VRTE02",
     "fromAsset": "eth-usdc",
     "toAsset": "pol-usdc",
-    "protocol": "across",
+    "protocol": "bridge-fast",
     "estimatedTimeSeconds": 60,
     "estimatedFeeUsd": "3.10",
     "tags": ["cross-chain", "fast"]
@@ -157,7 +157,7 @@ Request a precise quote for a specific amount. Quotes have a short expiry window
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/swap/quote \
+curl -X POST https://crypto-api.yativo.com/api/v1/swap/quote \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -230,7 +230,7 @@ print(f"Quote expires in {expires_in:.0f}s")
     "totalFeeUsd": "2.48"
   },
   "routeId": "rte_01J2KV3MNPQ7R4S5T6U7VRTE01",
-  "protocol": "stargate",
+  "protocol": "bridge-standard",
   "expiresAt": "2026-03-26T14:03:00Z",
   "createdAt": "2026-03-26T14:00:00Z"
 }
@@ -265,7 +265,7 @@ Submit the swap using the `quoteId`. The quote must not have expired.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/swap/execute \
+curl -X POST https://crypto-api.yativo.com/api/v1/swap/execute \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: swap_qte55_exec_01" \
@@ -326,7 +326,7 @@ Poll the swap history endpoint or listen for `swap.completed` / `swap.failed` we
 <CodeGroup>
 
 ```bash cURL
-curl -X GET "https://crypto-api.yativo.com/api/swap/history?accountId=acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y&swapId=swp_01J2KX3MNPQ7R4S5T6U7VSWP33" \
+curl -X GET "https://crypto-api.yativo.com/api/v1/swap/history?accountId=acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y&swapId=swp_01J2KX3MNPQ7R4S5T6U7VSWP33" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
 ```
 

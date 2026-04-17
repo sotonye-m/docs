@@ -9,7 +9,7 @@ This guide walks through the full IBAN onboarding flow: checking available accou
 With a Yativo standalone IBAN, you receive a dedicated account number (SEPA or SWIFT) that accepts bank transfers from anywhere in the world. Incoming funds are automatically converted to the crypto asset of your choice.
 
 <Note>
-  Test this flow in the Sandbox at `https://crypto-sandbox.yativo.com/api/`. Sandbox KYC and IBAN activation are instant.
+  Test this flow in the Sandbox at `https://crypto-sandbox.yativo.com/api/v1/`. Sandbox KYC and IBAN activation are instant.
 </Note>
 
 ## Activation Status Progression
@@ -29,7 +29,7 @@ Retrieve the available IBAN types, supported currencies, and jurisdiction-specif
 <CodeGroup>
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/standalone-iban/options \
+curl -X GET https://crypto-api.yativo.com/api/v1/standalone-iban/options \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
 ```
 
@@ -38,7 +38,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/",
+  baseUrl: "https://crypto-api.yativo.com/api/v1/",
 });
 
 const options = await client.iban.getOptions();
@@ -58,7 +58,7 @@ from yativo_crypto import YativoCrypto
 
 client = YativoCrypto(
     api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-api.yativo.com/api/",
+    base_url="https://crypto-api.yativo.com/api/v1/",
 )
 
 options = client.iban.get_options()
@@ -102,7 +102,7 @@ Start the onboarding session. This creates a record you will add KYC data to in 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/standalone-iban/onboarding/init \
+curl -X POST https://crypto-api.yativo.com/api/v1/standalone-iban/onboarding/init \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -165,7 +165,7 @@ Submit identity verification documents and personal details.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/standalone-iban/onboarding/kyc \
+curl -X POST https://crypto-api.yativo.com/api/v1/standalone-iban/onboarding/kyc \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -307,7 +307,7 @@ Once KYC is approved, submit the IBAN request to trigger account provisioning.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/standalone-iban/iban/request \
+curl -X POST https://crypto-api.yativo.com/api/v1/standalone-iban/iban/request \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -344,7 +344,7 @@ Once the IBAN is provisioned (typically within 1–2 business days), the status 
 <CodeGroup>
 
 ```bash cURL
-curl -X GET "https://crypto-api.yativo.com/api/standalone-iban/status?ibanId=ibn_01J2KT3MNPQ7R4S5T6U7VIBN77" \
+curl -X GET "https://crypto-api.yativo.com/api/v1/standalone-iban/status?ibanId=ibn_01J2KT3MNPQ7R4S5T6U7VIBN77" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: "Get Gas Fee"
-api: "POST /transactions/get-gas-price"
+api: "POST /v1/transactions/get-gas-price"
 description: "Estimate the gas fee for a transaction on a given blockchain network"
 authMethod: "bearer"
 ---
@@ -27,7 +27,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/transactions/get-gas-price' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/transactions/get-gas-price' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

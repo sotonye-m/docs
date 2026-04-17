@@ -8,9 +8,9 @@ description: "Mock responses for Yativo Card endpoints — card features are not
 <Warning>
   **The Yativo Card feature does NOT have a sandbox environment.**
 
-  Card endpoints (`/yativo-card/...` and `/card-issuer/...`) are not available at `https://crypto-sandbox.yativo.com/api/`. Calls to card endpoints using the sandbox URL will return an error.
+  Card endpoints (`/yativo-card/...` and `/card-issuer/...`) are not available at `https://crypto-sandbox.yativo.com/api/v1/`. Calls to card endpoints using the sandbox URL will return an error.
 
-  To integrate and test card features, you must use the **production environment** (`https://crypto-api.yativo.com/api/`) with real KYC-verified accounts.
+  To integrate and test card features, you must use the **production environment** (`https://crypto-api.yativo.com/api/v1/`) with real KYC-verified accounts.
 </Warning>
 
 ---
@@ -287,7 +287,7 @@ The following are representative mock responses for each card endpoint. Use thes
   "data": {
     "ephemeral_token": "eph_token_7f3k9d2m1p8q4r5t6y7u8i9o0p1a2b3c4d5e6f7g8h",
     "expires_at": "2026-03-25T10:35:00Z",
-    "card_view_url": "https://crypto-api.yativo.com/card-details?token=eph_token_7f3k9d2m1p8q4r5t6y7u8i9o0p1a2b3c4d5e6f7g8h"
+    "card_view_url": "https://crypto.yativo.com/card-details?token=eph_token_7f3k9d2m1p8q4r5t6y7u8i9o0p1a2b3c4d5e6f7g8h"
   }
 }
 ```
@@ -331,7 +331,7 @@ If you accidentally call a card endpoint against the sandbox URL, you will recei
 ```json
 {
   "status": "error",
-  "message": "Card services are not available in the sandbox environment. Please use the production API at https://crypto-api.yativo.com/api/",
+  "message": "Card services are not available in the sandbox environment. Please use the production API at https://crypto-api.yativo.com/api/v1/",
   "error_code": "FEATURE_NOT_AVAILABLE_IN_SANDBOX"
 }
 ```

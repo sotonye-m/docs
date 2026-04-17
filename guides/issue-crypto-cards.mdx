@@ -7,7 +7,7 @@ sidebarTitle: "Issue Cards"
 This guide walks through the complete flow for issuing a Visa/Mastercard virtual card to a user: onboarding, KYC, wallet deployment, card creation, funding via USDC deposit, and securely displaying card details.
 
 <Note>
-  Test this flow in the Sandbox at `https://crypto-sandbox.yativo.com/api/`. KYC checks are auto-approved in the Sandbox environment.
+  Test this flow in the Sandbox at `https://crypto-sandbox.yativo.com/api/v1/`. KYC checks are auto-approved in the Sandbox environment.
 </Note>
 
 ## Prerequisites
@@ -24,7 +24,7 @@ Submit basic user information to begin the card onboarding process.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/yativo-card/onboard \
+curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/onboard \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -49,7 +49,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/",
+  baseUrl: "https://crypto-api.yativo.com/api/v1/",
 });
 
 const onboarding = await client.card.onboard({
@@ -77,7 +77,7 @@ from yativo_crypto import YativoCrypto
 
 client = YativoCrypto(
     api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-api.yativo.com/api/",
+    base_url="https://crypto-api.yativo.com/api/v1/",
 )
 
 onboarding = client.card.onboard(
@@ -121,7 +121,7 @@ KYC review can be instant (automated) or take up to 24 hours for manual review. 
 <CodeGroup>
 
 ```bash cURL
-curl -X GET "https://crypto-api.yativo.com/api/yativo-card/kyc-status?cardUserId=cus_01J2KJ3MNPQ7R4S5T6U7VCRD01" \
+curl -X GET "https://crypto-api.yativo.com/api/v1/yativo-card/kyc-status?cardUserId=cus_01J2KJ3MNPQ7R4S5T6U7VCRD01" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
 ```
 
@@ -194,7 +194,7 @@ Before a card can be issued, the user must accept the card program's terms.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/yativo-card/accept-terms \
+curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/accept-terms \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -235,7 +235,7 @@ Deploy a smart contract wallet for the user. This wallet holds the USDC that fun
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/yativo-card/deploy-safe \
+curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/deploy-safe \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -287,7 +287,7 @@ With the wallet deployed and KYC approved, create the virtual card.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/yativo-card/create-card \
+curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/create-card \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -366,7 +366,7 @@ Retrieve the deposit address for the card wallet. Users send USDC to this addres
 <CodeGroup>
 
 ```bash cURL
-curl -X GET "https://crypto-api.yativo.com/api/yativo-card/crd_01J2KL3MNPQ7R4S5T6U7VCRD88/wallet/funding-address" \
+curl -X GET "https://crypto-api.yativo.com/api/v1/yativo-card/crd_01J2KL3MNPQ7R4S5T6U7VCRD88/wallet/funding-address" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
 ```
 
@@ -414,7 +414,7 @@ Card details (full PAN, CVV, expiry) are sensitive and must never be stored or l
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "https://crypto-api.yativo.com/api/yativo-card/cus_01J2KJ3MNPQ7R4S5T6U7VCRD01/cards/crd_01J2KL3MNPQ7R4S5T6U7VCRD88/ephemeral-token" \
+curl -X POST "https://crypto-api.yativo.com/api/v1/yativo-card/cus_01J2KJ3MNPQ7R4S5T6U7VCRD01/cards/crd_01J2KL3MNPQ7R4S5T6U7VCRD88/ephemeral-token" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -435,7 +435,7 @@ res.json({ token: ephemeral.token, expiresAt: ephemeral.expiresAt });
 
 // Frontend: use the token to fetch card details from Yativo's secure endpoint
 // The token is single-use and expires after ttlSeconds
-const cardDetails = await fetch("https://crypto-api.yativo.com/api/yativo-card/reveal", {
+const cardDetails = await fetch("https://crypto-api.yativo.com/api/v1/yativo-card/reveal", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ token: ephemeral.token }),

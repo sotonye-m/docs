@@ -1,6 +1,6 @@
 ---
 title: "List API Keys"
-api: "GET /apikey"
+api: "GET /v1/apikey"
 description: "List all API keys for your account. Secrets are never returned in list responses."
 authMethod: "bearer"
 ---
@@ -37,7 +37,7 @@ interface ListApiKeysResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/apikey' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/apikey' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

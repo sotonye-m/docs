@@ -7,7 +7,7 @@ sidebarTitle: "Accept Crypto"
 This guide walks you through the full flow for accepting crypto deposits: creating a custodial account, generating wallet addresses per chain, registering webhooks, and crediting user accounts when deposits confirm.
 
 <Note>
-  Test this entire flow against the Sandbox at `https://crypto-sandbox.yativo.com/api/` before going live. Sandbox deposits are simulated — no real funds are used.
+  Test this entire flow against the Sandbox at `https://crypto-sandbox.yativo.com/api/v1/` before going live. Sandbox deposits are simulated — no real funds are used.
 </Note>
 
 ## Overview
@@ -28,7 +28,7 @@ Each user or entity in your system maps to a Yativo account. Create one at onboa
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/accounts/create-account \
+curl -X POST https://crypto-api.yativo.com/api/v1/accounts/create-account \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -45,7 +45,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/",
+  baseUrl: "https://crypto-api.yativo.com/api/v1/",
 });
 
 const account = await client.accounts.create({
@@ -64,7 +64,7 @@ from yativo_crypto import YativoCrypto
 
 client = YativoCrypto(
     api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-api.yativo.com/api/",
+    base_url="https://crypto-api.yativo.com/api/v1/",
 )
 
 account = client.accounts.create(
@@ -109,7 +109,7 @@ For each blockchain you want to support, add an asset to the account. This retur
 
 ```bash cURL
 # Ethereum (ERC-20 / ETH)
-curl -X POST https://crypto-api.yativo.com/api/assets/add-asset \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/add-asset \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -177,7 +177,7 @@ Register a webhook endpoint to receive `deposit.detected` (immediate, unconfirme
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/webhook/create \
+curl -X POST https://crypto-api.yativo.com/api/v1/webhook/create \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{

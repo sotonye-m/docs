@@ -7,7 +7,7 @@ description: "Test sending funds, estimating gas fees, and querying transaction 
 
 Test crypto transactions in the sandbox — send testnet tokens, estimate gas fees, and query transaction history, all without spending real funds.
 
-**Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/`
+**Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/v1/`
 
 <Warning>
   The sandbox uses testnet blockchains. Never send real mainnet tokens to sandbox wallet addresses.
@@ -20,7 +20,7 @@ Test crypto transactions in the sandbox — send testnet tokens, estimate gas fe
 Estimate the gas fee for a transaction before sending.
 
 ```
-POST https://crypto-sandbox.yativo.com/api/transactions/get-gas-price
+POST https://crypto-sandbox.yativo.com/api/v1/transactions/get-gas-price
 ```
 
 <ParamField body="chain_type" type="string" required>
@@ -37,7 +37,7 @@ POST https://crypto-sandbox.yativo.com/api/transactions/get-gas-price
 
 <CodeGroup>
 ```bash Solana fee estimate
-curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/get-gas-price' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/get-gas-price' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -47,7 +47,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/get-gas-price' 
 ```
 
 ```bash Ethereum fee estimate
-curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/get-gas-price' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/get-gas-price' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -83,7 +83,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/get-gas-price' 
 Send testnet tokens from your sandbox wallet to another address.
 
 ```
-POST https://crypto-sandbox.yativo.com/api/transactions/send-funds
+POST https://crypto-sandbox.yativo.com/api/v1/transactions/send-funds
 ```
 
 <ParamField body="from_asset_id" type="string" required>
@@ -116,7 +116,7 @@ POST https://crypto-sandbox.yativo.com/api/transactions/send-funds
 
 <CodeGroup>
 ```bash Send USDC on Solana Devnet
-curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/send-funds' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/send-funds' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -130,7 +130,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/send-funds' \
 ```
 
 ```bash Send ETH on Sepolia
-curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/send-funds' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/send-funds' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -172,7 +172,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/send-funds' \
 Retrieve a paginated list of all transactions for your sandbox account.
 
 ```
-POST https://crypto-sandbox.yativo.com/api/transactions/get-transactions
+POST https://crypto-sandbox.yativo.com/api/v1/transactions/get-transactions
 ```
 
 <ParamField body="page" type="integer">
@@ -193,7 +193,7 @@ POST https://crypto-sandbox.yativo.com/api/transactions/get-transactions
 
 <CodeGroup>
 ```bash List recent transactions
-curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/get-transactions' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/get-transactions' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -203,7 +203,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/get-transaction
 ```
 
 ```bash Filter by chain and status
-curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/get-transactions' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/get-transactions' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -254,7 +254,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/get-transaction
   Attempt to send more than your wallet balance. Your application should handle this gracefully.
 
   ```bash
-  curl -X POST 'https://crypto-sandbox.yativo.com/api/transactions/send-funds' \
+  curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/send-funds' \
     -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
     -H 'Content-Type: application/json' \
     -d '{

@@ -7,7 +7,7 @@ sidebarTitle: "SDK Quickstart"
 This guide takes you from zero to your first successful API call in each of the official Yativo Crypto SDKs. Each example shows install, initialization, authentication, and creating your first wallet.
 
 <Note>
-  All examples connect to the Sandbox at `https://crypto-sandbox.yativo.com/api/` by default. Switch to `https://crypto-api.yativo.com/api/` when you're ready for production.
+  All examples connect to the Sandbox at `https://crypto-sandbox.yativo.com/api/v1/` by default. Switch to `https://crypto-api.yativo.com/api/v1/` when you're ready for production.
 </Note>
 
 ## Prerequisites
@@ -37,7 +37,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!, // yvk_sandbox_...
-  baseUrl: "https://crypto-sandbox.yativo.com/api/", // switch to crypto-api for production
+  baseUrl: "https://crypto-sandbox.yativo.com/api/v1/", // switch to crypto-api for production
 });
 ```
 
@@ -48,7 +48,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-sandbox.yativo.com/api/",
+  baseUrl: "https://crypto-sandbox.yativo.com/api/v1/",
 });
 
 async function main() {
@@ -102,7 +102,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: process.env.YATIVO_BASE_URL ?? "https://crypto-sandbox.yativo.com/api/",
+  baseUrl: process.env.YATIVO_BASE_URL ?? "https://crypto-sandbox.yativo.com/api/v1/",
 });
 ```
 
@@ -128,7 +128,7 @@ from yativo_crypto import YativoCrypto
 
 client = YativoCrypto(
     api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-sandbox.yativo.com/api/",
+    base_url="https://crypto-sandbox.yativo.com/api/v1/",
 )
 ```
 
@@ -140,7 +140,7 @@ from yativo_crypto import YativoCrypto
 
 client = YativoCrypto(
     api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-sandbox.yativo.com/api/",
+    base_url="https://crypto-sandbox.yativo.com/api/v1/",
 )
 
 def main():
@@ -201,7 +201,7 @@ from yativo_crypto import YativoCrypto
 
 client = YativoCrypto(
     api_key=os.environ["YATIVO_API_KEY"],
-    base_url=os.getenv("YATIVO_BASE_URL", "https://crypto-sandbox.yativo.com/api/"),
+    base_url=os.getenv("YATIVO_BASE_URL", "https://crypto-sandbox.yativo.com/api/v1/"),
 )
 ```
 
@@ -228,7 +228,7 @@ use Yativo\Crypto\YativoCrypto;
 
 $client = new YativoCrypto(
     apiKey: getenv("YATIVO_API_KEY"),
-    baseUrl: "https://crypto-sandbox.yativo.com/api/",
+    baseUrl: "https://crypto-sandbox.yativo.com/api/v1/",
 );
 ```
 
@@ -243,7 +243,7 @@ use Yativo\Crypto\YativoCrypto;
 
 $client = new YativoCrypto(
     apiKey: getenv("YATIVO_API_KEY"),
-    baseUrl: "https://crypto-sandbox.yativo.com/api/",
+    baseUrl: "https://crypto-sandbox.yativo.com/api/v1/",
 );
 
 // 1. Verify credentials
@@ -273,7 +273,7 @@ echo "Wallet address: " . $wallet->address . PHP_EOL;
 // config/services.php
 "yativo" => [
     "api_key" => env("YATIVO_API_KEY"),
-    "base_url" => env("YATIVO_BASE_URL", "https://crypto-sandbox.yativo.com/api/"),
+    "base_url" => env("YATIVO_BASE_URL", "https://crypto-sandbox.yativo.com/api/v1/"),
 ],
 
 // AppServiceProvider.php
@@ -329,7 +329,7 @@ import com.yativo.crypto.YativoCryptoConfig;
 
 YativoCrypto client = YativoCrypto.builder()
     .apiKey(System.getenv("YATIVO_API_KEY"))
-    .baseUrl("https://crypto-sandbox.yativo.com/api/")
+    .baseUrl("https://crypto-sandbox.yativo.com/api/v1/")
     .build();
 ```
 
@@ -344,7 +344,7 @@ public class QuickstartExample {
     public static void main(String[] args) {
         YativoCrypto client = YativoCrypto.builder()
             .apiKey(System.getenv("YATIVO_API_KEY"))
-            .baseUrl("https://crypto-sandbox.yativo.com/api/")
+            .baseUrl("https://crypto-sandbox.yativo.com/api/v1/")
             .build();
 
         // 1. Verify credentials
@@ -384,7 +384,7 @@ public class YativoConfig {
     @Value("${yativo.api-key}")
     private String apiKey;
 
-    @Value("${yativo.base-url:https://crypto-sandbox.yativo.com/api/}")
+    @Value("${yativo.base-url:https://crypto-sandbox.yativo.com/api/v1/}")
     private String baseUrl;
 
     @Bean
@@ -429,7 +429,7 @@ export default function Root() {
     <YativoProvider
       // Your server endpoint that returns a session token
       tokenEndpoint="/api/yativo-token"
-      baseUrl="https://crypto-sandbox.yativo.com/api/"
+      baseUrl="https://crypto-sandbox.yativo.com/api/v1/"
     >
       <App />
     </YativoProvider>
@@ -444,7 +444,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-sandbox.yativo.com/api/",
+  baseUrl: "https://crypto-sandbox.yativo.com/api/v1/",
 });
 
 app.post("/api/yativo-token", requireAuth, async (req, res) => {

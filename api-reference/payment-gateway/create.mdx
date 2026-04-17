@@ -1,6 +1,6 @@
 ---
 title: "Create Payment"
-api: "POST /crypto-gateway/payments"
+api: "POST /v1/crypto-gateway/payments"
 description: "Create a new payment intent with a hosted checkout URL"
 authMethod: "bearer"
 ---
@@ -51,7 +51,7 @@ curl -X POST '/crypto-gateway/payments' \
     "amount": 49.99,
     "currency": "USD",
     "status": "pending",
-    "checkout_url": "https://crypto-api.yativo.com/api/crypto-gateway/pay/pi_01abc123",
+    "checkout_url": "https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pi_01abc123",
     "description": "Pro Plan - Monthly",
     "metadata": { "order_id": "ord_123", "customer_email": "alice@example.com" },
     "expires_at": "2026-04-01T12:00:00Z",

@@ -57,7 +57,7 @@ GET /yativo-card/list-cards
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/list-cards' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/list-cards' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -110,7 +110,7 @@ POST /yativo-card/create-card
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/create-card' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/create-card' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -157,7 +157,7 @@ Sensitive card data — the full card number (PAN), CVV, expiry, and PIN — is 
 3. The SDK mounts a sandboxed iframe — your app never sees raw sensitive data
 
 ```bash Card Data Token
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/ephemeral-token' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/ephemeral-token' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{ "element_type": "cardData" }'
@@ -204,7 +204,7 @@ POST /yativo-card/cards/{cardId}/freeze
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/freeze' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/freeze' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{}'
@@ -236,7 +236,7 @@ POST /yativo-card/cards/{cardId}/unfreeze
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/unfreeze' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/unfreeze' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{}'
@@ -268,7 +268,7 @@ POST /yativo-card/cards/{cardId}/void
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/void' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/void' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{}'
@@ -306,7 +306,7 @@ POST /yativo-card/cards/{cardId}/pin/otp
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/pin/otp' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/pin/otp' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{}'
@@ -346,7 +346,7 @@ POST /yativo-card/cards/{cardId}/pin/set
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/pin/set' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/pin/set' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -384,7 +384,7 @@ GET /yativo-card/{yativoCardId}/profile
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/profile' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/profile' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -423,14 +423,14 @@ curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R
 ## Sandbox Testing
 
 <Note>
-  Replace `YOUR_SANDBOX_TOKEN` with a token obtained by authenticating against `https://crypto-sandbox.yativo.com/api/`. See [Sandbox Overview](/sandbox/overview).
+  Replace `YOUR_SANDBOX_TOKEN` with a token obtained by authenticating against `https://crypto-sandbox.yativo.com/api/v1/`. See [Sandbox Overview](/sandbox/overview).
 </Note>
 
 ### Create a Virtual Card (Sandbox)
 
 <CodeGroup>
 ```bash cURL (Sandbox)
-curl -X POST 'https://crypto-sandbox.yativo.com/api/yativo-card/create-card' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/yativo-card/create-card' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -445,7 +445,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/yativo-card/create-card' \
 import { YativoSDK } from '@yativo/crypto-sdk';
 
 const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
   apiKey: 'YOUR_SANDBOX_API_KEY',
   apiSecret: 'YOUR_SANDBOX_API_SECRET',
 });
@@ -464,7 +464,7 @@ console.log('Card ID:', card.data.card_id);
 
 <CodeGroup>
 ```bash cURL (Sandbox)
-curl -X GET 'https://crypto-sandbox.yativo.com/api/yativo-card/list-cards' \
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/yativo-card/list-cards' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
 
@@ -472,7 +472,7 @@ curl -X GET 'https://crypto-sandbox.yativo.com/api/yativo-card/list-cards' \
 import { YativoSDK } from '@yativo/crypto-sdk';
 
 const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
   apiKey: 'YOUR_SANDBOX_API_KEY',
   apiSecret: 'YOUR_SANDBOX_API_SECRET',
 });

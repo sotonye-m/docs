@@ -1,6 +1,6 @@
 ---
 title: "Get Card View Token"
-api: "POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token"
+api: "POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/view-token"
 description: "Issue a short-lived token for a hosted secure card view — embed the returned URL in an iframe"
 authMethod: "bearer"
 ---
@@ -39,14 +39,14 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash Card data only
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{ "enabled_views": ["data"] }'
 ```
 
 ```bash Card data + PIN
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{ "enabled_views": ["data", "pin"] }'

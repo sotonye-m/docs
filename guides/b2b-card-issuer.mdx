@@ -26,7 +26,7 @@ Once your account manager has enabled the Card Issuer Program on your account, t
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/card-issuer/apply \
+curl -X POST https://crypto-api.yativo.com/api/v1/card-issuer/apply \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -40,7 +40,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/",
+  baseUrl: "https://crypto-api.yativo.com/api/v1/",
 });
 
 const application = await client.cardIssuer.apply({
@@ -56,7 +56,7 @@ from yativo_crypto import YativoCrypto
 
 client = YativoCrypto(
     api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-api.yativo.com/api/",
+    base_url="https://crypto-api.yativo.com/api/v1/",
 )
 
 application = client.card_issuer.apply(
@@ -85,7 +85,7 @@ Poll the program status endpoint or listen for a `card_issuer.application_approv
 <CodeGroup>
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/card-issuer/my-program \
+curl -X GET https://crypto-api.yativo.com/api/v1/card-issuer/my-program \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
 ```
 
@@ -136,7 +136,7 @@ Once approved, create customer records for each of your end users. These map to 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/customers/create-customer \
+curl -X POST https://crypto-api.yativo.com/api/v1/customers/create-customer \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -214,7 +214,7 @@ Issue a card to a specific customer within your issuer program.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST "https://crypto-api.yativo.com/api/yativo-card/customers/cst_01J2KP3MNPQ7R4S5T6U7VCST55/create-card" \
+curl -X POST "https://crypto-api.yativo.com/api/v1/yativo-card/customers/cst_01J2KP3MNPQ7R4S5T6U7VCST55/create-card" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -272,7 +272,7 @@ Transfer funds from your master wallet balance to a customer's card. Identify th
 <CodeGroup>
 
 ```bash cURL — fund by email
-curl -X POST "https://crypto-api.yativo.com/api/card-issuer/fund" \
+curl -X POST "https://crypto-api.yativo.com/api/v1/card-issuer/fund" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -283,7 +283,7 @@ curl -X POST "https://crypto-api.yativo.com/api/card-issuer/fund" \
 ```
 
 ```bash cURL — fund by external reference
-curl -X POST "https://crypto-api.yativo.com/api/card-issuer/fund" \
+curl -X POST "https://crypto-api.yativo.com/api/v1/card-issuer/fund" \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{

@@ -1,6 +1,6 @@
 ---
 title: "Send Funds"
-api: "POST /transactions/send-funds"
+api: "POST /v1/transactions/send-funds"
 description: "Send cryptocurrency from a wallet to an external address"
 authMethod: "bearer"
 ---
@@ -43,7 +43,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/transactions/send-funds' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/transactions/send-funds' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: idem_01HX9KZMB3F7VNQP8R2WDGT4E5' \

@@ -88,7 +88,7 @@ POST /yativo-card/{yativoCardId}/cards/physical/order
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -149,7 +149,7 @@ POST /yativo-card/{yativoCardId}/cards/physical/order/{orderId}/payment
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4F6/payment' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4F6/payment' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -193,7 +193,7 @@ GET /yativo-card/{yativoCardId}/cards/physical/order/{orderId}/status
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4F6/status' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4F6/status' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -241,7 +241,7 @@ GET /yativo-card/{yativoCardId}/cards/physical/orders
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/orders' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/orders' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -284,7 +284,7 @@ POST /yativo-card/{yativoCardId}/cards/physical/order/{orderId}/cancel
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4F6/cancel' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4F6/cancel' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{}'
@@ -333,7 +333,7 @@ POST /yativo-card/{yativoCardId}/cards/physical/{cardId}/pin
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/card_phys_01HX9KZMB3F7/pin' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/physical/card_phys_01HX9KZMB3F7/pin' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{

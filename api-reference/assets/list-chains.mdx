@@ -1,6 +1,6 @@
 ---
 title: "List Supported Chains"
-api: "GET /assets/get-chains"
+api: "GET /v1/assets/get-chains"
 description: "Retrieve all supported blockchain networks"
 authMethod: "bearer"
 ---
@@ -11,7 +11,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/assets/get-chains' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/assets/get-chains' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -22,10 +22,10 @@ curl -X GET 'https://crypto-api.yativo.com/api/assets/get-chains' \
   "status": true,
   "message": "Chains fetched successfully",
   "data": [
-    {"id": "BNB", "name": "Binance Smart Chain", "image": "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png", "rpc": "https://bsc-dataseed.binance.org", "explorer": "https://bscscan.com"},
-    {"id": "SOL", "name": "Solana", "image": "https://assets.coingecko.com/coins/images/4128/large/solana.png", "rpc": "https://api.mainnet-beta.solana.com", "explorer": "https://solscan.io"},
-    {"id": "ETH", "name": "Ethereum on Base", "image": "https://assets.coingecko.com/coins/images/279/large/ethereum.png", "rpc": "https://mainnet.base.org", "explorer": "https://basescan.org"},
-    {"id": "BTC", "name": "Bitcoin", "image": "https://assets.coingecko.com/coins/images/1/large/bitcoin.png", "rpc": "https://bitcoin-rpc.publicnode.com", "explorer": "https://blockstream.info"}
+    {"id": "BNB", "name": "BNB Smart Chain", "image": "https://cdn.yativo.com/assets/chains/bnb.png", "rpc": "https://bsc-dataseed.binance.org", "explorer": "https://bscscan.com"},
+    {"id": "SOL", "name": "Solana", "image": "https://cdn.yativo.com/assets/chains/sol.png", "rpc": "https://api.mainnet-beta.solana.com", "explorer": "https://solscan.io"},
+    {"id": "ETH", "name": "Ethereum on Base", "image": "https://cdn.yativo.com/assets/chains/eth.png", "rpc": "https://mainnet.base.org", "explorer": "https://basescan.org"},
+    {"id": "BTC", "name": "Bitcoin", "image": "https://cdn.yativo.com/assets/chains/btc.png", "rpc": "https://bitcoin-rpc.publicnode.com", "explorer": "https://blockstream.info"}
   ]
 }
 ```

@@ -33,7 +33,7 @@ GET /yativo-card/{yativoCardId}/wallet
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -71,7 +71,7 @@ GET /yativo-card/{yativoCardId}/wallet/funding-address
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/funding-address' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/wallet/funding-address' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -164,18 +164,18 @@ See the [Card IBAN documentation](/yativo-crypto/cards/iban) for activation inst
 Use the sandbox to test this endpoint without real funds:
 
 <Note>
-  Sandbox URL: `https://crypto-sandbox.yativo.com/api/`
+  Sandbox URL: `https://crypto-sandbox.yativo.com/api/v1/`
 </Note>
 
 <CodeGroup>
 ```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/yativo-card/yc_01SANDBOX_CARD_ID/wallet/funding-address' \
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/yativo-card/yc_01SANDBOX_CARD_ID/wallet/funding-address' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
 
 ```typescript TypeScript SDK
 const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
   apiKey: 'YOUR_SANDBOX_API_KEY',
   apiSecret: 'YOUR_SANDBOX_API_SECRET',
 });

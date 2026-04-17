@@ -1,6 +1,6 @@
 ---
 title: "Register"
-api: "POST /auth/registration"
+api: "POST /v1/auth/registration"
 description: "Create a new user account and receive authentication tokens"
 authMethod: "none"
 ---
@@ -27,7 +27,7 @@ authMethod: "none"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/auth/registration' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/auth/registration' \
   -H 'Content-Type: application/json' \
   -d '{
     "email": "user@example.com",

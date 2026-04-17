@@ -45,7 +45,7 @@ For most Yativo Crypto server integrations, you'll want `read`, `write`, and `tr
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/apikey/create \
+curl -X POST https://crypto-api.yativo.com/api/v1/apikey/create \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "X-2FA-Token: 123456" \
   -H "Content-Type: application/json" \
@@ -79,7 +79,7 @@ curl -X POST https://crypto-api.yativo.com/api/apikey/create \
 **Method 1: Exchange for Bearer token (recommended for production)**
 
 ```bash
-curl -X POST https://crypto-api.yativo.com/api/apikey/token \
+curl -X POST https://crypto-api.yativo.com/api/v1/apikey/token \
   -H "Content-Type: application/json" \
   -d '{
     "api_key": "yvk_live_...",
@@ -92,7 +92,7 @@ Use the returned `access_token` as `Authorization: Bearer {token}` on all subseq
 **Method 2: Header-based (for simpler integrations)**
 
 ```bash
-curl -X POST https://crypto-api.yativo.com/api/transactions/send-funds \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/send-funds \
   -H "X-API-Key: yvk_live_..." \
   -H "X-API-Secret: yvs_live_..." \
   -H "Content-Type: application/json" \

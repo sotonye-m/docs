@@ -18,7 +18,7 @@ The Subscriptions API lets you manage your Yativo account subscription tier. Dif
 ## List Plans
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/subscription/plans' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/subscription/plans' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -73,7 +73,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/subscription/plans' \
 ## Get Current Subscription
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/subscription/current' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/subscription/current' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -96,7 +96,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/subscription/current' \
 ## Subscribe to a Plan
 
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/subscription/subscribe' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/subscription/subscribe' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -109,7 +109,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/subscription/subscribe' \
 ## Toggle Auto-Renewal
 
 ```bash
-curl -X PUT 'https://crypto-api.yativo.com/api/subscription/auto-renew' \
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/subscription/auto-renew' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -122,7 +122,7 @@ curl -X PUT 'https://crypto-api.yativo.com/api/subscription/auto-renew' \
 ## Cancel Subscription
 
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/subscription/cancel' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/subscription/cancel' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -133,7 +133,7 @@ Cancellation takes effect at the end of the current billing period. You retain a
 ## Payment History
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/subscription/history' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/subscription/history' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 

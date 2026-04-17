@@ -58,7 +58,7 @@ POST /card-issuer/apply
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/apply' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -109,7 +109,7 @@ GET /card-issuer/status
 
 <RequestExample>
 ```bash cURL
-curl 'https://crypto-api.yativo.com/api/card-issuer/status' \
+curl 'https://crypto-api.yativo.com/api/v1/card-issuer/status' \
   -H 'Authorization: Bearer YOUR_TOKEN'
 ```
 </RequestExample>
@@ -171,7 +171,7 @@ GET /card-issuer/wallets
 
 <RequestExample>
 ```bash cURL
-curl 'https://crypto-api.yativo.com/api/card-issuer/wallets' \
+curl 'https://crypto-api.yativo.com/api/v1/card-issuer/wallets' \
   -H 'Authorization: Bearer YOUR_TOKEN'
 ```
 </RequestExample>
@@ -239,7 +239,7 @@ POST /yativo-card/onboard
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/onboard' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/onboard' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -297,7 +297,7 @@ POST /card-issuer/fund
 
 <RequestExample>
 ```bash cURL — fund by email
-curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/fund' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -308,7 +308,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/fund' \
 ```
 
 ```bash cURL — fund by external reference
-curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/fund' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -383,7 +383,7 @@ POST /yativo-card/customers/{yativoCardId}/create-card
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/customers/yc_01HXABC123/create-card' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yc_01HXABC123/create-card' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

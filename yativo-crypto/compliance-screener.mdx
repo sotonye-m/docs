@@ -12,7 +12,7 @@ The screener is available as a **public API** — no authentication required.
 ## Check an Address
 
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/screener/check' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/screener/check' \
   -H 'Content-Type: application/json' \
   -d '{
     "address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4"
@@ -55,7 +55,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/screener/check' \
 Screen multiple addresses in a single request:
 
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/screener/batch-check' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/screener/batch-check' \
   -H 'Content-Type: application/json' \
   -d '{
     "addresses": [
@@ -87,7 +87,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/screener/batch-check' \
 Get the screener's current capabilities and usage information:
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/screener/info'
+curl -X GET 'https://crypto-api.yativo.com/api/v1/screener/info'
 ```
 
 ---
@@ -95,7 +95,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/screener/info'
 ## Health Check
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/screener/health'
+curl -X GET 'https://crypto-api.yativo.com/api/v1/screener/health'
 ```
 
 ---
@@ -106,7 +106,7 @@ Screen addresses before sending funds or accepting deposits:
 
 ```typescript
 // Before sending funds
-const screen = await fetch('https://crypto-api.yativo.com/api/screener/check', {
+const screen = await fetch('https://crypto-api.yativo.com/api/v1/screener/check', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ address: recipientAddress }),

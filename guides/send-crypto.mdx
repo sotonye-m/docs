@@ -6,7 +6,7 @@ description: "Programmatically send crypto to any wallet address"
 This guide covers the full flow for sending crypto from a Yativo account to an external wallet: estimating gas fees, executing the transfer with an idempotency key, and tracking the transaction to completion.
 
 <Note>
-  Test this flow in the Sandbox at `https://crypto-sandbox.yativo.com/api/`. Sandbox transactions are simulated — no real funds move.
+  Test this flow in the Sandbox at `https://crypto-sandbox.yativo.com/api/v1/`. Sandbox transactions are simulated — no real funds move.
 </Note>
 
 <Steps>
@@ -18,7 +18,7 @@ Before sending, retrieve the current gas fee estimate for the target chain. This
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/transactions/get-gas-price \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-gas-price \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -32,7 +32,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/",
+  baseUrl: "https://crypto-api.yativo.com/api/v1/",
 });
 
 const gasEstimate = await client.transactions.getGasPrice({
@@ -58,7 +58,7 @@ from yativo_crypto import YativoCrypto
 
 client = YativoCrypto(
     api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-api.yativo.com/api/",
+    base_url="https://crypto-api.yativo.com/api/v1/",
 )
 
 gas_estimate = client.transactions.get_gas_price(
@@ -112,7 +112,7 @@ Use `POST /transactions/send-funds` to initiate the transfer. Always include an 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/transactions/send-funds \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/send-funds \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: payout_01J2KG9MNPQ3R4S5T6UPAY001" \
@@ -204,7 +204,7 @@ You can poll for the current transaction status using `POST /transactions/get-tr
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/transactions/get-transaction \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-transaction \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{

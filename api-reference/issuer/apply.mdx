@@ -1,6 +1,6 @@
 ---
 title: "Apply for Issuer Program"
-api: "POST /card-issuer/apply"
+api: "POST /v1/card-issuer/apply"
 description: "Apply to become a card issuer and configure your card program"
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/card-issuer/apply' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

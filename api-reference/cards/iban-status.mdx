@@ -1,6 +1,6 @@
 ---
 title: "Get Card IBAN Status"
-api: "GET /yativo-card/{yativoCardId}/iban/status"
+api: "GET /v1/yativo-card/{yativoCardId}/iban/status"
 description: "Check the status of the IBAN linked to the card wallet"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/iban/status' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/iban/status' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

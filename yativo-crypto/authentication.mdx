@@ -35,7 +35,7 @@ From the dashboard (or via `POST /apikey/generate` once you already have a token
 All API endpoints require an `Authorization: Bearer <token>` header. Tokens expire after **60 minutes**; your API key never expires.
 
 ```bash
-curl -X POST https://crypto-api.yativo.com/api/auth/token \
+curl -X POST https://crypto-api.yativo.com/api/v1/auth/token \
   -H "Content-Type: application/json" \
   -d '{
     "api_key":    "yativo_...",
@@ -56,7 +56,7 @@ curl -X POST https://crypto-api.yativo.com/api/auth/token \
 For sandbox, use the sandbox base URL:
 
 ```bash
-curl -X POST https://crypto-sandbox.yativo.com/api/auth/token \
+curl -X POST https://crypto-sandbox.yativo.com/api/v1/auth/token \
   -H "Content-Type: application/json" \
   -d '{ "api_key": "yativo_...", "api_secret": "..." }'
 ```
@@ -68,7 +68,7 @@ curl -X POST https://crypto-sandbox.yativo.com/api/auth/token \
 Pass the access token in every request:
 
 ```bash
-curl https://crypto-api.yativo.com/api/accounts/get-accounts \
+curl https://crypto-api.yativo.com/api/v1/accounts/get-accounts \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 

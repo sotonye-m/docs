@@ -12,7 +12,7 @@ The sandbox payment gateway works exactly like production, but payments are simu
 ## Create a Test Payment
 
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/crypto-gateway/payments' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/crypto-gateway/payments' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -31,7 +31,7 @@ The response includes a `checkout_url` you can open in a browser to see the host
 In sandbox, you can simulate a successful payment without actually sending on-chain funds:
 
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/sandbox/simulate-gateway-payment' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/sandbox/simulate-gateway-payment' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

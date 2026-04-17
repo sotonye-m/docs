@@ -1,6 +1,6 @@
 ---
 title: "Set Spending Limits"
-api: "PUT /yativo-card/{yativoCardId}/wallet/limits"
+api: "PUT /v1/yativo-card/{yativoCardId}/wallet/limits"
 description: "Update the daily spending limit for the card wallet"
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X PUT 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet/limits' \
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet/limits' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

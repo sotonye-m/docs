@@ -14,7 +14,7 @@ Assets are wallets tied to a specific blockchain and token within an account. Ea
 Returns the full list of chains and tokens available on the platform.
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/assets/get-all-assets \
+curl -X GET https://crypto-api.yativo.com/api/v1/assets/get-all-assets \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -36,7 +36,7 @@ curl -X GET https://crypto-api.yativo.com/api/assets/get-all-assets \
 **GET** `/assets/get-chains`
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/assets/get-chains \
+curl -X GET https://crypto-api.yativo.com/api/v1/assets/get-chains \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -62,7 +62,7 @@ Creates a new wallet (deposit address) for a specific chain and token within an 
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/assets/add-asset \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/add-asset \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -127,7 +127,7 @@ Create multiple wallets in a single request. Useful when onboarding a new accoun
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/assets/batch-add-asset \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/batch-add-asset \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -175,7 +175,7 @@ Returns all assets (wallets) for the authenticated user, or filtered by account.
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/assets/get-user-assets \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/get-user-assets \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"account_id": "acc_01abc123"}'
@@ -211,7 +211,7 @@ Returns the current balance for a specific asset.
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/balance/check \
+curl -X POST https://crypto-api.yativo.com/api/v1/balance/check \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"asset_id": "asset_01xyz789"}'
@@ -242,7 +242,7 @@ Deactivates a wallet. The address remains valid for receiving funds, but the ass
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/assets/archive-asset \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/archive-asset \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"asset_id": "asset_01xyz789"}'
@@ -269,7 +269,7 @@ Create a wallet for a specific B2B customer. See [Customers](/yativo-crypto/cust
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/assets/add-customer-asset \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/add-customer-asset \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -292,7 +292,7 @@ Returns all wallets for a B2B customer.
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/assets/get-customer-assets \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/get-customer-assets \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"customer_id": "cust_01abc"}'

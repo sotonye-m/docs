@@ -84,7 +84,7 @@ POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token
 
 <RequestExample>
 ```bash Card details only
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -93,7 +93,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8
 ```
 
 ```bash Card details + PIN
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -102,7 +102,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8
 ```
 
 ```bash With custom theme + access code
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -124,7 +124,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8
 {
   "status": "success",
   "data": {
-    "secure_view_url": "https://crypto-api.yativo.com/api/card-view?token=eyJhbGciOiJIUzI1NiIs...",
+    "secure_view_url": "https://crypto-api.yativo.com/api/v1/card-view?token=eyJhbGciOiJIUzI1NiIs...",
     "expires_at": "2026-03-26T12:01:00Z",
     "last_four": "4242",
     "enabled_views": ["data", "pin"],
@@ -154,7 +154,7 @@ Pass the `secure_view_url` directly as the `src` of an iframe. No SDK or additio
 
 ```html
 <iframe
-  src="https://crypto-api.yativo.com/api/card-view?token=eyJhbGciOiJIUzI1NiIs..."
+  src="https://crypto-api.yativo.com/api/v1/card-view?token=eyJhbGciOiJIUzI1NiIs..."
   title="Secure Card View"
   width="420"
   height="740"
@@ -199,7 +199,7 @@ app.post('/api/card-view-token', async (req, res) => {
 
   // 4. Call Yativo from your backend — credentials never leave the server
   const response = await fetch(
-    `https://crypto-api.yativo.com/api/yativo-card/${yativoCardId}/cards/${cardId}/view-token`,
+    `https://crypto-api.yativo.com/api/v1/yativo-card/${yativoCardId}/cards/${cardId}/view-token`,
     {
       method: 'POST',
       headers: {
@@ -229,7 +229,7 @@ app.post('/api/card-view-token', async (req, res) => {
 import { YativoSDK } from '@yativo/crypto-sdk';
 
 const sdk = new YativoSDK({
-  baseURL: 'https://crypto-api.yativo.com/api/',
+  baseURL: 'https://crypto-api.yativo.com/api/v1/',
   apiKey: process.env.YATIVO_API_KEY!,
   apiSecret: process.env.YATIVO_API_SECRET!,
 });

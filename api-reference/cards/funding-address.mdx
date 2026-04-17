@@ -1,6 +1,6 @@
 ---
 title: "Get Funding Address"
-api: "GET /yativo-card/{yativoCardId}/wallet/funding-address"
+api: "GET /v1/yativo-card/{yativoCardId}/wallet/funding-address"
 description: "Get the deposit address to fund the card wallet with cryptocurrency"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet/funding-address' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet/funding-address' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

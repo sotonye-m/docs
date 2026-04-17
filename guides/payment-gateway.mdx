@@ -12,7 +12,7 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
     Get a Bearer token using your API key:
 
     ```bash
-    curl -X POST 'https://crypto-api.yativo.com/api/auth/token' \
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/auth/token' \
       -H 'Content-Type: application/json' \
       -d '{
         "api_key": "yativo_...",
@@ -36,7 +36,7 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
     Create a payment intent with the amount and currency:
 
     ```bash
-    curl -X POST 'https://crypto-api.yativo.com/api/crypto-gateway/payments' \
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
       -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
       -H 'Content-Type: application/json' \
       -d '{
@@ -81,7 +81,7 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
     Set up a webhook to get notified when the payment is confirmed:
 
     ```bash
-    curl -X POST 'https://crypto-api.yativo.com/api/webhook/create-webhook' \
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/webhook/create-webhook' \
       -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
       -H 'Content-Type: application/json' \
       -d '{

@@ -1,6 +1,6 @@
 ---
 title: "Physical Card Order Status"
-api: "GET /yativo-card/{yativoCardId}/cards/physical/order/{orderId}/status"
+api: "GET /v1/yativo-card/{yativoCardId}/cards/physical/order/{orderId}/status"
 description: "Track the status and shipment details of a physical card order"
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4EN/status' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/cards/physical/order/ord_01HX9KZMB3F7VNQP8R2WDGT4EN/status' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

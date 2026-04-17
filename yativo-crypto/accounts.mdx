@@ -39,7 +39,7 @@ Accounts are the top-level organizational unit in Yativo Crypto. Each account ho
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/accounts/create-account \
+curl -X POST https://crypto-api.yativo.com/api/v1/accounts/create-account \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -83,7 +83,7 @@ Returns all accounts belonging to the authenticated user.
 
 <CodeGroup>
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/accounts/get-accounts \
+curl -X GET https://crypto-api.yativo.com/api/v1/accounts/get-accounts \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -132,7 +132,7 @@ Returns accounts for a specific sub-user or B2B customer. Used when managing acc
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/accounts/get-user-accounts \
+curl -X POST https://crypto-api.yativo.com/api/v1/accounts/get-user-accounts \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "usr_cust_01xyz"}'
@@ -170,7 +170,7 @@ Connect an account to one or more blockchain networks. This initializes address 
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/accounts/create-connections \
+curl -X POST https://crypto-api.yativo.com/api/v1/accounts/create-connections \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -215,7 +215,7 @@ Returns blockchain connections for an account.
 </ParamField>
 
 ```bash cURL
-curl -X GET "https://crypto-api.yativo.com/api/accounts/get-connections?account_id=acc_01abc123" \
+curl -X GET "https://crypto-api.yativo.com/api/v1/accounts/get-connections?account_id=acc_01abc123" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -264,12 +264,12 @@ Your Platform
 Use the sandbox to test this endpoint without real funds:
 
 <Note>
-  Sandbox URL: `https://crypto-sandbox.yativo.com/api/`
+  Sandbox URL: `https://crypto-sandbox.yativo.com/api/v1/`
 </Note>
 
 <CodeGroup>
 ```bash cURL
-curl -X POST 'https://crypto-sandbox.yativo.com/api/accounts/create-account' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/accounts/create-account' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -280,7 +280,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/accounts/create-account' \
 
 ```typescript TypeScript SDK
 const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
   apiKey: 'YOUR_SANDBOX_API_KEY',
   apiSecret: 'YOUR_SANDBOX_API_SECRET',
 });

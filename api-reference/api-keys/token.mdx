@@ -1,6 +1,6 @@
 ---
 title: "Get Bearer Token"
-api: "POST /auth/token"
+api: "POST /v1/auth/token"
 description: "Exchange your API key and secret for a Bearer token. This is the starting point for all API authentication."
 authMethod: "none"
 ---
@@ -21,7 +21,7 @@ authMethod: "none"
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/auth/token' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/auth/token' \
   -H 'Content-Type: application/json' \
   -d '{
     "api_key": "yativo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -30,7 +30,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/auth/token' \
 ```
 
 ```typescript TypeScript
-const response = await fetch('https://crypto-api.yativo.com/api/auth/token', {
+const response = await fetch('https://crypto-api.yativo.com/api/v1/auth/token', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({

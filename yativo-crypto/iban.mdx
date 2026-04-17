@@ -67,7 +67,7 @@ GET /standalone-iban/options
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/standalone-iban/options' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/standalone-iban/options' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -113,7 +113,7 @@ POST /standalone-iban/onboarding/init
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/init' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/standalone-iban/onboarding/init' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -186,7 +186,7 @@ POST /standalone-iban/onboarding/kyc
 
 <CodeGroup>
 ```bash Sumsub KYC
-curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/kyc' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/standalone-iban/onboarding/kyc' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -199,7 +199,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/kyc' 
 ```
 
 ```bash Direct Docs KYC
-curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/onboarding/kyc' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/standalone-iban/onboarding/kyc' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -257,7 +257,7 @@ POST /standalone-iban/iban/request
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/standalone-iban/iban/request' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/standalone-iban/iban/request' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -303,7 +303,7 @@ GET /standalone-iban/status
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/standalone-iban/status?customer_id=your_internal_customer_id_001' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/standalone-iban/status?customer_id=your_internal_customer_id_001' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>

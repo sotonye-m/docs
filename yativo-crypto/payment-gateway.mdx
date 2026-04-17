@@ -54,7 +54,7 @@ The Crypto Payment Gateway lets you accept cryptocurrency payments from anyone. 
 ## Create a Payment Intent
 
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/crypto-gateway/payments' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -76,7 +76,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/crypto-gateway/payments' \
     "amount": 49.99,
     "currency": "USD",
     "status": "pending",
-    "checkout_url": "https://crypto-api.yativo.com/api/crypto-gateway/pay/pi_01abc123",
+    "checkout_url": "https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pi_01abc123",
     "description": "Pro Plan - Monthly",
     "metadata": { "order_id": "ord_123" },
     "expires_at": "2026-04-01T12:00:00Z",
@@ -108,7 +108,7 @@ No integration code required on your side.
 Poll the payment status or wait for a webhook:
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/crypto-gateway/pay/pi_01abc123/status'
+curl -X GET 'https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pi_01abc123/status'
 ```
 
 ```json Response
@@ -143,7 +143,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/crypto-gateway/pay/pi_01abc123/st
 ## List Payments
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/crypto-gateway/payments' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -156,7 +156,7 @@ Returns all payment intents with their current status, amounts, and metadata.
 Get a summary of your payment gateway activity:
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/crypto-gateway/overview' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/crypto-gateway/overview' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 

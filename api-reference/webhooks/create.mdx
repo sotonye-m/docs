@@ -1,6 +1,6 @@
 ---
 title: "Create Webhook"
-api: "POST /webhook/create-webhook"
+api: "POST /v1/webhook/create-webhook"
 description: "Register a webhook endpoint to receive real-time event notifications"
 authMethod: "bearer"
 ---
@@ -28,7 +28,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/webhook/create-webhook' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/webhook/create-webhook' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

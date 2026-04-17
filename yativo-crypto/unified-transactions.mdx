@@ -22,7 +22,7 @@ Instead of querying separate endpoints for each transaction type, the unified sy
 ## List Unified Transactions
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/unified-transactions/list?page=1&limit=20' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/unified-transactions/list?page=1&limit=20' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -85,7 +85,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/unified-transactions/list?page=1&
 ## Get Transaction Details
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/unified-transactions/utx_01abc123' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/unified-transactions/utx_01abc123' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -96,7 +96,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/unified-transactions/utx_01abc123
 Preview the fees for a transaction before executing:
 
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/unified-transactions/calculate-fees' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/unified-transactions/calculate-fees' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -113,7 +113,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/unified-transactions/calculate-f
 Get aggregated transaction analytics with fee breakdowns:
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/unified-transactions/analytics-with-fees' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/unified-transactions/analytics-with-fees' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -126,7 +126,7 @@ Export your transaction history as a branded PDF report or a CSV spreadsheet.
 ### Request an Export
 
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/unified-transactions/export' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/unified-transactions/export' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -152,14 +152,14 @@ curl -X POST 'https://crypto-api.yativo.com/api/unified-transactions/export' \
 ### List Exports
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/unified-transactions/export/list' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/unified-transactions/export/list' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
 ### Download an Export
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/unified-transactions/export/exp_01abc123/download' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/unified-transactions/export/exp_01abc123/download' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   --output transactions.pdf
 ```

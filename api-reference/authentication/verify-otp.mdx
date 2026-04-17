@@ -1,6 +1,6 @@
 ---
 title: "Verify OTP"
-api: "POST /auth/otp-verification"
+api: "POST /v1/auth/otp-verification"
 description: "Verify a one-time password to complete two-factor authentication"
 authMethod: "none"
 ---
@@ -15,7 +15,7 @@ authMethod: "none"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/auth/otp-verification' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/auth/otp-verification' \
   -H 'Content-Type: application/json' \
   -d '{
     "otp": "123456",

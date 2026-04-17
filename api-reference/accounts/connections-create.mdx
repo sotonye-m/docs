@@ -1,6 +1,6 @@
 ---
 title: "Create Connections"
-api: "POST /accounts/create-connections"
+api: "POST /v1/accounts/create-connections"
 description: "Connect an account to one or more blockchain networks"
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/accounts/create-connections' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/accounts/create-connections' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

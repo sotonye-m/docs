@@ -1,6 +1,6 @@
 ---
 title: "Analytics Overview"
-api: "GET /analytics/dashboard-analytics"
+api: "GET /v1/analytics/dashboard-analytics"
 description: "Get dashboard analytics including total account value, transaction volume chart, and user growth."
 authMethod: "bearer"
 ---
@@ -41,7 +41,7 @@ interface AnalyticsOverviewResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/analytics/dashboard-analytics' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/analytics/dashboard-analytics' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

@@ -1,6 +1,6 @@
 ---
 title: "Archive Asset"
-api: "POST /assets/archive-asset"
+api: "POST /v1/assets/archive-asset"
 description: "Archive a wallet asset to prevent it from appearing in active listings"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/assets/archive-asset' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/assets/archive-asset' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

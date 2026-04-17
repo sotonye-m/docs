@@ -1,6 +1,6 @@
 ---
 title: "Request IBAN"
-api: "POST /iban/iban/request"
+api: "POST /v1/iban/iban/request"
 description: "Request the issuance of a standalone IBAN after KYC approval"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/iban/iban/request' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/iban/iban/request' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

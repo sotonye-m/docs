@@ -1,6 +1,6 @@
 ---
 title: "Get Transaction"
-api: "POST /transactions/get-transactions"
+api: "POST /v1/transactions/get-transactions"
 description: "Retrieve details of a specific transaction by its ID"
 authMethod: "bearer"
 ---
@@ -10,22 +10,42 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField body="transaction_id" type="string" required>
-  The ID of the transaction to retrieve.
+  The ID of the transaction to retrieve. Pass this as the `search` parameter to filter the results.
 </ParamField>
+
+<Note>
+  This endpoint uses the same route as List Transactions. Pass the `search` field with a transaction ID or hash to retrieve a specific transaction.
+</Note>
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/transactions/get-transactions' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/transactions/get-transactions' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4EF"
+    "search": "txn_01HX9KZMB3F7VNQP8R2WDGT4EF"
   }'
 ```
 </RequestExample>
 
 <ResponseExample>
 ```json
-{"data":[],"status":true,"message":"No transactions found"}
+{
+  "data": [
+    {
+      "_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4EF",
+      "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
+      "type": "send",
+      "chain": "solana",
+      "asset_name": "USDC",
+      "amount": "50.00",
+      "status": "confirmed",
+      "transaction_hash": "4xKp9qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+      "createdAt": "2026-03-25T14:00:00Z"
+    }
+  ],
+  "status": true,
+  "message": "Transactions fetched successfully"
+}
 ```
 </ResponseExample>

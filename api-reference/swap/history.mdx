@@ -1,6 +1,6 @@
 ---
 title: "Swap History"
-api: "GET /swap/history"
+api: "GET /v1/swap/history"
 description: "Retrieve the history of swap transactions"
 authMethod: "bearer"
 ---
@@ -23,7 +23,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/swap/history?limit=20&offset=0&status=completed' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/swap/history?limit=20&offset=0&status=completed' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

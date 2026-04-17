@@ -71,7 +71,7 @@ GET /yativo-card/{yativoCardId}/cards/{cardId}/transactions
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=0&status=completed&from_date=2026-03-01T00:00:00Z' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=0&status=completed&from_date=2026-03-01T00:00:00Z' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -143,7 +143,7 @@ GET /yativo-card/{yativoCardId}/transactions
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=50&offset=0&status=completed' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=50&offset=0&status=completed' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </RequestExample>
@@ -207,17 +207,17 @@ Use `limit` and `offset` for paginating through large transaction histories:
 
 <CodeGroup>
 ```bash Page 1
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=0' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=0' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 
 ```bash Page 2
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=20' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=20' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 
 ```bash Page 3
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=40' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?limit=20&offset=40' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 </CodeGroup>
@@ -231,7 +231,7 @@ The `total` field in the response indicates the total number of matching transac
 To export transactions for a specific month:
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?from_date=2026-03-01T00:00:00Z&to_date=2026-03-31T23:59:59Z' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/transactions?from_date=2026-03-01T00:00:00Z&to_date=2026-03-31T23:59:59Z' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 
@@ -244,12 +244,12 @@ curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yc_01HX9KZMB3F7VNQP8R
 ## Sandbox Testing
 
 <Note>
-  Replace `YOUR_SANDBOX_TOKEN` with a token obtained by authenticating against `https://crypto-sandbox.yativo.com/api/`. See [Sandbox Overview](/sandbox/overview). Card transactions in the sandbox environment return mock data.
+  Replace `YOUR_SANDBOX_TOKEN` with a token obtained by authenticating against `https://crypto-sandbox.yativo.com/api/v1/`. See [Sandbox Overview](/sandbox/overview). Card transactions in the sandbox environment return mock data.
 </Note>
 
 <CodeGroup>
 ```bash cURL (Sandbox)
-curl -X GET 'https://crypto-sandbox.yativo.com/api/yativo-card/yc_sandbox_example/cards/card_sandbox_example/transactions?limit=20&offset=0&status=completed' \
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/yativo-card/yc_sandbox_example/cards/card_sandbox_example/transactions?limit=20&offset=0&status=completed' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
 
@@ -257,7 +257,7 @@ curl -X GET 'https://crypto-sandbox.yativo.com/api/yativo-card/yc_sandbox_exampl
 import { YativoSDK } from '@yativo/crypto-sdk';
 
 const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
   apiKey: 'YOUR_SANDBOX_API_KEY',
   apiSecret: 'YOUR_SANDBOX_API_SECRET',
 });

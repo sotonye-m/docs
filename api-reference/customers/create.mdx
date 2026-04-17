@@ -1,6 +1,6 @@
 ---
 title: "Create Customer"
-api: "POST /customers/create-customer"
+api: "POST /v1/customers/create-customer"
 description: "Register a new customer in your account"
 authMethod: "bearer"
 ---
@@ -57,7 +57,7 @@ interface CreateCustomerResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/customers/create-customer' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/customers/create-customer' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

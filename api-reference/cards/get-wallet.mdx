@@ -1,6 +1,6 @@
 ---
 title: "Get Card Wallet"
-api: "GET /yativo-card/{yativoCardId}/wallet"
+api: "GET /v1/yativo-card/{yativoCardId}/wallet"
 description: "Retrieve the card wallet details including balance and funding address"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/wallet' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

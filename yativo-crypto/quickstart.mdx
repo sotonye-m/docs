@@ -18,7 +18,7 @@ This guide takes you from zero to a completed on-chain transaction using the Yat
     <Tabs>
       <Tab title="cURL">
         ```bash
-        curl -X POST https://crypto-api.yativo.com/api/apikey/token \
+        curl -X POST https://crypto-api.yativo.com/api/v1/apikey/token \
           -H "Content-Type: application/json" \
           -d '{
             "api_key": "yvk_live_...",
@@ -59,7 +59,7 @@ This guide takes you from zero to a completed on-chain transaction using the Yat
     <Tabs>
       <Tab title="cURL">
         ```bash
-        curl -X POST https://crypto-api.yativo.com/api/accounts/create-account \
+        curl -X POST https://crypto-api.yativo.com/api/v1/accounts/create-account \
           -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{
@@ -106,7 +106,7 @@ This guide takes you from zero to a completed on-chain transaction using the Yat
     <Tabs>
       <Tab title="cURL">
         ```bash
-        curl -X POST https://crypto-api.yativo.com/api/assets/add-asset \
+        curl -X POST https://crypto-api.yativo.com/api/v1/assets/add-asset \
           -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{
@@ -159,7 +159,7 @@ This guide takes you from zero to a completed on-chain transaction using the Yat
     <Tabs>
       <Tab title="cURL">
         ```bash
-        curl -X POST https://crypto-api.yativo.com/api/balance/check \
+        curl -X POST https://crypto-api.yativo.com/api/v1/balance/check \
           -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{"asset_id": "asset_01xyz789"}'
@@ -197,7 +197,7 @@ This guide takes you from zero to a completed on-chain transaction using the Yat
     <Tabs>
       <Tab title="cURL">
         ```bash
-        curl -X POST https://crypto-api.yativo.com/api/transactions/send-funds \
+        curl -X POST https://crypto-api.yativo.com/api/v1/transactions/send-funds \
           -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{

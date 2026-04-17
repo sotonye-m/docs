@@ -1,6 +1,6 @@
 ---
 title: "File Dispute"
-api: "POST /yativo-card/{yativoCardId}/transactions/{transactionId}/dispute"
+api: "POST /v1/yativo-card/{yativoCardId}/transactions/{transactionId}/dispute"
 description: "File a dispute for a card transaction"
 authMethod: "bearer"
 ---
@@ -27,7 +27,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/transactions/ctxn_01HX9KZMB3F7VNQP8R2WDGT4EL/dispute' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7VNQP8R2WDGT4EI/transactions/ctxn_01HX9KZMB3F7VNQP8R2WDGT4EL/dispute' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

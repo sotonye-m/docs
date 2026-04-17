@@ -1,6 +1,6 @@
 ---
 title: "Revoke API Key"
-api: "DELETE /apikey/{keyId}"
+api: "DELETE /v1/apikey/{keyId}"
 description: "Permanently revoke an API key. This action is immediate and irreversible."
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X DELETE 'https://crypto-api.yativo.com/api/apikey/key_69c799d9f1fba3928d8a12ac' \
+curl -X DELETE 'https://crypto-api.yativo.com/api/v1/apikey/key_69c799d9f1fba3928d8a12ac' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

@@ -4,8 +4,8 @@
   "name": "Yativo",
   "api": {
     "baseUrl": [
-      "https://crypto-sandbox.yativo.com/api",
-      "https://crypto-api.yativo.com/api"
+      "https://crypto-sandbox.yativo.com/api/v1",
+      "https://crypto-api.yativo.com/api/v1"
     ],
     "auth": {
       "method": "bearer",
@@ -423,8 +423,7 @@
               "api-reference/transactions/send",
               "api-reference/transactions/list",
               "api-reference/transactions/get",
-              "api-reference/transactions/gas-fee",
-              "api-reference/transactions/cancel"
+              "api-reference/transactions/gas-fee"
             ]
           },
           {
@@ -544,15 +543,13 @@
             "group": "Webhooks",
             "pages": [
               "api-reference/webhooks/create",
-              "api-reference/webhooks/list",
-              "api-reference/webhooks/get"
+              "api-reference/webhooks/list"
             ]
           },
           {
             "group": "Customers",
             "pages": [
               "api-reference/customers/list",
-              "api-reference/customers/get",
               "api-reference/customers/create",
               "api-reference/customers/update"
             ]

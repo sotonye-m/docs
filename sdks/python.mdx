@@ -32,7 +32,7 @@ uv add yativo-crypto-sdk
     from yativo import YativoSDK
 
     sdk = YativoSDK(
-        base_url="https://crypto-api.yativo.com/api/"
+        base_url="https://crypto-api.yativo.com/api/v1/"
     )
 
     # Register
@@ -60,7 +60,7 @@ uv add yativo-crypto-sdk
     sdk = YativoSDK(
         api_key=os.environ["YATIVO_API_KEY"],
         api_secret=os.environ["YATIVO_API_SECRET"],
-        base_url="https://crypto-api.yativo.com/api/",
+        base_url="https://crypto-api.yativo.com/api/v1/",
     )
 
     # No login needed — every request is signed automatically
@@ -78,7 +78,7 @@ uv add yativo-crypto-sdk
 YativoSDK(
     api_key: str | None = None,
     api_secret: str | None = None,
-    base_url: str = "https://crypto-api.yativo.com/api/",
+    base_url: str = "https://crypto-api.yativo.com/api/v1/",
     timeout: int = 30,                    # seconds
     standalone_iban_enabled: bool = False,
 )

@@ -7,7 +7,7 @@ description: "Test token swap functionality in the Yativo Crypto sandbox"
 
 Test the full swap lifecycle — getting quotes and executing cross-chain or same-chain token swaps — without spending real funds.
 
-**Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/`
+**Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/v1/`
 
 <Note>
   Swap rates in the sandbox are simulated. They reflect approximate market conditions but are not live market prices.
@@ -20,7 +20,7 @@ Test the full swap lifecycle — getting quotes and executing cross-chain or sam
 Request a price quote before executing. The quote includes the expected output amount, rate, and fees.
 
 ```
-POST https://crypto-sandbox.yativo.com/api/swap/quote
+POST https://crypto-sandbox.yativo.com/api/v1/swap/quote
 ```
 
 <ParamField body="from_chain" type="string" required>
@@ -53,7 +53,7 @@ POST https://crypto-sandbox.yativo.com/api/swap/quote
 
 <CodeGroup>
 ```bash USDC Solana → USDC Ethereum (cross-chain)
-curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/quote' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/swap/quote' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -64,7 +64,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/quote' \
 ```
 
 ```bash Same-chain swap
-curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/quote' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/swap/quote' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -107,7 +107,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/quote' \
 Execute a swap using a previously obtained quote ID.
 
 ```
-POST https://crypto-sandbox.yativo.com/api/swap/execute
+POST https://crypto-sandbox.yativo.com/api/v1/swap/execute
 ```
 
 <ParamField body="quote_id" type="string" required>
@@ -123,7 +123,7 @@ POST https://crypto-sandbox.yativo.com/api/swap/execute
 </ParamField>
 
 ```bash Execute swap
-curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/execute' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/swap/execute' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -169,7 +169,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/swap/execute' \
 Retrieve the history of your swaps.
 
 ```
-GET https://crypto-sandbox.yativo.com/api/swap/history
+GET https://crypto-sandbox.yativo.com/api/v1/swap/history
 ```
 
 <ParamField query="limit" type="integer">
@@ -185,7 +185,7 @@ GET https://crypto-sandbox.yativo.com/api/swap/history
 </ParamField>
 
 ```bash cURL
-curl -X GET 'https://crypto-sandbox.yativo.com/api/swap/history?limit=10&status=completed' \
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/swap/history?limit=10&status=completed' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
 

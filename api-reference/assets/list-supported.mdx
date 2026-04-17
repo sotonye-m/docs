@@ -1,6 +1,6 @@
 ---
 title: "List Supported Assets"
-api: "GET /assets/get-all-assets"
+api: "GET /v1/assets/get-all-assets"
 description: "Retrieve all supported cryptocurrency assets and tokens"
 authMethod: "bearer"
 ---
@@ -11,7 +11,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/assets/get-all-assets' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/assets/get-all-assets' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -22,14 +22,14 @@ curl -X GET 'https://crypto-api.yativo.com/api/assets/get-all-assets' \
   "data": [
     {
       "_id": "67db59c4ebea822c360d5091",
-      "asset_name": "Binance Smart Chain",
+      "asset_name": "BNB Smart Chain",
       "asset_short_name": "BNB",
       "chain": "BSC",
       "chain_id": 56,
       "network_type": "mainnet",
       "asset_type": "native",
       "decimals": 18,
-      "image": "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png",
+      "image": "https://cdn.yativo.com/assets/chains/bnb.png",
       "active": true,
       "price": 613.45,
       "ticker_name": "BNB",
@@ -46,7 +46,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/assets/get-all-assets' \
       "network_type": "mainnet",
       "asset_type": "token",
       "decimals": 6,
-      "image": "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png",
+      "image": "https://cdn.yativo.com/assets/tokens/usdc.png",
       "active": true,
       "price": 1.00,
       "ticker_name": "USDC_SOL",

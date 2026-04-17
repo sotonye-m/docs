@@ -1,6 +1,6 @@
 ---
 title: "Get Swap Quote"
-api: "POST /swap/quote"
+api: "POST /v1/swap/quote"
 description: "Get a price quote for a cross-chain or same-chain token swap"
 authMethod: "bearer"
 ---
@@ -31,7 +31,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/swap/quote' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/swap/quote' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

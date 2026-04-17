@@ -1,6 +1,6 @@
 ---
 title: "List Customers"
-api: "POST /customers/get-customers"
+api: "POST /v1/customers/get-customers"
 description: "Retrieve a paginated list of all customers in your account"
 authMethod: "bearer"
 ---
@@ -23,6 +23,10 @@ authMethod: "bearer"
 
 <ParamField body="search" type="string">
   Search by email or name (partial match supported).
+</ParamField>
+
+<ParamField body="customerId" type="string">
+  Pass a specific customer ID to retrieve a single customer instead of the full list.
 </ParamField>
 
 <Accordion title="Response Type Definitions">
@@ -55,7 +59,7 @@ interface ListCustomersResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/customers/get-customers' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/customers/get-customers' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{}'

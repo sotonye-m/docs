@@ -1,6 +1,6 @@
 ---
 title: "Accept Terms"
-api: "POST /yativo-card/{yativoCardId}/terms"
+api: "POST /v1/yativo-card/{yativoCardId}/terms"
 description: "Accept the Yativo Card terms and conditions to proceed with card issuance"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/terms' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/terms' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json'
 ```

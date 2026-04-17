@@ -52,7 +52,7 @@ interface CreateCustomerRequest {
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/customers/create-customer \
+curl -X POST https://crypto-api.yativo.com/api/v1/customers/create-customer \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -117,7 +117,7 @@ print('Customer ID:', customer['id'])
 Returns all customers under your platform account.
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/customers/get-customers \
+curl -X POST https://crypto-api.yativo.com/api/v1/customers/get-customers \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -156,7 +156,7 @@ Returns the full transaction history for a specific customer.
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/customers/get-customer-transactions \
+curl -X POST https://crypto-api.yativo.com/api/v1/customers/get-customer-transactions \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"customer_id": "cust_01abc123"}'
@@ -199,7 +199,7 @@ After creating a customer, add wallets using the Assets API with the customer-sp
 
 ```bash
 # Add a wallet for a customer
-curl -X POST https://crypto-api.yativo.com/api/assets/add-customer-asset \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/add-customer-asset \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -209,7 +209,7 @@ curl -X POST https://crypto-api.yativo.com/api/assets/add-customer-asset \
   }'
 
 # Get all wallets for a customer
-curl -X POST https://crypto-api.yativo.com/api/assets/get-customer-assets \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/get-customer-assets \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"customer_id": "cust_01abc123"}'
@@ -246,14 +246,14 @@ Your Platform Account
 ## Sandbox Testing
 
 <Note>
-  Replace `YOUR_SANDBOX_TOKEN` with a token obtained by authenticating against `https://crypto-sandbox.yativo.com/api/`. See [Sandbox Overview](/sandbox/overview).
+  Replace `YOUR_SANDBOX_TOKEN` with a token obtained by authenticating against `https://crypto-sandbox.yativo.com/api/v1/`. See [Sandbox Overview](/sandbox/overview).
 </Note>
 
 ### Create a Customer (Sandbox)
 
 <CodeGroup>
 ```bash cURL (Sandbox)
-curl -X POST 'https://crypto-sandbox.yativo.com/api/customers/create-customer' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/customers/create-customer' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -271,7 +271,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/customers/create-customer' \
 import { YativoSDK } from '@yativo/crypto-sdk';
 
 const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
   apiKey: 'YOUR_SANDBOX_API_KEY',
   apiSecret: 'YOUR_SANDBOX_API_SECRET',
 });
@@ -293,7 +293,7 @@ console.log('Customer ID:', customer.customer_id);
 
 <CodeGroup>
 ```bash cURL (Sandbox)
-curl -X POST 'https://crypto-sandbox.yativo.com/api/customers/get-customers' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/customers/get-customers' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
 
@@ -301,7 +301,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/customers/get-customers' \
 import { YativoSDK } from '@yativo/crypto-sdk';
 
 const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/',
+  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
   apiKey: 'YOUR_SANDBOX_API_KEY',
   apiSecret: 'YOUR_SANDBOX_API_SECRET',
 });

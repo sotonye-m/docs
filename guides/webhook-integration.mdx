@@ -7,7 +7,7 @@ sidebarTitle: "Webhooks"
 Webhooks let Yativo push real-time event notifications to your server the moment something happens — a deposit confirms, a card transaction clears, a swap completes. This guide covers registering webhooks, verifying signatures, handling events correctly, and understanding the retry policy.
 
 <Note>
-  Test webhooks against the Sandbox at `https://crypto-sandbox.yativo.com/api/`. Use a tool like [ngrok](https://ngrok.com) or [Hookdeck](https://hookdeck.com) to expose your local server during development.
+  Test webhooks against the Sandbox at `https://crypto-sandbox.yativo.com/api/v1/`. Use a tool like [ngrok](https://ngrok.com) or [Hookdeck](https://hookdeck.com) to expose your local server during development.
 </Note>
 
 <Steps>
@@ -126,7 +126,7 @@ Register your endpoint and select which event types you want to receive.
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/webhook/create \
+curl -X POST https://crypto-api.yativo.com/api/v1/webhook/create \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -148,7 +148,7 @@ import { YativoCrypto } from "@yativo/crypto-sdk";
 
 const client = new YativoCrypto({
   apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/",
+  baseUrl: "https://crypto-api.yativo.com/api/v1/",
 });
 
 const webhook = await client.webhooks.create({

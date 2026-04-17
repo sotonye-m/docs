@@ -1,6 +1,6 @@
 ---
 title: "Create Account"
-api: "POST /accounts/create-account"
+api: "POST /v1/accounts/create-account"
 description: "Create a new account to organize wallets and assets"
 authMethod: "bearer"
 ---
@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/accounts/create-account' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/accounts/create-account' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

@@ -1,6 +1,6 @@
 ---
 title: "Fund Card"
-api: "POST /yativo-card/fund"
+api: "POST /v1/yativo-card/fund"
 description: "Add funds to a card from a source wallet asset"
 authMethod: "bearer"
 ---
@@ -23,7 +23,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/fund' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/fund' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

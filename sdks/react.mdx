@@ -38,7 +38,7 @@ export default function App({ children }: { children: React.ReactNode }) {
   return (
     <YativoProvider
       config={{
-        baseURL: "https://crypto-api.yativo.com/api/",
+        baseURL: "https://crypto-api.yativo.com/api/v1/",
         // Use passwordless login (sdk.auth.login + sdk.auth.verifyOTP) for client-side auth.
         // Do NOT pass apiSecret here — it would be exposed in the browser bundle.
       }}
@@ -538,7 +538,7 @@ Pass a `theme` object to `YativoProvider` to apply a global theme to all SDK com
 
 ```tsx
 <YativoProvider
-  config={{ baseURL: "https://crypto-api.yativo.com/api/" }}
+  config={{ baseURL: "https://crypto-api.yativo.com/api/v1/" }}
   theme={{
     primaryColor:    "#6366f1",   // indigo
     secondaryColor:  "#8b5cf6",   // violet

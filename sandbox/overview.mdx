@@ -9,10 +9,10 @@ The Yativo Crypto Sandbox is an isolated testing environment that mirrors the pr
 
 <CardGroup cols={2}>
   <Card title="Sandbox URL" icon="flask">
-    `https://crypto-sandbox.yativo.com/api/`
+    `https://crypto-sandbox.yativo.com/api/v1/`
   </Card>
   <Card title="Production URL" icon="rocket">
-    `https://crypto-api.yativo.com/api/`
+    `https://crypto-api.yativo.com/api/v1/`
   </Card>
 </CardGroup>
 
@@ -31,14 +31,14 @@ To get started immediately without registering, use the **shared sandbox API key
 For quick documentation testing, use the **long-lived docs token** (valid 1 year):
 
 ```bash
-curl -X GET 'https://crypto-sandbox.yativo.com/api/sandbox/docs-token'
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/sandbox/docs-token'
 ```
 
 This returns a bearer token you can use immediately in the API playground above — no API key or secret needed.
 
 <Accordion title="Alternative — Generate a standard 60-minute token">
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/auth/token' \
   -H 'Content-Type: application/json' \
   -d '{
     "api_key": "yativo_e072b3ef7e30fcb420183aa86ddd8452abd28a9ac8f5d04d",
@@ -52,7 +52,7 @@ You'll get back an `access_token`. The docs token is valid for 1 year; the stand
 ### Step 2 — Start calling the API
 
 ```bash
-curl -X GET 'https://crypto-sandbox.yativo.com/api/accounts/get-accounts' \
+curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/accounts/get-accounts' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -80,7 +80,7 @@ For private integration testing with dedicated credentials:
 1. Register at [crypto.yativo.com/sign-up](https://crypto.yativo.com/sign-up)
 2. Log in and go to **Developer → API Keys**
 3. Create an API key — it works against both sandbox and production (just change the base URL)
-4. Use `POST /auth/token` with your credentials against `https://crypto-sandbox.yativo.com/api/`
+4. Use `POST /auth/token` with your credentials against `https://crypto-sandbox.yativo.com/api/v1/`
 
 ---
 
@@ -88,7 +88,7 @@ For private integration testing with dedicated credentials:
 
 | Feature | Sandbox | Production |
 |---------|---------|------------|
-| Base URL | `https://crypto-sandbox.yativo.com/api/` | `https://crypto-api.yativo.com/api/` |
+| Base URL | `https://crypto-sandbox.yativo.com/api/v1/` | `https://crypto-api.yativo.com/api/v1/` |
 | API Keys | Same keys work on both | Same |
 | Wallets | Testnet only — no real value | Mainnet, real funds |
 | Blockchains | Testnets (Solana Devnet, Sepolia, etc.) | Mainnets |

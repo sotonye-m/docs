@@ -1,6 +1,6 @@
 ---
 title: "Batch Create Wallets"
-api: "POST /assets/batch-add-asset"
+api: "POST /v1/assets/batch-add-asset"
 description: "Create multiple cryptocurrency wallets for an account in a single request"
 authMethod: "bearer"
 ---
@@ -23,7 +23,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/assets/batch-add-asset' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/assets/batch-add-asset' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

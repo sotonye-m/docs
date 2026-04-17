@@ -1,6 +1,6 @@
 ---
 title: "Submit IBAN KYC"
-api: "POST /iban/onboarding/kyc"
+api: "POST /v1/iban/onboarding/kyc"
 description: "Submit KYC information to complete IBAN onboarding verification"
 authMethod: "bearer"
 ---
@@ -47,7 +47,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/iban/onboarding/kyc' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/iban/onboarding/kyc' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

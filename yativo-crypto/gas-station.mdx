@@ -49,7 +49,7 @@ Creates a gas station wallet for a specific chain. The ticker must be the chain'
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/assets/add-station-asset \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/add-station-asset \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -99,7 +99,7 @@ Returns all gas station wallets and their current balances.
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/assets/get-station-assets \
+curl -X POST https://crypto-api.yativo.com/api/v1/assets/get-station-assets \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: "Create Virtual Card"
-api: "POST /yativo-card/{yativoCardId}/cards/virtual"
+api: "POST /v1/yativo-card/{yativoCardId}/cards/virtual"
 description: "Issue a new virtual card linked to an account"
 authMethod: "bearer"
 ---
@@ -31,7 +31,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/cards/virtual' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/cards/virtual' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

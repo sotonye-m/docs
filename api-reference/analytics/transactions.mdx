@@ -1,6 +1,6 @@
 ---
 title: "Transaction Analytics"
-api: "GET /analytics/transaction-analytics"
+api: "GET /v1/analytics/transaction-analytics"
 description: "Get transaction analytics broken down by status: pending, processing, failed, and approved."
 authMethod: "bearer"
 ---
@@ -44,7 +44,7 @@ interface TransactionAnalyticsResponse {
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/analytics/transaction-analytics' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/analytics/transaction-analytics' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

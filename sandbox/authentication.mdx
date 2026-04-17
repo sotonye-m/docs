@@ -8,7 +8,7 @@ description: "Get a Bearer token for the sandbox — use the shared key instantl
 Use the pre-populated shared sandbox API key to get a token immediately:
 
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/auth/token' \
   -H 'Content-Type: application/json' \
   -d '{
     "api_key":    "yativo_e072b3ef7e30fcb420183aa86ddd8452abd28a9ac8f5d04d",
@@ -42,7 +42,7 @@ For isolated sandbox data with your own wallets and transactions:
 3. Use your key with the token endpoint:
 
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/auth/token' \
   -H 'Content-Type: application/json' \
   -d '{
     "api_key":    "yativo_<your_sandbox_key>",
@@ -57,7 +57,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
 Pass the token on every sandbox request:
 
 ```bash
-curl 'https://crypto-sandbox.yativo.com/api/accounts/get-accounts' \
+curl 'https://crypto-sandbox.yativo.com/api/v1/accounts/get-accounts' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -68,7 +68,7 @@ curl 'https://crypto-sandbox.yativo.com/api/accounts/get-accounts' \
 Simply call `/auth/token` again with the same API key credentials — there is no separate refresh endpoint:
 
 ```bash
-curl -X POST 'https://crypto-sandbox.yativo.com/api/auth/token' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/auth/token' \
   -H 'Content-Type: application/json' \
   -d '{ "api_key": "yativo_...", "api_secret": "..." }'
 ```

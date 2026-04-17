@@ -1,6 +1,6 @@
 ---
 title: "List User Assets"
-api: "POST /assets/get-user-assets"
+api: "POST /v1/assets/get-user-assets"
 description: "Retrieve all wallets and assets belonging to the authenticated user"
 authMethod: "bearer"
 ---
@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/assets/get-user-assets' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/assets/get-user-assets' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -40,7 +40,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/assets/get-user-assets' \
       "address": "7xKt3Bm4NZpQhsWn1YvJd2Lr8Pk5Cq9eAw6Fu0GiRHs",
       "amount": "0.300000",
       "token_type": "token",
-      "image": "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png",
+      "image": "https://cdn.yativo.com/assets/tokens/usdc.png",
       "layer_type": null,
       "parent_chain": null,
       "created_at": "2026-01-13T22:06:33.284Z",
