@@ -3,97 +3,116 @@ title: "Supported Chains"
 description: "Blockchains and tokens supported by the Yativo Crypto API"
 ---
 
-Yativo Crypto supports 9 blockchains. Each chain has a set of native and token assets you can use when creating wallets and initiating transactions.
+Yativo Crypto supports the following blockchains and tokens. Each chain has a set of native and token assets you can use when creating wallets and initiating transactions.
 
 ---
+
 
 ## Supported Networks
 
-| Chain | Network | Chain ID / Identifier | Native Gas Token |
-|-------|---------|----------------------|-----------------|
-| Ethereum | Mainnet | `ethereum` | ETH |
-| Solana | Mainnet | `solana` | SOL |
-| Bitcoin | Mainnet | `bitcoin` | BTC |
-| Polygon | Mainnet | `polygon` | POL (MATIC) |
-| BNB Smart Chain | Mainnet | `bsc` | BNB |
-| Base | Mainnet | `base` | ETH |
-| Arbitrum One | Mainnet | `arbitrum` | ETH |
-| Optimism | Mainnet | `optimism` | ETH |
-| XDC Network | Mainnet | `xdc` | XDC |
+| Chain                | Network  | Chain ID / Identifier | Native Gas Token |
+|----------------------|----------|----------------------|-----------------|
+| Binance Smart Chain  | Mainnet  | `BSC` (56)           | BNB             |
+| XDC Network          | Mainnet  | `XDC` (50)           | XDC             |
+| Bitcoin              | Mainnet  | `BTC`                | BTC             |
+| Solana               | Mainnet  | `SOL`                | SOL             |
+| Polygon              | Mainnet  | `POL` (137)          | POL             |
+| Base                 | Mainnet  | `Base` (8453)        | ETH             |
+| Optimism             | Mainnet  | `OP` (156)           | OP              |
+| Arbitrum             | Mainnet  | `ARB` (84)           | ARB             |
+| Tron                 | Mainnet  | `TRON` (8)           | TRX             |
+| Avalanche            | Mainnet  | `AVAX` (28)          | AVAX            |
+| Gnosis Chain (xDAI)  | Mainnet  | `GNO` (100)          | xDAI            |
 
 ---
 
+
 ## Supported Tokens by Chain
 
-### Ethereum
-
+### Binance Smart Chain (BSC)
 | Ticker | Token | Type |
 |--------|-------|------|
-| `ETH` | Ether | Native |
-| `USDC` | USD Coin | ERC-20 |
-| `USDT` | Tether | ERC-20 |
-| `DAI` | Dai | ERC-20 |
-
-### Solana
-
-| Ticker | Token | Type |
-|--------|-------|------|
-| `SOL` | Solana | Native |
-| `USDC_SOL` | USD Coin (Solana) | SPL Token |
-| `USDT_SOL` | Tether (Solana) | SPL Token |
-
-### Bitcoin
-
-| Ticker | Token | Type |
-|--------|-------|------|
-| `BTC` | Bitcoin | Native |
-
-### Polygon
-
-| Ticker | Token | Type |
-|--------|-------|------|
-| `POL` | Polygon (MATIC) | Native |
-| `USDC_POLYGON` | USD Coin (Polygon) | ERC-20 |
-| `USDT_POLYGON` | Tether (Polygon) | ERC-20 |
-
-### BNB Smart Chain
-
-| Ticker | Token | Type |
-|--------|-------|------|
-| `BNB` | BNB | Native |
-| `USDC_BSC` | USD Coin (BSC) | BEP-20 |
-| `USDT_BSC` | Tether (BSC) | BEP-20 |
-
-### Base
-
-| Ticker | Token | Type |
-|--------|-------|------|
-| `ETH_BASE` | Ether (Base) | Native |
-| `USDC_BASE` | USD Coin (Base) | ERC-20 |
-
-### Arbitrum One
-
-| Ticker | Token | Type |
-|--------|-------|------|
-| `ETH_ARBITRUM` | Ether (Arbitrum) | Native |
-| `USDC_ARBITRUM` | USD Coin (Arbitrum) | ERC-20 |
-| `USDT_ARBITRUM` | Tether (Arbitrum) | ERC-20 |
-
-### Optimism
-
-| Ticker | Token | Type |
-|--------|-------|------|
-| `ETH_OPTIMISM` | Ether (Optimism) | Native |
-| `USDC_OPTIMISM` | USD Coin (Optimism) | ERC-20 |
-| `USDT_OPTIMISM` | Tether (Optimism) | ERC-20 |
+| BNB    | Binance Coin | Native |
 
 ### XDC Network
-
 | Ticker | Token | Type |
 |--------|-------|------|
-| `XDC` | XDC | Native |
-| `USDC_XDC` | USD Coin (XDC) | XRC-20 |
-| `USDT_XDC` | Tether (XDC) | XRC-20 |
+| XDC    | XDC | Native |
+| USDC_XDC | USD Coin (XDC) | XRC20 |
+| TIVO_XDC | TIVO | XRC-20 |
+
+### Bitcoin
+| Ticker | Token | Type |
+|--------|-------|------|
+| BTC    | Bitcoin | Native |
+
+### Solana
+| Ticker | Token | Type |
+|--------|-------|------|
+| SOL    | Solana | Native |
+| USDC_SOL | USD Coin (Solana) | SPL |
+| USDT_SOL | Tether (Solana) | SPL |
+| EURC_SOL | EURO Coin | SPL |
+| PYUSD_SOL | PayPal USD | SPL |
+| USDG_SOL | Global Dollar | SPL |
+
+### Polygon
+| Ticker | Token | Type |
+|--------|-------|------|
+| POL    | Polygon | Native |
+| USDC_POL | USD Coin (Polygon) | ERC-20 |
+| USDT_POL | Tether (Polygon) | ERC-20 |
+
+### Base
+| Ticker | Token | Type |
+|--------|-------|------|
+| ETH_Base | Ethereum on Base | Native |
+| USDC_BASE | USD Coin (Base) | ERC-20 |
+| USDT_BASE | Tether (Base) | ERC-20 |
+| EURC_BASE | EURC (Base) | ERC-20 |
+
+### Optimism
+| Ticker | Token | Type |
+|--------|-------|------|
+| OP     | Optimism | Native |
+| USDC_OP | USD Coin (Optimism) | ERC-20 |
+| USDT_OP | Tether (Optimism) | ERC-20 |
+
+### Arbitrum
+| Ticker | Token | Type |
+|--------|-------|------|
+| ARB    | Arbitrum | Native |
+| USDC_ARB | USD Coin (Arbitrum) | ERC-20 |
+| USDT_ARB | Tether (Arbitrum) | ERC-20 |
+
+### Tron
+| Ticker | Token | Type |
+|--------|-------|------|
+| TRX    | Tron | Native |
+| USDC_TRON | USD Coin (Tron) | TRC20 |
+| USDT_TRON | Tether (Tron) | TRC20 |
+
+### Avalanche
+| Ticker | Token | Type |
+|--------|-------|------|
+| AVAX   | Avalanche | Native |
+| USDC_AVAX | USD Coin (Avalanche) | ERC-20 |
+| USDT_AVAX | Tether (Avalanche) | ERC-20 |
+| EURC_AVAX | EURC (Avalanche) | ERC-20 |
+
+### Gnosis Chain (xDAI)
+| Ticker | Token | Type |
+|--------|-------|------|
+| xDAI   | Gnosis Chain | Native |
+| GNO    | Gnosis | ERC-20 |
+| USDCe_GNO | USD Coin Bridged (GNO) | ERC-20 |
+| GBPe_GNO | Pound Sterling Bridged (GNO) | ERC-20 |
+| EURe_GNO | Euro Bridged (GNO) | ERC-20 |
+
+### Chiado Testnet
+| Ticker | Token | Type |
+|--------|-------|------|
+| EURe_CHIADO | Euro e-money (Chiado Testnet) | ERC-20 |
 
 ---
 
@@ -101,17 +120,19 @@ Yativo Crypto supports 9 blockchains. Each chain has a set of native and token a
 
 Every transaction on an EVM-compatible chain requires the native gas token to pay for network fees. Make sure your wallets (or your [Gas Station](/yativo-crypto/gas-station)) hold sufficient native token for the chain you're using.
 
-| Chain | Gas Token | Notes |
-|-------|-----------|-------|
-| Ethereum | ETH | Gas costs vary significantly with network congestion |
-| Polygon | POL | Low gas costs, fast finality |
-| BSC | BNB | Low gas costs |
-| Base | ETH | L2 — gas costs are a fraction of Ethereum mainnet |
-| Arbitrum | ETH | L2 — significantly cheaper than Ethereum mainnet |
-| Optimism | ETH | L2 — significantly cheaper than Ethereum mainnet |
-| XDC | XDC | Very low gas costs |
-| Solana | SOL | Flat, very low fees per transaction |
-| Bitcoin | BTC | Fee is included in the transaction amount; set priority accordingly |
+| Chain                | Gas Token | Notes |
+|----------------------|-----------|-------|
+| Binance Smart Chain  | BNB       | Low gas costs |
+| XDC Network          | XDC       | Very low gas costs |
+| Bitcoin              | BTC       | Fee is included in the transaction amount; set priority accordingly |
+| Solana               | SOL       | Flat, very low fees per transaction |
+| Polygon              | POL       | Low gas costs, fast finality |
+| Base                 | ETH       | L2 — gas costs are a fraction of Ethereum mainnet |
+| Optimism             | OP        | L2 — significantly cheaper than Ethereum mainnet |
+| Arbitrum             | ARB       | L2 — significantly cheaper than Ethereum mainnet |
+| Tron                 | TRX       | Low gas costs |
+| Avalanche            | AVAX      | Low gas costs |
+| Gnosis Chain (xDAI)  | xDAI      | Very low gas costs |
 
 <Tip>
   Use the [Gas Station](/yativo-crypto/gas-station) to pre-fund native token reserves. This lets the platform cover gas fees on behalf of your users so they only need to hold the token they want to transfer.

@@ -20,12 +20,34 @@ curl -X GET https://crypto-api.yativo.com/api/v1/assets/get-all-assets \
 
 ```json Response
 {
-  "assets": [
-    { "chain": "ethereum", "ticker": "ETH", "name": "Ether", "decimals": 18 },
-    { "chain": "ethereum", "ticker": "USDC", "name": "USD Coin", "decimals": 6 },
-    { "chain": "solana", "ticker": "SOL", "name": "Solana", "decimals": 9 },
-    { "chain": "solana", "ticker": "USDC_SOL", "name": "USD Coin (Solana)", "decimals": 6 }
-  ]
+  "data": [
+    { "asset_name": "Binance Smart Chain", "asset_short_name": "BNB", "chain": "BSC", "chain_id": 56, "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png", "active": true },
+    { "asset_name": "XDC Network", "asset_short_name": "XDC", "chain": "XDC", "chain_id": 50, "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/2912/large/xdc-icon.png", "active": true },
+    { "asset_name": "Bitcoin", "asset_short_name": "BTC", "chain": "BTC", "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/1/large/bitcoin.png", "active": true },
+    { "asset_name": "Solana", "asset_short_name": "SOL", "chain": "SOL", "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/4128/large/solana.png", "active": true },
+    { "asset_name": "Ethereum on Base", "asset_short_name": "ETH", "chain": "Base", "chain_id": 8453, "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/279/large/ethereum.png", "active": true },
+    { "asset_name": "Polygon", "asset_short_name": "POL", "chain": "POL", "chain_id": 137, "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/32440/standard/pol.png", "active": true },
+    { "asset_name": "Optimism", "asset_short_name": "OP", "chain": "OP", "chain_id": 156, "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/25244/standard/Token.png", "active": true },
+    { "asset_name": "Arbitrum", "asset_short_name": "ARB", "chain": "ARB", "chain_id": 84, "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/16547/standard/arb.jpg", "active": true },
+    { "asset_name": "Tron", "asset_short_name": "TRX", "chain": "TRON", "chain_id": 8, "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/1094/standard/tron-logo.png", "active": true },
+    { "asset_name": "Avalanche", "asset_short_name": "AVAX", "chain": "AVAX", "chain_id": 28, "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/12559/standard/Avalanche_Circle_RedWhite_Trans.png", "active": true },
+    { "asset_name": "Tether USD (Polygon)", "asset_short_name": "USDT", "chain": "POL", "chain_id": 137, "network_type": "mainnet", "asset_type": "token", "token_standard": "ERC20", "contract_address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", "decimals": 6, "image": "https://assets.coingecko.com/coins/images/325/large/Tether.png", "active": true },
+    { "asset_name": "USD Coin (Solana)", "asset_short_name": "USDC", "chain": "SOL", "network_type": "mainnet", "asset_type": "token", "token_standard": "SPL", "contract_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "decimals": 6, "image": "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png", "active": true },
+    { "asset_name": "EURO Coin", "asset_short_name": "EURC", "chain": "SOL", "network_type": "mainnet", "asset_type": "token", "token_standard": "SPL", "contract_address": "HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr", "decimals": 6, "image": "https://assets.coingecko.com/coins/images/26045/large/euro.png", "active": true },
+    { "asset_name": "TIVO", "asset_short_name": "TIVO", "chain": "XDC", "network_type": "mainnet", "asset_type": "token", "token_standard": "XRC-20", "contract_address": "0x765087A2360F4D1F516De6552970256F9DB64827", "decimals": 18, "image": "https://tivotoken.com/wp-content/uploads/2024/11/Tivo-A2_040739-e1731947639142.png", "active": true },
+    { "asset_name": "USD Coin (Polygon)", "asset_short_name": "USDC", "chain": "POL", "chain_id": 137, "network_type": "mainnet", "asset_type": "token", "token_standard": "ERC20", "contract_address": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "decimals": 6, "image": "https://assets.coingecko.com/coins/images/6319/large/USD_Coin_icon.png", "active": true },
+    { "asset_name": "Tether USD (Solana)", "asset_short_name": "USDT", "chain": "SOL", "network_type": "mainnet", "asset_type": "token", "token_standard": "SPL", "contract_address": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "decimals": 6, "image": "https://assets.coingecko.com/coins/images/325/large/Tether.png", "active": true },
+    { "asset_name": "PayPal USD (PYUSD)", "asset_short_name": "PYUSD", "chain": "SOL", "network_type": "mainnet", "asset_type": "token", "token_standard": "SPL", "contract_address": "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", "decimals": 6, "image": "https://assets.coingecko.com/coins/images/31212/standard/PYUSD_Token_Logo_2x.png", "active": true },
+    { "asset_name": "Global Dollar (USDG)", "asset_short_name": "USDG", "chain": "SOL", "network_type": "mainnet", "asset_type": "token", "token_standard": "SPL", "contract_address": "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH", "decimals": 6, "image": "https://assets.coingecko.com/coins/images/51281/standard/GDN_USDG_Token_200x200.png", "active": true },
+    { "asset_name": "Bridged USDC (XDC)", "asset_short_name": "USDC", "chain": "XDC", "chain_id": 50, "network_type": "mainnet", "asset_type": "token", "token_standard": "XRC20", "contract_address": "0xfA2958CB79b0491CC627c1557F441eF849Ca8eb1", "decimals": 6, "image": "https://xdcscan.com/token/images/usdc_ofc_32.svg", "active": true },
+    { "asset_name": "Gnosis Chain (xDAI)", "asset_short_name": "xDAI", "chain": "GNO", "chain_id": 100, "network_type": "mainnet", "asset_type": "native", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/11062/standard/Identity-Primary-DarkBG.png", "active": true },
+    { "asset_name": "Gnosis", "asset_short_name": "GNO", "chain": "GNO", "network_type": "mainnet", "asset_type": "token", "token_standard": "ERC20", "contract_address": "0x9C58BAcC331c9aa871AFD802DB6228953991E8a0", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/662/standard/logo_square_simple_300px.png", "active": true },
+    { "asset_name": "USD Coin Bridged (GNO)", "asset_short_name": "USDCe", "chain": "GNO", "chain_id": 100, "network_type": "mainnet", "asset_type": "token", "token_standard": "ERC20", "contract_address": "0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0", "decimals": 6, "image": "https://assets.coingecko.com/coins/images/6319/standard/usdc.png", "active": true },
+    { "asset_name": "Pound Sterling Bridged (GNO)", "asset_short_name": "GBPe", "chain": "GNO", "chain_id": 100, "network_type": "mainnet", "asset_type": "token", "token_standard": "ERC20", "contract_address": "0x5Cb9073902F2035222B9749F8fB0c9BFe5527108", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/39004/standard/gbp.png", "active": true },
+    { "asset_name": "Euro Bridged (GNO)", "asset_short_name": "EURe", "chain": "GNO", "chain_id": 100, "network_type": "mainnet", "asset_type": "token", "token_standard": "ERC20", "contract_address": "0x39b8B6385416f4cA36a20319F70D28621895279D", "decimals": 18, "image": "https://assets.coingecko.com/coins/images/23354/standard/eur.png?1696522569", "active": true }
+  ],
+  "status": true,
+  "message": "Assets Listed Successfully"
 }
 ```
 
