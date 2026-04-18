@@ -257,46 +257,300 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
     "created_at": "2026-04-01T11:00:00Z"
   }
 }
+---
+title: "Payment Gateway"
+description: "Accept stablecoin payments on 9 chains — hosted checkout or pure API, with built-in compliance gating, underpayment reconciliation, and direct wallet settlement"
+---
+
+The Crypto Payment Gateway lets you accept USDC and USDT on any supported chain. Use the **hosted checkout** (share a link, no frontend work) or the **API** to embed payments directly into your flow. Funds settle into your Yativo-issued wallet — withdraw manually or enable [Auto-Forwarding](/yativo-crypto/auto-forwarding) for automatic payouts.
+
+---
+
+## How It Works
+
+<Steps>
+  <Step title="Submit a Gateway Application">
+    Before creating payment links, submit a one-time compliance application via `POST /crypto-gateway/apply`. Provide your business type, expected volume, logo, support email, and social media URL. Yativo reviews and approves your account — this typically takes under 24 hours.
+  </Step>
+  <Step title="Create a payment link">
+    Call `POST /crypto-gateway/payments` with the amount, title, and accepted assets. Your logo, support email, and webhook URL are pulled automatically from your approved application — no need to pass them per-payment.
+  </Step>
+  <Step title="Customer enters their email and chooses how to pay">
+    On the hosted checkout page, the customer first provides their email address (used for the on-chain receipt). They then pick from your enabled payment methods and get a deposit address and QR code.
+  </Step>
+  <Step title="Payment is detected on-chain">
+    Yativo monitors the deposit address. Once confirmed on-chain the payment moves to `paid` and the checkout page auto-refreshes.
+  </Step>
+  <Step title="Funds settle to your wallet">
+    The net amount (after fees) is credited to your Yativo wallet. A webhook fires so your backend can fulfil the order.
+  </Step>
+</Steps>
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Hosted Checkout" icon="browser">
+    Share a URL — no frontend code required. The checkout page collects the customer's email, handles asset selection, and auto-confirms once the on-chain payment lands.
+  </Card>
+  <Card title="API-first" icon="code">
+    Fully programmable. Create links, poll status, and receive webhooks from your backend.
+  </Card>
+  <Card title="Multi-asset acceptance" icon="layer-group">
+    Accept USDC and USDT on 9 chains in a single payment link. Customers only see the options you enable.
+  </Card>
+  <Card title="Direct settlement" icon="bolt">
+    Funds settle directly into your Yativo-issued wallet — no holding periods.
+  </Card>
+  <Card title="Underpayment Reconciliation" icon="arrows-rotate">
+    If a customer sends less than the required amount, they can file an underpayment report from the expired checkout page. You verify the on-chain balance and choose to reverse (refund minus admin-configured fee), reconcile (new link for the shortfall), or settle at paid amount (revise original requested amount with audit trail).
+  </Card>
+  <Card title="Auto-Forwarding" icon="arrow-right-arrow-left">
+    Enable Auto-Forwarding on your wallet to sweep settled funds to any external address automatically.
+  </Card>
+</CardGroup>
+
+---
+
+## Compliance Gate
+
+Before your first payment link, you must submit a Gateway Application. This is a one-time step.
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/apply' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "logo_url": "https://yoursite.com/logo.png",
+    "support_email": "support@yoursite.com",
+    "social_media_url": "https://twitter.com/yourcompany",
+    "business_type": "ecommerce",
+    "expected_volume": "1k_10k",
+    "website_url": "https://yoursite.com",
+    "webhook_url": "https://yoursite.com/webhooks/yativo"
+  }'
 ```
 
-Share the `checkout_url` with your customer. The hosted page handles everything from there.
+| Field | Required | Description |
+|-------|----------|-------------|
+| `logo_url` | Yes | HTTPS URL to your brand logo — shown on all checkout pages |
+| `support_email` | Yes | Customer-facing support email — included in expired checkout links |
+| `social_media_url` | Yes | Company social media URL for identity verification |
+| `business_type` | Yes | One of: `ecommerce` `saas` `marketplace` `freelance` `ngo` `gaming` `travel` `finance` `other` |
+| `expected_volume` | Yes | One of: `under_1k` `1k_10k` `10k_50k` `50k_250k` `over_250k` |
+| `website_url` | No | Your business website |
+| `webhook_url` | No | Default webhook for all payment events — can be updated by reapplying |
+
+Once submitted, your application enters `pending` status. Attempting to create payment links before approval returns a `403` with `error_code: GATEWAY_APPLICATION_REQUIRED`.
+
+```bash
+# Check your application status
+curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/application' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+---
+
+## Supported Payment Assets
+
+| `asset_code`  | Token | Network    | Standard |
+|---------------|-------|------------|----------|
+| `USDC_SOL`    | USDC  | Solana     | SPL      |
+| `USDT_SOL`    | USDT  | Solana     | SPL      |
+| `USDC_POL`    | USDC  | Polygon    | ERC-20   |
+| `USDT_POL`    | USDT  | Polygon    | ERC-20   |
+| `USDC_BASE`   | USDC  | Base       | ERC-20   |
+| `USDT_BASE`   | USDT  | Base       | ERC-20   |
+| `USDC_ARB`    | USDC  | Arbitrum   | ERC-20   |
+| `USDT_ARB`    | USDT  | Arbitrum   | ERC-20   |
+| `USDC_OP`     | USDC  | Optimism   | ERC-20   |
+| `USDT_OP`     | USDT  | Optimism   | ERC-20   |
+| `USDC_AVAX`   | USDC  | Avalanche  | ERC-20   |
+| `USDT_AVAX`   | USDT  | Avalanche  | ERC-20   |
+| `USDT_TRON`   | USDT  | TRON       | TRC-20   |
+
+<Note>USDC on TRON is not supported — Circle deprecated it. Use `USDT_TRON` instead.</Note>
+
+---
+
+## Create a Payment Link
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Invoice #1234",
+    "requested_amount": 49.99,
+    "accepted_assets": ["USDC_SOL", "USDT_POL", "USDC_BASE"],
+    "customer_email": "alice@example.com",
+    "external_reference": "order_abc123"
+  }'
+```
+
+<Note>
+`logo_url`, `support_email`, and `webhook_url` are **not** passed here — they are read automatically from your approved Gateway Application. This ensures consistency across all your payment links.
+</Note>
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `title` | Yes | Displayed on the checkout page |
+| `requested_amount` | Yes | Amount in the asset's native unit (e.g. USDC = USD) |
+| `accepted_assets` | Yes* | Array of `asset_code` values — customer picks one |
+| `asset_code` + `network` | Yes* | Legacy single-asset format — use `accepted_assets` instead |
+| `customer_email` | No | Pre-fills the email field on checkout; skips the email collection step |
+| `external_reference` | No | Your own order ID — echoed back on webhooks |
+
+*One of `accepted_assets` or `asset_code` + `network` is required.
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "payment_id": "pay_a1b2c3d4e5f6",
+    "title": "Invoice #1234",
+    "requested_amount": 49.99,
+    "status": "awaiting_payment",
+    "checkout_url": "https://crypto-checkout.yativo.com/pay/pay_a1b2c3d4e5f6",
+    "embed_url": "https://crypto-checkout.yativo.com/embed/pay_a1b2c3d4e5f6",
+    "accepted_options": [
+      { "asset_code": "USDC_SOL", "network": "solana", "deposit_address": "7xKXtg..." },
+      { "asset_code": "USDT_POL", "network": "polygon", "deposit_address": "0xAbCd..." },
+      { "asset_code": "USDC_BASE", "network": "base",   "deposit_address": "0x1234..." }
+    ],
+    "payment_window_expires_at": "2026-04-18T13:00:00Z",
+    "monitoring_ends_at": "2026-04-18T13:20:00Z"
+  }
+}
+```
 
 ---
 
 ## Hosted Checkout Flow
 
-The hosted checkout page at `checkout_url` lets the payer:
+The checkout page at `checkout_url`:
 
-1. See the payment amount and description
-2. Select their preferred chain and token
-3. Connect their wallet or copy the payment address
-4. Confirm the transaction
-5. See a confirmation once the payment is verified on-chain
+1. If multiple assets are accepted, the customer picks one
+2. The customer enters their email (skipped if `customer_email` was passed at creation)
+3. The deposit address and QR code are revealed
+4. The customer sends the **exact** asset, on the **exact** network, for the **exact** amount shown in checkout
+5. The page polls for status and auto-transitions to a success screen once detected on-chain
 
-No integration code required on your side.
+If the payment window expires before funds arrive, the customer sees an expired state with a "I already sent crypto — report it" button that opens the [underpayment report form](#underpayment-reconciliation). The hosted checkout also warns customers not to send the wrong token or wrong network, for example `USDT` instead of `USDC`, because those cases require manual recovery handling.
+
+---
+
+## Settlement Rules
+
+| Scenario | Outcome |
+|----------|---------|
+| Exact or over-payment received on-chain within the primary window | Settled as `paid` — merchant credited full on-chain amount |
+| Payment arrives in the late monitoring window | Settled as `paid_late` — same credit rules |
+| Underpayment (received < requested) | Settlement rejected — merchant must use the reconciliation flow |
+| Payment arrives after monitoring window | Rejected unless `force_settle: true` is passed on the internal settle endpoint |
+
+Once settled, the net amount (on-chain amount minus platform fees) is credited to the merchant's Yativo-issued wallet for that asset. If [Auto-Forwarding](/yativo-crypto/auto-forwarding) is enabled, it triggers automatically.
+
+---
+
+## Underpayment Reconciliation
+
+If a customer paid but the amount was short and the window expired, both sides can resolve it without a support ticket.
+
+### Customer side (checkout page)
+
+On the expired checkout, the customer clicks **"I already sent crypto — report it"** and submits:
+- Their sending wallet address (required)
+- How much they sent (optional)
+- Their email (optional, if not already captured)
+- A note to the merchant (optional), for example explaining that they sent the wrong token or wrong network
+
+```bash
+# This endpoint is public — no auth required
+curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pay_a1b2c3d4e5f6/report-underpayment' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_sending_wallet": "7xKXtgMK...",
+    "reported_amount": 45.00,
+    "customer_email": "alice@example.com",
+    "customer_note": "I accidentally sent USDT instead of USDC. Please escalate for recovery review."
+  }'
+```
+
+You receive a `gateway.underpayment.reported` webhook immediately.
+
+### Merchant side (dashboard or API)
+
+```bash
+# List reports
+GET /crypto-gateway/reconciliation?status=pending
+
+# Step 1 — verify the on-chain balance at the gateway wallet
+POST /crypto-gateway/reconciliation/:reportId/verify
+
+# Optional — escalate wrong-token or wrong-network cases to platform recovery
+POST /crypto-gateway/reconciliation/:reportId/escalate-recovery
+
+# Step 2a — reverse: queue a refund using admin-configured fee
+POST /crypto-gateway/reconciliation/:reportId/reverse
+
+# Step 2b — reconcile: create a new payment link for the shortfall
+POST /crypto-gateway/reconciliation/:reportId/reconcile
+
+# Step 2c — settle as paid: revise original requested amount to verified amount and settle
+POST /crypto-gateway/reconciliation/:reportId/settle-as-paid
+```
+
+**Verify** queries the live on-chain balance at the original gateway wallet and stores `on_chain_verified_amount`.
+
+**Escalate Recovery** is the merchant action for wrong-token or wrong-network cases. It creates an admin dashboard alert, emails all admins, sends a Telegram alert, and pushes ops into the existing cross-token recovery workflow.
+
+**Reverse** queues an ops-processed on-chain refund of the verified amount minus the merchant's admin-configured underpayment reversal fee. The fee is configured in admin gateway settings per merchant.
+
+**Reconcile** creates a new `GatewayPaymentIntent` for exactly `requested_amount − on_chain_verified_amount`. When the customer pays this reconciliatory link, the platform **credits both amounts to the merchant together** — the original verified balance plus the top-up — completing the full order. The original payment intent appears in the new intent's audit trail.
+
+**Settle As Paid** lets the merchant complete the original payment intent immediately using the verified on-chain amount. The original requested amount is revised to the verified amount, settlement runs on the original intent, and an immutable audit trail entry is added to the report.
+
+If the payer note indicates a wrong token or wrong network, the merchant should escalate it to Yativo ops instead of settling or refunding immediately. Those cases are handled through the existing cross-chain recovery process.
+
+---
+
+## Reconciliation Report Statuses
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Submitted by customer — awaiting merchant verification |
+| `verified` | On-chain balance confirmed — merchant chooses next action |
+| `reversing` | Refund queued — ops processing the on-chain transfer |
+| `reversed` | Refund sent on-chain |
+| `reconciled` | Reconciliatory payment intent created (or settled) |
+| `settled_adjusted` | Original intent settled after revising requested amount to paid amount |
+| `dismissed` | Dismissed by merchant or admin |
 
 ---
 
 ## Check Payment Status
 
-Poll the payment status or wait for a webhook:
+This endpoint is **public** — no auth required. Use it to poll from your frontend.
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pi_01abc123/status'
+curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pay_a1b2c3d4e5f6/status'
 ```
 
 ```json Response
 {
   "success": true,
   "data": {
-    "payment_id": "pi_01abc123",
+    "payment_id": "pay_a1b2c3d4e5f6",
     "status": "paid",
-    "amount": 49.99,
-    "paid_amount": 50.00,
-    "paid_asset": "USDC",
-    "paid_chain": "base",
-    "tx_hash": "0xdef456...",
-    "confirmed_at": "2026-04-01T11:05:00Z"
+    "requested_amount": 49.99,
+    "settled_amount": 49.99,
+    "asset_code": "USDC_SOL",
+    "network": "solana",
+    "transaction_hash": "5K3p...",
+    "late_payment": false,
+    "payment_window_expires_at": "2026-04-18T13:00:00Z"
   }
 }
 ```
@@ -307,57 +561,68 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pi_01abc123
 
 | Status | Description |
 |--------|-------------|
-| `pending` | Payment intent created, awaiting customer action |
-| `paid` | Payment confirmed on-chain |
-| `expired` | Customer didn't pay before the expiration time |
-| `failed` | Transaction was attempted but failed on-chain |
+| `awaiting_payment` | Link created — waiting for the customer to send funds |
+| `monitoring_late_window` | Primary window closed; still accepted for a short grace period |
+| `paid` | Confirmed on-chain within the primary window |
+| `paid_late` | Confirmed in the late monitoring window |
+| `expired` | Monitoring window closed with no full payment detected |
+| `cancelled` | Cancelled by the merchant |
 
 ---
 
 ## List Payments
 
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
+curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
-Returns all payment intents with their current status, amounts, and metadata.
+Returns the 10 most recent payment intents with status, amounts, accepted options, settlement info, and any reconciliation details.
 
 ---
 
 ## Gateway Overview
 
-Get a summary of your payment gateway activity:
-
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/v1/crypto-gateway/overview' \
+curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/overview' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
+
+Returns totals for pending, paid, paid-late payments plus the status of your Yativo wallet for each settled asset.
 
 ---
 
 ## Webhook Events
 
-Subscribe to gateway events via the [Webhooks API](/yativo-crypto/webhooks):
-
 | Event | Trigger |
 |-------|---------|
-| `gateway.payment.paid` | Payment confirmed on-chain |
-| `gateway.payment.expired` | Payment expired without completion |
-| `gateway.payment.failed` | On-chain transaction failed |
+| `gateway.payment_intent.created` | Payment link created |
+| `gateway.payment.customer_confirmed` | Customer clicked "I've Made This Payment" |
+| `gateway.payment.settled` | Payment confirmed on-chain and merchant balance credited |
+| `gateway.payment.paid` | *(alias for settled)* |
+| `gateway.payment.paid_late` | Settled during the late monitoring window |
+| `gateway.payment.expired` | Monitoring window closed without full payment |
+| `gateway.underpayment.reported` | Customer filed an underpayment report |
+| `gateway.underpayment.recovery_escalated` | Merchant escalated the report to platform recovery |
+| `gateway.underpayment.reversal_queued` | Merchant approved a refund |
+| `gateway.underpayment.reconciliation_created` | Merchant created a reconciliatory payment link |
+| `gateway.underpayment.settled_as_paid` | Merchant settled original intent at revised paid amount |
 
 ---
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="API Reference" icon="code" href="/api-reference/payment-gateway/create">
-    Full endpoint reference for the payment gateway.
-  </Card>
-  <Card title="Sandbox" icon="flask" href="/sandbox/payment-gateway">
-    Test payment flows in the sandbox environment.
+  <Card title="Auto-Forwarding" icon="arrow-right-arrow-left" href="/yativo-crypto/auto-forwarding">
+    Sweep settled funds to an external wallet automatically.
   </Card>
   <Card title="Webhooks" icon="bell" href="/yativo-crypto/webhooks">
-    Set up webhook notifications for payment events.
+    Full webhook reference and signature verification.
+  </Card>
+  <Card title="Supported Chains" icon="link" href="/yativo-crypto/supported-chains">
+    All chains and tokens available on the platform.
+  </Card>
+  <Card title="Compliance Screener" icon="shield-check" href="/yativo-crypto/compliance-screener">
+    How wallet addresses are screened on the checkout page.
   </Card>
 </CardGroup>
