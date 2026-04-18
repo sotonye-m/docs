@@ -1,16 +1,27 @@
 ---
 title: "Payment Status"
 api: "GET /v1/crypto-gateway/pay/{paymentId}/status"
-description: "Check the status of a payment (public, no auth required)"
+description: "Check the status of a payment (public — no auth required)"
 ---
 
 <ParamField path="paymentId" type="string" required>
   The payment ID returned when the payment intent was created.
 </ParamField>
 
+**Possible `status` values**
+
+| Status | Description |
+|--------|-------------|
+| `awaiting_payment` | Waiting for the customer to send funds |
+| `monitoring_late_window` | Primary window closed; still accepting payment in grace period |
+| `paid` | Confirmed on-chain within the primary window |
+| `paid_late` | Confirmed on-chain during the late monitoring window |
+| `expired` | Monitoring window closed with no payment detected |
+| `cancelled` | Cancelled by the merchant |
+
 <RequestExample>
 ```bash
-curl -X GET '/crypto-gateway/pay/pi_01abc123/status'
+curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pay_a1b2c3d4e5f6/status'
 ```
 </RequestExample>
 
@@ -19,15 +30,19 @@ curl -X GET '/crypto-gateway/pay/pi_01abc123/status'
 {
   "success": true,
   "data": {
-    "payment_id": "pi_01abc123",
+    "payment_id": "pay_a1b2c3d4e5f6",
+    "title": "Invoice #1234",
+    "requested_amount": 49.99,
     "status": "paid",
-    "amount": 49.99,
-    "currency": "USD",
-    "paid_amount": 50.00,
-    "paid_asset": "USDC",
-    "paid_chain": "base",
-    "tx_hash": "0xdef456...",
-    "confirmed_at": "2026-04-01T11:05:00Z"
+    "asset_code": "USDC_SOL",
+    "network": "solana",
+    "deposit_address": "7xKXtg...",
+    "settled_amount": 49.99,
+    "transaction_hash": "5K3pXa...",
+    "late_payment": false,
+    "payment_window_expires_at": "2026-04-18T13:00:00Z",
+    "monitoring_ends_at": "2026-04-18T13:20:00Z",
+    "confirmed_at": "2026-04-18T12:08:00Z"
   }
 }
 ```

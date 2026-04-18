@@ -1,26 +1,26 @@
 ---
 title: "Payment Gateway"
-description: "Accept crypto payments with hosted checkout — create payment intents, share a payment link, get paid"
+description: "Accept stablecoin payments on 9 chains — hosted checkout or pure API, funds settle directly into your Yativo wallet"
 ---
 
-The Crypto Payment Gateway lets you accept cryptocurrency payments from anyone. Create a payment intent, share the hosted checkout link, and receive funds directly into your wallet. No frontend integration required — the hosted checkout page handles chain selection, wallet connection, and payment confirmation.
+The Crypto Payment Gateway lets you accept USDC and USDT payments on any supported chain. Use it as a **hosted checkout** (share a link, no frontend work) or integrate directly via the **API** into your own checkout flow. Funds settle into your Yativo-issued wallet — withdraw manually or enable [Auto-Forwarding](/yativo-crypto/auto-forwarding) to have them sent on automatically.
 
 ---
 
 ## How It Works
 
 <Steps>
-  <Step title="Create a payment intent">
-    Call `POST /crypto-gateway/payments` with the amount, currency, and optional metadata. You get back a payment ID and a hosted checkout URL.
+  <Step title="Create a payment link">
+    Call `POST /crypto-gateway/payments` with the amount, title, and the list of assets you want to accept (e.g. `["USDC_SOL", "USDT_POL", "USDC_BASE"]`). You get back a payment ID, a hosted checkout URL, and an embed URL.
   </Step>
-  <Step title="Share the payment link">
-    Redirect your customer to the hosted checkout page, or embed the payment link in an invoice, email, or QR code.
+  <Step title="Customer chooses how to pay">
+    On the hosted checkout page the customer picks from the payment methods you enabled, then gets the exact deposit address and a QR code to scan.
   </Step>
-  <Step title="Customer pays">
-    The customer selects a chain and token, confirms the transaction from their wallet, and the payment is verified on-chain.
+  <Step title="Payment is detected on-chain">
+    Yativo monitors the deposit address. Once the transaction is confirmed on-chain the payment moves to `paid`.
   </Step>
-  <Step title="You get notified">
-    A webhook fires when the payment is confirmed. The funds land in your designated wallet.
+  <Step title="Funds settle to your wallet">
+    The settled amount is credited to your Yativo wallet. A webhook fires so your backend can fulfil the order.
   </Step>
 </Steps>
 
@@ -30,22 +30,196 @@ The Crypto Payment Gateway lets you accept cryptocurrency payments from anyone. 
 
 <CardGroup cols={2}>
   <Card title="Hosted Checkout" icon="browser">
-    A branded checkout page — no frontend code needed. Share a URL and get paid.
+    Share a URL — no frontend code required. Customers pick their preferred asset and get an address to pay to.
   </Card>
-  <Card title="Multi-Chain" icon="link">
-    Accept payments in USDC, ETH, SOL, and other tokens across all supported chains.
+  <Card title="API-first" icon="code">
+    Fully programmable. Create payment links, poll status, and handle webhooks from your backend.
   </Card>
-  <Card title="Instant Settlement" icon="bolt">
-    Payments settle directly to your wallet. No holding periods, no intermediaries.
+  <Card title="Multi-asset acceptance" icon="layer-group">
+    Accept USDC and USDT on 9 chains in a single payment link. Customers see only the options you enable.
+  </Card>
+  <Card title="Direct settlement" icon="bolt">
+    Funds settle directly into your Yativo-issued wallet — no holding periods, no intermediaries.
+  </Card>
+  <Card title="Auto-Forwarding" icon="arrow-right-arrow-left">
+    Enable Auto-Forwarding on your wallet to have settled funds automatically sent to any external address.
   </Card>
   <Card title="Webhook Notifications" icon="bell">
-    Real-time webhook events when payments are confirmed, expired, or failed.
+    Real-time events when a payment is confirmed, enters the late window, or expires.
   </Card>
-  <Card title="Payment Dashboard" icon="chart-line">
-    View all payments, track conversions, and monitor revenue from the gateway overview.
+</CardGroup>
+
+---
+
+## Supported Payment Assets
+
+The following `asset_code` values can be passed in `accepted_assets` when creating a payment link:
+
+| `asset_code`  | Token | Network    | Standard |
+|---------------|-------|------------|----------|
+| `USDC_SOL`    | USDC  | Solana     | SPL      |
+| `USDT_SOL`    | USDT  | Solana     | SPL      |
+| `USDC_POL`    | USDC  | Polygon    | ERC-20   |
+| `USDT_POL`    | USDT  | Polygon    | ERC-20   |
+| `USDC_BASE`   | USDC  | Base       | ERC-20   |
+| `USDT_BASE`   | USDT  | Base       | ERC-20   |
+| `USDC_ARB`    | USDC  | Arbitrum   | ERC-20   |
+| `USDT_ARB`    | USDT  | Arbitrum   | ERC-20   |
+| `USDC_OP`     | USDC  | Optimism   | ERC-20   |
+| `USDT_OP`     | USDT  | Optimism   | ERC-20   |
+| `USDC_AVAX`   | USDC  | Avalanche  | ERC-20   |
+| `USDT_AVAX`   | USDT  | Avalanche  | ERC-20   |
+| `USDT_TRON`   | USDT  | TRON       | TRC-20   |
+
+<Note>USDC on TRON is not supported. [Circle officially deprecated USDC on TRON](https://www.circle.com/blog/circle-to-discontinue-usdc-on-tron). Use `USDT_TRON` instead.</Note>
+
+---
+
+## Create a Payment Link
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "Invoice #1234",
+    "requested_amount": 49.99,
+    "accepted_assets": ["USDC_SOL", "USDT_POL", "USDC_BASE"],
+    "customer_email": "alice@example.com",
+    "webhook_url": "https://yourapp.com/webhooks/payments",
+    "external_reference": "order_abc123"
+  }'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "payment_id": "pay_a1b2c3d4e5f6",
+    "title": "Invoice #1234",
+    "requested_amount": 49.99,
+    "status": "awaiting_payment",
+    "checkout_url": "https://pay.yativo.com/pay/pay_a1b2c3d4e5f6",
+    "embed_url": "https://pay.yativo.com/embed/pay_a1b2c3d4e5f6",
+    "accepted_options": [
+      { "asset_code": "USDC_SOL", "network": "solana", "deposit_address": "7xKXtg..." },
+      { "asset_code": "USDT_POL", "network": "polygon", "deposit_address": "0xAbCd..." },
+      { "asset_code": "USDC_BASE", "network": "base",   "deposit_address": "0x1234..." }
+    ],
+    "payment_window_expires_at": "2026-04-18T13:00:00Z",
+    "monitoring_ends_at": "2026-04-18T13:20:00Z"
+  }
+}
+```
+
+Share the `checkout_url` with your customer. Each `accepted_options` entry has its own pre-provisioned deposit address — the customer picks one and pays to that address directly.
+
+---
+
+## Hosted Checkout Flow
+
+The hosted page at `checkout_url`:
+
+1. Shows the payment title and amount
+2. Lists the payment methods you enabled (customer picks one)
+3. Displays the deposit address and QR code for the chosen asset
+4. Lets the customer enter their email to receive a receipt
+5. Auto-refreshes status — shows a confirmation screen once detected on-chain
+
+No integration code needed on your side beyond generating the link.
+
+---
+
+## Check Payment Status
+
+This endpoint is **public** — no auth required. Use it to poll from your frontend or build your own checkout UI.
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pay_a1b2c3d4e5f6/status'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "payment_id": "pay_a1b2c3d4e5f6",
+    "status": "paid",
+    "requested_amount": 49.99,
+    "settled_amount": 49.99,
+    "asset_code": "USDC_SOL",
+    "network": "solana",
+    "transaction_hash": "5K3p...",
+    "late_payment": false,
+    "payment_window_expires_at": "2026-04-18T13:00:00Z"
+  }
+}
+```
+
+---
+
+## Payment Statuses
+
+| Status | Description |
+|--------|-------------|
+| `awaiting_payment` | Payment link created — waiting for the customer to send funds |
+| `monitoring_late_window` | Primary window closed; payment still accepted for a short grace period |
+| `paid` | Payment confirmed on-chain within the primary window |
+| `paid_late` | Payment confirmed on-chain during the late monitoring window |
+| `expired` | Monitoring window closed with no payment detected |
+| `cancelled` | Cancelled by the merchant |
+
+---
+
+## Settlement
+
+Once a payment is detected:
+
+1. The received amount (minus platform fees) is credited to your **Yativo-issued wallet** for that asset.
+2. If you have [Auto-Forwarding](/yativo-crypto/auto-forwarding) enabled on that wallet, funds are automatically forwarded to your configured external address.
+3. Otherwise, the balance sits in your Yativo wallet and you can withdraw at any time.
+
+The `merchant_settlement` object on the payment record tracks credit status, credited amount, and whether auto-forwarding was triggered.
+
+---
+
+## Webhook Events
+
+Subscribe to gateway events via the [Webhooks API](/yativo-crypto/webhooks):
+
+| Event | Trigger |
+|-------|---------|
+| `gateway.payment_intent.created` | Payment link created |
+| `gateway.payment.paid` | Payment confirmed on-chain |
+| `gateway.payment.paid_late` | Payment confirmed in the late monitoring window |
+| `gateway.payment.expired` | Monitoring window closed without payment |
+
+---
+
+## List Payments
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+Returns the 10 most recent payment intents with their current status, amounts, accepted options, and settlement info.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference/payment-gateway/create">
+    Full endpoint reference with all parameters and response shapes.
   </Card>
-  <Card title="Embeddable" icon="code">
-    Use the payment link in emails, invoices, QR codes, or redirect from your checkout flow.
+  <Card title="Auto-Forwarding" icon="arrow-right-arrow-left" href="/yativo-crypto/auto-forwarding">
+    Automatically forward settled funds to an external address.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/yativo-crypto/webhooks">
+    Real-time payment events for your backend.
+  </Card>
+  <Card title="Supported Chains" icon="link" href="/yativo-crypto/supported-chains">
+    All chains and tokens available on the platform.
   </Card>
 </CardGroup>
 

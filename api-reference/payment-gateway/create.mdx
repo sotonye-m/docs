@@ -9,35 +9,47 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField body="amount" type="number" required>
-  Payment amount in the specified currency.
+<ParamField body="title" type="string" required>
+  Title shown on the checkout page (e.g. `"Invoice #1234"` or `"Pro Plan — Monthly"`).
 </ParamField>
 
-<ParamField body="currency" type="string" required>
-  Currency code (e.g., `USD`, `EUR`).
+<ParamField body="requested_amount" type="number" required>
+  Amount expected from the customer, in USD.
 </ParamField>
 
-<ParamField body="description" type="string">
-  Description shown on the checkout page.
+<ParamField body="accepted_assets" type="string[]" required>
+  One or more asset codes to accept. Must be from the [supported payment assets](/yativo-crypto/payment-gateway#supported-payment-assets) list.
+  Example: `["USDC_SOL", "USDT_POL", "USDC_BASE"]`.
 </ParamField>
 
-<ParamField body="metadata" type="object">
-  Arbitrary key-value pairs attached to the payment for your reference (e.g., `order_id`, `customer_email`).
+<ParamField body="customer_email" type="string">
+  Pre-fill the customer email on the checkout page.
+</ParamField>
+
+<ParamField body="webhook_url" type="string">
+  URL to POST payment event notifications to. See [Webhooks](/yativo-crypto/webhooks).
+</ParamField>
+
+<ParamField body="merchant_logo_url" type="string">
+  Logo URL displayed on the hosted checkout page.
+</ParamField>
+
+<ParamField body="external_reference" type="string">
+  Your internal order/reference ID attached to this payment for reconciliation.
 </ParamField>
 
 <RequestExample>
 ```bash
-curl -X POST '/crypto-gateway/payments' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "amount": 49.99,
-    "currency": "USD",
-    "description": "Pro Plan - Monthly",
-    "metadata": {
-      "order_id": "ord_123",
-      "customer_email": "alice@example.com"
-    }
+    "title": "Invoice #1234",
+    "requested_amount": 49.99,
+    "accepted_assets": ["USDC_SOL", "USDT_POL", "USDC_BASE"],
+    "customer_email": "alice@example.com",
+    "webhook_url": "https://yourapp.com/webhooks/payments",
+    "external_reference": "order_abc123"
   }'
 ```
 </RequestExample>
@@ -47,15 +59,22 @@ curl -X POST '/crypto-gateway/payments' \
 {
   "success": true,
   "data": {
-    "payment_id": "pi_01abc123",
-    "amount": 49.99,
-    "currency": "USD",
-    "status": "pending",
-    "checkout_url": "https://crypto-api.yativo.com/api/v1/crypto-gateway/pay/pi_01abc123",
-    "description": "Pro Plan - Monthly",
-    "metadata": { "order_id": "ord_123", "customer_email": "alice@example.com" },
-    "expires_at": "2026-04-01T12:00:00Z",
-    "created_at": "2026-04-01T11:00:00Z"
+    "payment_id": "pay_a1b2c3d4e5f6",
+    "title": "Invoice #1234",
+    "requested_amount": 49.99,
+    "status": "awaiting_payment",
+    "checkout_url": "https://pay.yativo.com/pay/pay_a1b2c3d4e5f6",
+    "embed_url": "https://pay.yativo.com/embed/pay_a1b2c3d4e5f6",
+    "accepted_options": [
+      { "asset_code": "USDC_SOL", "network": "solana",  "deposit_address": "7xKXtg..." },
+      { "asset_code": "USDT_POL", "network": "polygon", "deposit_address": "0xAbCd..." },
+      { "asset_code": "USDC_BASE", "network": "base",   "deposit_address": "0x1234..." }
+    ],
+    "customer_email": "alice@example.com",
+    "external_reference": "order_abc123",
+    "payment_window_expires_at": "2026-04-18T13:00:00Z",
+    "monitoring_ends_at": "2026-04-18T13:20:00Z",
+    "created_at": "2026-04-18T12:00:00Z"
   }
 }
 ```

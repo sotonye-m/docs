@@ -11,7 +11,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET '/crypto-gateway/overview' \
+curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/overview' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -24,9 +24,10 @@ curl -X GET '/crypto-gateway/overview' \
     "total_payments": 150,
     "total_volume_usd": 25000.00,
     "paid_count": 120,
-    "pending_count": 10,
-    "expired_count": 20,
-    "conversion_rate": "80%"
+    "paid_late_count": 5,
+    "awaiting_payment_count": 10,
+    "expired_count": 15,
+    "conversion_rate": "83%"
   }
 }
 ```

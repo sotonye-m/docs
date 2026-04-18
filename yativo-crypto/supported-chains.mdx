@@ -18,10 +18,10 @@ Yativo Crypto supports the following blockchains and tokens. Each chain has a se
 | Solana               | Mainnet  | `SOL`                | SOL             |
 | Polygon              | Mainnet  | `POL` (137)          | POL             |
 | Base                 | Mainnet  | `Base` (8453)        | ETH             |
-| Optimism             | Mainnet  | `OP` (156)           | OP              |
-| Arbitrum             | Mainnet  | `ARB` (84)           | ARB             |
-| Tron                 | Mainnet  | `TRON` (8)           | TRX             |
-| Avalanche            | Mainnet  | `AVAX` (28)          | AVAX            |
+| Optimism             | Mainnet  | `OP` (10)            | ETH             |
+| Arbitrum             | Mainnet  | `ARB` (42161)        | ETH             |
+| Tron                 | Mainnet  | `TRON`               | TRX             |
+| Avalanche            | Mainnet  | `AVAX` (43114)       | AVAX            |
 | Gnosis Chain (xDAI)  | Mainnet  | `GNO` (100)          | xDAI            |
 
 ---
@@ -74,23 +74,26 @@ Yativo Crypto supports the following blockchains and tokens. Each chain has a se
 ### Optimism
 | Ticker | Token | Type |
 |--------|-------|------|
-| OP     | Optimism | Native |
+| ETH_OP | Ethereum on Optimism | Native (L2 gas) |
+| OP     | Optimism | ERC-20 (governance) |
 | USDC_OP | USD Coin (Optimism) | ERC-20 |
 | USDT_OP | Tether (Optimism) | ERC-20 |
 
 ### Arbitrum
 | Ticker | Token | Type |
 |--------|-------|------|
-| ARB    | Arbitrum | Native |
+| ETH_ARB | Ethereum on Arbitrum | Native (L2 gas) |
+| ARB     | Arbitrum | ERC-20 (governance) |
 | USDC_ARB | USD Coin (Arbitrum) | ERC-20 |
 | USDT_ARB | Tether (Arbitrum) | ERC-20 |
 
 ### Tron
 | Ticker | Token | Type |
 |--------|-------|------|
-| TRX    | Tron | Native |
-| USDC_TRON | USD Coin (Tron) | TRC20 |
-| USDT_TRON | Tether (Tron) | TRC20 |
+| TRX       | Tron | Native |
+| USDT_TRON | Tether (Tron) | TRC-20 |
+
+<Note>USDC on TRON is not supported. Circle deprecated USDC on TRON — use `USDT_TRON` instead.</Note>
 
 ### Avalanche
 | Ticker | Token | Type |
