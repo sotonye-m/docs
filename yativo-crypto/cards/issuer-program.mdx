@@ -26,15 +26,26 @@ The Yativo Card Issuer Program lets businesses issue virtual and physical paymen
     Yativo's team reviews your use case and enables the Card Issuer Program on your account. Nothing is visible in your dashboard until this step is complete.
   </Step>
   <Step title="You submit an application">
-    Once eligible, the Card Issuer section appears in your dashboard. Choose your funding network (SOL or XDC) and an optional IBAN add-on, then submit.
+    Once eligible, the Card Issuer section appears in your dashboard. Choose your funding structure (`master_wallet` or `non_master`) and an optional IBAN add-on, then submit.
   </Step>
   <Step title="Yativo approves your program">
-    Our compliance team reviews and approves the application, typically within 2–5 business days. You will receive an email confirmation.
+    Our compliance team reviews and approves the application, typically within 2–5 business days. On approval, your Gnosis settlement wallets are auto-provisioned.
   </Step>
   <Step title="Fund your master wallet and issue cards">
-    Deposit to your master wallet, onboard customers, issue cards, and fund them by customer email, ID, or your own reference.
+    Deposit USDC, EURe, or GBPe to your master wallet, onboard customers, issue cards, and fund them by customer email, ID, or your own external reference.
   </Step>
 </Steps>
+
+---
+
+## Funding Structures
+
+Choose your funding structure at application time. It cannot be changed after approval.
+
+| Structure | Source Chain | Best For |
+|-----------|-------------|----------|
+| `master_wallet` | Solana (SOL) or XDC | You hold the source funds and push them to customer cards on demand |
+| `non_master` | Per-customer | Each customer deposits to their own collateral wallet — you do not hold a shared balance |
 
 ---
 
@@ -42,22 +53,7 @@ The Yativo Card Issuer Program lets businesses issue virtual and physical paymen
 
 Once your account manager has granted eligibility, submit your application.
 
-```
-POST /card-issuer/apply
-```
-
-<ParamField body="funding_structure" type="string" required>
-  The blockchain network your master wallet will use:
-  - `master_wallet` — SOL-based (USDC on Solana, ~2–5 s finality)
-  - `non_master` — XDC-based (USDC on XDC Network, ~2 s finality, near-zero fees)
-</ParamField>
-
-<ParamField body="iban_enabled" type="boolean">
-  Set to `true` to enable EUR IBAN issuance for your customers. Requires additional regulatory review. Default: `false`.
-</ParamField>
-
-<RequestExample>
-```bash cURL
+```bash
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
@@ -67,117 +63,105 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   }'
 ```
 
-```typescript TypeScript
-const result = await sdk.cardIssuer.apply({
-  funding_structure: "master_wallet",
-  iban_enabled: false,
-});
-```
-</RequestExample>
+| Field | Required | Description |
+|-------|----------|-------------|
+| `funding_structure` | Yes | `master_wallet` or `non_master` |
+| `iban_enabled` | No | Set to `true` to enable EUR IBAN issuance. Requires additional regulatory review. Default: `false` |
 
-<ResponseExample>
-```json Success
+```json Response
 {
   "success": true,
-  "message": "Application submitted. We will be in touch within 2–5 business days.",
+  "message": "Application submitted. An admin will review your request.",
   "data": {
-    "program_id": "iss_01HX9KZMB3F7VNQP8R2WDGT111",
+    "id": "6634abc...",
     "status": "pending",
     "funding_structure": "master_wallet",
-    "iban_enabled": false,
-    "created_at": "2026-04-01T10:00:00Z"
+    "iban_enabled": false
   }
 }
 ```
-
-```json Not eligible (403)
-{
-  "success": false,
-  "error": "NOT_ELIGIBLE",
-  "message": "You are not eligible for the Card Issuer Program. Contact your account manager to request access."
-}
-```
-</ResponseExample>
 
 ---
 
 ## Check Program Status
 
-```
-GET /card-issuer/status
-```
-
-<RequestExample>
-```bash cURL
+```bash
 curl 'https://crypto-api.yativo.com/api/v1/card-issuer/status' \
   -H 'Authorization: Bearer YOUR_TOKEN'
 ```
-</RequestExample>
 
-<ResponseExample>
-```json Approved
+```json Response (approved, master_wallet)
 {
   "success": true,
   "data": {
-    "program_id": "iss_01HX9KZMB3F7VNQP8R2WDGT111",
+    "enrolled": true,
     "status": "approved",
     "funding_structure": "master_wallet",
+    "enabled_chains": ["SOL"],
     "iban_enabled": false,
+    "card_reissue_enabled": false,
+    "master_wallets": {
+      "sol": {
+        "address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
+        "balance": 0.012
+      },
+      "usdc": { "balance": 5420.00 },
+      "eure": { "balance": 3100.00 },
+      "gbpe": { "balance": 800.00 }
+    },
     "stats": {
       "total_cards_issued": 47,
-      "total_funded_amount": 12840.00
+      "total_funded_amount": 12840.00,
+      "total_bridge_fees_paid": 12.40
     },
     "limits": {
+      "max_cards": 1000,
       "daily_funding_limit": 50000,
       "monthly_funding_limit": 500000
     }
   }
 }
 ```
-</ResponseExample>
 
 ---
 
-## Master Wallet & Funding
+## Master Wallet & Balances
 
-### Networks
+Master wallet issuers (`funding_structure: master_wallet`) have two types of wallets:
 
-Your program runs on one of two networks, chosen at application time:
+### Source wallets (SOL and/or XDC)
 
-| Option | Network | Best for |
-|---|---|---|
-| `master_wallet` | Solana | High volume, consumer payments |
-| `non_master` | XDC Network | Enterprise, near-zero fee environments |
+These are the wallets you deposit USDC into. Funds bridge automatically from SOL → Gnosis, or you manually trigger XDC bridges.
 
-### Currency Balances
+| Chain | Token deposited | Bridge route | Time |
+|-------|-----------------|-------------|------|
+| SOL | USDC_SOL | NEAR Intents → Gnosis | ~2–5 min |
+| XDC | USDC_XDC | CCTP → SOL → NEAR Intents → Gnosis | ~20 min |
 
-Your master wallet holds three spendable currency balances:
+XDC deposits are manual — you deposit and then trigger the bridge on your own schedule (XDC deposits accrue yield while held).
 
-| Balance | Currency | How to add funds |
-|---|---|---|
-| USD | US Dollars | Send USDC to your master wallet address |
-| EUR | Euros | Send EURe to your master wallet address |
-| GBP | British Pounds | Send GBPe to your master wallet address |
+### Settlement wallets (Gnosis)
+
+These are auto-provisioned on approval as a single Gnosis EOA. All three balances share the same on-chain address, which is required for CoW Protocol swaps to work.
+
+| Balance | Funded by | Used for |
+|---------|-----------|----------|
+| USDC (GNO) | USDC_SOL/XDC bridge | Funding cards in USD regions |
+| EURe (GNO) | EURe_SOL bridge or swap | Funding cards in EUR regions |
+| GBPe (GNO) | GBPe_SOL bridge or swap | Funding cards in GBP regions |
 
 <Note>
-  Each deposit token maps to the matching fiat currency — USDC goes to your USD balance, EURe to EUR, GBPe to GBP. Settlement is handled automatically. You and your customers only ever see USD, EUR, and GBP balances.
+  You never see the Gnosis address directly — balances are presented as `usdc`, `eure`, and `gbpe`. To move from USDC balance to EURe balance, use the swap endpoint below.
 </Note>
 
-### Get Master Wallet & Balances
+### Get master wallet balances
 
-```
-GET /card-issuer/wallets
-```
-
-<RequestExample>
-```bash cURL
-curl 'https://crypto-api.yativo.com/api/v1/card-issuer/wallets' \
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets' \
   -H 'Authorization: Bearer YOUR_TOKEN'
 ```
-</RequestExample>
 
-<ResponseExample>
-```json Success
+```json Response
 {
   "success": true,
   "data": {
@@ -186,222 +170,236 @@ curl 'https://crypto-api.yativo.com/api/v1/card-issuer/wallets' \
         "address": "9gHp7qLmKv3xFjNw4aBcYhUeT8sGkZoP2iMnDuWr5Cx",
         "balance": 0.012
       },
-      "usdc": {
-        "balance": 5420.00,
-        "currency": "USD"
-      },
-      "eure": {
-        "balance": 3100.00,
-        "currency": "EUR"
-      },
-      "gbpe": {
-        "balance": 800.00,
-        "currency": "GBP"
-      }
+      "xdc": null,
+      "usdc": { "balance": 5420.00, "last_balance_check": "2026-04-22T09:00:00Z" },
+      "eure": { "balance": 3100.00, "last_balance_check": "2026-04-22T09:00:00Z" },
+      "gbpe": { "balance": 800.00, "last_balance_check": "2026-04-22T09:00:00Z" }
     }
   }
 }
 ```
-</ResponseExample>
 
-### Depositing Funds
+`xdc` is `null` if XDC is not enabled for your program.
 
-Send the appropriate token to your master wallet deposit address (shown in your dashboard and in the `GET /card-issuer/wallets` response):
+### Get funding deposit addresses
 
-- **To add USD balance** — send USDC to your SOL or XDC deposit address
-- **To add EUR balance** — send EURe to your deposit address
-- **To add GBP balance** — send GBPe to your deposit address
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/card-issuer/funding-addresses' \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+```
 
-<Tip>
-  Always copy your deposit address from the dashboard or API — never type it manually. Deposits to the wrong address cannot be recovered.
-</Tip>
+Returns your SOL and XDC deposit addresses to send USDC to. For `non_master` programs, pass `?customer_id=...` to get the per-customer address.
 
 ---
 
-## Customer Management
+## Swap Between Currency Balances
 
-### Onboard a Customer
+Swap USDC ↔ EURe ↔ GBPe within your Gnosis settlement wallet using CoW Protocol.
 
-Creates the customer's card account and begins their KYC flow.
-
-```
-POST /yativo-card/onboard
-```
-
-<ParamField body="email" type="string" required>Email address.</ParamField>
-<ParamField body="first_name" type="string" required>First name.</ParamField>
-<ParamField body="last_name" type="string" required>Last name.</ParamField>
-<ParamField body="date_of_birth" type="string" required>Format: `YYYY-MM-DD`.</ParamField>
-<ParamField body="country" type="string" required>ISO 3166-1 alpha-2 country code.</ParamField>
-<ParamField body="external_reference" type="string">
-  Your own user/customer ID. Can be used later to look up or fund this customer.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/onboard' \
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets/swap' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "email": "customer@example.com",
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "date_of_birth": "1990-05-15",
-    "country": "US",
-    "external_reference": "user_9821"
+    "from_token": "USDC",
+    "to_token": "EUR",
+    "amount": 1000
   }'
 ```
-</RequestExample>
 
-<ResponseExample>
-```json Success
+| Field | Required | Description |
+|-------|----------|-------------|
+| `from_token` | Yes | `USDC`, `EUR`, or `GBP` |
+| `to_token` | Yes | `USDC`, `EUR`, or `GBP` (must differ from `from_token`) |
+| `amount` | Yes | Amount to sell, in the `from_token` currency |
+
+```json Response (EOA wallet — swap submitted immediately)
 {
   "success": true,
+  "message": "Swap initiated: 1000 USD → EUR",
   "data": {
-    "yativo_card_id": "yc_01HXABC123",
-    "email": "customer@example.com",
-    "kyc_status": "pending",
-    "card_wallet_deployed": false
+    "swap_id": "0x7abc...",
+    "status": "submitted",
+    "from_token": "USD",
+    "to_token": "EUR",
+    "amount": 1000,
+    "expected_output": "923.45",
+    "fee_amount": "1.20",
+    "estimated_time": "1-3 minutes"
   }
 }
 ```
-</ResponseExample>
 
-### List Customers
+```json Response (Safe wallet — presign required)
+{
+  "success": true,
+  "data": {
+    "status": "requires_safe_presign",
+    "from_token": "USD",
+    "to_token": "EUR",
+    "amount": 1000,
+    "expected_output": "923.45",
+    "presign": { ... }
+  }
+}
+```
 
-```
-GET /card-issuer/customers
-```
+<Note>
+  Most programs use an auto-provisioned EOA (externally owned account) on Gnosis — swaps execute immediately. If your program was manually set up with a Gnosis Safe, a presign transaction is required.
+</Note>
 
 ---
 
 ## Fund a Customer's Card
 
-Transfer funds from your master wallet balance to a customer's card. Identify the customer by **email address**, **Yativo card ID**, or your own **external reference**.
+Transfer from your master wallet to a customer's card Safe. The destination currency is automatically detected from the customer's card region (e.g. UK customers receive GBPe, EU customers receive EURe).
 
-```
-POST /card-issuer/fund
-```
-
-<ParamField body="identifier" type="string" required>
-  The customer's email address, Yativo card ID (`yc_...`), or `external_reference`.
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Amount to fund.
-</ParamField>
-
-<ParamField body="currency" type="string" required>
-  Currency of the amount. Accepted values: `USD`, `EUR`, `GBP`.
-</ParamField>
-
-<RequestExample>
-```bash cURL — fund by email
-curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund' \
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "identifier": "customer@example.com",
-    "amount": 100.00,
-    "currency": "USD"
+    "customer_id": "cust_abc123",
+    "amount": 100,
+    "source_chain": "SOL",
+    "pricing_mode": "receive_x"
   }'
 ```
 
-```bash cURL — fund by external reference
-curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund' \
-  -H 'Authorization: Bearer YOUR_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "identifier": "user_9821",
-    "amount": 75.00,
-    "currency": "GBP"
-  }'
-```
+| Field | Required | Description |
+|-------|----------|-------------|
+| `customer_id` | One of | Customer's Yativo customer ID |
+| `card_id` | One of | Card's Gnosis card ID |
+| `external_id` | One of | Your own external reference |
+| `email` | One of | Customer's email address |
+| `amount` | Yes | Amount to send (interpretation depends on `pricing_mode`) |
+| `source_chain` | Yes | `SOL` or `XDC` — which master wallet to send from |
+| `pricing_mode` | No | `send_x` (default) or `receive_x` — see below |
+| `destination_token` | No | Override the auto-detected destination token. Must match the customer's Safe currency or an error is returned |
 
-```typescript TypeScript
-// Fund by email
-await sdk.cardIssuer.fundCustomer({
-  identifier: "customer@example.com",
-  amount: 100.00,
-  currency: "USD",
-});
+### Pricing modes
 
-// Fund by your own user ID
-await sdk.cardIssuer.fundCustomer({
-  identifier: "user_9821",
-  amount: 75.00,
-  currency: "GBP",
-});
-```
-</RequestExample>
+| Mode | You specify | Customer receives |
+|------|-------------|-----------------|
+| `send_x` | The amount you send from your master wallet | Less than `amount` (bridge fees deducted) |
+| `receive_x` | The amount the customer should receive | More than `amount` is sent from your master wallet (you absorb fees) |
 
-<ResponseExample>
-```json Success
+<Note>
+  The token mismatch check is enforced at the API level. For example, if a customer's card is in a EUR region (EURe Safe), you cannot fund them with a USDC destination — the API returns `TOKEN_MISMATCH` and tells you the required token. Swap your USDC balance to EURe first, then fund.
+</Note>
+
+```json Response
 {
   "success": true,
   "data": {
-    "funding_id": "fund_01HX9ABC",
-    "customer_id": "yc_01HXABC123",
-    "amount": 100.00,
-    "currency": "USD",
-    "status": "completed",
-    "funded_at": "2026-04-16T10:30:00Z"
+    "bridge_id": "bridge_1745123456_abc123",
+    "status": "pending",
+    "source": { "chain": "SOL", "amount": 102.50, "wallet": "9gHp7q..." },
+    "destination": { "chain": "GNO", "token": "EURe" },
+    "pricing_mode": "receive_x",
+    "estimated_output": "100.00",
+    "estimated_time": "2-5 minutes"
   }
 }
 ```
 
-```json Insufficient balance (402)
+---
+
+## Look Up a Customer
+
+Find a customer by any of their identifiers. The safe address is never returned.
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?email=customer@example.com' \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+```
+
+Query parameters (one required): `customer_id`, `card_id`, `external_id`, or `email`.
+
+```json Response
 {
-  "success": false,
-  "error": "INSUFFICIENT_BALANCE",
-  "message": "Insufficient USD balance in your master wallet. Current balance: $32.50"
+  "success": true,
+  "data": {
+    "customer_id": "cust_abc123",
+    "external_id": "user_9821",
+    "email": "customer@example.com",
+    "currency": "GBP",
+    "token": "GBPe",
+    "safe_deployed": true,
+    "cards_count": 1,
+    "created_at": "2026-03-15T10:00:00Z"
+  }
 }
 ```
-</ResponseExample>
 
 ---
 
-## Issue a Card for a Customer
+## List & Manage Customers
 
-Once a customer's KYC is approved and their card wallet is deployed, issue a virtual or physical card.
+```bash
+# List all customers
+GET /card-issuer/customers?page=1&limit=20
 
+# List customers filtered by KYC stage
+GET /card-issuer/customers?status=kyc_approved
 ```
-POST /yativo-card/customers/{yativoCardId}/create-card
-```
 
-<ParamField path="yativoCardId" type="string" required>
-  The customer's Yativo card account ID (`yc_...`).
-</ParamField>
+---
 
-<ParamField body="card_type" type="string" required>
-  `virtual` or `physical`.
-</ParamField>
+## Deposit History (XDC)
 
-<ParamField body="display_name" type="string">
-  A label for the card shown in the dashboard.
-</ParamField>
+XDC deposits are tracked individually so you can choose when to bridge each one.
 
-<RequestExample>
-```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yc_01HXABC123/create-card' \
+```bash
+# List deposits
+curl 'https://crypto-api.yativo.com/api/v1/card-issuer/deposits' \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+
+# Manually trigger bridge for a specific XDC deposit
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/deposits/{depositId}/fund' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
-  -d '{
-    "card_type": "virtual",
-    "display_name": "Expense Card"
-  }'
+  -d '{ "destination_token": "USDC_GNO" }'
 ```
-</RequestExample>
+
+Deposits in `awaiting_manual` status can be manually triggered. SOL deposits are bridged automatically.
+
+---
+
+## Funding History
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/card-issuer/funding-history?page=1&limit=20' \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+```
+
+Returns all bridge transactions initiated from your master wallet, with status, amounts, and chain details.
+
+---
+
+## Card Reissue
+
+When card reissue is enabled for your program (admin-toggled), your customers can request a card reissue from the card management screen. This feature is off by default and is enabled per-program by Yativo's compliance team.
+
+Check whether it's enabled:
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/card-issuer/status' \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+# → data.card_reissue_enabled: true/false
+```
 
 ---
 
 ## Rate Limits & Program Limits
 
-| Resource | Limit |
-|---|---|
-| Daily funding | Set at program level — see `limits` in `GET /card-issuer/status` |
-| Monthly funding | Set at program level |
-| Customer accounts | Contact your account manager to raise the cap |
+| Resource | Default | Adjustable |
+|----------|---------|-----------|
+| Max customer accounts | 1,000 | Yes — contact your account manager |
+| Daily funding cap | $50,000 | Yes — admin-configurable per program |
+| Monthly funding cap | $500,000 | Yes — admin-configurable per program |
+
+Your current limits are always visible in `GET /card-issuer/status` under `limits`.
 
 ---
 
@@ -410,18 +408,18 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yc_01HX
 Subscribe to issuer events using the [Webhooks API](/yativo-crypto/webhooks):
 
 | Event | Description |
-|---|---|
+|-------|-------------|
 | `issuer.program.approved` | Your program application was approved |
 | `issuer.customer.kyc_approved` | A customer's KYC was approved |
 | `issuer.customer.card_created` | A card was issued for a customer |
-| `issuer.funding.completed` | A card funding settled successfully |
+| `issuer.funding.completed` | A card funding bridge settled successfully |
 | `issuer.funding.failed` | A card funding attempt failed |
 
 ---
 
 ## Related
 
-- [B2B Card Issuer Guide](/guides/b2b-card-issuer)
 - [Card overview](/yativo-crypto/cards/overview)
 - [Customer onboarding](/yativo-crypto/cards/onboarding)
 - [Webhooks](/yativo-crypto/webhooks)
+- [Supported chains](/yativo-crypto/supported-chains)
