@@ -3,7 +3,7 @@ title: "Accept Crypto Payments (Gateway)"
 description: "Set up a crypto payment gateway to accept payments from anyone via hosted checkout"
 ---
 
-This guide walks you through setting up the Yativo Crypto Payment Gateway to accept payments. By the end, you'll have a working payment flow: create a payment intent, share a link, and receive crypto.
+This guide walks you through setting up the Yativo Crypto Payment Gateway to accept payments. By the end, you'll have a working payment flow: submit a compliance application, create a payment intent, share a link, and receive crypto settled to your Gateway Account.
 
 ---
 
@@ -32,20 +32,40 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
     ```
   </Step>
 
+  <Step title="Submit a Gateway Application (one-time)">
+    Before creating payment links you must pass a one-time compliance check. Attempting to skip this returns `403 GATEWAY_APPLICATION_REQUIRED`.
+
+    ```bash
+    curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/apply' \
+      -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "logo_url": "https://yoursite.com/logo.png",
+        "support_email": "support@yoursite.com",
+        "social_media_url": "https://twitter.com/yourcompany",
+        "business_type": "ecommerce",
+        "expected_volume": "1k_10k",
+        "website_url": "https://yoursite.com",
+        "webhook_url": "https://yoursite.com/webhooks/yativo"
+      }'
+    ```
+
+    Poll `GET /crypto-gateway/application` to check approval status. Approval typically takes under 24 hours.
+  </Step>
+
   <Step title="Create a payment intent">
-    Create a payment intent with the amount and currency:
+    Once approved, create a payment intent specifying the amount, a title (shown on the checkout page), and the tokens you accept:
 
     ```bash
     curl -X POST 'https://crypto-api.yativo.com/api/v1/crypto-gateway/payments' \
       -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
       -H 'Content-Type: application/json' \
       -d '{
-        "amount": 49.99,
-        "currency": "USD",
-        "description": "Pro Plan - Monthly",
-        "metadata": {
-          "order_id": "ord_123"
-        }
+        "title": "Pro Plan — Monthly",
+        "description": "1-month access to Pro features",
+        "requested_amount": 49.99,
+        "accepted_assets": ["USDC_SOL", "USDT_POL", "USDC_BASE"],
+        "external_reference": "order_abc123"
       }'
     ```
 
@@ -53,13 +73,22 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
     {
       "success": true,
       "data": {
-        "payment_id": "gw_01HX9KZMB3F7VNQP8R2WDGT4E5",
-        "amount": 49.99,
-        "currency": "USD",
-        "status": "pending",
-        "checkout_url": "https://pay.yativo.com/gw_01HX9KZMB3F7VNQP8R2WDGT4E5",
-        "expires_at": "2026-03-25T11:00:00Z",
-        "created_at": "2026-03-25T10:00:00Z"
+        "payment_id": "pay_a1b2c3d4e5f6",
+        "title": "Pro Plan — Monthly",
+        "description": "1-month access to Pro features",
+        "requested_amount": 49.99,
+        "status": "awaiting_payment",
+        "checkout_url": "https://crypto-checkout.yativo.com/pay/pay_a1b2c3d4e5f6",
+        "embed_url": "https://crypto-checkout.yativo.com/embed/pay_a1b2c3d4e5f6",
+        "accepted_options": [
+          { "asset_code": "USDC_SOL", "network": "solana",  "deposit_address": "7xKXtg..." },
+          { "asset_code": "USDT_POL", "network": "polygon", "deposit_address": "0xAbCd..." },
+          { "asset_code": "USDC_BASE", "network": "base",   "deposit_address": "0x1234..." }
+        ],
+        "external_reference": "order_abc123",
+        "payment_window_expires_at": "2026-04-18T13:00:00Z",
+        "monitoring_ends_at": "2026-04-18T13:20:00Z",
+        "created_at": "2026-04-18T12:00:00Z"
       }
     }
     ```
@@ -74,61 +103,64 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
     - A "Pay with Crypto" button on your site
     - A Telegram/Discord bot message
 
-    The hosted checkout page handles chain selection, wallet connection, and payment confirmation.
+    The hosted checkout page collects the customer's email, displays the title and description, lets the customer choose a token, shows the deposit address and QR code, and auto-confirms once the on-chain payment lands.
   </Step>
 
   <Step title="Listen for webhook">
-    Set up a webhook to get notified when the payment is confirmed:
+    Register a webhook to get notified when the payment settles. The `webhook_url` from your application is used automatically; you can also override it per payment.
 
-    ```bash
-    curl -X POST 'https://crypto-api.yativo.com/api/v1/webhook/create-webhook' \
-      -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-      -H 'Content-Type: application/json' \
-      -d '{
-        "url": "https://your-server.com/webhooks/yativo",
-        "events": ["gateway.payment.paid"]
-      }'
-    ```
-
-    ```json Webhook Payload
+    ```json Webhook Payload — gateway.payment.settled
     {
-      "event": "gateway.payment.paid",
+      "event": "gateway.payment.settled",
       "data": {
-        "payment_id": "gw_01HX9KZMB3F7VNQP8R2WDGT4E5",
-        "amount": 49.99,
-        "currency": "USD",
-        "crypto_amount": "49.99",
-        "crypto_currency": "USDC",
-        "chain": "solana",
-        "tx_hash": "5UxR7Kq...",
+        "payment_id": "pay_a1b2c3d4e5f6",
+        "title": "Pro Plan — Monthly",
+        "requested_amount": 49.99,
+        "settled_amount": 49.99,
+        "asset_code": "USDC_SOL",
+        "network": "solana",
+        "transaction_hash": "5UxR7Kq...",
         "status": "paid",
-        "metadata": {
-          "order_id": "ord_123"
-        },
-        "paid_at": "2026-03-25T10:05:00Z"
+        "external_reference": "order_abc123",
+        "late_payment": false,
+        "settled_at": "2026-04-18T12:08:00Z"
       }
     }
     ```
   </Step>
 
   <Step title="Verify and fulfill">
-    When your webhook endpoint receives the `gateway.payment.paid` event, verify the payment amount and fulfill the order:
+    When your webhook endpoint receives the `gateway.payment.settled` event, check `status === "paid"` or `"paid_late"` and fulfill the order using your `external_reference`:
 
     ```javascript
     app.post('/webhooks/yativo', (req, res) => {
       const { event, data } = req.body;
-      
-      if (event === 'gateway.payment.paid') {
-        const { payment_id, amount, metadata } = data;
-        // Fulfill the order using metadata.order_id
-        fulfillOrder(metadata.order_id);
+
+      if (event === 'gateway.payment.settled') {
+        const { payment_id, status, external_reference } = data;
+        if (status === 'paid' || status === 'paid_late') {
+          fulfillOrder(external_reference);
+        }
       }
-      
+
       res.status(200).send('ok');
     });
     ```
   </Step>
 </Steps>
+
+---
+
+## Payment Status Values
+
+| Status | Description |
+|--------|-------------|
+| `awaiting_payment` | Waiting for the customer to send funds |
+| `monitoring_late_window` | Primary window closed; still accepted in grace period |
+| `paid` | Confirmed on-chain within the primary window |
+| `paid_late` | Confirmed during the late monitoring window |
+| `expired` | Monitoring window closed with no payment detected |
+| `cancelled` | Cancelled by the merchant |
 
 ---
 
@@ -145,13 +177,14 @@ const client = new YativoCrypto({
 // Create a payment for a customer's order
 async function createPayment(orderId: string, amount: number) {
   const payment = await client.gateway.createPayment({
-    amount,
-    currency: 'USD',
-    description: `Order #${orderId}`,
-    metadata: { order_id: orderId },
+    title: `Order #${orderId}`,
+    description: 'Your purchase from Acme Store',
+    requestedAmount: amount,
+    acceptedAssets: ['USDC_SOL', 'USDT_POL', 'USDC_BASE'],
+    externalReference: orderId,
   });
 
-  return payment.checkout_url; // Send this to your customer
+  return payment.checkoutUrl; // Send this to your customer
 }
 ```
 
@@ -161,7 +194,7 @@ async function createPayment(orderId: string, amount: number) {
 
 <CardGroup cols={2}>
   <Card title="Payment Gateway" icon="credit-card" href="/yativo-crypto/payment-gateway">
-    Full Payment Gateway documentation.
+    Full Payment Gateway documentation — analytics, reconciliation, and more.
   </Card>
   <Card title="Webhook Integration" icon="bell" href="/guides/webhook-integration">
     Set up and verify webhooks.

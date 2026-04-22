@@ -21,13 +21,22 @@ curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/overview' \
 {
   "success": true,
   "data": {
-    "total_payments": 150,
-    "total_volume_usd": 25000.00,
-    "paid_count": 120,
-    "paid_late_count": 5,
-    "awaiting_payment_count": 10,
-    "expired_count": 15,
-    "conversion_rate": "83%"
+    "totals": {
+      "pending_payments": 10,
+      "paid_payments": 120,
+      "paid_late": 5,
+      "active_wallets": 3
+    },
+    "wallets": [
+      {
+        "wallet_id": "6634abc...",
+        "asset_code": "USDC_SOL",
+        "network": "solana",
+        "wallet_address": "7xKXtg...",
+        "status": "available",
+        "cooldown_until": null
+      }
+    ]
   }
 }
 ```

@@ -336,7 +336,7 @@ Returns totals for pending, paid, and paid-late payments, plus your Gateway Acco
 Track payment performance metrics for your gateway. Useful for understanding customer behaviour, tuning monitoring windows, and measuring settlement health.
 
 ```bash
-curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/analytics/me?days=30' \
+curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/analytics/me' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -344,31 +344,20 @@ curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/analytics/me?days=30' 
 {
   "success": true,
   "data": {
-    "period_days": 30,
-    "totals": {
-      "payments_created": 142,
-      "payments_settled": 128,
-      "payments_late": 9,
-      "payments_expired": 5
-    },
-    "rates": {
-      "settlement_rate_pct": 90.1,
-      "late_rate_pct": 7.0,
-      "expired_rate_pct": 3.5
-    },
-    "timing": {
-      "avg_ms_to_claimed_paid": 45000,
-      "avg_ms_claimed_to_settled": 180000,
-      "avg_ms_window_to_settled": 210000,
-      "avg_ms_late_by": 95000
-    },
+    "payment_intents_created": 142,
+    "payments_settled": 128,
+    "payments_late": 9,
+    "payments_expired": 5,
+    "customer_claimed_paid_clicks": 130,
+    "late_rate_pct": 7.0,
+    "expired_rate_pct": 3.5,
+    "total_volume_usd": 6384.50,
+    "avg_seconds_window_to_settled": 210.0,
+    "avg_seconds_claimed_to_settled": 180.0,
+    "avg_seconds_late_by": 95.0,
     "preferred_tokens": [
-      { "asset_code": "USDC_SOL", "count": 88 },
-      { "asset_code": "USDT_POL", "count": 25 }
-    ],
-    "preferred_chains": [
-      { "chain": "SOL", "count": 88 },
-      { "chain": "POL", "count": 25 }
+      { "token": "USDC", "chain": "SOL", "settlement_count": 88, "volume_usd": 4400.00 },
+      { "token": "USDT", "chain": "POL", "settlement_count": 25, "volume_usd": 1250.00 }
     ]
   }
 }
@@ -376,12 +365,11 @@ curl 'https://crypto-api.yativo.com/api/v1/crypto-gateway/analytics/me?days=30' 
 
 | Field | Description |
 |-------|-------------|
-| `avg_ms_to_claimed_paid` | Average ms from checkout open to customer clicking "I've Paid" |
-| `avg_ms_claimed_to_settled` | Average ms from customer click to on-chain confirmation |
-| `avg_ms_window_to_settled` | Average ms from payment window open to settlement |
-| `avg_ms_late_by` | For late payments — how far past the primary window they arrived |
+| `avg_seconds_window_to_settled` | Average seconds from payment window open to settlement |
+| `avg_seconds_claimed_to_settled` | Average seconds from customer clicking "I've Paid" to on-chain confirmation |
+| `avg_seconds_late_by` | For late payments — how far past the primary window they arrived (seconds) |
 
-Use `avg_ms_late_by` to decide whether to widen your primary payment window. A high `late_rate_pct` with a low `avg_ms_late_by` (e.g. < 2 minutes) indicates customers are consistently on time but the window is slightly too tight.
+Use `avg_seconds_late_by` to decide whether to widen your primary payment window. A high `late_rate_pct` with a low `avg_seconds_late_by` (e.g. < 120 s) indicates customers are consistently on time but the window is slightly too tight.
 
 ---
 

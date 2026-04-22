@@ -10,7 +10,7 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField body="funding_structure" type="string" required>
-  The funding model for the issuer program. Defines how card balances are funded, e.g. `pre_funded`, `post_funded`.
+  The funding model for the issuer program. One of: `master_wallet` (you hold a shared balance and push funds to customers) or `non_master` (each customer has their own collateral wallet).
 </ParamField>
 
 <ParamField body="iban_enabled" type="boolean" required>
@@ -23,8 +23,8 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "funding_structure": "pre_funded",
-    "iban_enabled": true
+    "funding_structure": "master_wallet",
+    "iban_enabled": false
   }'
 ```
 </RequestExample>
