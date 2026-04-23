@@ -26,12 +26,12 @@ Yativo uses TOTP (Time-based One-Time Password), the same standard used by Googl
 
 ## Set Up 2FA
 
-**POST** `/auth/2fa/setup`
+**POST** `/v1/auth/2fa/enable`
 
 Initiates the 2FA setup flow. Returns a QR code and a manual entry secret for your authenticator app.
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/auth/2fa/setup \
+curl -X POST https://crypto-api.yativo.com/api/v1/auth/2fa/enable \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -61,19 +61,19 @@ curl -X POST https://crypto-api.yativo.com/api/auth/2fa/setup \
 
 ## Verify and Activate 2FA
 
-**POST** `/auth/2fa/verify`
+**POST** `/v1/auth/2fa/verify-setup`
 
 Confirms the setup and activates 2FA on your account. Must be called immediately after setup with a valid code from your authenticator app.
 
-<ParamField body="code" type="string" required>
+<ParamField body="token" type="string" required>
   The 6-digit TOTP code currently shown in your authenticator app.
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/auth/2fa/verify \
+curl -X POST https://crypto-api.yativo.com/api/v1/auth/2fa/verify-setup \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"code": "482931"}'
+  -d '{"token": "482931"}'
 ```
 
 ```json Response
@@ -97,12 +97,12 @@ curl -X POST https://crypto-api.yativo.com/api/auth/2fa/verify \
 
 ## Check 2FA Status
 
-**GET** `/auth/2fa/status`
+**GET** `/v1/auth/2fa/status`
 
 Returns whether 2FA is currently enabled on your account.
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/auth/2fa/status \
+curl -X GET https://crypto-api.yativo.com/api/v1/auth/2fa/status \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -117,14 +117,22 @@ curl -X GET https://crypto-api.yativo.com/api/auth/2fa/status \
 
 ## Using 2FA in API Requests
 
-Once 2FA is enabled, protected operations require the `X-2FA-Token` header:
+Once 2FA is enabled, your login flow includes a TOTP verification step. After verifying your email OTP and then your authenticator code, you receive an access token that carries 2FA verification. Use this token as your `Bearer` token for all requests — no extra header is needed.
 
 ```bash
-curl -X POST https://crypto-api.yativo.com/api/apikey/create \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "X-2FA-Token: 123456" \
+# 1. Verify email OTP after login
+curl -X POST https://crypto-api.yativo.com/api/authentication/otp_verification \
   -H "Content-Type: application/json" \
-  -d '{"name": "My Key", "permissions": ["read", "transactions"]}'
+  -d '{"email": "you@example.com", "otp": "384921"}'
+
+# → Response: { "requires2FA": true } — proceed to step 2
+
+# 2. Verify your TOTP code to receive your access token
+curl -X POST https://crypto-api.yativo.com/api/authentication/google_auth_verification \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "otp": "482931"}'
+
+# → Response: { "data": { "token": "eyJ..." } } — use this token for all requests
 ```
 
 **Operations that require 2FA:**

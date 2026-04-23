@@ -61,7 +61,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/onboard
 1. Create virtual card: `POST /v1/yativo-card/customers/{yativoCardId}/cards/virtual`
 
 <Note>
-  Safe wallet deployment is handled automatically by Yativo after KYC approval — no manual
-  deploy step is required. When KYC status first returns `approved`, the Safe is provisioned
+  Card wallet provisioning is handled automatically by Yativo after KYC approval — no manual
+  deploy step is required. When KYC status first returns `approved`, the wallet is provisioned
   in the background and the card will be ready for virtual card creation within ~1 minute.
 </Note>

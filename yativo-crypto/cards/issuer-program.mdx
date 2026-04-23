@@ -29,7 +29,7 @@ The Yativo Card Issuer Program lets businesses issue virtual and physical paymen
     Once eligible, the Card Issuer section appears in your dashboard. Choose your funding structure (`master_wallet` or `non_master`) and an optional IBAN add-on, then submit.
   </Step>
   <Step title="Yativo approves your program">
-    Our compliance team reviews and approves the application, typically within 2–5 business days. On approval, your Gnosis settlement wallets are auto-provisioned.
+    Our compliance team reviews and approves the application, typically within 2–5 business days. On approval, your settlement wallets are auto-provisioned.
   </Step>
   <Step title="Fund your master wallet and issue cards">
     Deposit USDC, EURe, or GBPe to your master wallet, onboard customers, issue cards, and fund them by customer email, ID, or your own external reference.
@@ -131,27 +131,25 @@ Master wallet issuers (`funding_structure: master_wallet`) have two types of wal
 
 ### Source wallets (SOL and/or XDC)
 
-These are the wallets you deposit USDC into. Funds bridge automatically from SOL → Gnosis, or you manually trigger XDC bridges.
+These are the wallets you deposit USDC into. SOL deposits are bridged automatically to your settlement wallet. XDC deposits are bridged manually on your own schedule (XDC deposits accrue yield while held).
 
-| Chain | Token deposited | Bridge route | Time |
-|-------|-----------------|-------------|------|
-| SOL | USDC_SOL | NEAR Intents → Gnosis | ~2–5 min |
-| XDC | USDC_XDC | CCTP → SOL → NEAR Intents → Gnosis | ~20 min |
+| Chain | Token deposited | Bridge | Time |
+|-------|-----------------|--------|------|
+| SOL | USDC_SOL | Automatic | ~2–5 min |
+| XDC | USDC_XDC | Manual | ~20 min |
 
-XDC deposits are manual — you deposit and then trigger the bridge on your own schedule (XDC deposits accrue yield while held).
+### Settlement wallets
 
-### Settlement wallets (Gnosis)
-
-These are auto-provisioned on approval as a single Gnosis EOA. All three balances share the same on-chain address, which is required for CoW Protocol swaps to work.
+These are auto-provisioned on approval. All three currency balances share the same underlying on-chain address.
 
 | Balance | Funded by | Used for |
 |---------|-----------|----------|
-| USDC (GNO) | USDC_SOL/XDC bridge | Funding cards in USD regions |
-| EURe (GNO) | EURe_SOL bridge or swap | Funding cards in EUR regions |
-| GBPe (GNO) | GBPe_SOL bridge or swap | Funding cards in GBP regions |
+| USDC | USDC bridge from SOL/XDC | Funding cards in USD regions |
+| EURe | EURe bridge or swap | Funding cards in EUR regions |
+| GBPe | GBPe bridge or swap | Funding cards in GBP regions |
 
 <Note>
-  You never see the Gnosis address directly — balances are presented as `usdc`, `eure`, and `gbpe`. To move from USDC balance to EURe balance, use the swap endpoint below.
+  The underlying on-chain address is abstracted — balances are presented as `usdc`, `eure`, and `gbpe`. To move from USDC balance to EURe balance, use the swap endpoint below.
 </Note>
 
 ### Get master wallet balances
@@ -194,7 +192,7 @@ Returns your SOL and XDC deposit addresses to send USDC to. For `non_master` pro
 
 ## Swap Between Currency Balances
 
-Swap USDC ↔ EURe ↔ GBPe within your Gnosis settlement wallet using CoW Protocol.
+Swap USDC ↔ EURe ↔ GBPe within your settlement wallet.
 
 ```bash
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets/swap' \
@@ -213,7 +211,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets/sw
 | `to_token` | Yes | `USDC`, `EUR`, or `GBP` (must differ from `from_token`) |
 | `amount` | Yes | Amount to sell, in the `from_token` currency |
 
-```json Response (EOA wallet — swap submitted immediately)
+```json Response
 {
   "success": true,
   "message": "Swap initiated: 1000 USD → EUR",
@@ -230,29 +228,11 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets/sw
 }
 ```
 
-```json Response (Safe wallet — presign required)
-{
-  "success": true,
-  "data": {
-    "status": "requires_safe_presign",
-    "from_token": "USD",
-    "to_token": "EUR",
-    "amount": 1000,
-    "expected_output": "923.45",
-    "presign": { ... }
-  }
-}
-```
-
-<Note>
-  Most programs use an auto-provisioned EOA (externally owned account) on Gnosis — swaps execute immediately. If your program was manually set up with a Gnosis Safe, a presign transaction is required.
-</Note>
-
 ---
 
 ## Fund a Customer's Card
 
-Transfer from your master wallet to a customer's card Safe. The destination currency is automatically detected from the customer's card region (e.g. UK customers receive GBPe, EU customers receive EURe).
+Transfer from your master wallet to a customer's card wallet. The destination currency is automatically detected from the customer's card region (e.g. UK customers receive GBPe, EU customers receive EURe).
 
 ```bash
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
@@ -269,13 +249,13 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 | Field | Required | Description |
 |-------|----------|-------------|
 | `customer_id` | One of | Customer's Yativo customer ID |
-| `card_id` | One of | Card's Gnosis card ID |
+| `card_id` | One of | Card's unique ID |
 | `external_id` | One of | Your own external reference |
 | `email` | One of | Customer's email address |
 | `amount` | Yes | Amount to send (interpretation depends on `pricing_mode`) |
 | `source_chain` | Yes | `SOL` or `XDC` — which master wallet to send from |
 | `pricing_mode` | No | `send_x` (default) or `receive_x` — see below |
-| `destination_token` | No | Override the auto-detected destination token. Must match the customer's Safe currency or an error is returned |
+| `destination_token` | No | Override the auto-detected destination token. Must match the customer's card region currency or an error is returned |
 
 ### Pricing modes
 
@@ -285,7 +265,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 | `receive_x` | The amount the customer should receive | More than `amount` is sent from your master wallet (you absorb fees) |
 
 <Note>
-  The token mismatch check is enforced at the API level. For example, if a customer's card is in a EUR region (EURe Safe), you cannot fund them with a USDC destination — the API returns `TOKEN_MISMATCH` and tells you the required token. Swap your USDC balance to EURe first, then fund.
+  The token mismatch check is enforced at the API level. For example, if a customer's card is in a EUR region (EURe wallet), you cannot fund them with a USDC destination — the API returns `TOKEN_MISMATCH` and tells you the required token. Swap your USDC balance to EURe first, then fund.
 </Note>
 
 ```json Response
@@ -295,7 +275,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
     "bridge_id": "bridge_1745123456_abc123",
     "status": "pending",
     "source": { "chain": "SOL", "amount": 102.50, "wallet": "9gHp7q..." },
-    "destination": { "chain": "GNO", "token": "EURe" },
+    "destination": { "token": "EURe" },
     "pricing_mode": "receive_x",
     "estimated_output": "100.00",
     "estimated_time": "2-5 minutes"
@@ -307,7 +287,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 
 ## Look Up a Customer
 
-Find a customer by any of their identifiers. The safe address is never returned.
+Find a customer by any of their identifiers. The underlying wallet address is never returned.
 
 ```bash
 curl 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?email=customer@example.com' \
@@ -359,7 +339,7 @@ curl 'https://crypto-api.yativo.com/api/v1/card-issuer/deposits' \
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/deposits/{depositId}/fund' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
-  -d '{ "destination_token": "USDC_GNO" }'
+  -d '{ "destination_token": "USDC" }'
 ```
 
 Deposits in `awaiting_manual` status can be manually triggered. SOL deposits are bridged automatically.
