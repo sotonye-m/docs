@@ -1,0 +1,89 @@
+---
+title: "Phone Verification"
+description: "Request and verify a phone number for the customer's card account"
+---
+
+Phone verification is required before card creation. There are two endpoints:
+
+1. **`POST /v1/yativo-card/customers/:yativoCardId/phone/request-verification`** — send OTP to phone
+2. **`POST /v1/yativo-card/customers/:yativoCardId/phone/verify`** — verify the OTP
+
+---
+
+## Request Phone Verification
+
+<APIEndpoint method="POST" path="/v1/yativo-card/customers/{yativoCardId}/phone/request-verification" />
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<ParamField body="phoneNumber" type="string" required>
+  Customer's phone number in international format (e.g. `+14155552671`).
+</ParamField>
+
+<RequestExample>
+```bash Request OTP
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/phone/request-verification' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"phoneNumber": "+14155552671"}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OTP sent
+{
+  "success": true,
+  "message": "Verification code sent to your phone",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "phone_number": "+14155****",
+    "otp_requested_at": "2026-04-01T12:20:00.000Z",
+    "next_step": "Verify OTP using POST /phone/verify"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Verify Phone Number
+
+<APIEndpoint method="POST" path="/v1/yativo-card/customers/{yativoCardId}/phone/verify" />
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<ParamField body="code" type="string" required>
+  The OTP code received via SMS.
+</ParamField>
+
+<RequestExample>
+```bash Verify OTP
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/phone/verify' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"code": "382910"}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Verified
+{
+  "success": true,
+  "message": "Phone number verified successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "phone_number": "+14155****",
+    "is_verified": true,
+    "next_step": "Create virtual card using POST /cards/virtual"
+  }
+}
+```
+</ResponseExample>

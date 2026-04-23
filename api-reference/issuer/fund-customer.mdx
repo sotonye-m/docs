@@ -1,7 +1,7 @@
 ---
-title: "Fund Customer"
+title: "Fund Customer Card"
 api: "POST /v1/card-issuer/fund-customer"
-description: "Fund a customer's card wallet on their behalf as a card issuer"
+description: "Push funds from your master wallet to a customer's card wallet. Only available for `master_wallet` programs."
 authMethod: "bearer"
 ---
 
@@ -9,42 +9,53 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
+<Note>
+  Supply exactly one customer identifier. The customer must have completed onboarding
+  (KYC approved, wallet ready) before funding.
+</Note>
+
 <ParamField body="customer_id" type="string">
-  The customer's Yativo customer ID. One of `customer_id`, `card_id`, `external_id`, or `email` is required.
+  Yativo-generated customer ID returned at onboarding.
 </ParamField>
 
 <ParamField body="card_id" type="string">
-  The card's Gnosis card ID. Alternative identifier.
+  Card ID from card creation.
 </ParamField>
 
 <ParamField body="external_id" type="string">
-  Your own external reference set at customer onboarding. Alternative identifier.
+  Your own reference (`external_customer_id`) set at onboarding.
 </ParamField>
 
 <ParamField body="email" type="string">
-  The customer's email address. Alternative identifier.
+  Customer email address.
 </ParamField>
 
 <ParamField body="amount" type="number" required>
-  Amount to fund. Interpretation depends on `pricing_mode`.
+  Amount in USD. Interpretation depends on `pricing_mode`.
 </ParamField>
 
 <ParamField body="source_chain" type="string" required>
-  Which master wallet to send from. One of: `SOL` or `XDC`.
+  Master wallet to debit. `SOL` or `XDC`.
 </ParamField>
 
 <ParamField body="pricing_mode" type="string">
-  How the `amount` is interpreted. `send_x` (default) — you specify what you send, customer receives less after fees. `receive_x` — you specify what the customer receives, more is taken from your master wallet.
+  `send_x` (default) — debit exactly `amount`; customer receives less after fees.
+  `receive_x` — customer receives exactly `amount`; master wallet debited more.
+</ParamField>
+
+<ParamField body="destination_token" type="string">
+  Optional target currency (`USDC`, `EURe`, `GBPe`). Defaults to the customer's card
+  currency. Must match — mismatches return an error with the correct required token.
 </ParamField>
 
 <RequestExample>
-```bash
+```bash cURL
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "customer_id": "cust_abc123",
-    "amount": 500,
+    "external_id": "your_user_id_8821",
+    "amount": 200,
     "source_chain": "SOL",
     "pricing_mode": "receive_x"
   }'
@@ -52,18 +63,37 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 </RequestExample>
 
 <ResponseExample>
-```json
+```json 200 Initiated
 {
-  "status": "success",
-  "message": "Customer funded successfully",
+  "success": true,
+  "message": "Customer funding initiated",
   "data": {
-    "funding_id": "fnd_01HX9KZMB3F7VNQP8R2WDGT4EQ",
-    "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4EP",
-    "amount_usd": "500.00",
-    "source_chain": "polygon",
-    "status": "completed",
-    "funded_at": "2026-03-26T12:00:00Z"
+    "bridge_id": "bridge_01HX9KZMB3F7VNQ",
+    "status": "initiated",
+    "source": { "chain": "SOL", "amount": 201.80 },
+    "destination": { "token": "EURe", "amount": 200.00 },
+    "pricing_mode": "receive_x",
+    "estimated_time": "2-10 minutes",
+    "created_at": "2026-04-01T12:00:00.000Z"
   }
+}
+```
+
+```json 400 Token mismatch
+{
+  "success": false,
+  "error": "TOKEN_MISMATCH",
+  "message": "This customer's card requires EURe. You requested USDC. Please swap to EURe first.",
+  "required_token": "EURe",
+  "requested_token": "USDC"
+}
+```
+
+```json 400 Daily limit exceeded
+{
+  "success": false,
+  "error": "DAILY_LIMIT_EXCEEDED",
+  "message": "Daily funding limit exceeded. Used: $48200.00, limit: $50000"
 }
 ```
 </ResponseExample>

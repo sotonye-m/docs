@@ -1,0 +1,78 @@
+---
+title: "Check Customer KYC Status"
+api: "GET /v1/yativo-card/customers/{yativoCardId}/kyc-status"
+description: "Poll the KYC verification status for a customer. Card wallet is deployed automatically when KYC is first approved."
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<Note>
+  When KYC status first changes to `approved`, Yativo automatically provisions the customer's
+  card wallet in the background (typically completes within 60 seconds). You do **not** need
+  to call a separate wallet deployment endpoint. Once `kyc_status` is `approved`, proceed
+  directly to Source of Funds questions.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/kyc-status' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Approved
+{
+  "success": true,
+  "message": "KYC status retrieved",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "kyc_status": "approved",
+    "verification_level": "STANDARD",
+    "terms_accepted": true,
+    "next_step": "create_virtual_card"
+  }
+}
+```
+
+```json 200 Pending
+{
+  "success": true,
+  "message": "KYC status retrieved",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "kyc_status": "pending",
+    "verification_level": null,
+    "terms_accepted": false,
+    "next_step": null
+  }
+}
+```
+
+```json 200 Rejected
+{
+  "success": true,
+  "message": "KYC status retrieved",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "kyc_status": "rejected",
+    "rejection_reason": "Document not accepted"
+  }
+}
+```
+</ResponseExample>
+
+### KYC Status Values
+
+| Status | Meaning |
+|---|---|
+| `pending` | Verification in progress |
+| `approved` | Identity verified — card wallet auto-provisioned, proceed to source of funds |
+| `rejected` | Verification failed — customer must restart onboarding |

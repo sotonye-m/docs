@@ -437,7 +437,7 @@
             ]
           },
           {
-            "group": "Yativo Card",
+            "group": "Yativo Card (Own Account)",
             "pages": [
               "api-reference/cards/onboard",
               "api-reference/cards/kyc-status",
@@ -466,11 +466,35 @@
             ]
           },
           {
+            "group": "B2B Customer Cards",
+            "pages": [
+              "api-reference/cards/onboard",
+              "api-reference/cards/verify-otp",
+              "api-reference/cards/kyc-link",
+              "api-reference/cards/customer-kyc-status",
+              "api-reference/cards/source-of-funds",
+              "api-reference/cards/phone-verification",
+              "api-reference/cards/create-virtual",
+              "api-reference/cards/customer-cards",
+              "api-reference/cards/customer-wallet",
+              "api-reference/cards/customer-freeze",
+              "api-reference/cards/customer-unfreeze",
+              "api-reference/cards/customer-terminate",
+              "api-reference/cards/customer-transactions",
+              "api-reference/cards/customer-dispute"
+            ]
+          },
+          {
             "group": "Card Issuer Program",
             "pages": [
               "api-reference/issuer/apply",
               "api-reference/issuer/program",
-              "api-reference/issuer/fund-customer"
+              "api-reference/issuer/master-wallets",
+              "api-reference/issuer/swap-token",
+              "api-reference/issuer/fund-customer",
+              "api-reference/issuer/funding-history",
+              "api-reference/issuer/customers",
+              "api-reference/issuer/lookup-customer"
             ]
           },
           {

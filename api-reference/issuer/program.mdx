@@ -1,7 +1,7 @@
 ---
-title: "Get Issuer Program"
+title: "Get Issuer Program Status"
 api: "GET /v1/card-issuer/status"
-description: "Retrieve details of your card issuer program"
+description: "Retrieve the status and configuration of your Card Issuer Program"
 authMethod: "bearer"
 ---
 
@@ -10,17 +10,55 @@ authMethod: "bearer"
 </ParamField>
 
 <RequestExample>
-```bash
+```bash cURL
 curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/status' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json
+```json 200 Approved program
 {
   "success": true,
-  "data": {"enrolled": false}
+  "data": {
+    "enrolled": true,
+    "status": "approved",
+    "funding_structure": "master_wallet",
+    "iban_enabled": false,
+    "enabled_chains": ["SOL"],
+    "max_cards": 500,
+    "daily_funding_limit": 50000,
+    "monthly_funding_limit": 500000,
+    "approved_at": "2026-04-01T12:00:00.000Z"
+  }
+}
+```
+
+```json 200 Pending
+{
+  "success": true,
+  "data": {
+    "enrolled": true,
+    "status": "pending",
+    "funding_structure": "master_wallet",
+    "iban_enabled": false
+  }
+}
+```
+
+```json 200 Not enrolled
+{
+  "success": true,
+  "data": { "enrolled": false }
 }
 ```
 </ResponseExample>
+
+### Status Values
+
+| Status | Meaning |
+|---|---|
+| `pending` | Application under review — typically 1–2 business days |
+| `approved` | Program is live — you can onboard customers and issue cards |
+| `rejected` | Application declined — contact support |
+| `suspended` | Program temporarily suspended |

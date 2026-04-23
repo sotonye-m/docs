@@ -15,13 +15,13 @@ authMethod: "bearer"
 
 <ParamField body="kyc_method" type="string" required>
   The KYC verification method to use. One of:
-  - `platform_sumsub` — KYC handled by the platform using Sumsub
-  - `user_sumsub` — User completes KYC directly via Sumsub
+  - `platform_kyc` — KYC handled by the platform
+  - `user_kyc` — User completes KYC directly via the hosted verification flow
   - `direct_docs` — KYC via direct document submission
 </ParamField>
 
-<ParamField body="sumsub_token" type="string">
-  A Sumsub access token, required when `kyc_method` is `user_sumsub`.
+<ParamField body="kyc_token" type="string">
+  A KYC access token, required when `kyc_method` is `user_kyc`.
 </ParamField>
 
 <RequestExample>
@@ -30,7 +30,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7V
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "kyc_method": "platform_sumsub"
+    "kyc_method": "platform_kyc"
   }'
 ```
 </RequestExample>
@@ -43,7 +43,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yvc_01HX9KZMB3F7V
   "data": {
     "yativo_card_id": "yvc_01HX9KZMB3F7VNQP8R2WDGT4EI",
     "iban_status": "pending_kyc",
-    "kyc_method": "platform_sumsub",
+    "kyc_method": "platform_kyc",
     "initiated_at": "2026-03-26T12:00:00Z"
   }
 }

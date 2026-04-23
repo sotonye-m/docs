@@ -1,0 +1,59 @@
+---
+title: "Swap Master Wallet Token"
+api: "POST /v1/card-issuer/master-wallets/swap"
+description: "Swap between USD, EUR, and GBP balances in your master wallet"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="from_token" type="string" required>
+  Source currency: `USDC`, `EUR`, or `GBP`.
+</ParamField>
+
+<ParamField body="to_token" type="string" required>
+  Target currency: `USDC`, `EUR`, or `GBP`.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to swap from the source currency balance.
+</ParamField>
+
+<Note>
+  Customer card currency is determined by the customer's country at the time their card
+  wallet is created. Use this endpoint to convert your USDC balance to the correct currency
+  before funding customers whose cards are denominated in EUR or GBP.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets/swap' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_token": "USDC",
+    "to_token": "EUR",
+    "amount": 1000
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Swap initiated
+{
+  "success": true,
+  "message": "Swap initiated from USD to EUR",
+  "data": {
+    "swap_id": "swap_01HX9ABC123",
+    "from_token": "USDC",
+    "to_token": "EUR",
+    "from_amount": 1000,
+    "estimated_output": 924.50,
+    "status": "pending",
+    "estimated_time": "1-5 minutes"
+  }
+}
+```
+</ResponseExample>

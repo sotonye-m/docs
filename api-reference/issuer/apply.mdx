@@ -1,7 +1,7 @@
 ---
 title: "Apply for Issuer Program"
 api: "POST /v1/card-issuer/apply"
-description: "Apply to become a card issuer and configure your card program"
+description: "Submit an application to join the Yativo Card Issuer Program"
 authMethod: "bearer"
 ---
 
@@ -10,15 +10,24 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField body="funding_structure" type="string" required>
-  The funding model for the issuer program. One of: `master_wallet` (you hold a shared balance and push funds to customers) or `non_master` (each customer has their own collateral wallet).
+  Funding model for the program.
+
+  | Value | Description |
+  |---|---|
+  | `master_wallet` | You maintain a shared balance and push funds to each customer card. Best for platforms that want centralised control over top-ups. |
+  | `non_master` | Each customer funds their own card wallet independently. Best for self-service crypto-funded cards. |
 </ParamField>
 
 <ParamField body="iban_enabled" type="boolean" required>
   Whether to enable IBAN functionality for cardholders in your program.
 </ParamField>
 
+<Note>
+  The Issuer Program requires prior eligibility approval. Contact your account manager or [support@yativo.com](mailto:support@yativo.com) to request access before applying.
+</Note>
+
 <RequestExample>
-```bash
+```bash cURL
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
@@ -30,15 +39,23 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
 </RequestExample>
 
 <ResponseExample>
-```json
+```json 201 Created
 {
   "success": true,
   "message": "Application submitted successfully",
   "data": {
-    "application_id": "app_69c799d9f1fba3928d8a12ac",
+    "application_id": "6627f3a2c5d4e100123abcde",
     "status": "pending",
-    "submitted_at": "2026-03-28T10:00:00.000Z"
+    "submitted_at": "2026-04-01T10:00:00.000Z"
   }
+}
+```
+
+```json 403 Not eligible
+{
+  "success": false,
+  "error": "NOT_ELIGIBLE",
+  "message": "Your account is not yet eligible for the Card Issuer Program. Contact support to request access."
 }
 ```
 </ResponseExample>

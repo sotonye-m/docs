@@ -1,0 +1,60 @@
+---
+title: "Get Master Wallets"
+api: "GET /v1/card-issuer/master-wallets"
+description: "Retrieve your master wallet addresses and current balances for all supported currencies"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<Note>
+  Fund your master wallets by depositing crypto to the addresses shown here. Once funded,
+  use [Fund Customer](/api-reference/issuer/fund-customer) to push balances to individual
+  customer cards. Master wallets are only available for `master_wallet` funding programs.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "wallets": {
+      "sol": {
+        "address": "SoLMasterWalletAddressXXXXXXXXXXXXXXXXXXXXXXXX",
+        "balance": 12450.50,
+        "last_balance_check": "2026-04-01T11:55:00.000Z"
+      },
+      "xdc": {
+        "address": "0xXDCMasterWalletAddress",
+        "balance": 3200.00,
+        "last_balance_check": "2026-04-01T11:55:00.000Z"
+      },
+      "usdc": { "balance": 8340.00, "last_balance_check": "2026-04-01T11:55:00.000Z" },
+      "eur":  { "balance": 3100.00, "last_balance_check": "2026-04-01T11:55:00.000Z" },
+      "gbp":  { "balance": 1200.00, "last_balance_check": "2026-04-01T11:55:00.000Z" }
+    }
+  }
+}
+```
+</ResponseExample>
+
+### Wallet Reference
+
+| Key | Currency | Notes |
+|---|---|---|
+| `sol` | USDC on Solana | Primary deposit chain — send USDC here |
+| `xdc` | USDC on XDC | Alternative deposit chain |
+| `usdc` | USD spend balance | Available for funding USD-denomination cards |
+| `eur` | EUR spend balance | Available for funding EUR-denomination cards |
+| `gbp` | GBP spend balance | Available for funding GBP-denomination cards |
+
+Use [Swap Token](/api-reference/issuer/swap-token) to convert between `usdc`, `eur`, and `gbp` balances.

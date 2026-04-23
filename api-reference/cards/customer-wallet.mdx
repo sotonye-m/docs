@@ -1,0 +1,49 @@
+---
+title: "Customer Wallet"
+api: "GET /v1/yativo-card/customers/{yativoCardId}/wallet"
+description: "Get the card wallet details and funding address for a customer"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/wallet' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "currency": "EUR",
+    "token": "EURe",
+    "wallet_ready": true,
+    "balance": {
+      "available": 245.50,
+      "pending": 0.00,
+      "currency": "EUR"
+    },
+    "funding_address": {
+      "address": "SoLFundingWalletAddressXXXXXXXXXXXXXX",
+      "network": "solana",
+      "asset": "USDC",
+      "memo": null
+    },
+    "spending_limits": {
+      "daily": { "limit": 7999, "used": 54.50, "remaining": 7944.50 }
+    }
+  }
+}
+```
+</ResponseExample>

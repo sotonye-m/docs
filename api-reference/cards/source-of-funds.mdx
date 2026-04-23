@@ -1,0 +1,99 @@
+---
+title: "Source of Funds"
+description: "Retrieve the source of funds questionnaire and submit the customer's answers"
+---
+
+Source of funds declaration is required after KYC approval and before card creation. There are two endpoints:
+
+1. **`GET /v1/yativo-card/customers/:yativoCardId/source-of-funds`** — fetch the questions
+2. **`POST /v1/yativo-card/customers/:yativoCardId/source-of-funds`** — submit answers
+
+---
+
+## Get Questions
+
+<APIEndpoint method="GET" path="/v1/yativo-card/customers/{yativoCardId}/source-of-funds" />
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<ParamField query="locale" type="string">
+  Language for questions, e.g. `en`, `de`, `fr`. Defaults to `en`.
+</ParamField>
+
+<RequestExample>
+```bash Get questions
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/source-of-funds' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Questions response
+{
+  "success": true,
+  "message": "Source of Funds questions retrieved",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "status": "questions_retrieved",
+    "questions": [
+      {
+        "question": "EMPLOYMENT_STATUS",
+        "label": "What is your employment status?",
+        "options": ["EMPLOYED", "SELF_EMPLOYED", "UNEMPLOYED", "STUDENT", "RETIRED"]
+      },
+      {
+        "question": "SOURCE_OF_INCOME",
+        "label": "What is your primary source of income?",
+        "options": ["SALARY", "BUSINESS_INCOME", "INVESTMENT", "PENSION", "OTHER"]
+      }
+    ],
+    "next_step": "Submit answers using POST /source-of-funds"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Submit Answers
+
+<APIEndpoint method="POST" path="/v1/yativo-card/customers/{yativoCardId}/source-of-funds" />
+
+<ParamField body="answers" type="array" required>
+  Array of answer objects. Each must have `question` (the question ID from GET) and `answer` (selected option).
+</ParamField>
+
+<RequestExample>
+```bash Submit answers
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/source-of-funds' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "answers": [
+      {"question": "EMPLOYMENT_STATUS", "answer": "EMPLOYED"},
+      {"question": "SOURCE_OF_INCOME", "answer": "SALARY"}
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Submitted
+{
+  "success": true,
+  "message": "Source of Funds submitted successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "status": "completed",
+    "submitted_at": "2026-04-01T12:15:00.000Z",
+    "next_step": "Verify phone number using POST /phone/request-verification"
+  }
+}
+```
+</ResponseExample>

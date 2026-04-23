@@ -1,0 +1,40 @@
+---
+title: "Unfreeze Customer Card"
+api: "POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/unfreeze"
+description: "Unfreeze a previously frozen customer card to re-enable transactions"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The card ID to unfreeze.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/cards/b2dc97ab-03f9-49eb-c72f-95be13815278/unfreeze' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "message": "Card unfrozen successfully",
+  "data": {
+    "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
+    "is_frozen": false,
+    "unfrozen_at": "2026-04-01T13:05:00.000Z"
+  }
+}
+```
+</ResponseExample>

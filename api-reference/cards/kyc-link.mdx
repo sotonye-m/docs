@@ -1,0 +1,44 @@
+---
+title: "Get Customer KYC Link"
+api: "GET /v1/yativo-card/customers/{yativoCardId}/kyc-link"
+description: "Generate a KYC verification link for the customer to complete identity verification"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<Note>
+  Call this endpoint after OTP verification. The returned `kyc_url` should be opened by the
+  customer in their browser or embedded in your app. They will complete identity verification
+  (government ID upload + liveness check) through the hosted flow. After completion, poll
+  [Check KYC Status](/api-reference/cards/kyc-status) or listen for the
+  `customer.kyc.approved` webhook.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/kyc-link' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "message": "KYC link generated. Open the link to complete identity verification.",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "kyc_url": "https://kyc.yativo.com/verify?token=eyJhbGciOiJSUzI1NiJ9...",
+    "next_step": "kyc_status",
+    "instructions": "Direct the customer to open this URL to upload their government ID and complete liveness check"
+  }
+}
+```
+</ResponseExample>

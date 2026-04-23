@@ -1,7 +1,7 @@
 ---
 title: "Create Virtual Card"
-api: "POST /v1/yativo-card/{yativoCardId}/cards/virtual"
-description: "Issue a new virtual card linked to an account"
+api: "POST /v1/yativo-card/customers/{yativoCardId}/cards/virtual"
+description: "Issue a virtual Visa/Mastercard for a customer who has completed onboarding"
 authMethod: "bearer"
 ---
 
@@ -9,58 +9,58 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField body="account_id" type="string" required>
-  The ID of the account to associate the card with.
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
 </ParamField>
 
-<ParamField body="card_type" type="string" required>
-  Must be `virtual` for a virtual card.
-</ParamField>
+<Note>
+  **Prerequisites before calling this endpoint:**
+  1. KYC approved
+  2. Source of funds questionnaire completed
+  3. Phone number verified
+  4. Card wallet ready (provisioned automatically after KYC approval)
 
-<ParamField body="card_program" type="string">
-  The card network to use. One of: `VISA`, `MASTERCARD`.
-</ParamField>
-
-<ParamField body="currency" type="string">
-  The billing currency for the card. Defaults to `USD`.
-</ParamField>
-
-<ParamField body="label" type="string">
-  An optional human-readable nickname for the card, e.g. `"Marketing Spend"`.
-</ParamField>
+  If any prerequisite is missing the API returns a descriptive error.
+</Note>
 
 <RequestExample>
-```bash
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/cards/virtual' \
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/cards/virtual' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -d '{
-    "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "card_type": "virtual",
-    "card_program": "VISA",
-    "currency": "USD",
-    "label": "Marketing Spend"
-  }'
+  -d '{}'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json
+```json 201 Created
 {
-  "status": "success",
+  "success": true,
   "message": "Virtual card created successfully",
   "data": {
-    "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4EJ",
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
     "card_type": "virtual",
-    "card_program": "VISA",
-    "currency": "USD",
-    "label": "Marketing Spend",
-    "status": "pending",
-    "masked_pan": "4111 **** **** 7890",
-    "expiry_month": "03",
-    "expiry_year": "2029",
-    "created_at": "2026-03-26T12:00:00Z"
+    "status": "active",
+    "status_name": "Active",
+    "activated_at": "2026-04-01T12:30:00.000Z",
+    "total_cards": 1,
+    "funding_wallet": {
+      "address": "SoLFundingWalletAddressXXXXXXXXXXXXXX",
+      "network": "solana",
+      "asset": "USDC"
+    }
   }
 }
 ```
+
+```json 400 Prerequisites not met
+{
+  "success": false,
+  "error_code": "SOURCE_OF_FUNDS_NOT_COMPLETED",
+  "message": "Source of Funds must be completed before creating a card. Use GET /source-of-funds to get questions and POST /source-of-funds to submit answers."
+}
+```
 </ResponseExample>
+
+After card creation, use [Get Card View Token](/api-reference/cards/ephemeral-token) to display the card number and CVV securely in your UI.

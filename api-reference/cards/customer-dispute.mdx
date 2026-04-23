@@ -1,0 +1,55 @@
+---
+title: "File Customer Card Dispute"
+api: "POST /v1/yativo-card/customers/{yativoCardId}/transactions/{transactionId}/dispute"
+description: "File a dispute for a customer's card transaction"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<ParamField path="transactionId" type="string" required>
+  The transaction ID to dispute.
+</ParamField>
+
+<ParamField body="reason_code" type="string" required>
+  Dispute reason code. Retrieve valid codes from
+  [Get Dispute Reasons](/api-reference/cards/dispute-reasons).
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional additional context for the dispute.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/transactions/txn_abc123/dispute' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "reason_code": "NOT_AS_DESCRIBED",
+    "description": "Item received was significantly different from what was shown"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Dispute filed
+{
+  "success": true,
+  "message": "Dispute filed successfully",
+  "data": {
+    "dispute_id": "dsp_01HX9ABC123",
+    "transaction_id": "txn_abc123",
+    "status": "submitted",
+    "reason_code": "NOT_AS_DESCRIBED",
+    "filed_at": "2026-04-01T14:30:00.000Z"
+  }
+}
+```
+</ResponseExample>

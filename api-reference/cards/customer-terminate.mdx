@@ -1,0 +1,45 @@
+---
+title: "Terminate Customer Card"
+api: "POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/void"
+description: "Permanently terminate a customer's card. This action is irreversible."
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The card ID to terminate.
+</ParamField>
+
+<Warning>
+  Card termination is permanent and irreversible. The customer must go through full card
+  creation again if they need a new card.
+</Warning>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/cards/b2dc97ab-03f9-49eb-c72f-95be13815278/void' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "message": "Card terminated successfully",
+  "data": {
+    "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
+    "status": "Terminated",
+    "terminated_at": "2026-04-01T14:00:00.000Z"
+  }
+}
+```
+</ResponseExample>

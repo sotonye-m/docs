@@ -1,0 +1,57 @@
+---
+title: "Verify Customer OTP"
+api: "POST /v1/yativo-card/customers/{yativoCardId}/verify-otp"
+description: "Verify the one-time code sent to the customer's email address to confirm their identity"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The `yativo_card_id` returned by the [Onboard Customer](/api-reference/cards/onboard) endpoint.
+</ParamField>
+
+<ParamField body="otp" type="string" required>
+  The 6-digit verification code sent to the customer's email.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/verify-otp' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"otp": "847291"}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Verified
+{
+  "success": true,
+  "message": "Email verified successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "flow_status": "otp_verified",
+    "next_step": "kyc_link"
+  }
+}
+```
+
+```json 400 Invalid OTP
+{
+  "success": false,
+  "error_code": "OTP_VERIFICATION_FAILED",
+  "message": "Invalid OTP"
+}
+```
+
+```json 400 OTP expired
+{
+  "success": false,
+  "error_code": "OTP_EXPIRED",
+  "message": "OTP has expired. Request a new one."
+}
+```
+</ResponseExample>

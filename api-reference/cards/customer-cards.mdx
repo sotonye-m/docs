@@ -1,0 +1,44 @@
+---
+title: "List Customer Cards"
+api: "GET /v1/yativo-card/customers/{yativoCardId}/cards"
+description: "List all cards issued to a specific customer"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/cards' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "cards": [
+      {
+        "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
+        "card_type": "virtual",
+        "status_name": "Active",
+        "is_frozen": false,
+        "last_four_digits": "0892",
+        "holder_name": "PRIYA CUSTOMER",
+        "activated_at": "2026-04-01T12:30:00.000Z"
+      }
+    ],
+    "total": 1
+  }
+}
+```
+</ResponseExample>
