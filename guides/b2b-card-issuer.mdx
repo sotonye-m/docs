@@ -57,12 +57,12 @@ Continue once status is `approved`.
 
 <Step title="Onboard customer">
 
-Create a customer-scoped card profile with email and one identifier.
+Create a customer-scoped card profile with email.
 
 Required:
 
 - `email`
-- one of `customer_id` or `external_customer_id`
+- optional `external_customer_id` (your own reference for this customer)
 
 ```bash cURL
 curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/customers/onboard \
@@ -81,6 +81,7 @@ Typical response:
   "success": true,
   "data": {
     "yativo_card_id": "yativo_card_customer_123",
+    "customer_id": "6627f3a2c5d4e100123abcde",
     "external_customer_id": "your_user_id_8821",
     "email_masked": "pr***@yourapp.com",
     "next_step": "verify_otp",
@@ -103,7 +104,12 @@ Core endpoints:
 - `POST /api/v1/yativo-card/customers/:yativoCardId/source-of-funds`
 - `POST /api/v1/yativo-card/customers/:yativoCardId/phone/request-verification`
 - `POST /api/v1/yativo-card/customers/:yativoCardId/phone/verify`
-- `POST /api/v1/yativo-card/customers/:yativoCardId/safe/deploy`
+
+<Note>
+  Safe wallet deployment is handled automatically by Yativo when KYC is first approved.
+  You do not need to call `/safe/deploy` — it runs in the background within ~1 minute of
+  KYC approval.
+</Note>
 
 Then create the virtual card:
 
