@@ -1,53 +1,8 @@
 ---
-title: "Get IBAN Status"
-api: "GET /v1/iban/status"
-description: "Check the status of a standalone IBAN and view its details"
-authMethod: "bearer"
+title: "Coming Soon"
+description: "This endpoint is coming soon"
 ---
 
-<ParamField header="Authorization" type="string" required>
-  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
-</ParamField>
-
-<ParamField query="customer_id" type="string">
-  Filter status by customer ID. Defaults to the authenticated user if omitted.
-</ParamField>
-
-<RequestExample>
-```bash
-curl -X GET 'https://crypto-api.yativo.com/api/v1/iban/status' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
-```
-</RequestExample>
-
-<ResponseExample>
-```json
-{
-  "success": true,
-  "data": {
-    "initialized": true,
-    "account_type": "user",
-    "profile_kind": "personal",
-    "profile_status": "approved",
-    "iban_status": "active",
-    "iban": {
-      "iban": "EE740205417800000001",
-      "bic": "FAKEFK01",
-      "currency": "EUR"
-    },
-    "balance": {"amount": "0", "currency": "EURe"},
-    "settlement_asset": "EURe",
-    "chain": "gnosis",
-    "funding": {
-      "crypto": {
-        "enabled": true,
-        "chain": "gnosis",
-        "asset": "EURe",
-        "address": "0xF11dF20C69e0651306C2C2dF2B7c42918e529D60"
-      },
-      "bank_transfer": {"enabled": true}
-    }
-  }
-}
-```
-</ResponseExample>
+<Note>
+  This endpoint is coming soon. The standalone IBAN product is currently in sandbox and not yet available for production use.
+</Note>

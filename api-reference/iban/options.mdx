@@ -1,40 +1,8 @@
 ---
-title: "Get IBAN Options"
-api: "GET /v1/iban/options"
-description: "Retrieve available IBAN options, currencies, and supported countries"
-authMethod: "bearer"
+title: "Coming Soon"
+description: "This endpoint is coming soon"
 ---
 
-<ParamField header="Authorization" type="string" required>
-  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
-</ParamField>
-
-<RequestExample>
-```bash
-curl -X GET 'https://crypto-api.yativo.com/api/v1/iban/options' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
-```
-</RequestExample>
-
-<ResponseExample>
-```json
-{
-  "success": true,
-  "data": {
-    "auth_model": "platform_managed_email",
-    "custody_model": "yativo_custodial",
-    "settlement_asset": "EURe",
-    "chain": "gnosis",
-    "supported_chains": {
-      "production": ["ethereum", "gnosis", "polygon", "arbitrum", "linea", "base", "noble"],
-      "sandbox": ["sepolia", "chiado", "amoy", "arbitrumsepolia", "lineasepolia", "basesepolia"]
-    },
-    "profile_kinds": ["personal", "corporate"],
-    "onboarding": {
-      "phase_a": "initialize",
-      "phase_b": "submit_kyc_and_proceed"
-    }
-  }
-}
-```
-</ResponseExample>
+<Note>
+  This endpoint is coming soon. The standalone IBAN product is currently in sandbox and not yet available for production use.
+</Note>
