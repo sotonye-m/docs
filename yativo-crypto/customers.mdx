@@ -7,6 +7,10 @@ The Customers API lets you create managed accounts for your own business custome
 
 This is the foundation of a B2B crypto-as-a-service product: you use the Yativo API on the backend, and your customers interact with your interface.
 
+<Note>
+  **These are WaaS (wallet) customers — not card customers.** If you are issuing crypto cards, your card holders are managed separately via the [Card Issuer API](/api-reference/issuer/customers). The two systems use different customer records and different endpoints. A customer enabled for cards is created through the card onboarding flow; a customer here is created with a single API call and gets crypto wallets immediately.
+</Note>
+
 <Accordion title="Type Definitions">
 ```typescript
 interface Customer {

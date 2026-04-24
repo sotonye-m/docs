@@ -1,9 +1,13 @@
 ---
-title: "List Customers"
-api: "GET /v1/yativo-card/customers/cards"
-description: "List all customer cards onboarded under your issuer program"
+title: "List Card Customers"
+api: "GET /v1/card-issuer/customers"
+description: "List all customers onboarded under your card issuer program"
 authMethod: "bearer"
 ---
+
+<Note>
+  **Card issuer customers are separate from WaaS customers.** This endpoint returns customers who have gone through card KYC onboarding and have a Gnosis Safe wallet for card spending. For wallet sub-accounts (deposits, withdrawals, crypto transfers), see [WaaS Customers](/yativo-crypto/customers).
+</Note>
 
 <ParamField header="Authorization" type="string" required>
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
@@ -18,13 +22,9 @@ authMethod: "bearer"
   `kyc_completed`, `card_created`, `active`.
 </ParamField>
 
-<ParamField query="external_customer_id" type="string">
-  Filter by your external reference.
-</ParamField>
-
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/cards?status=active' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=active' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
