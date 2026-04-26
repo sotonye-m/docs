@@ -1,7 +1,7 @@
 ---
-title: "Lookup Customer"
+title: "Look Up Customer"
 api: "GET /v1/card-issuer/lookup-customer"
-description: "Find a customer record by any identifier"
+description: "Find a card customer record by any identifier"
 authMethod: "bearer"
 ---
 
@@ -9,21 +9,35 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField query="customer_id" type="string">Yativo customer ID.</ParamField>
+<ParamField query="yativo_card_id" type="string">Yativo's internal card customer ID (e.g. `yativo_card_customer_8f9a..._1769031332068`).</ParamField>
 
-<ParamField query="card_id" type="string">Card ID from card creation.</ParamField>
+<ParamField query="customer_id" type="string">Customer ObjectId, or falls back to `yativo_card_id` lookup if not a valid ObjectId.</ParamField>
 
-<ParamField query="external_id" type="string">Your external reference set at onboarding.</ParamField>
+<ParamField query="card_id" type="string">Card ID returned from card creation.</ParamField>
+
+<ParamField query="external_id" type="string">Your reference ID set at onboarding.</ParamField>
 
 <ParamField query="email" type="string">Customer email address.</ParamField>
 
+<ParamField query="id" type="string">MongoDB `_id` of the customer document.</ParamField>
+
 <Note>
-  One of `customer_id`, `card_id`, `external_id`, or `email` is required.
+  Pass exactly one identifier. `yativo_card_id` and `external_id` are the most reliable — prefer them over `email` if you have either.
 </Note>
 
 <RequestExample>
-```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?external_id=your_user_id_8821' \
+```bash By external_id
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?external_id=usr_8821' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash By yativo_card_id
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?yativo_card_id=yativo_card_customer_8f9a..._1769031332068' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash By email
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?email=priya%40yourapp.com' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -33,15 +47,35 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?ex
 {
   "success": true,
   "data": {
-    "customer_id": "6627f3a2c5d4e100123abcde",
-    "external_id": "your_user_id_8821",
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "external_id": "usr_8821",
     "email": "priya@yourapp.com",
-    "currency": "EUR",
-    "token": "EURe",
-    "wallet_ready": true,
+    "flow_status": "card_created",
+    "currency": "USD",
+    "token": "USD",
+    "safe_deployed": true,
     "cards_count": 1,
-    "created_at": "2026-04-01T10:00:00.000Z"
+    "cards": [
+      {
+        "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
+        "last_four": "4242",
+        "card_type": "virtual",
+        "is_frozen": false,
+        "is_lost": false,
+        "is_blocked": false,
+        "status": "active"
+      }
+    ],
+    "created_at": "2026-04-25T10:00:00.000Z"
   }
+}
+```
+
+```json 400 No identifier provided
+{
+  "success": false,
+  "error": "MISSING_IDENTIFIER",
+  "message": "Provide one of: id, yativo_card_id, customer_id, card_id, external_id, email"
 }
 ```
 

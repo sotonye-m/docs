@@ -279,15 +279,18 @@ The following are representative mock responses for each card endpoint. Use thes
 
 ---
 
-### POST /yativo-card/{yativoCardId}/cards/{cardId}/ephemeral-token — Mock Response
+### POST /yativo-card/customers/{yativoCardId}/cards/{cardId}/view-token — Mock Response
 
 ```json
 {
-  "status": "success",
+  "success": true,
   "data": {
-    "ephemeral_token": "eph_token_7f3k9d2m1p8q4r5t6y7u8i9o0p1a2b3c4d5e6f7g8h",
+    "secure_view_url": "https://crypto-sandbox.yativo.com/api/v1/yativo-card/view/eyJhbGciOiJIUzI1NiJ9...",
     "expires_at": "2026-03-25T10:35:00Z",
-    "card_view_url": "https://crypto.yativo.com/card-details?token=eph_token_7f3k9d2m1p8q4r5t6y7u8i9o0p1a2b3c4d5e6f7g8h"
+    "last_four": "4242",
+    "card_type": "virtual",
+    "enabled_views": ["data", "pin"],
+    "requires_access_code": false
   }
 }
 ```

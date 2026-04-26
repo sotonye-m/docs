@@ -32,7 +32,7 @@ The Yativo Card Issuer Program lets businesses issue virtual and physical paymen
     Our compliance team reviews and approves the application, typically within 2–5 business days. On approval, your settlement wallets are auto-provisioned.
   </Step>
   <Step title="Fund your master wallet and issue cards">
-    Deposit USDC, EURe, or GBPe to your master wallet, onboard customers, issue cards, and fund them by customer email, ID, or your own external reference.
+    Deposit USDC to your SOL address to top up your USD balance, swap to EUR or GBP as needed, onboard customers, issue cards, and fund them by customer email, ID, or your own external reference.
   </Step>
 </Steps>
 
@@ -106,8 +106,8 @@ curl 'https://crypto-api.yativo.com/api/v1/card-issuer/status' \
         "balance": 0.012
       },
       "usdc": { "balance": 5420.00 },
-      "eure": { "balance": 3100.00 },
-      "gbpe": { "balance": 800.00 }
+      "eur": { "balance": 3100.00 },
+      "gbp": { "balance": 800.00 }
     },
     "stats": {
       "total_cards_issued": 47,
@@ -144,12 +144,12 @@ These are auto-provisioned on approval. All three currency balances share the sa
 
 | Balance | Funded by | Used for |
 |---------|-----------|----------|
-| USDC | USDC bridge from SOL/XDC | Funding cards in USD regions |
-| EURe | EURe bridge or swap | Funding cards in EUR regions |
-| GBPe | GBPe bridge or swap | Funding cards in GBP regions |
+| USD | USDC bridge from SOL/XDC | Funding cards in USD regions |
+| EUR | Swap from USD | Funding cards in EUR regions |
+| GBP | Swap from USD | Funding cards in GBP regions |
 
 <Note>
-  The underlying on-chain address is abstracted — balances are presented as `usdc`, `eure`, and `gbpe`. To move from USDC balance to EURe balance, use the swap endpoint below.
+  All three balances are managed internally by Yativo. To move from USD balance to EUR balance, use the swap endpoint below.
 </Note>
 
 ### Get master wallet balances
@@ -170,8 +170,8 @@ curl 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets' \
       },
       "xdc": null,
       "usdc": { "balance": 5420.00, "last_balance_check": "2026-04-22T09:00:00Z" },
-      "eure": { "balance": 3100.00, "last_balance_check": "2026-04-22T09:00:00Z" },
-      "gbpe": { "balance": 800.00, "last_balance_check": "2026-04-22T09:00:00Z" }
+      "eur": { "balance": 3100.00, "last_balance_check": "2026-04-22T09:00:00Z" },
+      "gbp": { "balance": 800.00, "last_balance_check": "2026-04-22T09:00:00Z" }
     }
   }
 }
@@ -192,7 +192,7 @@ Returns your SOL and XDC deposit addresses to send USDC to. For `non_master` pro
 
 ## Swap Between Currency Balances
 
-Swap USDC ↔ EURe ↔ GBPe within your settlement wallet.
+Swap USD ↔ EUR ↔ GBP within your master wallet balances.
 
 ```bash
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets/swap' \
@@ -232,7 +232,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets/sw
 
 ## Fund a Customer's Card
 
-Transfer from your master wallet to a customer's card wallet. The destination currency is automatically detected from the customer's card region (e.g. UK customers receive GBPe, EU customers receive EURe).
+Transfer from your master wallet to a customer's card wallet. The destination currency is automatically detected from the customer's card region (e.g. UK customers receive GBP, EU customers receive EUR).
 
 ```bash
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
@@ -265,7 +265,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 | `receive_x` | The amount the customer should receive | More than `amount` is sent from your master wallet (you absorb fees) |
 
 <Note>
-  The token mismatch check is enforced at the API level. For example, if a customer's card is in a EUR region (EURe wallet), you cannot fund them with a USDC destination — the API returns `TOKEN_MISMATCH` and tells you the required token. Swap your USDC balance to EURe first, then fund.
+  The currency mismatch check is enforced at the API level. For example, if a customer's card is in a EUR region, you cannot fund them with a USD destination — the API returns `TOKEN_MISMATCH` and tells you the required currency. Swap your USD balance to EUR first, then fund.
 </Note>
 
 ```json Response
@@ -275,7 +275,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
     "bridge_id": "bridge_1745123456_abc123",
     "status": "pending",
     "source": { "chain": "SOL", "amount": 102.50, "wallet": "9gHp7q..." },
-    "destination": { "token": "EURe" },
+    "destination": { "token": "EUR" },
     "pricing_mode": "receive_x",
     "estimated_output": "100.00",
     "estimated_time": "2-5 minutes"
@@ -304,7 +304,7 @@ Query parameters (one required): `customer_id`, `card_id`, `external_id`, or `em
     "external_id": "user_9821",
     "email": "customer@example.com",
     "currency": "GBP",
-    "token": "GBPe",
+    "token": "GBP",
     "safe_deployed": true,
     "cards_count": 1,
     "created_at": "2026-03-15T10:00:00Z"

@@ -14,16 +14,20 @@ authMethod: "bearer"
 
   | Value | Description |
   |---|---|
-  | `master_wallet` | You maintain a shared balance and push funds to each customer card. Best for platforms that want centralised control over top-ups. |
+  | `master_wallet` | You maintain a shared balance and push funds to each customer card via the Fund Customer API. Best for platforms that want centralised control over top-ups. |
   | `non_master` | Each customer funds their own card wallet independently. Best for self-service crypto-funded cards. |
 </ParamField>
 
-<ParamField body="iban_enabled" type="boolean" required>
-  Whether to enable IBAN functionality for cardholders in your program.
+<ParamField body="preferred_chain" type="string">
+  The chain your master wallet will receive deposits on. `SOL` (default) or `XDC`. Yativo auto-provisions a wallet for the chosen chain on approval. Most issuers use `SOL`.
+</ParamField>
+
+<ParamField body="iban_enabled" type="boolean">
+  Whether to enable IBAN functionality for cardholders in your program. Defaults to `false`.
 </ParamField>
 
 <Note>
-  The Issuer Program requires prior eligibility approval. Contact your account manager or [support@yativo.com](mailto:support@yativo.com) to request access before applying.
+  The Issuer Program requires prior eligibility approval. Check `GET /v1/card-issuer/eligibility` first. If not eligible, contact your account manager or [support@yativo.com](mailto:support@yativo.com).
 </Note>
 
 <RequestExample>
@@ -33,6 +37,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   -H 'Content-Type: application/json' \
   -d '{
     "funding_structure": "master_wallet",
+    "preferred_chain": "SOL",
     "iban_enabled": false
   }'
 ```
@@ -42,12 +47,21 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
 ```json 201 Created
 {
   "success": true,
-  "message": "Application submitted successfully",
+  "message": "Application submitted. An admin will review your request.",
   "data": {
-    "application_id": "6627f3a2c5d4e100123abcde",
+    "id": "69ecc05a4fc8c9c148ed1a9a",
     "status": "pending",
-    "submitted_at": "2026-04-01T10:00:00.000Z"
+    "funding_structure": "master_wallet",
+    "preferred_chain": "SOL"
   }
+}
+```
+
+```json 409 Already enrolled
+{
+  "success": false,
+  "error": "ALREADY_ENROLLED",
+  "message": "You already have an active card issuer program."
 }
 ```
 

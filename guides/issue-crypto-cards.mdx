@@ -1,18 +1,40 @@
 ---
-title: "Issue Crypto Cards"
-description: "Step-by-step guide to issue a virtual card on your own account — from onboarding through card creation and funding"
+title: "Issue Crypto Cards (Own Account)"
+description: "Step-by-step guide to onboard yourself, deploy your card wallet, and issue a Visa virtual card on your own Yativo account"
 ---
 
-This guide walks through the **own-account** card flow, where you issue a virtual card directly on your Yativo account (not through the B2B Card Issuer Program). Use this if you want a card for your own use. For programmatic customer card issuance see [B2B Card Issuer Program](/guides/b2b-card-issuer).
+This guide covers the **own-account** card flow — issuing a Visa virtual card directly on your Yativo developer account. For issuing cards to your end customers under a B2B program, see [B2B Card Issuer Program](/guides/b2b-card-issuer).
+
+<Note>
+  **Two API namespaces — keep them separate.**
+
+  | Path prefix | Purpose |
+  |---|---|
+  | `/v1/yativo-card/{id}/...` | Own-account card flow (this guide) |
+  | `/v1/yativo-card/customers/{id}/...` | B2B customer card flow |
+
+  These are different flows with different route prefixes. Mixing them up is the most common integration mistake.
+</Note>
 
 ---
 
-## 1. Start Onboarding
+## Flow Overview
 
-Register your card account:
+```
+Onboard → Verify OTP → KYC → Source of Funds → Phone → Deploy Wallet → Create Card → Fund
+```
+
+Unlike the B2B customer flow, you must **manually trigger wallet deployment** after KYC. B2B customers have their wallets auto-deployed.
+
+---
+
+## Step 1 — Onboard
+
+Register your card account with an email address:
 
 ```bash
 POST /v1/yativo-card/onboard
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
@@ -20,23 +42,32 @@ Content-Type: application/json
 }
 ```
 
-```json Response
+```json Response 201
 {
-  "yativo_card_id": "yativo_card_abc123_1769031332068",
-  "email": "you@example.com",
-  "flow_status": "otp_requested",
-  "next_step": "verify_otp"
+  "success": true,
+  "message": "Card onboarding initiated. Check your email for verification code.",
+  "data": {
+    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "email_masked": "yo***@example.com",
+    "next_step": "verify_otp",
+    "otp_expires_in_seconds": 600
+  }
 }
 ```
 
-An OTP is sent to your email.
+<Warning>
+  Store `yativo_card_id` — it is the path parameter for every subsequent call. Do **not** use an email address that belongs to one of your customers. Each account type must have a unique email.
+</Warning>
+
+A 6-digit OTP is sent automatically to the email address.
 
 ---
 
-## 2. Verify Email OTP
+## Step 2 — Verify Email OTP
 
 ```bash
 POST /v1/yativo-card/{yativoCardId}/verify-otp
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
@@ -44,72 +75,172 @@ Content-Type: application/json
 }
 ```
 
-```json Response
+```json Response 200
 {
-  "flow_status": "otp_verified",
-  "next_step": "kyc_link"
+  "success": true,
+  "message": "Email verified successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "flow_status": "otp_verified",
+    "next_step": "kyc_link"
+  }
 }
+```
+
+| Error | Meaning |
+|---|---|
+| `OTP_EXPIRED` | 10-minute window passed — resend via `POST /{id}/resend-otp` |
+| `OTP_VERIFICATION_FAILED` | Wrong code |
+| `OTP_ATTEMPTS_EXCEEDED` | 5 failed attempts — restart onboarding |
+
+### Resend OTP
+
+```bash
+POST /v1/yativo-card/{yativoCardId}/resend-otp
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ---
 
-## 3. Complete KYC
-
-### Get KYC Link
+## Step 3 — Get KYC Link
 
 ```bash
 GET /v1/yativo-card/{yativoCardId}/kyc-link
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response 200
+{
+  "success": true,
+  "message": "KYC link generated. Open the link to complete identity verification.",
+  "data": {
+    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "kyc_type": "sumsub",
+    "kyc_url": "https://kyc.yativo.com/verify?token=...",
+    "sumsub_sdk_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "next_step": "kyc_status",
+    "instructions": "Open the KYC link to upload your government ID and complete liveness check"
+  }
+}
+```
+
+Redirect to `kyc_url`, or embed the verification widget using `sumsub_sdk_token` and the [Sumsub Web SDK](https://docs.sumsub.com/reference/web-sdk-readme). Add `?refresh=true` to force-generate a new link if the old one expired.
+
+---
+
+## Step 4 — Poll KYC Status
+
+```bash
+GET /v1/yativo-card/{yativoCardId}/kyc-status
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Approved
+{
+  "success": true,
+  "message": "KYC status retrieved",
+  "data": {
+    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "kyc_status": "approved",
+    "verification_level": 1,
+    "terms_accepted": true,
+    "next_step": "create_safe"
+  }
+}
+```
+
+```json Pending
+{
+  "success": true,
+  "data": {
+    "kyc_status": "pending",
+    "next_step": null
+  }
+}
+```
+
+```json Rejected
+{
+  "success": true,
+  "data": {
+    "kyc_status": "rejected",
+    "rejection_reason": "Document not readable",
+    "next_step": null
+  }
+}
+```
+
+Poll every 10 seconds for up to 10 minutes. On rejection, fetch a new `kyc-link` and retry. Terms are auto-accepted when KYC first transitions to `approved`.
+
+---
+
+## Step 5 — Source of Funds
+
+### Get questions
+
+```bash
+GET /v1/yativo-card/{yativoCardId}/source-of-funds
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ```json Response
 {
-  "kyc_url": "https://kyc.yativo.com/verify?token=...",
-  "instructions": "Open this URL to upload your government ID and complete liveness check"
+  "success": true,
+  "data": {
+    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "status": "questions_retrieved",
+    "questions": [
+      {
+        "question": "EMPLOYMENT_STATUS",
+        "label": "What is your employment status?",
+        "options": ["EMPLOYED", "SELF_EMPLOYED", "UNEMPLOYED", "STUDENT", "RETIRED"]
+      },
+      {
+        "question": "SOURCE_OF_INCOME",
+        "label": "What is your primary source of income?",
+        "options": ["SALARY", "BUSINESS_INCOME", "INVESTMENT", "PENSION", "OTHER"]
+      }
+    ],
+    "next_step": "Submit answers using POST /source-of-funds"
+  }
 }
 ```
 
-Open the `kyc_url` and complete the identity verification flow.
-
-### Poll KYC Status
-
-```bash
-GET /v1/yativo-card/{yativoCardId}/kyc-status
-```
-
-Wait for `kyc_status: "approved"` before continuing. Card terms are automatically accepted when KYC is first approved.
-
----
-
-## 4. Complete Source of Funds
-
-### Get Questions
-
-```bash
-GET /v1/yativo-card/{yativoCardId}/source-of-funds
-```
-
-### Submit Answers
+### Submit answers
 
 ```bash
 POST /v1/yativo-card/{yativoCardId}/source-of-funds
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
   "answers": [
-    {"question": "EMPLOYMENT_STATUS", "answer": "EMPLOYED"},
-    {"question": "SOURCE_OF_INCOME", "answer": "SALARY"}
+    { "question": "EMPLOYMENT_STATUS", "answer": "EMPLOYED" },
+    { "question": "SOURCE_OF_INCOME",  "answer": "SALARY" }
   ]
+}
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "status": "completed",
+    "next_step": "Verify phone number using POST /phone/request-verification"
+  }
 }
 ```
 
 ---
 
-## 5. Verify Phone Number
+## Step 6 — Phone Verification
 
-### Request OTP
+### Request SMS code
 
 ```bash
 POST /v1/yativo-card/{yativoCardId}/phone/request-verification
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
@@ -117,10 +248,18 @@ Content-Type: application/json
 }
 ```
 
-### Verify OTP
+```json Response
+{
+  "success": true,
+  "message": "Verification code sent"
+}
+```
+
+### Verify SMS code
 
 ```bash
 POST /v1/yativo-card/{yativoCardId}/phone/verify
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
@@ -128,99 +267,197 @@ Content-Type: application/json
 }
 ```
 
----
-
-## 6. Deploy Card Wallet
-
-For own-account card holders, wallet deployment is a manual step:
-
-### Initiate Deployment
-
-```bash
-POST /v1/yativo-card/{yativoCardId}/safe/deploy
-```
-
-### Poll Until Ready
-
-```bash
-GET /v1/yativo-card/{yativoCardId}/safe/deploy
-```
-
-```json Deployed
-{
-  "deployed": true,
-  "wallet_address": "0xABCD...",
-  "network": "ethereum"
-}
-```
-
-Wait for `deployed: true` before creating a card.
-
-<Note>
-  B2B customers managed through the Card Issuer Program have their wallets provisioned
-  automatically after KYC approval — no manual step required.
-</Note>
-
----
-
-## 7. Create Virtual Card
-
-```bash
-POST /v1/yativo-card/{yativoCardId}/cards/virtual
-```
-
 ```json Response
 {
-  "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
-  "card_type": "virtual",
-  "status": "active",
-  "activated_at": "2026-04-01T12:30:00.000Z",
-  "funding_wallet": {
-    "address": "SoLFundingWalletAddressXXX",
-    "network": "solana",
-    "asset": "USDC"
+  "success": true,
+  "data": {
+    "is_verified": true
   }
 }
 ```
 
-Use [Get Card View Token](/api-reference/cards/ephemeral-token) to securely display the full card number and CVV.
+---
+
+## Step 7 — Deploy Card Wallet
+
+<Note>
+  This step is **own-account only**. B2B customers managed through the Card Issuer Program have their wallets provisioned automatically after KYC — no manual deployment needed.
+</Note>
+
+### Initiate deployment
+
+```bash
+POST /v1/yativo-card/{yativoCardId}/safe/deploy
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response 202
+{
+  "success": true,
+  "message": "Safe deployment initiated. Deployment typically takes up to 1 minute.",
+  "data": {
+    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "deployment_accepted": true,
+    "estimated_completion": "~1 minute",
+    "next_step": "monitor_deployment",
+    "monitor_endpoint": "/api/yativo-card/yativo_card_abc123_1769031332068/safe/deploy"
+  }
+}
+```
+
+### Poll until ready
+
+```bash
+GET /v1/yativo-card/{yativoCardId}/safe/deploy
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Ready
+{
+  "success": true,
+  "message": "Safe deployment complete",
+  "data": {
+    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "safe_config": {
+      "address": "0xABCD1234...",
+      "token_symbol": "EUR",
+      "fiat_symbol": "EUR",
+      "account_status": 0,
+      "account_status_meaning": "Ok",
+      "is_deployed": true,
+      "has_no_approvals": false
+    },
+    "is_ready": true,
+    "next_step": "card_ready"
+  }
+}
+```
+
+```json In Progress
+{
+  "success": true,
+  "message": "Safe deployment in progress",
+  "data": {
+    "is_ready": false,
+    "next_step": "wait_and_check_again"
+  }
+}
+```
+
+Poll every 5 seconds. Move to card creation once `is_ready` is `true`.
 
 ---
 
-## 8. Fund Your Card
+## Step 8 — Create Virtual Card
 
-Get your card wallet deposit address:
+```bash
+POST /v1/yativo-card/{yativoCardId}/cards/virtual
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response 201
+{
+  "success": true,
+  "message": "Virtual card created successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
+    "card_type": "virtual",
+    "status": "active",
+    "status_code": 1000,
+    "status_name": "Active",
+    "activated_at": "2026-04-01T12:30:00.000Z",
+    "total_cards": 1,
+    "funding_wallet": {
+      "address": "SoLFundingWalletAddressXXX",
+      "network": "solana",
+      "asset": "USDC"
+    }
+  }
+}
+```
+
+Each account can hold 1 virtual card and 1 physical card at a time. Use [Get Secure Card View URL](/api-reference/cards/customer-secure-view) to securely display the full card number and CVV.
+
+---
+
+## Step 9 — Fund Your Card
+
+Get your deposit address:
 
 ```bash
 GET /v1/yativo-card/{yativoCardId}/wallet/funding-address
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ```json Response
 {
-  "address": "SoLFundingWalletAddressXXX",
-  "network": "solana",
-  "asset": "USDC",
-  "minimum_deposit": 1.00
+  "success": true,
+  "data": {
+    "address": "SoLFundingWalletAddressXXX",
+    "network": "solana",
+    "card_currency": "EUR",
+    "supported_tokens": [
+      {
+        "symbol": "USDC",
+        "name": "USD Coin",
+        "contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "decimals": 6,
+        "network": "solana"
+      }
+    ],
+    "funding_sources": {
+      "usdc_sol": {
+        "address": "SoLFundingWalletAddressXXX",
+        "network": "solana",
+        "token": "USDC",
+        "bridge_type": "automatic",
+        "bridge_time": "2-5 minutes",
+        "description": "Send USDC on Solana — automatically applied to your card"
+      },
+      "usdc_xdc": {
+        "address": "0xXDCFundingWallet...",
+        "network": "xdc",
+        "token": "USDC",
+        "bridge_type": "manual",
+        "bridge_time": "15-25 minutes",
+        "description": "No minimum. Hold to earn yield. Fund card on demand."
+      }
+    },
+    "auto_bridge": {
+      "enabled": true,
+      "source": "USDC_SOL",
+      "destination": "EUR",
+      "estimated_time": "30 seconds",
+      "minimum_trigger_amount": 5,
+      "minimum_trigger_amount_unit": "USDC",
+      "accumulates_below_minimum": true
+    },
+    "minimum_deposit": "5.00",
+    "instructions": "Send USDC (SPL) on Solana to this address. Auto-bridge starts once your available balance reaches at least 5.00 USDC; smaller deposits accumulate until the minimum is reached."
+  }
 }
 ```
 
-Send USDC to this address. Funds are automatically converted and applied to your card balance.
+Send USDC to the `usdc_sol.address` on Solana. The bridge triggers automatically once the available balance reaches `minimum_trigger_amount`.
 
 ---
 
-## 9. Manage Your Card
+## Card Management
 
 ### Freeze / Unfreeze
 
 ```bash
 POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/freeze
 POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/unfreeze
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ### View Transactions
 
 ```bash
-GET /v1/yativo-card/{yativoCardId}/transactions
+GET /v1/yativo-card/{yativoCardId}/transactions?limit=20
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ### File a Dispute
@@ -228,9 +465,11 @@ GET /v1/yativo-card/{yativoCardId}/transactions
 ```bash
 # Get reason codes first
 GET /v1/yativo-card/{yativoCardId}/transactions/dispute-reasons
+Authorization: Bearer YOUR_TOKEN
 
 # File dispute
 POST /v1/yativo-card/{yativoCardId}/transactions/{transactionId}/dispute
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
@@ -238,10 +477,33 @@ Content-Type: application/json
 }
 ```
 
+### Terminate a Card (irreversible)
+
+```bash
+POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/void
+Authorization: Bearer YOUR_TOKEN
+```
+
 ---
 
-## Flow Summary
+## Quick Reference
 
-```
-onboard → verify OTP → KYC → source of funds → phone verify → deploy wallet → create card → fund
-```
+| Step | Method | Path |
+|---|---|---|
+| Onboard | `POST` | `/v1/yativo-card/onboard` |
+| Verify OTP | `POST` | `/v1/yativo-card/{id}/verify-otp` |
+| Resend OTP | `POST` | `/v1/yativo-card/{id}/resend-otp` |
+| Get KYC link | `GET` | `/v1/yativo-card/{id}/kyc-link` |
+| Poll KYC status | `GET` | `/v1/yativo-card/{id}/kyc-status` |
+| Get SoF questions | `GET` | `/v1/yativo-card/{id}/source-of-funds` |
+| Submit SoF answers | `POST` | `/v1/yativo-card/{id}/source-of-funds` |
+| Request phone OTP | `POST` | `/v1/yativo-card/{id}/phone/request-verification` |
+| Verify phone | `POST` | `/v1/yativo-card/{id}/phone/verify` |
+| Initiate wallet deploy | `POST` | `/v1/yativo-card/{id}/safe/deploy` |
+| Poll wallet deploy | `GET` | `/v1/yativo-card/{id}/safe/deploy` |
+| Create virtual card | `POST` | `/v1/yativo-card/{id}/cards/virtual` |
+| Get deposit address | `GET` | `/v1/yativo-card/{id}/wallet/funding-address` |
+| Freeze card | `POST` | `/v1/yativo-card/{id}/cards/{cardId}/freeze` |
+| Unfreeze card | `POST` | `/v1/yativo-card/{id}/cards/{cardId}/unfreeze` |
+| Terminate card | `POST` | `/v1/yativo-card/{id}/cards/{cardId}/void` |
+| View transactions | `GET` | `/v1/yativo-card/{id}/transactions` |

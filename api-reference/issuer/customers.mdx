@@ -6,7 +6,7 @@ authMethod: "bearer"
 ---
 
 <Note>
-  **Card issuer customers are separate from WaaS customers.** This endpoint returns customers who have gone through card KYC onboarding and have a Gnosis Safe wallet for card spending. For wallet sub-accounts (deposits, withdrawals, crypto transfers), see [WaaS Customers](/yativo-crypto/customers).
+  **Card customers are separate from WaaS customers.** This endpoint returns cardholders who have completed card KYC and have an active card wallet. For wallet sub-accounts (crypto deposits/withdrawals/transfers), see [WaaS Customers](/api-reference/customers/list).
 </Note>
 
 <ParamField header="Authorization" type="string" required>
@@ -24,7 +24,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=active' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=card_created&limit=20' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -34,34 +34,30 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=a
 {
   "success": true,
   "data": {
-    "customer_cards": [
+    "customers": [
       {
         "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
         "customer_id": "6627f3a2c5d4e100123abcde",
-        "external_customer_id": "your_user_id_8821",
-        "email_masked": "pr***@yourapp.com",
-        "flow_status": "active",
-        "kyc_status": "approved",
+        "external_customer_id": "usr_8821",
+        "email": "priya@yourapp.com",
+        "flow_status": "card_created",
+        "currency": "USDCe",
         "cards_count": 1,
-        "cards": [
-          {
-            "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
-            "last_four": "0892",
-            "type": "virtual",
-            "status": "Active",
-            "is_frozen": false
-          }
-        ],
-        "created_at": "2026-04-01T10:00:00.000Z"
+        "created_at": "2026-04-25T10:00:00.000Z"
       }
     ],
-    "pagination": {
-      "page": 1,
-      "limit": 20,
-      "total": 87,
-      "total_pages": 5
-    }
+    "total": 87,
+    "page": 1,
+    "limit": 20
   }
+}
+```
+
+```json 403 Not approved
+{
+  "success": false,
+  "error": "NOT_APPROVED",
+  "message": "Card issuer program not approved"
 }
 ```
 </ResponseExample>

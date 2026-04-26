@@ -470,18 +470,18 @@ function DepositPage({ walletId }: { walletId: string }) {
 
 The card widget renders sensitive card details (PAN, CVV, expiry) inside a secure sandboxed iframe. Card data never touches your JavaScript.
 
-The widget requires an **ephemeral token** from your backend — never pass API credentials to client-side components.
+Your backend requests a `secure_view_url` and passes it to the client — never pass API credentials to client-side components.
 
 ```tsx
 import { YativoCardWidget } from "@yativo/crypto-sdk-react";
 
-// ephemeralToken must come from your backend:
-// const { token } = await sdk.cards.getEphemeralToken({ yativoCardId, cardId })
-function CardViewer({ ephemeralToken }: { ephemeralToken: string }) {
+// secureViewUrl must come from your backend:
+// const { secure_view_url } = await sdk.cards.getCardViewToken({ yativoCardId, cardId })
+function CardViewer({ secureViewUrl }: { secureViewUrl: string }) {
   return (
     <div style={{ width: 380, height: 240 }}>
       <YativoCardWidget
-        ephemeralToken={ephemeralToken}
+        secureViewUrl={secureViewUrl}
         theme={{
           background:  "#1a1a2e",
           textColor:   "#ffffff",

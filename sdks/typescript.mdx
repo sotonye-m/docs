@@ -505,46 +505,48 @@ const ibans = await sdk.standaloneIban.list({ customerId: "cust_111" });
 
 The card widget displays sensitive card details (PAN, CVV, expiry) inside a secure sandboxed iframe. Card data never touches your JavaScript.
 
-The widget requires a short-lived **ephemeral token** generated server-side — never pass your `apiSecret` to client code.
+Card data is displayed via a **Yativo-hosted secure page** — your backend requests a URL, your frontend opens it. No SDK widget to mount, no sensitive token to handle client-side.
 
-**Step 1 — Generate an ephemeral token on your server:**
+**Step 1 — Request a secure view URL on your server:**
 
 ```typescript
 // Server-side only (Node.js / backend route)
-const ephemeral = await sdk.cards.getEphemeralToken({
+const view = await sdk.cards.getCardViewToken({
   yativoCardId: "yc_abc123",
   cardId:       "card_mno345",
+  enabledViews: ["data", "pin"],
+  theme: {
+    accentColor: "#6366f1",
+    logoUrl:     "https://yourapp.com/logo.png",
+  },
 });
-// Send ephemeral.token to your frontend — it expires in ~5 minutes
+// Send view.secureViewUrl to your frontend
 ```
 
-**Step 2 — Mount the widget with the ephemeral token:**
+**Step 2 — Open the URL for the cardholder:**
 
 ```typescript
-import { YativoCardEmbed } from "@yativo/crypto-sdk";
-
-const embed = YativoCardEmbed.mount("#card-container", {
-  ephemeralToken: ephemeralTokenFromServer,   // from your backend
-  theme: {
-    background: "#1a1a2e",
-    textColor:  "#ffffff",
-    fontFamily: "Inter, sans-serif",
-  },
-  onReady: () => console.log("Card widget loaded"),
-  onError: (err) => console.error("Widget error:", err),
-});
-
-// Unmount when done
-embed.unmount();
+// In your frontend — open in iframe, WebView, or new tab
+const iframe = document.createElement("iframe");
+iframe.src    = secureViewUrlFromServer;
+iframe.width  = "420";
+iframe.height = "740";
+iframe.style.border = "0";
+document.getElementById("card-container").appendChild(iframe);
 ```
 
 ```html
-<!-- In your HTML -->
-<div id="card-container" style="width:380px;height:240px;"></div>
+<!-- Or directly in HTML -->
+<iframe
+  src="SECURE_VIEW_URL_FROM_YOUR_BACKEND"
+  width="420" height="740"
+  style="border:0;border-radius:16px;"
+  allow="clipboard-read; clipboard-write">
+</iframe>
 ```
 
 <Warning>
-  Never pass `apiKey` or `apiSecret` to the card widget in client-side code. Use the ephemeral token pattern above. See [Get Ephemeral Token](/api-reference/cards/ephemeral-token).
+  Always request a fresh URL immediately before showing it. Never cache or reuse a previous `secure_view_url`. See [Get Secure Card View URL](/api-reference/cards/customer-secure-view).
 </Warning>
 
 ---

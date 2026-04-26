@@ -1,0 +1,56 @@
+---
+title: "Check Eligibility"
+api: "GET /v1/card-issuer/eligibility"
+description: "Check whether your account has been granted access to apply for the Card Issuer Program"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<Note>
+  Eligibility is granted by a Yativo admin. If `eligible` is `false`, contact your account manager — there is no API call to change this yourself.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/eligibility' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Eligible, not yet enrolled
+{
+  "success": true,
+  "data": {
+    "eligible": true,
+    "enrolled": false,
+    "status": null
+  }
+}
+```
+
+```json 200 Already enrolled
+{
+  "success": true,
+  "data": {
+    "eligible": true,
+    "enrolled": true,
+    "status": "approved"
+  }
+}
+```
+
+```json 200 Not eligible
+{
+  "success": true,
+  "data": {
+    "eligible": false,
+    "enrolled": false,
+    "status": null
+  }
+}
+```
+</ResponseExample>

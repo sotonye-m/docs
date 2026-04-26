@@ -1,0 +1,96 @@
+---
+title: "Get Secure Card View URL"
+api: "POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/view-token"
+description: "Generate a short-lived hosted URL that displays sensitive card data (PAN, CVV, expiry, PIN) to the cardholder — no SDK integration required"
+authMethod: "bearer"
+---
+
+Yativo hosts the card data page and handles all cryptography internally. Your backend requests a URL, then passes it to your customer via your app, an email, or an iframe. The cardholder opens it in any browser or WebView.
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The card ID to display.
+</ParamField>
+
+<ParamField body="enabled_views" type="array">
+  Which panels to show. Options: `"data"` (PAN, CVV, expiry) and `"pin"`. Defaults to `["data", "pin"]`.
+</ParamField>
+
+<ParamField body="require_access_code" type="boolean">
+  If `true`, the cardholder must enter a code before card data is revealed.
+</ParamField>
+
+<ParamField body="access_code" type="string">
+  The access code the cardholder must enter. Setting this automatically enables `require_access_code`.
+</ParamField>
+
+<ParamField body="theme" type="object">
+  Customize the hosted page to match your brand.
+
+  | Field | Type | Description |
+  |---|---|---|
+  | `accent_color` | string | Hex color for buttons and highlights |
+  | `background_color` | string | Page background |
+  | `panel_color` | string | Card panel background |
+  | `text_color` | string | Primary text |
+  | `logo_url` | string | Your logo shown at the top |
+  | `border_radius` | number | Corner radius in px (8–36) |
+  | `font_family` | string | CSS font-family string |
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/cards/afeb85fe-02f8-48da-b61e-84ad02704167/view-token' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "enabled_views": ["data", "pin"],
+    "require_access_code": true,
+    "access_code": "1234",
+    "theme": {
+      "accent_color": "#6366f1",
+      "logo_url": "https://yourapp.com/logo.png"
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "secure_view_url": "https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGciOiJIUzI1NiJ9...",
+    "url": "https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGciOiJIUzI1NiJ9...",
+    "expires_at": "2026-04-25T19:09:00.000Z",
+    "last_four": "4291",
+    "card_type": "virtual",
+    "holder_name": "John Doe",
+    "enabled_views": ["data", "pin"],
+    "requires_access_code": true,
+    "theme": {
+      "accentColor": "#6366f1",
+      "backgroundColor": "#f5f1ea",
+      "panelColor": "#fffaf7",
+      "textColor": "#1e2a24",
+      "mutedColor": "#6b746e",
+      "borderRadius": 24,
+      "fontFamily": "Inter, sans-serif",
+      "logoUrl": "https://yourapp.com/logo.png"
+    },
+    "usage_notes": [
+      "Open secure_view_url in a browser, iframe, or WebView hosted on your side",
+      "The hosted page renders card data securely and does not auto-refresh",
+      "Request a fresh view URL whenever the previous one expires"
+    ]
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,41 @@
+---
+title: "Get Customer Spending Limits"
+api: "GET /v1/yativo-card/customers/{yativoCardId}/wallet/limits"
+description: "Retrieve the current daily spending limit and usage for a customer's card"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/wallet/limits' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "currency": "USD",
+    "limits": {
+      "daily": {
+        "limit": 7999,
+        "used": 0,
+        "remaining": 7999
+      },
+      "monthly": {},
+      "per_transaction": {}
+    }
+  }
+}
+```
+</ResponseExample>

@@ -34,13 +34,15 @@ interface CreateCardRequest {
   spending_limit_frequency?: "daily" | "weekly" | "monthly";
 }
 
-interface EphemeralTokenResponse {
-  ephemeral_token: string;
-  app_id: string;
-  auth_token: string;
-  card_token: string;
-  last_four: string;
+interface CardViewTokenResponse {
+  secure_view_url: string;
+  url: string;
   expires_at: string;
+  last_four: string;
+  card_type: string;
+  holder_name: string;
+  enabled_views: string[];
+  requires_access_code: boolean;
 }
 ```
 </Accordion>
@@ -142,50 +144,46 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/create-card' \
 
 ---
 
-## View Card Details and PIN (Secure iframe)
+## View Card Details and PIN (Secure hosted page)
 
-Sensitive card data — the full card number (PAN), CVV, expiry, and PIN — is never returned in standard API responses. Yativo uses a **Secure Element iframe** pattern instead.
+Sensitive card data — the full card number (PAN), CVV, expiry, and PIN — is never returned in API responses. To display it, your backend requests a **secure view URL** from Yativo. You open that URL for the cardholder in an iframe, WebView, or browser tab. Yativo hosts the page and handles all the cryptography internally — no SDK integration required on your side.
 
-<Note>
-  Card details and PIN use **separate tokens** — you must request the correct `element_type` for each view. A `cardData` token cannot display the PIN, and a `cardPin` token cannot display card numbers.
-</Note>
+**How it works:**
 
-**Quick steps:**
+1. Your backend calls `POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token`
+2. You receive a `secure_view_url`
+3. Open the URL for the cardholder (iframe, WebView, new tab)
+4. Yativo's hosted page displays PAN, CVV, expiry and/or PIN securely
 
-1. Call `POST /yativo-card/{yativoCardId}/cards/{cardId}/ephemeral-token` with `element_type: "cardData"` (or `"cardPin"` for PIN)
-2. Pass the returned token fields to the Secure Element SDK
-3. The SDK mounts a sandboxed iframe — your app never sees raw sensitive data
-
-```bash Card Data Token
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/ephemeral-token' \
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
-  -d '{ "element_type": "cardData" }'
+  -d '{
+    "enabled_views": ["data", "pin"],
+    "theme": { "accent_color": "#6366f1", "logo_url": "https://yourapp.com/logo.png" }
+  }'
 ```
 
 ```json Response
 {
-  "status": "success",
+  "success": true,
   "data": {
-    "ephemeral_token": "eph_01HX9KZMB3F7VNQP8R2WDGT4EK",
-    "app_id": "app_yativo_prod",
-    "card_token": "ct_carddata_01HX9KZMB3F7VNQP8R2W",
-    "auth_token": "auth_01HX9KZMB3F7VNQP8R2WDGT",
-    "sdk_config": {
-      "sdk_url": "https://crypto-api.yativo.com/sdk/card-display.js",
-      "allowed_element_types": ["cardData"]
-    },
-    "expires_at": "2026-03-26T12:01:00Z"
+    "secure_view_url": "https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGci...",
+    "expires_at": "2026-03-26T12:01:00Z",
+    "last_four": "4242",
+    "enabled_views": ["data", "pin"],
+    "requires_access_code": false
   }
 }
 ```
 
 <Warning>
-  Tokens expire in 60 seconds. Never log, cache, or store them. Always call this from your backend — never from the browser with your API credentials.
+  Always request a fresh URL immediately before showing card details. Never cache or reuse a previous `secure_view_url`.
 </Warning>
 
-<Card title="Full iframe integration guide" icon="window" href="/yativo-crypto/cards/secure-display">
-  Step-by-step setup for card data and PIN iframes, backend proxy pattern, CSP requirements, React/Vue/Vanilla JS examples, and security requirements.
+<Card title="Full integration guide" icon="window" href="/yativo-crypto/cards/secure-display">
+  Backend proxy pattern, iframe embedding, access code flow, theming options, React/Vue/Vanilla JS examples, and CSP requirements.
 </Card>
 
 ---

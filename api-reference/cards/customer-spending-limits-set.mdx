@@ -1,0 +1,48 @@
+---
+title: "Set Customer Spending Limit"
+api: "PUT /v1/yativo-card/customers/{yativoCardId}/wallet/limits"
+description: "Update the daily spending limit for a customer's card via Gelato relay"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<ParamField body="dailyLimit" type="number" required>
+  The new daily spending limit in USD. Must be a positive number and cannot exceed the admin-set ceiling for your program.
+</ParamField>
+
+<Note>
+  Limit changes are processed via a Gelato relay with a 3-minute delay. A `gelato_status: "ExecSuccess"` confirms the transaction was enqueued. Poll `GET /wallet/limits` after 3 minutes to confirm the updated limit is active.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/wallet/limits' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "dailyLimit": 2500 }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "current_limit": null,
+    "requested_limit": 2500,
+    "admin_limit": null,
+    "delay_seconds": 180,
+    "note": "Limit changes are processed through a delay relay. Refresh after 3 minutes to see the updated limit.",
+    "gelato_status": "ExecSuccess",
+    "enqueue_task_id": "0xa1e2123efeb346823ed82bb44a5597d0ee70fcbbbbe52f8660c4e360c5e083ed"
+  }
+}
+```
+</ResponseExample>

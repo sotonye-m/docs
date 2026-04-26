@@ -44,8 +44,8 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField body="destination_token" type="string">
-  Optional target currency (`USDC`, `EURe`, `GBPe`). Defaults to the customer's card
-  currency. Must match — mismatches return an error with the correct required token.
+  Optional target currency (`USD`, `EUR`, `GBP`). Defaults to the customer's card
+  currency. Must match — mismatches return an error with the correct required currency.
 </ParamField>
 
 <RequestExample>
@@ -71,7 +71,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
     "bridge_id": "bridge_01HX9KZMB3F7VNQ",
     "status": "initiated",
     "source": { "chain": "SOL", "amount": 201.80 },
-    "destination": { "token": "EURe", "amount": 200.00 },
+    "destination": { "token": "EUR", "amount": 200.00 },
     "pricing_mode": "receive_x",
     "estimated_time": "2-10 minutes",
     "created_at": "2026-04-01T12:00:00.000Z"
@@ -83,9 +83,9 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 {
   "success": false,
   "error": "TOKEN_MISMATCH",
-  "message": "This customer's card requires EURe. You requested USDC. Please swap to EURe first.",
-  "required_token": "EURe",
-  "requested_token": "USDC"
+  "message": "This customer's card requires EUR. You requested USD. Please swap to EUR first.",
+  "required_token": "EUR",
+  "requested_token": "USD"
 }
 ```
 

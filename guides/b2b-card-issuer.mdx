@@ -1,168 +1,291 @@
 ---
-title: "B2B Card Issuer Program"
-description: "End-to-end guide: apply for the Card Issuer Program, onboard customers, fund cards, and manage the full card lifecycle"
+title: "Card Issuer Program"
+description: "End-to-end integration guide: apply, onboard customers, complete KYC, and issue Visa virtual cards under your brand"
 ---
 
-The Card Issuer Program lets your platform issue Visa virtual cards to your own customers under your brand. Yativo handles the card infrastructure, compliance, and settlement — you own the customer experience.
+The Card Issuer Program lets your platform issue Visa virtual cards to your end customers. Yativo handles the card network, compliance, and settlement — your backend drives the entire flow via API.
 
 <Note>
-  This guide covers the **B2B Card Issuer** flow where you manage customers programmatically. Each customer goes through: onboarding → KYC → source of funds → phone verification → card creation → funding.
+  **Two API namespaces — keep them separate.**
+
+  | Namespace | Base path | Purpose |
+  |---|---|---|
+  | Card Issuer | `/v1/card-issuer/*` | Your program: apply, check status, manage customers, fund cards |
+  | Card Customer | `/v1/yativo-card/customers/*` | Individual customer lifecycle: OTP, KYC, card creation, freeze, transactions |
+
+  The `/v1/customers/*` path is **WaaS** (wallet sub-accounts for crypto deposits/withdrawals). It has nothing to do with card customers. Do not mix them up.
 </Note>
 
 ---
 
-## 1. Check Eligibility
+## Identity Model
 
-Before applying, confirm your account is eligible.
-
-```bash
-GET /v1/card-issuer/eligibility
+```
+Yativo
+  └── You (the Issuer) — authenticated via your API Bearer token
+        └── Your Customers — identified by yativo_card_id, external_customer_id, or email
 ```
 
-```json Response
-{
-  "eligible": true,
-  "enrolled": false,
-  "status": null,
-  "funding_structure": null
-}
+- **You** are a Yativo user who has been approved into the Card Issuer Program.
+- **Your Customers** are the end users of your platform who get a card. They are never authenticated directly against Yativo — all API calls come from your backend using your token.
+- `yativo_card_id` is the primary identifier for a card customer. Store it after onboarding.
+- `external_customer_id` is your own reference ID — pass it at onboarding and use it to look up the customer later without storing Yativo IDs.
+
+---
+
+## Flow Overview
+
+```
+Apply → Approved → (Fund Master Wallet)
+                        ↓
+       Onboard Customer → OTP → KYC → Source of Funds → Phone
+                        ↓
+                   Card Issued → Fund Card → Active
 ```
 
 ---
 
-## 2. Apply for the Program
+## Step 1 — Check Eligibility
 
-Submit your application with your preferred funding structure.
+Confirm your account has been granted access before applying.
+
+```bash
+GET /v1/card-issuer/eligibility
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "eligible": true,
+    "enrolled": false,
+    "status": null
+  }
+}
+```
+
+If `eligible` is `false`, contact your account manager. This gate is admin-only — there is no API call to change it yourself.
+
+---
+
+## Step 2 — Apply
 
 ```bash
 POST /v1/card-issuer/apply
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
   "funding_structure": "master_wallet",
+  "preferred_chain": "SOL",
   "iban_enabled": false
 }
 ```
 
-### Funding Structure Options
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `funding_structure` | string | Yes | `master_wallet` or `non_master` (see below) |
+| `preferred_chain` | string | No | `SOL` (default) or `XDC` — the chain your master wallet will receive funds on |
+| `iban_enabled` | boolean | No | Enable IBAN for cardholders. Defaults to `false`. |
 
-| Structure | How it works |
+### Funding Structures
+
+| Value | How it works |
 |---|---|
-| `master_wallet` | You maintain a shared balance and push funds to each customer card via the [Fund Customer](/api-reference/issuer/fund-customer) endpoint |
-| `non_master` | Each customer self-funds their own card by depositing crypto to their card wallet address |
+| `master_wallet` | You maintain a shared balance and push funds to each customer card via the Fund Customer API. Best for platforms that control card top-ups. |
+| `non_master` | Each customer receives their own deposit address and funds their card directly. Best for self-serve wallets. |
 
-Choose `master_wallet` if you want to control when and how much each customer card is funded. Choose `non_master` if customers top up their own cards independently.
+```json Response
+{
+  "success": true,
+  "message": "Application submitted. An admin will review your request.",
+  "data": {
+    "id": "69ecc05a4fc8c9c148ed1a9a",
+    "status": "pending",
+    "funding_structure": "master_wallet",
+    "preferred_chain": "SOL"
+  }
+}
+```
 
 ---
 
-## 3. Await Approval
+## Step 3 — Check Program Status
 
-Applications are reviewed within 1–2 business days. Poll the status endpoint:
+Applications are reviewed within 1–2 business days. Poll until `status` is `approved`.
 
 ```bash
 GET /v1/card-issuer/status
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ```json Approved
 {
-  "enrolled": true,
-  "status": "approved",
-  "funding_structure": "master_wallet",
-  "max_cards": 500,
-  "daily_funding_limit": 50000,
-  "monthly_funding_limit": 500000
-}
-```
-
-Proceed once `status` is `approved`.
-
----
-
-## 4. Fund Your Master Wallet (master_wallet programs only)
-
-Retrieve your master wallet deposit addresses:
-
-```bash
-GET /v1/card-issuer/master-wallets
-```
-
-```json Response
-{
-  "wallets": {
-    "sol": {
-      "address": "SoLMasterWalletAddress...",
-      "balance": 0.00
+  "success": true,
+  "data": {
+    "enrolled": true,
+    "status": "approved",
+    "funding_structure": "master_wallet",
+    "preferred_chain": "SOL",
+    "enabled_chains": ["SOL"],
+    "iban_enabled": false,
+    "card_reissue_enabled": true,
+    "master_wallets": {
+      "sol": {
+        "address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "balance": 0,
+        "last_balance_check": null
+      },
+      "usdc": {
+        "balance": 0,
+        "last_balance_check": null
+      },
+      "eur": {
+        "balance": 0,
+        "last_balance_check": null
+      },
+      "gbp": {
+        "balance": 0,
+        "last_balance_check": null
+      }
     },
-    "xdc": {
-      "address": "0xXDCMasterWalletAddress",
-      "balance": 0.00
+    "stats": {
+      "total_cards_issued": 0,
+      "total_funded_amount": 0,
+      "total_bridge_fees_paid": 0
+    },
+    "limits": {
+      "max_cards": 1000,
+      "daily_funding_limit": 50000,
+      "monthly_funding_limit": 500000
     }
   }
 }
 ```
 
-Deposit USDC to the `sol.address` (Solana network) or `xdc.address` (XDC network). Once received, the balance will appear under `usdc`, `eur`, or `gbp` after internal processing.
+<Note>
+  On approval, Yativo provisions your master wallet set:
 
-### Swap Currencies if Needed
+  - **SOL deposit address** (`sol.address`) — send USDC on Solana here to top up your USD balance.
+  - **USD balance** — funded automatically when your SOL deposit confirms.
+  - **EUR balance** — funded by swapping from USD.
+  - **GBP balance** — funded by swapping from USD.
 
-If your customers are in the EU or UK, their cards will be funded in EUR or GBP respectively. Swap your USDC balance before funding:
-
-```bash
-POST /v1/card-issuer/master-wallets/swap
-Content-Type: application/json
-
-{
-  "from_token": "USDC",
-  "to_token": "EUR",
-  "amount": 1000
-}
-```
-
-Card currency is determined automatically by country:
-- **UK customers** → GBP card
-- **Brazil customers** → USD card
-- **All other countries** → EUR card
+  Balances update in real time. You never interact with the underlying settlement infrastructure directly.
+</Note>
 
 ---
 
-## 5. Onboard a Customer
+## Step 4 — Fund Your Master Wallet *(master_wallet programs only)*
 
-Register a new customer for card issuance. Only `email` is required. Optionally pass your own reference so you can look up the customer later using your own system IDs.
+Get your current balances and deposit addresses:
 
 ```bash
-POST /v1/yativo-card/customers/onboard
+GET /v1/card-issuer/master-wallets
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "wallets": {
+      "sol": {
+        "address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "balance": 0,
+        "last_balance_check": null
+      },
+      "usdc": { "balance": 0 },
+      "eur":  { "balance": 0 },
+      "gbp":  { "balance": 0 }
+    }
+  }
+}
+```
+
+Send USDC on Solana to `sol.address`. Once the deposit confirms, your `usdc` balance increases automatically. Swap to `eur` or `gbp` before funding customers who hold those card currencies.
+
+### Swap Currencies
+
+If your customers are in the EU or UK, swap USDC into the correct card currency before funding:
+
+```bash
+POST /v1/card-issuer/master-wallets/swap
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
-  "email": "priya@yourapp.com",
-  "external_customer_id": "your_internal_user_id_8821"
+  "from_token": "USD",
+  "to_token": "EUR",
+  "amount": 1000
 }
 ```
 
 ```json Response
 {
   "success": true,
-  "message": "Customer onboarding initiated. OTP sent to email.",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
-    "customer_id": "6627f3a2c5d4e100123abcde",
-    "email": "priya@yourapp.com",
-    "flow_status": "otp_requested",
-    "next_step": "verify_otp"
+    "swap_id": "swap_01HX...",
+    "status": "initiated",
+    "from": { "token": "USD", "amount": 1000 },
+    "to":   { "token": "EUR" },
+    "estimated_time": "2-10 minutes"
   }
 }
 ```
 
-Store the `customer_id` — this is the Yativo-generated identifier used in all subsequent funding and management calls.
-
-An OTP is automatically sent to the customer's email. Prompt them to check their inbox.
+Card currency is determined by the cardholder's country: **UK** → GBP, **EU** → EUR, **all others** → USD.
 
 ---
 
-## 6. Verify Customer OTP
+## Step 5 — Onboard a Customer
+
+Start the onboarding flow for each end customer. Only `email` is required.
+
+```bash
+POST /v1/yativo-card/customers/onboard
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+
+{
+  "email": "priya@yourapp.com",
+  "external_customer_id": "usr_8821"
+}
+```
+
+```json Response 201
+{
+  "success": true,
+  "message": "Customer card onboarding initiated. Verification code sent to customer email.",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "customer_id": "6627f3a2c5d4e100123abcde",
+    "external_customer_id": "usr_8821",
+    "email": "priya@yourapp.com",
+    "next_step": "verify_otp",
+    "otp_expires_in_seconds": 600
+  }
+}
+```
+
+<Warning>
+  Store **`yativo_card_id`** — it is the primary path parameter in every subsequent customer call. It is different from `customer_id`.
+
+  Do **not** use your own issuer email as a customer email. Each customer must have a unique email address.
+</Warning>
+
+A 6-digit OTP is sent to the customer's email automatically.
+
+---
+
+## Step 6 — Verify OTP
+
+Collect the OTP from your customer and submit it:
 
 ```bash
 POST /v1/yativo-card/customers/{yativoCardId}/verify-otp
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
@@ -170,117 +293,173 @@ Content-Type: application/json
 }
 ```
 
-```json Response
+```json Response 200
 {
-  "flow_status": "otp_verified",
-  "next_step": "kyc_link"
+  "success": true,
+  "message": "Email verified successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "flow_status": "otp_verified",
+    "next_step": "kyc_link"
+  }
 }
+```
+
+| Error code | Meaning |
+|---|---|
+| `OTP_EXPIRED` | 10-minute window passed — call `resend-otp` |
+| `OTP_VERIFICATION_FAILED` | Wrong code |
+| `OTP_ATTEMPTS_EXCEEDED` | 5 failed attempts — customer must restart onboarding |
+
+### Resend OTP
+
+```bash
+POST /v1/yativo-card/customers/{yativoCardId}/resend-otp
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ---
 
-## 7. Start KYC Verification
+## Step 7 — Get KYC Link
 
-Generate a KYC verification link and share it with the customer:
+Generate a verification URL for this customer:
 
 ```bash
 GET /v1/yativo-card/customers/{yativoCardId}/kyc-link
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ```json Response
 {
-  "kyc_url": "https://kyc.yativo.com/verify?token=...",
-  "next_step": "kyc_status",
-  "instructions": "Direct the customer to open this URL to upload their government ID and complete liveness check"
+  "success": true,
+  "message": "KYC link retrieved",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "kyc_url": "https://kyc.yativo.com/verify?token=...",
+    "sumsub_sdk_token": "eyJ...",
+    "next_step": "kyc_status"
+  }
 }
 ```
 
-Open `kyc_url` in your app (embed in an iframe or redirect). The customer uploads their government-issued ID and completes a liveness check.
+Redirect the customer to `kyc_url`, or embed the KYC flow in your app using the Sumsub SDK with `sumsub_sdk_token`. Add `?refresh=true` to generate a new link if the existing one has expired.
 
 ---
 
-## 8. Poll KYC Status
-
-After the customer completes their ID check, poll for the result:
+## Step 8 — Poll KYC Status
 
 ```bash
 GET /v1/yativo-card/customers/{yativoCardId}/kyc-status
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ```json Approved
 {
-  "kyc_status": "approved",
-  "terms_accepted": true,
-  "next_step": "create_virtual_card"
+  "success": true,
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "kyc_status": "approved",
+    "flow_status": "kyc_completed",
+    "terms_accepted": true,
+    "next_step": "source_of_funds"
+  }
 }
 ```
 
+```json Pending
+{
+  "success": true,
+  "data": {
+    "kyc_status": "pending",
+    "flow_status": "kyc_initiated",
+    "next_step": "kyc_status"
+  }
+}
+```
+
+```json Rejected
+{
+  "success": true,
+  "data": {
+    "kyc_status": "rejected",
+    "flow_status": "kyc_initiated",
+    "rejection_reason": "Document not readable",
+    "next_step": "kyc_link"
+  }
+}
+```
+
+Poll every 10 seconds for up to 10 minutes. When KYC is rejected, fetch a new `kyc-link` and redirect the customer to retry.
+
 <Tip>
-  When KYC is first approved, Yativo automatically:
-  - Accepts card terms on behalf of the customer
-  - Provisions the customer's card-linked wallet in the background
-
-  You do **not** need to call any wallet deployment endpoint. The wallet is ready within ~60 seconds of KYC approval.
+  When KYC transitions to `approved`, Yativo automatically provisions the customer's card wallet in the background. You do not need to call any wallet deployment endpoint — move directly to Source of Funds.
 </Tip>
-
-**Recommended polling interval:** every 10 seconds for up to 10 minutes.
 
 ---
 
-## 9. Collect Source of Funds
+## Step 9 — Source of Funds
 
-After KYC approval, collect the customer's source of funds declaration. First retrieve the questions:
+### Get questions
 
 ```bash
 GET /v1/yativo-card/customers/{yativoCardId}/source-of-funds
+Authorization: Bearer YOUR_TOKEN
 ```
 
-```json Questions
+```json Response
 {
-  "questions": [
-    {
-      "question": "EMPLOYMENT_STATUS",
-      "label": "What is your employment status?",
-      "options": ["EMPLOYED", "SELF_EMPLOYED", "UNEMPLOYED", "STUDENT", "RETIRED"]
-    },
-    {
-      "question": "SOURCE_OF_INCOME",
-      "label": "What is your primary source of income?",
-      "options": ["SALARY", "BUSINESS_INCOME", "INVESTMENT", "PENSION", "OTHER"]
-    }
-  ]
+  "success": true,
+  "data": {
+    "questions": [
+      {
+        "question": "EMPLOYMENT_STATUS",
+        "label": "What is your employment status?",
+        "options": ["EMPLOYED", "SELF_EMPLOYED", "UNEMPLOYED", "STUDENT", "RETIRED"]
+      },
+      {
+        "question": "SOURCE_OF_INCOME",
+        "label": "What is your primary source of income?",
+        "options": ["SALARY", "BUSINESS_INCOME", "INVESTMENT", "PENSION", "OTHER"]
+      }
+    ]
+  }
 }
 ```
 
-Display these questions to the customer and collect their answers, then submit:
+### Submit answers
 
 ```bash
 POST /v1/yativo-card/customers/{yativoCardId}/source-of-funds
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
   "answers": [
-    {"question": "EMPLOYMENT_STATUS", "answer": "EMPLOYED"},
-    {"question": "SOURCE_OF_INCOME", "answer": "SALARY"}
+    { "question": "EMPLOYMENT_STATUS", "answer": "EMPLOYED" },
+    { "question": "SOURCE_OF_INCOME",  "answer": "SALARY" }
   ]
 }
 ```
 
 ```json Response
 {
-  "status": "completed",
-  "next_step": "Verify phone number"
+  "success": true,
+  "data": {
+    "status": "completed",
+    "next_step": "phone_verification"
+  }
 }
 ```
 
 ---
 
-## 10. Verify Phone Number
+## Step 10 — Phone Verification
 
-### Request OTP
+### Request SMS code
 
 ```bash
 POST /v1/yativo-card/customers/{yativoCardId}/phone/request-verification
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
@@ -288,10 +467,18 @@ Content-Type: application/json
 }
 ```
 
-### Verify OTP
+```json Response
+{
+  "success": true,
+  "message": "Verification code sent"
+}
+```
+
+### Verify SMS code
 
 ```bash
 POST /v1/yativo-card/customers/{yativoCardId}/phone/verify
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
@@ -301,225 +488,572 @@ Content-Type: application/json
 
 ```json Response
 {
-  "is_verified": true,
-  "next_step": "Create virtual card"
-}
-```
-
----
-
-## 11. Create Virtual Card
-
-All prerequisites are now complete. Issue the card:
-
-```bash
-POST /v1/yativo-card/customers/{yativoCardId}/cards/virtual
-```
-
-```json Response
-{
-  "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
-  "card_type": "virtual",
-  "status": "active",
-  "activated_at": "2026-04-01T12:30:00.000Z",
-  "funding_wallet": {
-    "address": "SoLFundingWalletAddressXXX",
-    "network": "solana",
-    "asset": "USDC"
+  "success": true,
+  "data": {
+    "is_verified": true,
+    "next_step": "create_virtual_card"
   }
 }
 ```
 
-Use [Get Card View Token](/api-reference/cards/ephemeral-token) to securely display the full card number and CVV to the customer in your UI.
+---
+
+## Step 11 — Create Virtual Card
+
+All prerequisites are complete. Issue the card:
+
+```bash
+POST /v1/yativo-card/customers/{yativoCardId}/cards/virtual
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response 201
+{
+  "success": true,
+  "data": {
+    "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
+    "card_type": "virtual",
+    "status": "active",
+    "last_four": "0892",
+    "activated_at": "2026-04-25T14:35:41.418Z"
+  }
+}
+```
+
+To show the customer their full card number and CVV, request a secure view URL (see [Secure Card View](#sensitive-card-data) below) and open it in an iframe or WebView.
 
 ---
 
-## 12. Fund the Card
+## Step 12 — Fund the Card
 
-### Option A: Push from Master Wallet (master_wallet programs)
+### Option A: Push from Master Wallet *(master_wallet programs)*
 
-Use any identifier — `customer_id`, `card_id`, `external_id`, or `email`:
+You can identify the customer by any of: `customer_id`, `card_id`, `external_id`, `email`, or `yativo_card_id`.
 
 ```bash
 POST /v1/card-issuer/fund-customer
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
-  "external_id": "your_internal_user_id_8821",
+  "external_id": "usr_8821",
   "amount": 100,
   "source_chain": "SOL",
   "pricing_mode": "receive_x"
 }
 ```
 
-```json Response
+```json Response 200
 {
-  "bridge_id": "bridge_01HX9KZMB3F7VNQ",
-  "status": "initiated",
-  "source": { "chain": "SOL", "amount": 101.80 },
-  "destination": { "token": "EURe", "amount": 100.00 },
-  "estimated_time": "2-10 minutes"
+  "success": true,
+  "message": "Funding initiated for customer",
+  "data": {
+    "bridge_id": "bridge_01HX9KZM",
+    "status": "initiated",
+    "source": {
+      "chain": "SOL",
+      "amount": 101.80,
+      "wallet": "5wQsqNwqu5yTXb7aDG4eLdGYLo1pXXArMTEoGb4KPDoM"
+    },
+    "destination": {
+      "token": "EUR"
+    },
+    "pricing_mode": "receive_x",
+    "estimated_output": "100.00",
+    "estimated_time": "2-10 minutes"
+  }
 }
 ```
 
-`pricing_mode: "receive_x"` ensures the customer receives exactly the specified amount. Use `"send_x"` to debit exactly that amount from your master wallet instead.
+**`pricing_mode`:**
+- `receive_x` — the customer receives exactly `amount`. Yativo deducts slightly more from your master wallet to cover fees.
+- `send_x` *(default)* — exactly `amount` is debited from your master wallet. The customer receives less after fees.
 
-### Option B: Customer Self-Funds via Deposit Address
+**`TOKEN_MISMATCH` error:** if you fund with the wrong currency for a customer's card region, the API returns this error with the exact token their card requires. Swap your master wallet balance first.
 
-Get the customer's card wallet deposit address:
+### Option B: Customer Self-Funds via Deposit Address *(non_master programs)*
+
+Get the customer's deposit address:
 
 ```bash
 GET /v1/yativo-card/customers/{yativoCardId}/wallet/funding-address
+Authorization: Bearer YOUR_TOKEN
 ```
 
 ```json Response
 {
-  "address": "SoLFundingWalletAddress...",
-  "network": "solana",
-  "asset": "USDC",
-  "minimum_deposit": 1.00
+  "success": true,
+  "data": {
+    "address": "3vQ7GqN8kKTb2mFCdHrE8TvBcJgR2XpLmWqNzYsKdPh",
+    "network": "solana",
+    "card_currency": "USDCe",
+    "minimum_deposit": "5.00",
+    "funding_sources": {
+      "usdc_sol": {
+        "address": "3vQ7GqN8kKTb2mFCdHrE8TvBcJgR2XpLmWqNzYsKdPh",
+        "network": "solana",
+        "token": "USDC",
+        "contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "bridge_type": "automatic",
+        "bridge_time": "2-5 minutes",
+        "description": "Send USDC on Solana — automatically applied to your card"
+      },
+      "usdc_xdc": {
+        "address": "0x742d35Cc6634C0532925a3b8D4C9b98E8A1f4bC2",
+        "network": "xdc",
+        "token": "USDC",
+        "contract": "0xfA2958CB79b0491CC627c1557F441eF849Ca8eb1",
+        "bridge_type": "manual",
+        "bridge_time": "15-25 minutes",
+        "description": "No minimum. Hold to earn yield. Fund card on demand.",
+        "balance": { "total": 0, "available": 0, "held": 0 }
+      }
+    },
+    "auto_bridge": {
+      "enabled": true,
+      "source": "USDC_SOL",
+      "destination": "USDC",
+      "estimated_time": "2-5 minutes",
+      "minimum_trigger_amount": 5,
+      "minimum_trigger_amount_unit": "USDC",
+      "accumulates_below_minimum": true
+    },
+    "instructions": "Send USDC (SPL) on Solana to this address. Auto-bridge starts once your available balance reaches at least 5.00 USDC."
+  }
 }
 ```
 
-The customer sends USDC to this address. Funds are automatically converted and applied to their card balance.
-
 ---
 
-## 13. Card Management
+## Card Management
 
-### Freeze a Card
+### List all customers
 
-Temporarily block all transactions. The customer cannot make purchases until unfrozen.
+```bash
+GET /v1/card-issuer/customers?status=card_created&page=1&limit=20
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "customers": [
+      {
+        "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+        "customer_id": "6627f3a2c5d4e100123abcde",
+        "external_customer_id": "usr_8821",
+        "email": "priya@yourapp.com",
+        "flow_status": "card_created",
+        "currency": "USDCe",
+        "cards_count": 1,
+        "created_at": "2026-04-25T10:00:00.000Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+
+Filter by `flow_status`: `otp_requested`, `otp_verified`, `kyc_initiated`, `kyc_completed`, `card_created`, `active`.
+
+### Look up a customer
+
+Find a customer by any identifier:
+
+```bash
+GET /v1/card-issuer/lookup-customer?external_id=usr_8821
+Authorization: Bearer YOUR_TOKEN
+```
+
+Supported query parameters (pass exactly one):
+
+| Param | Description |
+|---|---|
+| `yativo_card_id` | Yativo's internal card customer ID |
+| `customer_id` | MongoDB customer ObjectId (or `yativo_card_id` as fallback) |
+| `card_id` | Card ID from card creation |
+| `external_id` | Your reference ID set at onboarding |
+| `email` | Customer email address |
+| `id` | MongoDB `_id` of the customer record |
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "external_id": "usr_8821",
+    "email": "priya@yourapp.com",
+    "flow_status": "card_created",
+    "currency": "USDCe",
+    "token": "USDC",
+    "safe_deployed": true,
+    "cards_count": 1,
+    "created_at": "2026-04-25T10:00:00.000Z"
+  }
+}
+```
+
+### Freeze / Unfreeze a Card
 
 ```bash
 POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/freeze
+Authorization: Bearer YOUR_TOKEN
 ```
 
-### Unfreeze a Card
+```json Response
+{
+  "success": true,
+  "message": "Card frozen successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
+    "is_frozen": true,
+    "frozen_at": "2026-04-25T19:07:14.917Z"
+  }
+}
+```
 
 ```bash
 POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/unfreeze
+Authorization: Bearer YOUR_TOKEN
 ```
 
-### Terminate a Card
-
-Permanently close the card. This is irreversible — the customer must go through card creation again for a new card.
-
-```bash
-POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/void
+```json Response
+{
+  "success": true,
+  "message": "Card unfrozen successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
+    "is_frozen": false,
+    "unfrozen_at": "2026-04-25T19:07:20.065Z"
+  }
+}
 ```
 
----
-
-## 14. Transactions
-
-List all transactions for a customer's cards:
+### Get Card Transactions
 
 ```bash
-GET /v1/yativo-card/customers/{yativoCardId}/transactions?limit=20&status=completed
+GET /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/transactions?limit=20
+Authorization: Bearer YOUR_TOKEN
 ```
 
-### File a Dispute
-
-First retrieve valid dispute reason codes:
-
-```bash
-GET /v1/yativo-card/customers/{yativoCardId}/transactions/dispute-reasons
+```json Response
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "kind": "Payment",
+        "transaction_type": "Purchase",
+        "merchant_name": "CloudSoft Inc",
+        "merchant_country": "United States",
+        "merchant_country_code": "US",
+        "mcc_code": "5734",
+        "mcc_description": "Software",
+        "mcc_category": "Electronics & Tech",
+        "billing_amount": 13.72,
+        "billing_currency": "USD",
+        "billing_formatted": "$13.72",
+        "transaction_amount": 13.72,
+        "transaction_currency": "USD",
+        "status": "approved",
+        "status_label": "Approved",
+        "is_pending": false,
+        "card_token": "849301752",
+        "authorized_at": "2026-04-22T15:03:31.441Z",
+        "cleared_at": "2026-04-24T15:36:51.331Z"
+      }
+    ]
+  }
+}
 ```
 
-Then file the dispute:
+### Spending Limits
+
+Get the current spending limit for a customer's card:
 
 ```bash
-POST /v1/yativo-card/customers/{yativoCardId}/transactions/{transactionId}/dispute
+GET /v1/yativo-card/customers/{yativoCardId}/wallet/limits
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "currency": "USD",
+    "limits": {
+      "daily": {
+        "limit": 7999,
+        "used": 0,
+        "remaining": 7999
+      },
+      "monthly": {},
+      "per_transaction": {}
+    }
+  }
+}
+```
+
+Update the daily spending limit:
+
+```bash
+PUT /v1/yativo-card/customers/{yativoCardId}/wallet/limits
+Authorization: Bearer YOUR_TOKEN
 Content-Type: application/json
 
 {
-  "reason_code": "NOT_AS_DESCRIBED",
-  "description": "Item received was different from what was shown"
+  "dailyLimit": 2500
 }
 ```
 
----
-
-## 15. Webhook Notifications
-
-Subscribe to webhook events to receive real-time updates for card activity. See [Webhook Integration](/guides/webhook-integration) for full setup instructions.
-
-### Card Transaction Events
-
-| Event | Description |
-|---|---|
-| `card.transaction.approved` | Card transaction approved |
-| `card.transaction.declined` | Card transaction declined |
-| `card.transaction.completed` | Settlement completed |
-| `card.transaction.refunded` | Refund applied to card |
-| `card.transaction.dispute.filed` | Dispute submitted |
-
-### Card Funding Events
-
-| Event | Description |
-|---|---|
-| `card.funded` | Card wallet funding completed |
-| `card.funding.failed` | Funding transfer failed |
-| `card.funding.pending` | Funding in progress |
-
-### Customer Lifecycle Events
-
-| Event | Description |
-|---|---|
-| `customer.kyc.approved` | KYC verification passed — wallet auto-provisioned |
-| `customer.kyc.rejected` | KYC verification failed |
-| `customer.card.created` | Virtual card issued |
-| `customer.card.frozen` | Card frozen by issuer |
-| `customer.card.terminated` | Card permanently closed |
-
-### Example Webhook Payload
-
-```json Card transaction approved
+```json Response
 {
-  "event": "card.transaction.approved",
-  "timestamp": "2026-04-01T14:22:11.000Z",
+  "success": true,
   "data": {
-    "transaction_id": "txn_01HX9XYZ",
-    "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
-    "customer_id": "6627f3a2c5d4e100123abcde",
-    "external_customer_id": "your_internal_user_id_8821",
-    "merchant_name": "Coffee Shop NYC",
-    "amount": 4.50,
-    "currency": "EUR",
-    "status": "approved"
+    "current_limit": null,
+    "requested_limit": 2500,
+    "admin_limit": null,
+    "delay_seconds": 180,
+    "note": "Limit changes are processed through a delay relay. Refresh after 3 minutes to see the updated limit.",
+    "gelato_status": "ExecSuccess",
+    "enqueue_task_id": "0xb3f4901cd12347834fe93cc55b6608e1ff81gddd63g9d5771e5b5f161d6f194fe"
   }
 }
 ```
 
-```json Card funded
+<Note>
+  Limit changes go through a Gelato relay with a 3-minute processing delay. The `gelato_status: "ExecSuccess"` confirms the transaction was enqueued. Poll `GET /wallet/limits` after 3 minutes to confirm the new limit is active.
+</Note>
+
+---
+
+## Secure Card View
+
+To let a cardholder view their full card details (PAN, CVV, expiry, PIN), your backend requests a **secure view URL** from Yativo. You send that URL to your customer — via your app, an email link, or an in-app iframe. Yativo hosts the page and handles all cryptography internally. Your backend never sees or handles raw card data.
+
+### How it works
+
+```
+Your backend  →  POST view-token  →  gets secure_view_url
+Your app      →  opens URL in iframe / WebView / browser tab
+Yativo page   →  renders secure card data page
+Cardholder    →  sees PAN, CVV, expiry (and optionally PIN)
+```
+
+No SDK integration is required on your side. Yativo handles all the cryptography and secure rendering.
+
+### Request a secure view URL
+
+```bash
+POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/view-token
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+
 {
-  "event": "card.funded",
-  "timestamp": "2026-04-01T12:08:42.000Z",
-  "data": {
-    "bridge_id": "bridge_01HX9KZMB3F7VNQ",
-    "customer_id": "6627f3a2c5d4e100123abcde",
-    "external_customer_id": "your_internal_user_id_8821",
-    "amount_funded": 100.00,
-    "currency": "EUR",
-    "status": "completed"
+  "enabled_views": ["data", "pin"],
+  "require_access_code": true,
+  "access_code": "1234",
+  "theme": {
+    "accent_color": "#6366f1",
+    "background_color": "#ffffff",
+    "logo_url": "https://yourapp.com/logo.png",
+    "border_radius": 12
   }
 }
 ```
 
----
-
-## Quick Reference — Onboarding Checklist
-
-| Step | Endpoint | Trigger |
+| Field | Type | Description |
 |---|---|---|
-| Onboard | `POST /customers/onboard` | Your backend |
-| Verify email OTP | `POST /customers/{id}/verify-otp` | Customer submits OTP |
-| Get KYC link | `GET /customers/{id}/kyc-link` | After OTP verified |
-| Poll KYC status | `GET /customers/{id}/kyc-status` | After customer finishes ID check |
-| Get SoF questions | `GET /customers/{id}/source-of-funds` | After KYC approved |
-| Submit SoF answers | `POST /customers/{id}/source-of-funds` | Customer answers questions |
-| Request phone OTP | `POST /customers/{id}/phone/request-verification` | After SoF submitted |
-| Verify phone OTP | `POST /customers/{id}/phone/verify` | Customer submits SMS code |
-| Create card | `POST /customers/{id}/cards/virtual` | After phone verified |
-| Fund card | `POST /card-issuer/fund-customer` | Anytime after card created |
+| `enabled_views` | array | Which panels to show: `"data"` (PAN/CVV/expiry), `"pin"`. Defaults to both. |
+| `require_access_code` | boolean | Require the cardholder to enter a code before the card data unlocks. |
+| `access_code` | string | The code the cardholder must enter (set by you, shared via your app). |
+| `theme.accent_color` | string | Hex color for buttons and highlights. |
+| `theme.background_color` | string | Page background color. |
+| `theme.panel_color` | string | Card panel background color. |
+| `theme.text_color` | string | Primary text color. |
+| `theme.logo_url` | string | Your logo shown at the top of the page. |
+| `theme.border_radius` | number | Corner radius in px (8–36). |
+| `theme.font_family` | string | CSS font-family string. |
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "secure_view_url": "https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGci...",
+    "expires_at": "2026-04-25T19:09:00.000Z",
+    "last_four": "4291",
+    "card_type": "virtual",
+    "holder_name": "John Doe",
+    "enabled_views": ["data", "pin"],
+    "requires_access_code": true,
+    "usage_notes": [
+      "Open secure_view_url in a browser, iframe, or WebView hosted on your side",
+      "The hosted page renders card data securely and does not auto-refresh",
+      "Request a fresh view URL whenever the previous one expires"
+    ]
+  }
+}
+```
+
+Open `secure_view_url` in a browser tab, iframe, or mobile WebView. The URL is short-lived (60 seconds by default). Request a new one each time the customer wants to view their card.
+
+---
+
+## Deposits
+
+View all funding deposits into your issuer program (SOL auto-funding and XDC manual deposits):
+
+```bash
+GET /v1/card-issuer/deposits?page=1&limit=20
+Authorization: Bearer YOUR_TOKEN
+```
+
+Filter by `status`: `pending`, `auto_funding`, `awaiting_manual`, `funding`, `funded`, `failed`.
+Filter by `chain`: `SOL`, `XDC`.
+
+---
+
+## Funding History
+
+View all card funding transactions you have initiated for customers:
+
+```bash
+GET /v1/card-issuer/funding-history?page=1&limit=20
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "id": "6627f3a2...",
+        "bridge_id": "bridge_01HX9KZM",
+        "source_chain": "SOL",
+        "source_amount": 101.80,
+        "destination_token": "EUR",
+        "destination_amount": 100.00,
+        "status": "completed",
+        "funding_type": "master_wallet_fund",
+        "customer_id": "6627f3a2c5d4e100123abcde",
+        "created_at": "2026-04-25T12:00:00.000Z",
+        "completed_at": "2026-04-25T12:08:42.000Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+
+---
+
+## Check Progress Anytime
+
+```bash
+GET /v1/yativo-card/customers/{yativoCardId}/progress
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "flow_status": "card_created",
+    "current_step": 5,
+    "progress_percentage": 100,
+    "steps": [
+      { "step": 1, "name": "Initiate Program",  "completed": true },
+      { "step": 2, "name": "Verify Email",       "completed": true },
+      { "step": 3, "name": "Start KYC",          "completed": true },
+      { "step": 4, "name": "Complete KYC",        "completed": true },
+      { "step": 5, "name": "Create Card",         "completed": true }
+    ],
+    "kyc_status": "approved",
+    "card_status": "active"
+  }
+}
+```
+
+---
+
+## Delete an Incomplete Customer Record
+
+If you created a customer by mistake (e.g. wrong email) and the card has not yet been issued:
+
+```bash
+DELETE /v1/card-issuer/customers/{yativoCardId}
+Authorization: Bearer YOUR_TOKEN
+```
+
+This endpoint is blocked once the customer reaches `card_created` or `active` status.
+
+---
+
+## Webhook Events
+
+Subscribe to webhooks for real-time events. See [Webhook Integration](/guides/webhook-integration).
+
+| Event | Trigger |
+|---|---|
+| `customer.kyc.approved` | KYC passed — wallet is being provisioned |
+| `customer.kyc.rejected` | KYC failed — redirect customer to retry |
+| `customer.card.created` | Card issued successfully |
+| `card.transaction.approved` | Purchase approved |
+| `card.transaction.declined` | Purchase declined |
+| `card.transaction.completed` | Settlement complete |
+| `card.funded` | Funding transfer completed |
+| `card.funding.failed` | Funding transfer failed |
+
+---
+
+## Quick Reference
+
+### Issuer Program (`/v1/card-issuer/*`)
+
+| Action | Method | Path |
+|---|---|---|
+| Check eligibility | `GET` | `/v1/card-issuer/eligibility` |
+| Apply | `POST` | `/v1/card-issuer/apply` |
+| Check program status | `GET` | `/v1/card-issuer/status` |
+| Get master wallet balances | `GET` | `/v1/card-issuer/master-wallets` |
+| Swap master wallet currencies | `POST` | `/v1/card-issuer/master-wallets/swap` |
+| List customers | `GET` | `/v1/card-issuer/customers` |
+| Look up customer | `GET` | `/v1/card-issuer/lookup-customer` |
+| Fund a customer card | `POST` | `/v1/card-issuer/fund-customer` |
+| Funding history | `GET` | `/v1/card-issuer/funding-history` |
+| Deposits list | `GET` | `/v1/card-issuer/deposits` |
+| Delete incomplete customer | `DELETE` | `/v1/card-issuer/customers/{id}` |
+
+### Card Customer Lifecycle (`/v1/yativo-card/customers/*`)
+
+| Action | Method | Path |
+|---|---|---|
+| Onboard customer | `POST` | `/v1/yativo-card/customers/onboard` |
+| Verify OTP | `POST` | `/v1/yativo-card/customers/{id}/verify-otp` |
+| Resend OTP | `POST` | `/v1/yativo-card/customers/{id}/resend-otp` |
+| Get KYC link | `GET` | `/v1/yativo-card/customers/{id}/kyc-link` |
+| Poll KYC status | `GET` | `/v1/yativo-card/customers/{id}/kyc-status` |
+| Get SoF questions | `GET` | `/v1/yativo-card/customers/{id}/source-of-funds` |
+| Submit SoF answers | `POST` | `/v1/yativo-card/customers/{id}/source-of-funds` |
+| Request phone OTP | `POST` | `/v1/yativo-card/customers/{id}/phone/request-verification` |
+| Verify phone OTP | `POST` | `/v1/yativo-card/customers/{id}/phone/verify` |
+| Create virtual card | `POST` | `/v1/yativo-card/customers/{id}/cards/virtual` |
+| Get deposit address | `GET` | `/v1/yativo-card/customers/{id}/wallet/funding-address` |
+| Check onboarding progress | `GET` | `/v1/yativo-card/customers/{id}/progress` |
+| Freeze card | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/freeze` |
+| Unfreeze card | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/unfreeze` |
+| Terminate card | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/void` |
+| Get transactions | `GET` | `/v1/yativo-card/customers/{id}/cards/{cardId}/transactions` |
+| Get spending limits | `GET` | `/v1/yativo-card/customers/{id}/wallet/limits` |
+| Set spending limit | `PUT` | `/v1/yativo-card/customers/{id}/wallet/limits` |
+| Get secure card view URL | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/view-token` |
+| Get customer profile | `GET` | `/v1/yativo-card/customers/{id}/profile` |
