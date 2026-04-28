@@ -439,7 +439,7 @@
           {
             "group": "Yativo Card (Own Account)",
             "pages": [
-              "api-reference/cards/onboard",
+              "api-reference/cards/own-onboard",
               "api-reference/cards/kyc-status",
               "api-reference/cards/accept-terms",
               "api-reference/cards/deploy-wallet",
@@ -468,6 +468,7 @@
           {
             "group": "Card Customer — Onboarding",
             "pages": [
+              "api-reference/cards/create-customer",
               "api-reference/cards/customer-kyc-status",
               "api-reference/cards/kyc-link",
               "api-reference/cards/verify-otp",
