@@ -15,7 +15,7 @@ authMethod: "bearer"
 </Note>
 
 <ParamField body="customer_id" type="string">
-  Yativo-generated customer ID returned at onboarding.
+  The `customer_id` from the [List Customers](/api-reference/issuer/customers) or [Look Up Customer](/api-reference/issuer/lookup-customer) response. You may supply any one identifier: `customer_id`, `card_id`, `external_id`, or `email`.
 </ParamField>
 
 <ParamField body="card_id" type="string">
@@ -31,7 +31,7 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField body="amount" type="number" required>
-  Amount in USD. Interpretation depends on `pricing_mode`.
+  Amount in USD. How this is interpreted depends on `pricing_mode` — see below.
 </ParamField>
 
 <ParamField body="source_chain" type="string" required>
@@ -39,8 +39,16 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField body="pricing_mode" type="string">
-  `send_x` (default) — debit exactly `amount`; customer receives less after fees.
-  `receive_x` — customer receives exactly `amount`; master wallet debited more.
+  Controls whether `amount` is what you **send** or what the customer **receives**.
+
+  - **`send_x`** (default) — Your master wallet is debited exactly `amount`. Bridge and token-conversion fees are deducted from that, so the customer lands with slightly less. Use this when you want a predictable debit.
+  - **`receive_x`** — The customer's card is credited exactly `amount`. The system works backwards through the fee schedule to calculate how much your master wallet must send, then debits that larger figure. Use this when the customer is owed an exact payout.
+
+  **Example — funding €200:**
+  | `pricing_mode` | You send | Customer receives |
+  |---|---|---|
+  | `send_x` | 200 USD | ~197 EUR (fees deducted) |
+  | `receive_x` | ~204 USD (fees added) | 200 EUR exactly |
 </ParamField>
 
 <ParamField body="destination_token" type="string">

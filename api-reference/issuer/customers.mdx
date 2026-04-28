@@ -6,7 +6,7 @@ authMethod: "bearer"
 ---
 
 <Note>
-  **Card customers are separate from WaaS customers.** This endpoint returns cardholders who have completed card KYC and have an active card wallet. For wallet sub-accounts (crypto deposits/withdrawals/transfers), see [WaaS Customers](/api-reference/customers/list).
+  **Card customers are separate from WaaS customers.** This endpoint returns all customer card records regardless of onboarding stage. For wallet sub-accounts (crypto deposits/withdrawals/transfers), see [WaaS Customers](/api-reference/customers/list).
 </Note>
 
 <ParamField header="Authorization" type="string" required>
@@ -23,8 +23,13 @@ authMethod: "bearer"
 </ParamField>
 
 <RequestExample>
-```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=card_created&limit=20' \
+```bash All customers
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash Filter by status
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=kyc_initiated' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -36,14 +41,30 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=c
   "data": {
     "customers": [
       {
+        "customer_id": "69f0bdf29a84752db9cc8ff9",
         "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
-        "customer_id": "6627f3a2c5d4e100123abcde",
         "external_customer_id": "usr_8821",
         "email": "priya@yourapp.com",
-        "flow_status": "card_created",
-        "currency": "USDCe",
-        "cards_count": 1,
+        "flow_status": "kyc_initiated",
+        "step": 3,
+        "next_action": "Awaiting KYC approval from Gnosis Pay",
+        "safe_deployed": false,
+        "currency": null,
+        "cards_count": 0,
         "created_at": "2026-04-25T10:00:00.000Z"
+      },
+      {
+        "customer_id": "6627f3a2c5d4e100123abcde",
+        "yativo_card_id": "yativo_card_customer_ab12..._1769031332999",
+        "external_customer_id": "usr_7714",
+        "email": "tom@yourapp.com",
+        "flow_status": "active",
+        "step": 6,
+        "next_action": "Card is active — customer can spend",
+        "safe_deployed": true,
+        "currency": "USD",
+        "cards_count": 1,
+        "created_at": "2026-04-20T08:00:00.000Z"
       }
     ],
     "total": 87,
@@ -61,3 +82,20 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=c
 }
 ```
 </ResponseExample>
+
+## Onboarding stages
+
+| `flow_status` | `step` | `next_action` |
+|---|---|---|
+| `otp_requested` | 1 | Customer must verify the OTP sent to their email |
+| `otp_verified` | 2 | Complete KYC — call the kyc-link endpoint |
+| `kyc_initiated` | 3 | Awaiting KYC approval from Gnosis Pay |
+| `kyc_completed` | 4 | Submit source-of-funds questionnaire |
+| `safe_deploying` | 5 | Safe wallet is being deployed — wait a few minutes |
+| `card_created` / `active` | 6 | Card is active — customer can spend |
+
+## Using customer identifiers
+
+The `id` field is the canonical identifier for a customer card record. You can also use `yativo_card_id`, `external_customer_id`, or `email` interchangeably in endpoints that accept a customer identifier (e.g. [Fund Customer](/api-reference/issuer/fund-customer), [Look Up Customer](/api-reference/issuer/lookup-customer)).
+
+Customers with `safe_deployed: false` cannot be funded yet — the Safe wallet deploys automatically once KYC is approved.
