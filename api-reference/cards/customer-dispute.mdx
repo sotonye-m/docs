@@ -17,7 +17,7 @@ authMethod: "bearer"
   The transaction ID to dispute.
 </ParamField>
 
-<ParamField body="reason_code" type="string" required>
+<ParamField body="reasonCode" type="string" required>
   Dispute reason code. Retrieve valid codes from
   [Get Dispute Reasons](/api-reference/cards/dispute-reasons).
 </ParamField>
@@ -32,7 +32,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "reason_code": "NOT_AS_DESCRIBED",
+    "reasonCode": "NOT_AS_DESCRIBED",
     "description": "Item received was significantly different from what was shown"
   }'
 ```

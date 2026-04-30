@@ -305,11 +305,15 @@ Content-Type: application/json
 }
 ```
 
-| Error code | Meaning |
-|---|---|
-| `OTP_EXPIRED` | 10-minute window passed — call `resend-otp` |
-| `OTP_VERIFICATION_FAILED` | Wrong code |
-| `OTP_ATTEMPTS_EXCEEDED` | 5 failed attempts — customer must restart onboarding |
+| Error code | Meaning | Recovery |
+|---|---|---|
+| `OTP_EXPIRED` | 10-minute window passed | Call `resend-otp` |
+| `OTP_INVALID_OR_EXPIRED` | Wrong or expired code | Check code and retry, or call `resend-otp` |
+| `OTP_VERIFICATION_FAILED` | Verification service rejected with a specific reason | Inspect `message`, call `resend-otp` |
+| `OTP_ATTEMPTS_EXCEEDED` | 5 failed attempts | Call `resend-otp` — this resets the counter |
+| `SESSION_EXPIRED` | Session expired and couldn't auto-refresh | Call `resend-otp` — a new OTP re-establishes the session |
+
+Every error response with these codes includes a `data.next_step` field and a `data.action` URL pointing to the exact endpoint to call next.
 
 ### Resend OTP
 
@@ -382,14 +386,14 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "data": {
     "kyc_status": "rejected",
-    "flow_status": "kyc_initiated",
+    "flow_status": "kyc_rejected",
     "rejection_reason": "Document not readable",
-    "next_step": "kyc_link"
+    "next_step": "retry_kyc"
   }
 }
 ```
 
-Poll every 10 seconds for up to 10 minutes. When KYC is rejected, fetch a new `kyc-link` and redirect the customer to retry.
+Poll every 10 seconds for up to 10 minutes. When `next_step` is `retry_kyc`, fetch a fresh `kyc-link?refresh=true` and redirect the customer.
 
 <Tip>
   When KYC transitions to `approved`, Yativo automatically provisions the customer's card wallet in the background. You do not need to call any wallet deployment endpoint — move directly to Source of Funds.
@@ -1015,6 +1019,207 @@ Subscribe to webhooks for real-time events. See [Webhook Integration](/guides/we
 
 ---
 
+---
+
+## Recovery & Continuation Reference
+
+Every operation that can fail returns a `data.next_step` field and a `data.action` URL so you never have to guess what to do. This section documents every failure mode and the exact API call that recovers from it.
+
+### Onboarding State Machine
+
+```
+[new customer]
+      │
+      ▼  POST /customers/onboard
+ otp_requested ──────► resend-otp (OTP expired / too many attempts / session expired)
+      │
+      ▼  POST /customers/{id}/verify-otp
+ otp_verified
+      │
+      ▼  GET /customers/{id}/kyc-link
+ kyc_initiated ──────► GET /customers/{id}/kyc-link?refresh=true  (link expired)
+      │
+      ├─► (pending) ── poll kyc-status every 10s
+      │
+      ├─► kyc_rejected ──► GET /customers/{id}/kyc-link?refresh=true → retry KYC
+      │
+      └─► kyc_completed
+              │
+              ▼  (auto background — no action needed)
+         safe_deployed
+              │
+              ▼  POST /customers/{id}/cards/virtual
+          card_created
+              │
+              ▼
+           active  (terminal — no further steps)
+```
+
+---
+
+### Handling All Error Codes
+
+#### OTP Phase errors
+
+| Error code | Cause | Recovery call |
+|---|---|---|
+| `OTP_EXPIRED` | 10-min window elapsed | `POST /customers/{id}/resend-otp` |
+| `OTP_INVALID_OR_EXPIRED` | Wrong or expired code | Retry with correct code, or `POST /customers/{id}/resend-otp` |
+| `OTP_VERIFICATION_FAILED` | Verification service returned an unexpected error | Inspect `message` field; then `resend-otp` |
+| `OTP_ATTEMPTS_EXCEEDED` | 5 wrong attempts | `POST /customers/{id}/resend-otp` — **this resets the counter** |
+| `SESSION_EXPIRED` | JWT expired and SIWE auto-refresh failed | `POST /customers/{id}/resend-otp` — new OTP re-establishes the session |
+| `JWT_REFRESH_FAILED` | SIWE re-auth failed (rare) | `POST /customers/{id}/resend-otp` |
+
+All OTP errors include `data.attempts_remaining`, `data.next_step: "resend_otp"`, and `data.action` in the response body.
+
+#### KYC Phase errors
+
+| Error code | Cause | Recovery call |
+|---|---|---|
+| `KYC_LINK_FAILED` | Identity verification link could not be generated | Retry `GET /customers/{id}/kyc-link?refresh=true` after a short delay |
+| `KYC_STATUS_ERROR` | Live status check failed | Retry `GET /customers/{id}/kyc-status` — response falls back to cached status |
+| `SESSION_EXPIRED` | JWT expired and can't refresh | `GET /customers/{id}/kyc-link?refresh=true` — this forces a SIWE re-auth internally |
+
+---
+
+### Abandoned Onboardings — `resume` Endpoint
+
+If a customer starts onboarding but never finishes (OTP not verified, KYC link never opened, KYC in progress for days), call the **resume** endpoint. It inspects the current state, takes the correct action automatically, and tells you exactly what to present to the customer next.
+
+```bash
+POST /v1/yativo-card/customers/{yativoCardId}/resume
+Authorization: Bearer YOUR_TOKEN
+```
+
+**What it does by state:**
+
+| `flow_status` | Action taken | `next_step` returned |
+|---|---|---|
+| `otp_requested` | Resends OTP to customer email, resets attempt counter | `verify_otp` |
+| `reauth_otp_requested` | Same as above (re-auth OTP pending) | `verify_otp` |
+| `otp_verified` | Generates a fresh KYC link | `kyc_link` |
+| `kyc_initiated` | Generates a fresh KYC link | `kyc_link` |
+| `kyc_rejected` | Generates a fresh KYC link for retry | `retry_kyc` |
+| `kyc_completed` / `kyc_approved` / `safe_deployed` | No action needed — ready for card creation | `create_virtual_card` |
+| `card_created` / `active` | Already complete | `none` |
+
+```json Response — OTP phase
+{
+  "success": true,
+  "message": "OTP resent to customer email. Customer should verify to continue.",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_...",
+    "flow_status": "otp_requested",
+    "next_step": "verify_otp",
+    "action_taken": "otp_resent",
+    "email_masked": "sa***@truther.to",
+    "otp_expires_in_seconds": 600,
+    "days_since_created": 6
+  }
+}
+```
+
+```json Response — KYC phase
+{
+  "success": true,
+  "message": "KYC was rejected. A new KYC link has been generated for retry.",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_...",
+    "flow_status": "kyc_rejected",
+    "kyc_status": "rejected",
+    "rejection_reason": "Document not readable",
+    "next_step": "retry_kyc",
+    "action_taken": "kyc_link_generated",
+    "kyc_url": "https://kyc.yativo.com/verify?token=...",
+    "sumsub_sdk_token": "eyJ...",
+    "days_since_created": 2
+  }
+}
+```
+
+<Tip>
+  Use `days_since_created` to decide how aggressively to pursue a customer. A 1-day abandoned onboarding is worth a simple email nudge; a 30-day one may warrant re-onboarding from scratch.
+</Tip>
+
+---
+
+### Polling Strategy
+
+For KYC status polling, use an exponential-backoff approach with a hard timeout:
+
+```typescript
+async function waitForKycApproval(yativoCardId: string, token: string): Promise<string> {
+  const maxWait = 15 * 60 * 1000; // 15 minutes
+  const start = Date.now();
+  let delay = 5_000; // start at 5s
+
+  while (Date.now() - start < maxWait) {
+    const res = await fetch(`/v1/yativo-card/customers/${yativoCardId}/kyc-status`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const body = await res.json();
+    const status = body.data?.kyc_status;
+
+    if (status === 'approved') return 'approved';
+    if (status === 'rejected') return 'rejected';
+
+    await new Promise(r => setTimeout(r, delay));
+    delay = Math.min(delay * 1.5, 30_000); // cap at 30s
+  }
+  return 'timeout';
+}
+```
+
+When `kyc_status === 'rejected'`, fetch a fresh KYC link and redirect the customer:
+
+```typescript
+if (kycResult === 'rejected') {
+  const linkRes = await fetch(
+    `/v1/yativo-card/customers/${yativoCardId}/kyc-link?refresh=true`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const { data } = await linkRes.json();
+  redirectCustomer(data.kyc_url); // or embed Sumsub SDK with data.sumsub_sdk_token
+}
+```
+
+---
+
+### Full `next_step` Reference
+
+Every API response in the customer lifecycle includes `data.next_step`. Use it to drive your state machine without hardcoding assumptions about flow order.
+
+| `next_step` value | What to do |
+|---|---|
+| `verify_otp` | Show OTP input to customer |
+| `resend_otp` | OTP is unusable — call `resend-otp` then show OTP input |
+| `kyc_link` | Open `kyc_url` or embed SDK |
+| `kyc_status` | Start polling `kyc-status` |
+| `retry_kyc` | KYC rejected — show reason, get new link, redirect customer |
+| `create_virtual_card` | KYC done, Safe deployed — call `POST /cards/virtual` |
+| `none` | Customer is fully active, no further action |
+| `null` | Intermediate state — call `GET /progress` for full picture |
+
+---
+
+### Common Integration Mistakes
+
+<Warning>
+  **Do not hardcode state transitions.** Always read `next_step` from the response. States can be added between releases.
+</Warning>
+
+| Mistake | Consequence | Fix |
+|---|---|---|
+| Using issuer email as customer email | `ISSUER_EMAIL_NOT_ALLOWED` — blocked at onboard | Use the customer's own email address |
+| Not storing `yativo_card_id` | Can't call any subsequent customer endpoint | Store it immediately after `POST /customers/onboard` |
+| Treating `OTP_ATTEMPTS_EXCEEDED` as fatal | Customer stuck | Call `resend-otp` — resets the counter |
+| Not handling `kyc_rejected` | Customer stuck in KYC loop | Detect rejection in `kyc-status`, fetch fresh link, re-direct |
+| Re-creating customer after OTP failure | Duplicate records | Call `resend-otp` on the existing `yativo_card_id` |
+| Calling `kyc-link` for `otp_requested` customers | `SESSION_EXPIRED` or wrong step | Ensure OTP is verified before requesting KYC link |
+| Assuming Safe deploy needs manual call | Extra API call, possible conflict | For customers: Safe deploys **automatically** after KYC approval |
+
+---
+
 ## Quick Reference
 
 ### Issuer Program (`/v1/card-issuer/*`)
@@ -1040,6 +1245,7 @@ Subscribe to webhooks for real-time events. See [Webhook Integration](/guides/we
 | Onboard customer | `POST` | `/v1/yativo-card/customers/onboard` |
 | Verify OTP | `POST` | `/v1/yativo-card/customers/{id}/verify-otp` |
 | Resend OTP | `POST` | `/v1/yativo-card/customers/{id}/resend-otp` |
+| **Resume stuck onboarding** | `POST` | `/v1/yativo-card/customers/{id}/resume` |
 | Get KYC link | `GET` | `/v1/yativo-card/customers/{id}/kyc-link` |
 | Poll KYC status | `GET` | `/v1/yativo-card/customers/{id}/kyc-status` |
 | Get SoF questions | `GET` | `/v1/yativo-card/customers/{id}/source-of-funds` |

@@ -122,6 +122,20 @@ const data = await response.json();
   }
 }
 ```
+
+```json 409 Customer fully onboarded
+{
+  "success": false,
+  "error_code": "CUSTOMER_ALREADY_ONBOARDED",
+  "message": "This customer has already completed card onboarding. No further action is needed.",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a2b3c4d5e6f7a8b9c0d1e_1769031332068",
+    "flow_status": "active",
+    "external_customer_id": "usr_8821",
+    "next_step": "none"
+  }
+}
+```
 </ResponseExample>
 
 ## Response Fields
@@ -138,6 +152,8 @@ const data = await response.json();
 ## Idempotency
 
 If you call this endpoint again with the same `external_customer_id` or the same `email` while an active session already exists, the API returns a `409` with the existing `yativo_card_id` instead of creating a duplicate. Use the returned ID to resume the onboarding flow.
+
+If the customer has already completed onboarding (`flow_status` is `active`, `safe_deployed`, or `kyc_approved`), the API returns `409 CUSTOMER_ALREADY_ONBOARDED` with `next_step: "none"` — no further action is needed for this customer.
 
 ## Next Steps
 
