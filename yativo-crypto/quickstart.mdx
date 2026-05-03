@@ -201,11 +201,13 @@ This guide takes you from zero to a completed on-chain transaction using the Yat
           -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{
-            "from_asset_id": "asset_01xyz789",
-            "to_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
-            "amount": "10.00",
+            "account": "64b1f9e2a3c4d5e6f7a8b9c0",
+            "assets": "64b1f9e2a3c4d5e6f7a8b9d1",
+            "receiving_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+            "amount": 10,
+            "type": "USDC",
             "chain": "solana",
-            "ticker": "USDC_SOL",
+            "category": "payment",
             "priority": "medium"
           }'
         ```
@@ -213,43 +215,53 @@ This guide takes you from zero to a completed on-chain transaction using the Yat
       <Tab title="TypeScript">
         ```typescript
         const tx = await client.transactions.send({
-          from_asset_id: wallet.id,
-          to_address: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
-          amount: '10.00',
+          account: wallet.accountId,
+          assets: wallet.id,
+          receiving_address: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
+          amount: 10,
+          type: 'USDC',
           chain: 'solana',
-          ticker: 'USDC_SOL',
+          category: 'payment',
           priority: 'medium',
         });
-        console.log('Transaction ID:', tx.transaction_id);
-        console.log('Status:', tx.status);
+        console.log('Transaction ID:', tx.data._id);
+        console.log('Status:', tx.data.status);
         ```
       </Tab>
       <Tab title="Python">
         ```python
         tx = client.transactions.send(
-            from_asset_id=wallet['id'],
-            to_address='9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
-            amount='10.00',
+            account=wallet['account_id'],
+            assets=wallet['id'],
+            receiving_address='9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
+            amount=10,
+            type='USDC',
             chain='solana',
-            ticker='USDC_SOL',
+            category='payment',
             priority='medium',
         )
-        print('Transaction ID:', tx['transaction_id'])
-        print('Status:', tx['status'])
+        print('Transaction ID:', tx['data']['_id'])
+        print('Status:', tx['data']['status'])
         ```
       </Tab>
     </Tabs>
 
     ```json Response
     {
-      "transaction_id": "txn_01pqr456",
-      "status": "pending",
-      "from_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-      "to_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
-      "amount": "10.00",
-      "chain": "solana",
-      "ticker": "USDC_SOL",
-      "created_at": "2026-03-26T10:06:00Z"
+      "status": true,
+      "message": "Transaction Created Successfully",
+      "data": {
+        "_id": "64c2a1f3b4d5e6f7a8b9c0d1",
+        "account": "64b1f9e2a3c4d5e6f7a8b9c0",
+        "assets": "64b1f9e2a3c4d5e6f7a8b9d1",
+        "receiving_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        "amount": 10,
+        "type": "USDC",
+        "chain": "solana",
+        "category": "payment",
+        "status": "pending",
+        "created_at": "2026-03-26T10:06:00Z"
+      }
     }
     ```
 

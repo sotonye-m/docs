@@ -1,7 +1,7 @@
 ---
 title: "Send Funds"
 api: "POST /v1/transactions/send-funds"
-description: "Send cryptocurrency from a wallet to an external address"
+description: "Send cryptocurrency from a wallet asset to an external address or another account"
 authMethod: "bearer"
 ---
 
@@ -10,73 +10,164 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
-  Optional unique key to prevent duplicate transactions. If not provided, one is auto-generated. Use the same key to safely retry failed requests without creating duplicate sends.
+  Optional unique key to prevent duplicate transactions. If omitted, one is auto-generated per request. Re-submit the same key to safely retry without double-spending.
 </ParamField>
 
-<ParamField body="from_asset_id" type="string" required>
-  The ID of the source wallet asset to send funds from.
+<ParamField body="account" type="string" required>
+  The MongoDB ObjectId of the **account** that owns the source asset.
 </ParamField>
 
-<ParamField body="to_address" type="string" required>
-  The destination blockchain address to send funds to.
+<ParamField body="assets" type="string" required>
+  The MongoDB ObjectId of the **asset** (wallet) to send from. Returned when you [list account assets](/api-reference/assets/list).
 </ParamField>
 
-<ParamField body="amount" type="string" required>
-  The amount to send, denominated in the token's native units (e.g. `"100.00"` for 100 USDC).
+<ParamField body="receiving_address" type="string" required>
+  The destination blockchain address. Must be a valid address on the target chain.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to send, denominated in the token's native units (e.g. `100` for 100 USDC).
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  The asset ticker / short name of the token being sent (e.g. `"ETH"`, `"USDC"`, `"SOL"`). Must match the asset record.
 </ParamField>
 
 <ParamField body="chain" type="string" required>
-  The blockchain network of the transaction, e.g. `solana`, `ethereum`.
+  The blockchain network (e.g. `"ethereum"`, `"solana"`, `"polygon"`). Must match the asset's chain.
 </ParamField>
 
-<ParamField body="ticker" type="string" required>
-  The token ticker symbol, e.g. `USDC_SOL`, `ETH`, `BTC`.
+<ParamField body="category" type="string" required>
+  Transaction category for reporting and compliance. Common values: `"personal"`, `"business"`, `"payment"`, `"auto-forward"`, `"other"`.
 </ParamField>
 
 <ParamField body="priority" type="string">
-  Transaction speed priority. One of: `slow`, `medium`, `fast`. Defaults to `medium`.
+  Gas / speed priority. One of: `"low"`, `"medium"`, `"high"`. Defaults to `"medium"`.
 </ParamField>
 
-<ParamField body="idempotency_key" type="string">
-  Idempotency key in the request body (alternative to the header). Auto-generated if not provided.
+<ParamField body="description" type="string">
+  Optional human-readable note attached to the transaction.
+</ParamField>
+
+<ParamField body="use_self_funding" type="boolean">
+  When `true`, gas fees are paid from the sending wallet's own native token balance instead of a configured Gas Station. Only valid for native token assets (ETH, SOL, etc.). Defaults to `false`.
 </ParamField>
 
 <RequestExample>
-```bash
+```bash cURL
 curl -X POST 'https://crypto-api.yativo.com/api/v1/transactions/send-funds' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: idem_01HX9KZMB3F7VNQP8R2WDGT4E5' \
   -d '{
-    "from_asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA",
-    "to_address": "9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
-    "amount": "100.00",
+    "account": "64b1f9e2a3c4d5e6f7a8b9c0",
+    "assets": "64b1f9e2a3c4d5e6f7a8b9d1",
+    "receiving_address": "9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
+    "amount": 100,
+    "type": "USDC",
     "chain": "solana",
-    "ticker": "USDC_SOL",
-    "priority": "medium"
+    "category": "payment",
+    "priority": "medium",
+    "description": "Invoice #1042 settlement"
   }'
+```
+
+```typescript TypeScript
+const tx = await client.transactions.sendFunds({
+  account: '64b1f9e2a3c4d5e6f7a8b9c0',
+  assets: '64b1f9e2a3c4d5e6f7a8b9d1',
+  receiving_address: '9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK',
+  amount: 100,
+  type: 'USDC',
+  chain: 'solana',
+  category: 'payment',
+  priority: 'medium',
+  description: 'Invoice #1042 settlement',
+});
+```
+
+```python Python
+tx = client.transactions.send_funds(
+    account='64b1f9e2a3c4d5e6f7a8b9c0',
+    assets='64b1f9e2a3c4d5e6f7a8b9d1',
+    receiving_address='9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK',
+    amount=100,
+    type='USDC',
+    chain='solana',
+    category='payment',
+    priority='medium',
+    description='Invoice #1042 settlement',
+)
 ```
 </RequestExample>
 
 <ResponseExample>
-```json
+```json 200 — Success
 {
-  "status": "success",
-  "message": "Transaction submitted successfully",
+  "status": true,
+  "message": "Transaction Created Successfully",
   "data": {
-    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4EF",
-    "from_asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4EA",
-    "to_address": "9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
-    "amount": "100.00",
-    "chain": "solana",
-    "ticker": "USDC_SOL",
-    "status": "pending",
-    "tx_hash": "5KgF7hJ2mN4pQ8rT9vX1yC3bA6wD0eG2jL5nP8sU1z4",
-    "fee": "0.000005",
-    "fee_ticker": "SOL",
-    "idempotency_key": "idem_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "created_at": "2026-03-26T12:00:00Z"
+    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "transaction_hash": "5KtMKNmZtEbXq3RrsPkjDqNJVA5rtzEPvR8WBa7kLnZm",
+    "gas_tx_hash": null,
+    "platform_fee_tx_hash": null,
+    "gas_amount": "0",
+    "platform_fee": "0.50000000",
+    "gas_funding_markup": "0.12000000",
+    "total_fee": "0.62000000",
+    "fee_breakdown": "N/A"
   }
 }
 ```
+
+```json 202 — Gas funding required
+{
+  "requires_approval": true,
+  "message": "Insufficient native token for gas. Approve gas station funding to proceed.",
+  "estimated_gas": "0.000005",
+  "native_token": "SOL"
+}
+```
+
+```json 400 — Validation error
+{
+  "status": false,
+  "message": "Insufficient balance",
+  "error": "INSUFFICIENT_BALANCE"
+}
+```
+
+```json 403 — Account not approved
+{
+  "status": false,
+  "message": "Account approval required before withdrawals",
+  "error": "ACCOUNT_NOT_APPROVED"
+}
+```
+
+```json 409 — Duplicate (idempotency)
+{
+  "status": false,
+  "message": "Duplicate transaction detected",
+  "existing_transaction_id": "64c2a1f3b4d5e6f7a8b9c0d1"
+}
+```
 </ResponseExample>
+
+## Gas Funding
+
+When sending **token** assets (USDC, USDT, etc.) the wallet must hold enough native currency (ETH, SOL, MATIC…) to pay gas fees.
+
+| Scenario | Behaviour |
+|---|---|
+| Gas Station configured | Gas funded automatically — returns `200` |
+| `use_self_funding: true` | Gas deducted from the wallet's native balance — returns `200` |
+| No Gas Station, `use_self_funding: false` | Returns `202` with `requires_approval: true` — re-submit with `use_self_funding: true` or configure a [Gas Station](/yativo-crypto/gas-station) |
+
+## Idempotency
+
+Each request auto-generates a unique idempotency key. Submitting the same request twice returns the original transaction rather than creating a duplicate. Supply your own key via the `Idempotency-Key` header for controlled retries.
+
+<Warning>
+  Always verify `receiving_address` before sending. Blockchain transactions are irreversible — funds sent to the wrong address cannot be recovered.
+</Warning>

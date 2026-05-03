@@ -22,8 +22,9 @@ curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-gas-price \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
-    "chain": "ethereum",
-    "asset": "USDC"
+    "chainType": "ethereum",
+    "priority": "medium",
+    "token_symbol": "USDC"
   }'
 ```
 
@@ -117,13 +118,15 @@ curl -X POST https://crypto-api.yativo.com/api/v1/transactions/send-funds \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: payout_01J2KG9MNPQ3R4S5T6UPAY001" \
   -d '{
-    "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    "account": "64b1f9e2a3c4d5e6f7a8b9c0",
+    "assets": "64b1f9e2a3c4d5e6f7a8b9d1",
+    "receiving_address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "amount": 100,
+    "type": "USDC",
     "chain": "ethereum",
-    "asset": "USDC",
-    "toAddress": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-    "amount": "100.00",
+    "category": "payment",
     "priority": "medium",
-    "memo": "Payout for order #ORD-9821"
+    "description": "Payout for order #ORD-9821"
   }'
 ```
 
@@ -135,35 +138,39 @@ const idempotencyKey = `payout_${payoutRecord.id}`;
 
 const transaction = await client.transactions.sendFunds(
   {
-    accountId: "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    account: "64b1f9e2a3c4d5e6f7a8b9c0",
+    assets: "64b1f9e2a3c4d5e6f7a8b9d1",
+    receiving_address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    amount: 100,
+    type: "USDC",
     chain: "ethereum",
-    asset: "USDC",
-    toAddress: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-    amount: "100.00",
+    category: "payment",
     priority: "medium",
-    memo: "Payout for order #ORD-9821",
+    description: "Payout for order #ORD-9821",
   },
   { idempotencyKey }
 );
 
-console.log(transaction.transactionId); // txn_01J2KH3MNPQ7R4S5T6U7VSND99
-console.log(transaction.status);        // "pending"
+console.log(transaction.data.transaction_id);  // txn_01HX9KZMB3F7VNQP8R2WDGT4E5
+console.log(transaction.data.transaction_hash); // 0x9f3e2d...
 ```
 
 ```python Python
 transaction = client.transactions.send_funds(
-    account_id="acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
+    account="64b1f9e2a3c4d5e6f7a8b9c0",
+    assets="64b1f9e2a3c4d5e6f7a8b9d1",
+    receiving_address="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    amount=100,
+    type="USDC",
     chain="ethereum",
-    asset="USDC",
-    to_address="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-    amount="100.00",
+    category="payment",
     priority="medium",
-    memo="Payout for order #ORD-9821",
+    description="Payout for order #ORD-9821",
     idempotency_key=f"payout_{payout_record.id}",
 )
 
-print(transaction.transaction_id)  # txn_01J2KH3MNPQ7R4S5T6U7VSND99
-print(transaction.status)          # "pending"
+print(transaction.data.transaction_id)      # txn_01HX9KZMB3F7VNQP8R2WDGT4E5
+print(transaction.data.transaction_hash)    # 0x9f3e2d...
 ```
 
 </CodeGroup>
@@ -172,17 +179,19 @@ print(transaction.status)          # "pending"
 
 ```json
 {
-  "transactionId": "txn_01J2KH3MNPQ7R4S5T6U7VSND99",
-  "accountId": "acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y",
-  "chain": "ethereum",
-  "asset": "USDC",
-  "toAddress": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-  "amount": "100.00",
-  "networkFee": "1.02",
-  "priority": "medium",
-  "status": "pending",
-  "memo": "Payout for order #ORD-9821",
-  "createdAt": "2026-03-26T11:05:00Z"
+  "status": true,
+  "message": "Transaction Created Successfully",
+  "data": {
+    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "transaction_hash": "0x9f3e2d1c4b7a5e8f2c9b3d6a1e4c7f2b5d8e1c4a",
+    "gas_tx_hash": null,
+    "platform_fee_tx_hash": null,
+    "gas_amount": "0",
+    "platform_fee": "0.50000000",
+    "gas_funding_markup": "0.12000000",
+    "total_fee": "0.62000000",
+    "fee_breakdown": "N/A"
+  }
 }
 ```
 

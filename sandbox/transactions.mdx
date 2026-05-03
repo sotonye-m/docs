@@ -23,12 +23,12 @@ Estimate the gas fee for a transaction before sending.
 POST https://crypto-sandbox.yativo.com/api/v1/transactions/get-gas-price
 ```
 
-<ParamField body="chain_type" type="string" required>
+<ParamField body="chainType" type="string" required>
   Blockchain to estimate gas for: `ethereum`, `solana`, `bitcoin`, `polygon`, `bsc`, `base`, `xdc`.
 </ParamField>
 
 <ParamField body="priority" type="string">
-  Transaction speed: `slow`, `medium`, `fast`. Defaults to `medium`.
+  Transaction speed: `low`, `medium`, `high`. Defaults to `low`.
 </ParamField>
 
 <ParamField body="amount_usd" type="number">
@@ -41,7 +41,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/get-gas-pric
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "chain_type": "SOL",
+    "chainType": "SOL",
     "priority": "medium"
   }'
 ```
@@ -51,7 +51,7 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/get-gas-pric
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "chain_type": "ETH",
+    "chainType": "ETH",
     "priority": "low"
   }'
 ```
@@ -86,32 +86,44 @@ Send testnet tokens from your sandbox wallet to another address.
 POST https://crypto-sandbox.yativo.com/api/v1/transactions/send-funds
 ```
 
-<ParamField body="from_asset_id" type="string" required>
-  The asset ID of the wallet to send from (obtained from `POST /assets/get-user-assets`).
+<ParamField body="account" type="string" required>
+  The ObjectId of the account that owns the source asset.
 </ParamField>
 
-<ParamField body="to_address" type="string" required>
+<ParamField body="assets" type="string" required>
+  The ObjectId of the asset (wallet) to send from.
+</ParamField>
+
+<ParamField body="receiving_address" type="string" required>
   Destination blockchain address. Must be a valid testnet address for the specified chain.
 </ParamField>
 
-<ParamField body="amount" type="string" required>
-  Amount to send in the token's native units, e.g. `"25.00"`.
+<ParamField body="amount" type="number" required>
+  Amount to send in the token's native units, e.g. `25`.
 </ParamField>
 
 <ParamField body="chain" type="string" required>
   Blockchain network: `solana`, `ethereum`, `base`, etc.
 </ParamField>
 
-<ParamField body="ticker" type="string" required>
-  Token ticker symbol: `USDC_SOL`, `ETH`, `BTC`, etc.
+<ParamField body="type" type="string" required>
+  Token ticker / short name: `"USDC"`, `"ETH"`, `"SOL"`, etc. Must match the asset record.
+</ParamField>
+
+<ParamField body="category" type="string" required>
+  Transaction category: `"personal"`, `"business"`, `"payment"`, `"other"`, etc.
 </ParamField>
 
 <ParamField body="priority" type="string">
-  Transaction speed: `slow`, `medium`, `fast`. Defaults to `medium`.
+  Transaction speed: `"low"`, `"medium"`, `"high"`. Defaults to `"medium"`.
 </ParamField>
 
-<ParamField body="idempotency_key" type="string">
-  Unique key to prevent duplicate transactions. Auto-generated if omitted.
+<ParamField body="description" type="string">
+  Optional human-readable note.
+</ParamField>
+
+<ParamField body="use_self_funding" type="boolean">
+  Pay gas from the wallet's own native balance. Defaults to `false`.
 </ParamField>
 
 <CodeGroup>
@@ -120,11 +132,13 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/send-funds' 
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "from_asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4E6",
-    "to_address": "9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
-    "amount": "25.00",
+    "account": "64b1f9e2a3c4d5e6f7a8b9c0",
+    "assets": "64b1f9e2a3c4d5e6f7a8b9d1",
+    "receiving_address": "9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
+    "amount": 25,
+    "type": "USDC",
     "chain": "solana",
-    "ticker": "USDC_SOL",
+    "category": "payment",
     "priority": "medium"
   }'
 ```
@@ -134,33 +148,33 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/transactions/send-funds' 
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "from_asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4E7",
-    "to_address": "0x8b5d42Dd7745C1643B36e4F8C5E2b5A8E9f1c456",
-    "amount": "0.001",
+    "account": "64b1f9e2a3c4d5e6f7a8b9c0",
+    "assets": "64b1f9e2a3c4d5e6f7a8b9d2",
+    "receiving_address": "0x8b5d42Dd7745C1643B36e4F8C5E2b5A8E9f1c456",
+    "amount": 0.001,
+    "type": "ETH",
     "chain": "base",
-    "ticker": "ETH",
-    "priority": "slow"
+    "category": "personal",
+    "priority": "low",
+    "use_self_funding": true
   }'
 ```
 </CodeGroup>
 
 ```json Response — Transaction Submitted
 {
-  "status": "success",
-  "message": "Transaction submitted successfully",
+  "status": true,
+  "message": "Transaction Created Successfully",
   "data": {
-    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT100",
-    "from_asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4E6",
-    "to_address": "9xZ7Y4mQkLpR3sVwC8tF2bG6hJ5nM1yK",
-    "amount": "25.00",
-    "chain": "solana",
-    "ticker": "USDC_SOL",
-    "status": "pending",
-    "tx_hash": "5KgF7hJ2mN4pQ8rT9vX1yC3bA6wD0eG2jL5nP8sU1z4",
-    "fee": "0.000005",
-    "fee_ticker": "SOL",
-    "idempotency_key": "idem_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "created_at": "2026-03-28T11:00:00Z"
+    "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "transaction_hash": "5KtMKNmZtEbXq3RrsPkjDqNJVA5rtzEPvR8WBa7kLnZm",
+    "gas_tx_hash": null,
+    "platform_fee_tx_hash": null,
+    "gas_amount": "0",
+    "platform_fee": "0.50000000",
+    "gas_funding_markup": "0.12000000",
+    "total_fee": "0.62000000",
+    "fee_breakdown": "N/A"
   }
 }
 ```
