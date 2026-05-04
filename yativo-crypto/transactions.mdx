@@ -178,9 +178,7 @@ tx = client.transactions.send_funds(
 
 ### Idempotency
 
-Each send-funds call automatically generates a unique idempotency key. If the same request is submitted twice (e.g., due to a network retry), the second call returns the original transaction rather than creating a duplicate.
-
-Supply your own key via the `Idempotency-Key` request header.
+Supply an `Idempotency-Key` header to prevent duplicate transactions on retry. If the same key is submitted again by the same user, the original response is returned instead of creating a new transaction. Without a key, no deduplication is applied. Keys expire after 24 hours.
 
 <Warning>
   Double-check `receiving_address` before sending. Blockchain transactions are irreversible — funds sent to the wrong address cannot be recovered.
@@ -188,121 +186,69 @@ Supply your own key via the `Idempotency-Key` request header.
 
 ---
 
-## Get a Transaction
+## List Transactions
 
-**POST** `/transactions/get-transaction`
+**POST** `/transactions/get-transactions`
 
-<ParamField body="transaction_id" type="string" required>
-  The transaction ID returned by `send-funds`.
+Returns up to 100 transactions for the authenticated user, sorted by most recent. Use the filter parameters to narrow results.
+
+<ParamField body="search" type="string">
+  Search by `transaction_id` or `transaction_hash` (case-insensitive substring match).
+</ParamField>
+
+<ParamField body="status_filter" type="string">
+  Filter by status: `pending`, `completed`, `failed`.
+</ParamField>
+
+<ParamField body="assets_filter" type="string">
+  Filter by asset ObjectId or asset name substring.
+</ParamField>
+
+<ParamField body="method_filter" type="string">
+  Filter by transaction `type` field (e.g. `"USDC"`, `"ETH"`).
+</ParamField>
+
+<ParamField body="chain_filter" type="string">
+  Filter by blockchain (e.g. `"ethereum"`, `"solana"`).
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-transaction \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-transactions \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"transaction_id": "txn_01pqr456"}'
+  -d '{
+    "status_filter": "completed",
+    "chain_filter": "ethereum"
+  }'
 ```
 
 ```json Response
 {
-  "transaction_id": "txn_01pqr456",
-  "status": "completed",
-  "from_address": "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1",
-  "to_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
-  "amount": "100.00",
-  "ticker": "USDC",
-  "chain": "ethereum",
-  "tx_hash": "0xabc123def456...",
-  "block_number": 19500000,
-  "confirmations": 12,
-  "fee_usd": "3.18",
-  "created_at": "2026-03-26T10:06:00Z",
-  "completed_at": "2026-03-26T10:07:30Z"
+  "status": true,
+  "message": "Transactions fetched successfully",
+  "data": [
+    {
+      "_id": "64b1f9e2a3c4d5e6f7a8b9e0",
+      "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "transaction_hash": "0x9f3e2d1c4b7a5e8f2c9b3d6a1e4c7f2b5d8e1c4a",
+      "receiving_address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "amount": "100",
+      "type": "USDC",
+      "chain": "ethereum",
+      "status": "completed",
+      "blockchain_status": "confirmed",
+      "confirmations": 12,
+      "block_number": 19847345,
+      "fee_paid": "0.62000000",
+      "fee_currency": "USDC",
+      "platform_fee_tx_hash": null,
+      "category": "payment",
+      "description": "Payout for order #ORD-9821",
+      "is_autoforward": false,
+      "createdAt": "2026-03-26T10:06:00.000Z"
+    }
+  ]
 }
-```
-
----
-
-## List Transactions
-
-**POST** `/transactions/list`
-
-<ParamField body="page" type="number">
-  Page number. Defaults to 1.
-</ParamField>
-
-<ParamField body="limit" type="number">
-  Results per page. Defaults to 20.
-</ParamField>
-
-<ParamField body="status" type="string">
-  Filter by status: `pending`, `processing`, `completed`, `failed`, `cancelled`.
-</ParamField>
-
-<ParamField body="chain" type="string">
-  Filter by blockchain.
-</ParamField>
-
-```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/v1/transactions/list \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "page": 1,
-    "limit": 20,
-    "status": "completed",
-    "chain": "ethereum"
-  }'
-```
-
----
-
-## Asset Transaction History
-
-**POST** `/transactions/asset-history`
-
-Returns all transactions for a specific wallet asset.
-
-<ParamField body="asset_id" type="string" required>
-  The asset to retrieve history for.
-</ParamField>
-
-<ParamField body="page" type="number">
-  Page number. Defaults to 1.
-</ParamField>
-
-<ParamField body="limit" type="number">
-  Results per page. Defaults to 20.
-</ParamField>
-
-```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/v1/transactions/asset-history \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "asset_id": "asset_01xyz789",
-    "page": 1,
-    "limit": 50
-  }'
-```
-
----
-
-## Cancel a Transaction
-
-**POST** `/transactions/cancel`
-
-Attempts to cancel a transaction that is still in `pending` status. Once a transaction is `processing` (broadcast to the network), it cannot be cancelled.
-
-<ParamField body="transaction_id" type="string" required>
-  The ID of the transaction to cancel.
-</ParamField>
-
-```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/v1/transactions/cancel \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"transaction_id": "txn_01pqr456"}'
 ```
 
 ---
@@ -312,10 +258,15 @@ curl -X POST https://crypto-api.yativo.com/api/v1/transactions/cancel \
 | Status | Description |
 |--------|-------------|
 | `pending` | Transaction created, waiting to be broadcast to the network |
-| `processing` | Broadcast to the network, waiting for confirmations |
 | `completed` | Confirmed on-chain with sufficient block confirmations |
 | `failed` | Transaction failed (insufficient funds, invalid address, network error) |
-| `cancelled` | Cancelled before broadcast |
+
+The `blockchain_status` field tracks on-chain state separately:
+
+| blockchain_status | Description |
+|---|---|
+| `pending` | Not yet broadcast |
+| `confirmed` | Included in a block with enough confirmations |
 
 ## Priority Levels
 
@@ -325,6 +276,22 @@ curl -X POST https://crypto-api.yativo.com/api/v1/transactions/cancel \
 | `medium` | Standard confirmation time | Standard |
 | `fast` | Prioritized for faster inclusion | Highest |
 
+## Gas Funding for Token Withdrawals
+
+When withdrawing token assets (USDC, USDT, etc.) the sending wallet needs native currency for gas. Yativo handles this automatically:
+
+- **User Gas Station configured** — gas is funded from the user's own gas station wallet
+- **No user Gas Station** — the platform Gas Station is used as a fallback
+- **`use_self_funding: true`** — only valid for native token assets (ETH, SOL, etc.); gas is deducted from the wallet's own balance without a markup
+
+In both gas station cases, a **20% service markup** on the estimated gas cost is deducted from your withdrawal amount and returned as `gas_funding_markup` in the response.
+
+<Note>
+  Ensure `amount` is larger than `platform_fee + gas_funding_markup`. The API returns a `400` if the amount cannot cover total fees.
+</Note>
+
 <Tip>
-  Use webhooks to track transaction status changes in real time instead of polling the get-transaction endpoint. See [Webhooks](/yativo-crypto/webhooks) for event types.
+  Use webhooks to track transaction status changes in real time instead of polling. See [Webhooks](/yativo-crypto/webhooks) for the `transaction.confirmed` and `transaction.failed` event payloads.
 </Tip>
+
+

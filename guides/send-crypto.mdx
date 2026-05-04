@@ -197,27 +197,27 @@ print(transaction.data.transaction_hash)    # 0x9f3e2d...
 
 ### Idempotency keys
 
-An idempotency key is a unique string you generate and attach to a request. If the request fails or times out, you can safely retry with the same key — Yativo will return the original response instead of creating a duplicate transaction.
+An idempotency key is a unique string you attach to a request. If the request fails or times out, you can safely retry with the same key — Yativo will return the original response instead of creating a duplicate transaction. If no key is supplied, no deduplication is applied.
 
 **Best practices:**
 - Derive the key from your internal record ID (e.g., `payout_${payoutId}`)
-- Keys must be unique per operation type — reusing a key for a different transfer will return the original transaction
+- Keys must be unique per operation — reusing a key for a different transfer will return the original transaction
 - Keys expire after 24 hours
 
 </Step>
 
 <Step title="Poll for transaction status">
 
-You can poll for the current transaction status using `POST /transactions/get-transaction`.
+You can poll for the current transaction status using `POST /transactions/get-transactions`, filtering by `transaction_id`.
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-transaction \
+curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-transactions \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..." \
   -H "Content-Type: application/json" \
   -d '{
-    "transactionId": "txn_01J2KH3MNPQ7R4S5T6U7VSND99"
+    "search": "txn_01J2KH3MNPQ7R4S5T6U7VSND99"
   }'
 ```
 
@@ -228,20 +228,22 @@ async function waitForTransaction(transactionId: string): Promise<any> {
   let delay = 2000; // start at 2 seconds
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const txn = await client.transactions.getTransaction({ transactionId });
+    const result = await client.transactions.getTransactions({ search: transactionId });
+    const txn = result.data?.[0];
 
-    if (txn.status === "confirmed") return txn;
-    if (txn.status === "failed") throw new Error(`Transaction failed: ${txn.failureReason}`);
+    if (!txn) throw new Error('Transaction not found');
+    if (txn.status === 'completed') return txn;
+    if (txn.status === 'failed') throw new Error(`Transaction failed: ${txn.error_message}`);
 
     await new Promise((resolve) => setTimeout(resolve, delay));
     delay = Math.min(delay * 1.5, 30000); // cap at 30s
   }
 
-  throw new Error("Transaction did not complete within timeout");
+  throw new Error('Transaction did not complete within timeout');
 }
 
-const completed = await waitForTransaction("txn_01J2KH3MNPQ7R4S5T6U7VSND99");
-console.log(completed.txHash); // 0x9f3e2d1c4b7a5e8f2c9b3d6a1e4c7f2b5d8e1c4a...
+const completed = await waitForTransaction('txn_01J2KH3MNPQ7R4S5T6U7VSND99');
+console.log(completed.transaction_hash); // 0x9f3e2d1c4b7a5e8f2c9b3d6a1e4c7f2b5d8e1c4a...
 ```
 
 ```python Python
@@ -252,41 +254,52 @@ def wait_for_transaction(transaction_id: str) -> dict:
     delay = 2.0
 
     for attempt in range(max_attempts):
-        txn = client.transactions.get_transaction(transaction_id=transaction_id)
+        result = client.transactions.get_transactions(search=transaction_id)
+        txn = result.data[0] if result.data else None
 
-        if txn.status == "confirmed":
+        if not txn:
+            raise Exception('Transaction not found')
+        if txn.status == 'completed':
             return txn
-        if txn.status == "failed":
-            raise Exception(f"Transaction failed: {txn.failure_reason}")
+        if txn.status == 'failed':
+            raise Exception(f'Transaction failed: {txn.error_message}')
 
         time.sleep(delay)
         delay = min(delay * 1.5, 30.0)
 
-    raise TimeoutError("Transaction did not complete within timeout")
+    raise TimeoutError('Transaction did not complete within timeout')
 
-completed = wait_for_transaction("txn_01J2KH3MNPQ7R4S5T6U7VSND99")
-print(completed.tx_hash)
+completed = wait_for_transaction('txn_01J2KH3MNPQ7R4S5T6U7VSND99')
+print(completed.transaction_hash)
 ```
 
 </CodeGroup>
 
-**Response (confirmed):**
+**Response (completed):**
 
 ```json
 {
-  "transactionId": "txn_01J2KH3MNPQ7R4S5T6U7VSND99",
-  "chain": "ethereum",
-  "asset": "USDC",
-  "toAddress": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-  "amount": "100.00",
-  "networkFee": "1.02",
-  "priority": "medium",
-  "status": "confirmed",
-  "txHash": "0x9f3e2d1c4b7a5e8f2c9b3d6a1e4c7f2b5d8e1c4a7f6e3d2b1a8c5f4e3d2c1b",
-  "blockNumber": 19847345,
-  "confirmations": 12,
-  "confirmedAt": "2026-03-26T11:05:42Z",
-  "memo": "Payout for order #ORD-9821"
+  "status": true,
+  "message": "Transactions fetched successfully",
+  "data": [
+    {
+      "transaction_id": "txn_01J2KH3MNPQ7R4S5T6U7VSND99",
+      "transaction_hash": "0x9f3e2d1c4b7a5e8f2c9b3d6a1e4c7f2b5d8e1c4a7f6e3d2b1a8c5f4e3d2c1b",
+      "receiving_address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "amount": "100",
+      "type": "USDC",
+      "chain": "ethereum",
+      "status": "completed",
+      "blockchain_status": "confirmed",
+      "block_number": 19847345,
+      "confirmations": 12,
+      "fee_paid": "0.62000000",
+      "fee_currency": "USDC",
+      "category": "payment",
+      "description": "Payout for order #ORD-9821",
+      "createdAt": "2026-03-26T11:05:42.000Z"
+    }
+  ]
 }
 ```
 
@@ -295,10 +308,8 @@ print(completed.tx_hash)
 | Status | Description |
 |--------|-------------|
 | `pending` | Submitted, waiting to be broadcast |
-| `broadcasting` | Being submitted to the network |
-| `mempool` | In the mempool, awaiting inclusion in a block |
-| `confirmed` | Included in a block with sufficient confirmations |
-| `failed` | Transaction failed (see `failureReason`) |
+| `completed` | Included in a block with sufficient confirmations |
+| `failed` | Transaction failed (see `error_message`) |
 
 </Step>
 
@@ -336,10 +347,14 @@ case "transaction.failed": {
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `INSUFFICIENT_BALANCE` | Account balance too low | Check balance before sending |
-| `INVALID_ADDRESS` | Malformed or wrong-network address | Validate address for the target chain |
-| `DUPLICATE_IDEMPOTENCY_KEY` | Key reused for different parameters | Use a unique key per unique transfer |
-| `AMOUNT_TOO_SMALL` | Amount below chain minimum | Check minimum transfer amounts per chain |
+| `Assets required` | `assets` body field missing | Include the asset ObjectId in the request body |
+| `Receiving address required` | `receiving_address` missing | Include the destination address |
+| `Valid amount required` | `amount` missing, zero, or negative | Provide a positive numeric amount |
+| `Insufficient balance` | Asset balance too low | Check balance before sending |
+| `Withdrawal amount must be greater than total fees` | Amount too small to cover platform fee + gas markup | Increase amount or check fee estimates first |
+| `Self funding is only available for native token transactions` | `use_self_funding: true` on a token asset | Remove `use_self_funding` for token withdrawals |
+| `Transaction blocked due to high-risk receiving address` | Chainalysis/Circle screening blocked the address | Do not send to flagged addresses |
+| `DUPLICATE_REQUEST_IN_PROGRESS` | Same `Idempotency-Key` submitted while first request is still processing | Wait for the first request to complete before retrying |
 
 ## Next Steps
 

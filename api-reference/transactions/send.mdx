@@ -10,7 +10,7 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
-  Optional unique key to prevent duplicate transactions. If omitted, one is auto-generated per request. Re-submit the same key to safely retry without double-spending.
+  Unique key to prevent duplicate transactions. Strongly recommended — if omitted, no deduplication is applied. Re-submit the same key to safely retry without double-spending. Keys expire after 24 hours.
 </ParamField>
 
 <ParamField body="account" type="string" required>
@@ -120,53 +120,72 @@ tx = client.transactions.send_funds(
 }
 ```
 
-```json 202 — Gas funding required
-{
-  "requires_approval": true,
-  "message": "Insufficient native token for gas. Approve gas station funding to proceed.",
-  "estimated_gas": "0.000005",
-  "native_token": "SOL"
-}
-```
-
 ```json 400 — Validation error
 {
   "status": false,
-  "message": "Insufficient balance",
-  "error": "INSUFFICIENT_BALANCE"
+  "message": "Withdrawal amount must be greater than total fees. Amount: 0.5, Platform fee: 0.5, Gas funding fee: 0.12"
 }
 ```
 
-```json 403 — Account not approved
+```json 400 — Self-funding on token
 {
   "status": false,
-  "message": "Account approval required before withdrawals",
-  "error": "ACCOUNT_NOT_APPROVED"
+  "message": "Self funding is only available for native token transactions. For USDC transactions on polygon, you need approximately 0.002 POL"
 }
 ```
 
-```json 409 — Duplicate (idempotency)
+```json 403 — Account suspended
 {
   "status": false,
-  "message": "Duplicate transaction detected",
-  "existing_transaction_id": "64c2a1f3b4d5e6f7a8b9c0d1"
+  "message": "Account is suspended from withdrawals",
+  "suspension": {
+    "type": "withdrawal",
+    "reason": "Compliance review",
+    "expires_at": null
+  }
+}
+```
+
+```json 409 — Duplicate in-progress (idempotency)
+{
+  "success": false,
+  "message": "Request is already being processed",
+  "error": "DUPLICATE_REQUEST_IN_PROGRESS",
+  "idempotencyKey": "payout_ORD-9821"
+}
+```
+
+```json 500 — Transaction blocked (high-risk address)
+{
+  "status": false,
+  "message": "Transaction blocked due to high-risk receiving address"
 }
 ```
 </ResponseExample>
 
 ## Gas Funding
 
-When sending **token** assets (USDC, USDT, etc.) the wallet must hold enough native currency (ETH, SOL, MATIC…) to pay gas fees.
+When sending **token** assets (USDC, USDT, etc.) the platform automatically funds native gas from a configured Gas Station. A 20% service markup on the gas cost is deducted from your withdrawal amount as `gas_funding_markup`.
 
 | Scenario | Behaviour |
 |---|---|
-| Gas Station configured | Gas funded automatically — returns `200` |
-| `use_self_funding: true` | Gas deducted from the wallet's native balance — returns `200` |
-| No Gas Station, `use_self_funding: false` | Returns `202` with `requires_approval: true` — re-submit with `use_self_funding: true` or configure a [Gas Station](/yativo-crypto/gas-station) |
+| Gas Station configured by user | Gas funded from user's gas station — `gas_funding_markup` applied |
+| No user Gas Station | Platform Gas Station used as fallback — `gas_funding_markup` applied |
+| `use_self_funding: true` (native tokens only) | Gas deducted from the wallet's own native balance — no markup |
+| `use_self_funding: true` on a token asset | Returns `400` — self-funding is not available for token transactions |
+
+<Note>
+  Ensure `amount` is large enough to cover `platform_fee + gas_funding_markup`. The API returns a `400` if the amount cannot cover total fees.
+</Note>
 
 ## Idempotency
 
-Each request auto-generates a unique idempotency key. Submitting the same request twice returns the original transaction rather than creating a duplicate. Supply your own key via the `Idempotency-Key` header for controlled retries.
+Supply an `Idempotency-Key` header to enable safe retries. If the same key is submitted again for the same user, the original response is returned instead of creating a duplicate transaction. Without a key, no deduplication is applied.
+
+**Best practices:**
+- Derive the key from your internal record ID: `payout_${orderId}`
+- Keys must be unique per operation — reusing a key for a different transfer returns the original transaction
+- Keys expire after 24 hours
 
 <Warning>
   Always verify `receiving_address` before sending. Blockchain transactions are irreversible — funds sent to the wrong address cannot be recovered.
