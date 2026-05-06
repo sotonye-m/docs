@@ -1,0 +1,85 @@
+---
+title: "Set Program Card Limits"
+api: "PATCH /v1/card-issuer/admin/{programId}/card-limits"
+description: "Admin: set the per-customer card limit ceiling for an issuer program"
+authMethod: "bearer"
+---
+
+<Note>
+  This is an **admin-only** endpoint. It sets the maximum number of cards each customer in the program can hold. Issuers cannot set per-customer limits above these ceilings.
+</Note>
+
+<ParamField path="programId" type="string" required>
+  The ID of the issuer program to update. Returned by `GET /v1/card-issuer/status` as `data.id`.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="max_virtual_per_customer" type="integer">
+  Maximum virtual cards allowed per customer. Must be 0–5. Default: `1`.
+</ParamField>
+
+<ParamField body="max_physical_per_customer" type="integer">
+  Maximum physical cards allowed per customer. Must be 0–5. Default: `1`.
+</ParamField>
+
+<ParamField body="max_total_per_customer" type="integer">
+  Maximum total active cards (virtual + physical combined) allowed per customer. Must be 0–5. Default: `2`. Gnosis hard cap is 5.
+</ParamField>
+
+At least one field must be provided. Fields not sent are left unchanged.
+
+<RequestExample>
+```bash cURL
+curl -X PATCH 'https://crypto-api.yativo.com/api/v1/card-issuer/admin/69ecc05a4fc8c9c148ed1a9a/card-limits' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "max_virtual_per_customer": 3,
+    "max_physical_per_customer": 1,
+    "max_total_per_customer": 4
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "message": "Card limits updated",
+  "data": {
+    "program_id": "69ecc05a4fc8c9c148ed1a9a",
+    "card_limits": {
+      "max_virtual_per_customer": 3,
+      "max_physical_per_customer": 1,
+      "max_total_per_customer": 4
+    }
+  }
+}
+```
+
+```json 400 Invalid limit
+{
+  "success": false,
+  "error": "INVALID_LIMIT",
+  "message": "max_virtual_per_customer must be 0–5"
+}
+```
+
+```json 400 No changes
+{
+  "success": false,
+  "error": "NO_CHANGES",
+  "message": "Provide at least one limit field to update"
+}
+```
+
+```json 404 Not found
+{
+  "success": false,
+  "error": "NOT_FOUND"
+}
+```
+</ResponseExample>

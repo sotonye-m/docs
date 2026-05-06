@@ -1,0 +1,65 @@
+---
+title: "Reset Customer Onboarding"
+api: "POST /v1/yativo-card/customers/{yativoCardId}/reset"
+description: "Delete a customer's onboarding record so they can restart with a fresh verification flow"
+authMethod: "bearer"
+---
+
+Deletes the customer's Yativo record, allowing re-onboarding from scratch with a new verification flow.
+
+Use this when a customer is stuck in a state that cannot be recovered — for example, repeated KYC failures or an account that was set up with wrong details.
+
+<Warning>
+  **The email address used previously cannot be reused.** It remains registered with the card network. You must re-onboard the customer with a different email address. Attempting to use the same email will return `EMAIL_ALREADY_REGISTERED`.
+</Warning>
+
+**Restrictions:**
+- Blocked if the customer already has a payment card issued (`card_created` or `active` status). Once a card exists, this endpoint returns `CARD_ALREADY_ISSUED` — contact support for admin-level resets.
+- Only resets customers belonging to your issuer program (`account_type: customer`).
+
+<ParamField path="yativoCardId" type="string" required>
+  The `yativo_card_id` of the customer to reset.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a_abc_1769031332068/reset' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "message": "Customer onboarding reset. Re-onboard this customer via POST /api/yativo-card/customers/onboard with a different email address.",
+  "data": {
+    "deleted_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "email_masked": "sa***@hotmail.com",
+    "external_customer_id": "usr_8821",
+    "next_step": "POST /api/yativo-card/customers/onboard",
+    "email_warning": "The email address used previously remains registered with the card network and cannot be reused. Use a different email address when re-onboarding this customer."
+  }
+}
+```
+
+```json 400 Card already issued
+{
+  "success": false,
+  "error_code": "CARD_ALREADY_ISSUED",
+  "message": "Cannot reset: a payment card has already been issued for this customer. Contact support."
+}
+```
+
+```json 404 Not found
+{
+  "success": false,
+  "error_code": "NOT_FOUND",
+  "message": "Customer card not found"
+}
+```
+</ResponseExample>

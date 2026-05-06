@@ -377,7 +377,7 @@ Authorization: Bearer YOUR_TOKEN
 }
 ```
 
-Each account can hold 1 virtual card and 1 physical card at a time. Use [Get Secure Card View URL](/api-reference/cards/customer-secure-view) to securely display the full card number and CVV.
+By default, each account can hold 1 virtual card and 1 physical card (2 total). Yativo admins can raise these limits up to the Gnosis hard cap of 5 active cards combined. If you hit the limit, you will receive `VIRTUAL_CARD_LIMIT_REACHED` or `PHYSICAL_CARD_LIMIT_REACHED`. Use [Get Secure Card View URL](/api-reference/cards/customer-secure-view) to securely display the full card number and CVV.
 
 ---
 

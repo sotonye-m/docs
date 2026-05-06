@@ -526,6 +526,84 @@ Authorization: Bearer YOUR_TOKEN
 
 To show the customer their full card number and CVV, request a secure view URL (see [Secure Card View](#sensitive-card-data) below) and open it in an iframe or WebView.
 
+### Multiple Cards per Customer
+
+A single customer account supports up to **5 active cards** (virtual + physical combined). You can issue additional virtual cards on top of the first one, subject to the limits set on your program.
+
+```bash
+POST /v1/yativo-card/customers/{yativoCardId}/cards/virtual
+Authorization: Bearer YOUR_TOKEN
+```
+
+The response is identical to the first card creation. Each call issues a new independent card on the same customer account. If the customer has reached their limit you will get:
+
+```json 403 Limit reached
+{
+  "success": false,
+  "error_code": "VIRTUAL_CARD_LIMIT_REACHED",
+  "message": "Virtual card limit reached for this customer (max: 1). Contact your account manager to increase the limit."
+}
+```
+
+### Card Limits
+
+Limits work in a three-tier hierarchy:
+
+```
+Yativo Admin
+  └── sets program ceiling (e.g. max 3 virtual per customer)
+        └── You (the Issuer)
+              └── can set per-customer override ≤ program ceiling
+                    └── Gnosis hard cap: 5 active cards combined
+```
+
+The defaults on a new program are **1 virtual, 1 physical, 2 total** per customer.
+
+#### Set per-customer limits (issuer)
+
+Override the limit for a specific customer, up to your program's ceiling:
+
+```bash
+PATCH /v1/yativo-card/customers/{yativoCardId}/card-limits
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+
+{
+  "max_virtual": 2,
+  "max_physical": 1,
+  "max_total": 3
+}
+```
+
+All fields are optional — send only the limits you want to change.
+
+```json Response 200
+{
+  "success": true,
+  "message": "Customer card limits updated",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "card_limits": {
+      "max_virtual": 2,
+      "max_physical": 1,
+      "max_total": 3
+    },
+    "program_ceilings": {
+      "max_virtual": 3,
+      "max_physical": 2,
+      "max_total": 5
+    }
+  }
+}
+```
+
+`program_ceilings` reflects the maximum values your program permits. You cannot set a customer limit above its corresponding ceiling.
+
+| Error code | Meaning |
+|---|---|
+| `LIMIT_EXCEEDS_PROGRAM` | The value you sent is above your program's ceiling for that limit type |
+| `NO_CHANGES` | No valid limit fields were provided in the request body |
+
 ---
 
 ## Step 12 — Fund the Card
@@ -1002,6 +1080,49 @@ This endpoint is blocked once the customer reaches `card_created` or `active` st
 
 ---
 
+## Reset Customer Onboarding
+
+If a customer's onboarding is stuck (KYC rejected multiple times, verification loop, wrong details submitted) and you need to start completely fresh, use the reset endpoint. This deletes the Yativo record and allows re-onboarding with a new verification flow.
+
+```bash
+POST /v1/yativo-card/customers/{yativoCardId}/reset
+Authorization: Bearer YOUR_TOKEN
+```
+
+```json Response 200
+{
+  "success": true,
+  "message": "Customer onboarding reset. Re-onboard this customer via POST /api/yativo-card/customers/onboard with a different email address.",
+  "data": {
+    "deleted_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "email_masked": "sa***@hotmail.com",
+    "external_customer_id": "usr_8821",
+    "next_step": "POST /api/yativo-card/customers/onboard",
+    "email_warning": "The email address used previously remains registered with the card network and cannot be reused. Use a different email address when re-onboarding this customer."
+  }
+}
+```
+
+<Warning>
+  **You must use a different email address when re-onboarding.** The previous email remains registered with the card network and cannot be reused for a new account. Attempting to re-onboard with the same email will fail with `EMAIL_ALREADY_REGISTERED`.
+</Warning>
+
+**When reset is blocked:**
+
+As an issuer, you can only reset a customer who has **not yet had a card issued**. Once the customer reaches `card_created` status, this endpoint returns:
+
+```json 400 Card already issued
+{
+  "success": false,
+  "error_code": "CARD_ALREADY_ISSUED",
+  "message": "Cannot reset: a payment card has already been issued for this customer. Contact support."
+}
+```
+
+If you need to reset a customer who already has a card, contact Yativo support — admin-level resets are available for exceptional cases.
+
+---
+
 ## Webhook Events
 
 Subscribe to webhooks for real-time events. See [Webhook Integration](/guides/webhook-integration).
@@ -1253,6 +1374,8 @@ Every API response in the customer lifecycle includes `data.next_step`. Use it t
 | Request phone OTP | `POST` | `/v1/yativo-card/customers/{id}/phone/request-verification` |
 | Verify phone OTP | `POST` | `/v1/yativo-card/customers/{id}/phone/verify` |
 | Create virtual card | `POST` | `/v1/yativo-card/customers/{id}/cards/virtual` |
+| **Set per-customer card limits** | `PATCH` | `/v1/yativo-card/customers/{id}/card-limits` |
+| **Reset customer onboarding** | `POST` | `/v1/yativo-card/customers/{id}/reset` |
 | Get deposit address | `GET` | `/v1/yativo-card/customers/{id}/wallet/funding-address` |
 | Check onboarding progress | `GET` | `/v1/yativo-card/customers/{id}/progress` |
 | Freeze card | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/freeze` |

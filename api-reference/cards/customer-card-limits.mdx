@@ -1,0 +1,104 @@
+---
+title: "Set Customer Card Limits"
+api: "PATCH /v1/yativo-card/customers/{yativoCardId}/card-limits"
+description: "Set per-customer card limits, up to the issuer program ceiling"
+authMethod: "bearer"
+---
+
+Override the card count limits for a specific customer. Limits are capped by the ceiling set on your issuer program — you cannot grant a customer more cards than your program allows.
+
+**Limit hierarchy:**
+```
+Admin sets program ceiling  →  you set per-customer override (≤ ceiling)  →  Gnosis hard cap (5 total)
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  The `yativo_card_id` of the customer. Returned when the customer was onboarded.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="max_virtual" type="integer">
+  Maximum virtual cards for this customer. Must be 0 to your program's `max_virtual_per_customer` ceiling.
+</ParamField>
+
+<ParamField body="max_physical" type="integer">
+  Maximum physical cards for this customer. Must be 0 to your program's `max_physical_per_customer` ceiling.
+</ParamField>
+
+<ParamField body="max_total" type="integer">
+  Maximum total active cards (virtual + physical combined) for this customer. Must be 0 to your program's `max_total_per_customer` ceiling.
+</ParamField>
+
+At least one field must be provided.
+
+<RequestExample>
+```bash cURL
+curl -X PATCH 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a_abc_1769031332068/card-limits' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "max_virtual": 2,
+    "max_physical": 1,
+    "max_total": 3
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "message": "Customer card limits updated",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "card_limits": {
+      "max_virtual": 2,
+      "max_physical": 1,
+      "max_total": 3
+    },
+    "program_ceilings": {
+      "max_virtual": 3,
+      "max_physical": 2,
+      "max_total": 5
+    }
+  }
+}
+```
+
+`program_ceilings` shows the maximum values your program permits for each limit type.
+
+```json 400 Exceeds program ceiling
+{
+  "success": false,
+  "error_code": "LIMIT_EXCEEDS_PROGRAM",
+  "message": "max_virtual must be 0–3 (your program ceiling)"
+}
+```
+
+```json 400 No changes
+{
+  "success": false,
+  "error_code": "NO_CHANGES",
+  "message": "Provide at least one limit field to update"
+}
+```
+
+```json 403 Program not approved
+{
+  "success": false,
+  "error_code": "PROGRAM_NOT_APPROVED",
+  "message": "Card issuer program not approved"
+}
+```
+
+```json 404 Not found
+{
+  "success": false,
+  "error_code": "NOT_FOUND",
+  "message": "Customer card not found"
+}
+```
+</ResponseExample>
