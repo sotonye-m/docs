@@ -1,0 +1,89 @@
+---
+title: "Get Transfer Status"
+api: "GET /v1/card-issuer/transfers/:transferId"
+description: "Retrieve the current status and details of a single master-wallet → customer-card transfer"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="transferId" type="string" required>
+  The `transfer_id` returned by [Fund Customer Card](/api-reference/issuer/fund-customer).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/txn_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 In progress
+{
+  "success": true,
+  "data": {
+    "transfer_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "hop1_processing",
+    "source": {
+      "chain": "SOL",
+      "amount": 201.80
+    },
+    "destination": {
+      "token": "EUR",
+      "amount": null
+    },
+    "fees": {
+      "platform_fee": 0.50,
+      "total_fee": 0.90,
+      "fee_currency": "USDC"
+    },
+    "customer_id": "6627f3a2c5d4e100123def",
+    "initiated_at": "2026-05-06T14:30:00Z",
+    "completed_at": null
+  }
+}
+```
+
+```json 200 Completed
+{
+  "success": true,
+  "data": {
+    "transfer_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "completed",
+    "source": {
+      "chain": "SOL",
+      "amount": 201.80
+    },
+    "destination": {
+      "token": "EUR",
+      "amount": 200.00
+    },
+    "fees": {
+      "platform_fee": 0.50,
+      "total_fee": 0.90,
+      "fee_currency": "USDC"
+    },
+    "customer_id": "6627f3a2c5d4e100123def",
+    "initiated_at": "2026-05-06T14:30:00Z",
+    "completed_at": "2026-05-06T14:33:22Z"
+  }
+}
+```
+</ResponseExample>
+
+## Status reference
+
+| Status | Meaning |
+|---|---|
+| `pending` | Transfer queued, not yet started |
+| `hop1_processing` | First transfer leg in progress |
+| `hop1_complete` | First leg done, second leg starting |
+| `hop2_processing` | Final delivery to customer card wallet in progress |
+| `completed` | Funds delivered — customer card is credited |
+| `failed` | Transfer failed |
+| `refunded` | Funds returned to your master wallet |
+
+Poll this endpoint every 10–15 seconds until `status` is `completed` or `failed`. Transfers typically complete in **2–5 minutes** under normal network conditions.

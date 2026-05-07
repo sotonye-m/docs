@@ -1,0 +1,59 @@
+---
+title: "List Transfers"
+api: "GET /v1/card-issuer/transfers"
+description: "List all master-wallet → customer-card transfers initiated from your issuer program"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField query="page" type="integer">Page number. Defaults to `1`.</ParamField>
+
+<ParamField query="limit" type="integer">Results per page. Defaults to `20`, max `100`.</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status. One of: `pending`, `hop1_processing`, `hop1_complete`, `hop2_processing`, `completed`, `failed`, `refunded`.
+</ParamField>
+
+<ParamField query="customer_id" type="string">Filter by customer ID.</ParamField>
+
+<ParamField query="chain" type="string">Filter by source chain: `SOL` or `XDC`.</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers?status=completed&limit=20' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "transfers": [
+      {
+        "transfer_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "source_chain": "SOL",
+        "source_amount": 201.80,
+        "destination_token": "EUR",
+        "destination_amount": 200.00,
+        "status": "completed",
+        "customer_id": "6627f3a2c5d4e100123def",
+        "created_at": "2026-04-01T12:00:00.000Z",
+        "completed_at": "2026-04-01T12:08:42.000Z"
+      }
+    ],
+    "total": 142,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+</ResponseExample>
+
+<Note>
+  `GET /v1/card-issuer/funding-history` is a backward-compatible alias for this endpoint and returns the same response shape.
+</Note>

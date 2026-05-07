@@ -630,22 +630,23 @@ Content-Type: application/json
   "success": true,
   "message": "Funding initiated for customer",
   "data": {
-    "bridge_id": "bridge_01HX9KZM",
-    "status": "initiated",
+    "transfer_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "pending",
     "source": {
       "chain": "SOL",
-      "amount": 101.80,
-      "wallet": "5wQsqNwqu5yTXb7aDG4eLdGYLo1pXXArMTEoGb4KPDoM"
+      "amount": 201.80
     },
     "destination": {
       "token": "EUR"
     },
     "pricing_mode": "receive_x",
-    "estimated_output": "100.00",
-    "estimated_time": "2-10 minutes"
+    "estimated_amount": "200.00",
+    "estimated_time": "2–5 minutes"
   }
 }
 ```
+
+Save the `transfer_id`. Poll [GET /v1/card-issuer/transfers/:transferId](/api-reference/issuer/transfer-status) until `status` is `completed` (typically 2–5 minutes).
 
 **`pricing_mode`:**
 - `receive_x` — the customer receives exactly `amount`. Yativo deducts slightly more from your master wallet to cover fees.
@@ -1000,12 +1001,14 @@ Filter by `chain`: `SOL`, `XDC`.
 
 ---
 
-## Funding History
+## Transfers
 
-View all card funding transactions you have initiated for customers:
+### All transfers
+
+View all funding transfers you have sent to customer cards:
 
 ```bash
-GET /v1/card-issuer/funding-history?page=1&limit=20
+GET /v1/card-issuer/transfers?page=1&limit=20
 Authorization: Bearer YOUR_TOKEN
 ```
 
@@ -1013,16 +1016,14 @@ Authorization: Bearer YOUR_TOKEN
 {
   "success": true,
   "data": {
-    "transactions": [
+    "transfers": [
       {
-        "id": "6627f3a2...",
-        "bridge_id": "bridge_01HX9KZM",
+        "transfer_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
         "source_chain": "SOL",
-        "source_amount": 101.80,
+        "source_amount": 201.80,
         "destination_token": "EUR",
-        "destination_amount": 100.00,
+        "destination_amount": 200.00,
         "status": "completed",
-        "funding_type": "master_wallet_fund",
         "customer_id": "6627f3a2c5d4e100123abcde",
         "created_at": "2026-04-25T12:00:00.000Z",
         "completed_at": "2026-04-25T12:08:42.000Z"
@@ -1034,6 +1035,26 @@ Authorization: Bearer YOUR_TOKEN
   }
 }
 ```
+
+Supports `status`, `customer_id`, and `chain` query filters. See [List Transfers](/api-reference/issuer/transfers).
+
+### Single transfer status
+
+```bash
+GET /v1/card-issuer/transfers/{transferId}
+Authorization: Bearer YOUR_TOKEN
+```
+
+See [Get Transfer Status](/api-reference/issuer/transfer-status) for the full response shape and status enum.
+
+### Transfers for a specific customer
+
+```bash
+GET /v1/card-issuer/customers/{customerId}/transfers
+Authorization: Bearer YOUR_TOKEN
+```
+
+`customerId` accepts `yativo_card_id`, `customer_id`, or your own `external_id`. See [List Customer Transfers](/api-reference/issuer/customer-transfers).
 
 ---
 
@@ -1355,7 +1376,9 @@ Every API response in the customer lifecycle includes `data.next_step`. Use it t
 | List customers | `GET` | `/v1/card-issuer/customers` |
 | Look up customer | `GET` | `/v1/card-issuer/lookup-customer` |
 | Fund a customer card | `POST` | `/v1/card-issuer/fund-customer` |
-| Funding history | `GET` | `/v1/card-issuer/funding-history` |
+| List all transfers | `GET` | `/v1/card-issuer/transfers` |
+| Get transfer status | `GET` | `/v1/card-issuer/transfers/{transferId}` |
+| List customer transfers | `GET` | `/v1/card-issuer/customers/{id}/transfers` |
 | Deposits list | `GET` | `/v1/card-issuer/deposits` |
 | Delete incomplete customer | `DELETE` | `/v1/card-issuer/customers/{id}` |
 

@@ -41,7 +41,7 @@ authMethod: "bearer"
 <ParamField body="pricing_mode" type="string">
   Controls whether `amount` is what you **send** or what the customer **receives**.
 
-  - **`send_x`** (default) — Your master wallet is debited exactly `amount`. Bridge and token-conversion fees are deducted from that, so the customer lands with slightly less. Use this when you want a predictable debit.
+  - **`send_x`** (default) — Your master wallet is debited exactly `amount`. Processing fees are deducted from that, so the customer lands with slightly less. Use this when you want a predictable debit.
   - **`receive_x`** — The customer's card is credited exactly `amount`. The system works backwards through the fee schedule to calculate how much your master wallet must send, then debits that larger figure. Use this when the customer is owed an exact payout.
 
   **Example — funding €200:**
@@ -74,15 +74,20 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 ```json 200 Initiated
 {
   "success": true,
-  "message": "Customer funding initiated",
+  "message": "Funding initiated for customer",
   "data": {
-    "bridge_id": "bridge_01HX9KZMB3F7VNQ",
-    "status": "initiated",
-    "source": { "chain": "SOL", "amount": 201.80 },
-    "destination": { "token": "EUR", "amount": 200.00 },
+    "transfer_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "status": "pending",
+    "source": {
+      "chain": "SOL",
+      "amount": 201.80
+    },
+    "destination": {
+      "token": "EUR"
+    },
     "pricing_mode": "receive_x",
-    "estimated_time": "2-10 minutes",
-    "created_at": "2026-04-01T12:00:00.000Z"
+    "estimated_amount": "200.00",
+    "estimated_time": "2–5 minutes"
   }
 }
 ```
@@ -105,3 +110,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 }
 ```
 </ResponseExample>
+
+<Note>
+  Save the `transfer_id` from the response. Use it with [Get Transfer Status](/api-reference/issuer/transfer-status) to poll until `status` is `completed`.
+</Note>
