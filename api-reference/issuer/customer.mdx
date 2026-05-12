@@ -1,0 +1,167 @@
+---
+title: "Get Customer"
+api: "GET /v1/card-issuer/customers/{customerId}"
+description: "Return the full customer record — balance, KYC status, and all card details"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="customerId" type="string" required>
+  Customer identifier — accepts `yativo_card_id`, MongoDB `_id`, or `external_customer_id`.
+</ParamField>
+
+<RequestExample>
+```bash By yativo_card_id
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers/yativo_card_customer_8f9a...' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash By external_id
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers/usr_8821' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Active customer
+{
+  "success": true,
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "external_id": "usr_8821",
+    "email": "priya@yourapp.com",
+    "flow_status": "active",
+    "step": 6,
+    "next_action": "Card is active — customer can spend",
+    "kyc_status": "approved",
+    "currency": "EUR",
+    "safe_deployed": true,
+    "ledger_balance": 145.50,
+    "available_balance": 132.00,
+    "pending_balance": 13.50,
+    "balance_freshness": "realtime",
+    "balance_updated_at": "2026-05-12T14:30:00.000Z",
+    "cards_count": 2,
+    "cards": [
+      {
+        "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
+        "last_four": "4242",
+        "card_type": "virtual",
+        "status": "active",
+        "is_frozen": false,
+        "is_lost": false,
+        "is_stolen": false,
+        "is_blocked": false,
+        "is_void": false,
+        "activated_at": "2026-04-25T12:00:00.000Z",
+        "created_at": "2026-04-25T10:00:00.000Z"
+      },
+      {
+        "card_id": "b3c19f2e-14a7-41bc-9e2d-93bf14815028",
+        "last_four": "9876",
+        "card_type": "virtual",
+        "status": "frozen",
+        "is_frozen": true,
+        "is_lost": false,
+        "is_stolen": false,
+        "is_blocked": false,
+        "is_void": false,
+        "activated_at": "2026-05-01T08:00:00.000Z",
+        "created_at": "2026-05-01T07:45:00.000Z"
+      }
+    ],
+    "created_at": "2026-04-25T10:00:00.000Z"
+  }
+}
+```
+
+```json 200 KYC pending
+{
+  "success": true,
+  "data": {
+    "yativo_card_id": "yativo_card_customer_ab12..._1769031332999",
+    "external_id": "usr_7714",
+    "email": "bob@yourapp.com",
+    "flow_status": "kyc_initiated",
+    "step": 3,
+    "next_action": "Awaiting KYC verification",
+    "kyc_status": "pending_review",
+    "currency": null,
+    "safe_deployed": false,
+    "ledger_balance": null,
+    "available_balance": null,
+    "pending_balance": null,
+    "balance_freshness": null,
+    "balance_updated_at": null,
+    "cards_count": 0,
+    "cards": [],
+    "created_at": "2026-04-28T09:00:00.000Z"
+  }
+}
+```
+
+```json 404 Not found
+{
+  "success": false,
+  "error": "CUSTOMER_NOT_FOUND"
+}
+```
+
+```json 403 Not approved
+{
+  "success": false,
+  "error": "NOT_APPROVED"
+}
+```
+</ResponseExample>
+
+## Customer fields
+
+| Field | Description |
+|---|---|
+| `yativo_card_id` | Yativo's canonical customer identifier |
+| `external_id` | Your own reference ID supplied at onboarding |
+| `email` | Customer email |
+| `flow_status` | Onboarding stage — see [onboarding stages](/api-reference/issuer/customers#onboarding-stages) |
+| `step` | Numeric step (1–6) |
+| `next_action` | What needs to happen next for this customer |
+| `kyc_status` | `pending`, `in_progress`, `pending_review`, `approved`, `rejected`, or `expired` |
+| `currency` | Card currency (`USD`, `EUR`, `GBP`) — `null` until a region is assigned during KYC |
+| `safe_deployed` | Whether the customer's account wallet has been deployed |
+
+## Balance fields
+
+Balance is wallet-level — all cards issued to a customer share the same balance. Fields are `null` until the account wallet is deployed.
+
+| Field | Description |
+|---|---|
+| `ledger_balance` | Total token balance in the customer's account wallet |
+| `available_balance` | Spendable balance after deducting pending authorizations |
+| `pending_balance` | Amount held for authorized but not yet settled transactions |
+| `balance_freshness` | `"realtime"` — sourced from live card notifications; `"on_chain"` — fetched directly from the blockchain (no pending info available) |
+| `balance_updated_at` | Timestamp of the last card notification that updated the balance (`null` when on-chain fallback was used) |
+
+## Card fields
+
+Each object in `cards` represents one card issued to this customer. Full card numbers and CVVs are never returned.
+
+| Field | Description |
+|---|---|
+| `card_id` | Card identifier |
+| `last_four` | Last four digits of the card number |
+| `card_type` | `virtual` or `physical` |
+| `status` | `active`, `frozen`, `blocked`, `lost`, or `voided` |
+| `is_frozen` | Card is temporarily frozen |
+| `is_lost` | Card reported lost |
+| `is_stolen` | Card reported stolen (treated as permanently voided) |
+| `is_blocked` | Card blocked by program or compliance |
+| `is_void` | Card permanently disabled |
+| `activated_at` | When the card was first activated |
+| `created_at` | When the card was issued |
+
+<Note>
+  To retrieve this customer's transaction history use [Customer Card Transactions](/api-reference/issuer/customer-card-transactions). To fund the customer use [Fund Customer](/api-reference/issuer/fund-customer).
+</Note>

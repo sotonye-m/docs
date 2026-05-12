@@ -511,6 +511,7 @@
               "api-reference/issuer/customer-card-transactions",
               "api-reference/issuer/deposits",
               "api-reference/issuer/customers",
+              "api-reference/issuer/customer",
               "api-reference/issuer/aggregate-balances",
               "api-reference/issuer/webhooks",
               "api-reference/issuer/lookup-customer",
