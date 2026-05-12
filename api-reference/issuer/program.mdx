@@ -23,12 +23,33 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/status' \
   "data": {
     "enrolled": true,
     "status": "approved",
+    "visibility": "visible",
     "funding_structure": "master_wallet",
-    "iban_enabled": false,
+    "preferred_chain": "SOL",
     "enabled_chains": ["SOL"],
-    "max_cards": 500,
-    "daily_funding_limit": 50000,
-    "monthly_funding_limit": 500000,
+    "iban_enabled": false,
+    "card_reissue_enabled": false,
+    "master_wallets": {
+      "sol": {
+        "address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgHkv",
+        "balance": 1024.50,
+        "last_balance_check": "2026-05-12T14:00:00.000Z"
+      },
+      "xdc": null,
+      "usdc": { "balance": 8200.00, "last_balance_check": "2026-05-12T14:00:00.000Z" },
+      "eur":  { "balance": 3100.00, "last_balance_check": "2026-05-12T14:00:00.000Z" },
+      "gbp":  { "balance": 950.00,  "last_balance_check": "2026-05-12T14:00:00.000Z" }
+    },
+    "stats": {
+      "total_cards_issued": 87,
+      "total_funded_amount": 142350.00,
+      "total_transfer_fees_paid": 284.70
+    },
+    "limits": {
+      "max_cards": 500,
+      "daily_funding_limit": 50000,
+      "monthly_funding_limit": 500000
+    },
     "approved_at": "2026-04-01T12:00:00.000Z"
   }
 }
@@ -54,7 +75,24 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/status' \
 ```
 </ResponseExample>
 
-### Status Values
+## Response fields
+
+| Field | Description |
+|---|---|
+| `enrolled` | Whether you have submitted an application |
+| `status` | Current program status (see below) |
+| `funding_structure` | `master_wallet` — you fund customers from your master wallet; `non_master` — customers fund themselves |
+| `preferred_chain` | Source chain used for master-wallet funding (`SOL` or `XDC`) |
+| `enabled_chains` | Source chains enabled for your program |
+| `master_wallets` | Present when `funding_structure` is `master_wallet`. `sol`/`xdc` are source wallets; `usdc`/`eur`/`gbp` are settlement wallets for customer card funding |
+| `stats.total_cards_issued` | Total cards issued across all customers |
+| `stats.total_funded_amount` | Cumulative amount funded to customers |
+| `stats.total_transfer_fees_paid` | Cumulative transfer fees incurred |
+| `limits.max_cards` | Maximum customer cards allowed under your program |
+| `limits.daily_funding_limit` | Maximum daily funding volume |
+| `limits.monthly_funding_limit` | Maximum monthly funding volume |
+
+## Status values
 
 | Status | Meaning |
 |---|---|

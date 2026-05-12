@@ -1,0 +1,93 @@
+---
+title: "Aggregate Customer Balances"
+api: "GET /v1/card-issuer/customers/aggregate-balances"
+description: "Sum the live on-chain balances of all customers' account wallets, grouped by currency"
+authMethod: "bearer"
+---
+
+<Note>
+  Balances are fetched live from the blockchain and reflect the actual token balance held in each customer's account wallet. This call queries each wallet individually and may take a few seconds for large programs.
+</Note>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+Use this endpoint to see the total float across your card issuer program without querying each customer individually. Results are grouped by currency (USD, EUR, GBP) and include a count of wallets successfully fetched.
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers/aggregate-balances' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "by_currency": [
+      {
+        "currency": "USD",
+        "total_ledger_balance": 12345.67,
+        "total_available_balance": 11890.23,
+        "total_pending_balance": 455.44,
+        "customer_count": 42,
+        "realtime_count": 40,
+        "on_chain_count": 1
+      },
+      {
+        "currency": "EUR",
+        "total_ledger_balance": 4321.00,
+        "total_available_balance": 4321.00,
+        "total_pending_balance": 0.00,
+        "customer_count": 15,
+        "realtime_count": 15,
+        "on_chain_count": 0
+      },
+      {
+        "currency": "GBP",
+        "total_ledger_balance": 890.50,
+        "total_available_balance": 820.00,
+        "total_pending_balance": 70.50,
+        "customer_count": 7,
+        "realtime_count": 6,
+        "on_chain_count": 1
+      }
+    ],
+    "total_customers": 64,
+    "customers_with_wallets": 63,
+    "fetched_at": "2026-05-12T14:30:00.000Z"
+  }
+}
+```
+
+```json 403 Not approved
+{
+  "success": false,
+  "error": "NOT_APPROVED",
+  "message": "Card issuer program not approved"
+}
+```
+</ResponseExample>
+
+## Response fields
+
+| Field | Description |
+|---|---|
+| `by_currency` | Array of balance summaries, one entry per currency in your program |
+| `by_currency[].currency` | Currency code (`USD`, `EUR`, `GBP`) |
+| `by_currency[].total_ledger_balance` | Sum of total token balances across all wallets for this currency |
+| `by_currency[].total_available_balance` | Sum of spendable balances (ledger minus pending holds) |
+| `by_currency[].total_pending_balance` | Sum of amounts held for authorized-but-unsettled transactions |
+| `by_currency[].customer_count` | Total customers with this card currency (deployed wallets) |
+| `by_currency[].realtime_count` | Wallets whose balance came from live card notifications |
+| `by_currency[].on_chain_count` | Wallets where balances were fetched directly from the blockchain (no pending info available) |
+| `total_customers` | Total customers across all currencies |
+| `customers_with_wallets` | Customers whose account wallet has been deployed |
+| `fetched_at` | ISO 8601 timestamp of when the response was generated |
+
+<Warning>
+  When `on_chain_count > 0` for a currency, the `total_available_balance` for those wallets equals their `total_ledger_balance` — pending transaction holds are not visible from the blockchain alone. `total_available_balance` may be slightly overstated in that case.
+</Warning>

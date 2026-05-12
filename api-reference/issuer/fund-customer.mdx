@@ -35,20 +35,20 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField body="source_chain" type="string" required>
-  Master wallet to debit. `SOL` or `XDC`.
+  Your master wallet chain to use as the funding source. `SOL` or `XDC`.
 </ParamField>
 
 <ParamField body="pricing_mode" type="string">
   Controls whether `amount` is what you **send** or what the customer **receives**.
 
-  - **`send_x`** (default) — Your master wallet is debited exactly `amount`. Processing fees are deducted from that, so the customer lands with slightly less. Use this when you want a predictable debit.
-  - **`receive_x`** — The customer's card is credited exactly `amount`. The system works backwards through the fee schedule to calculate how much your master wallet must send, then debits that larger figure. Use this when the customer is owed an exact payout.
+  - **`send_x`** (default) — Your master wallet is debited exactly `amount`. Any applicable fees are deducted before the customer's card is credited.
+  - **`receive_x`** — The customer's card is credited exactly `amount`. The system works backwards through the fee schedule to calculate how much your master wallet must supply. Use this when the customer is owed an exact payout.
 
-  **Example — funding €200:**
+  **Example — funding $200:**
   | `pricing_mode` | You send | Customer receives |
   |---|---|---|
-  | `send_x` | 200 USD | ~197 EUR (fees deducted) |
-  | `receive_x` | ~204 USD (fees added) | 200 EUR exactly |
+  | `send_x` | $200 | ~$198 (after fees) |
+  | `receive_x` | ~$202 (fees added) | $200 exactly |
 </ParamField>
 
 <ParamField body="destination_token" type="string">
@@ -57,36 +57,69 @@ authMethod: "bearer"
 </ParamField>
 
 <RequestExample>
-```bash cURL
+```bash cURL — receive_x (customer gets exactly $10)
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "external_id": "your_user_id_8821",
-    "amount": 200,
+    "email": "fernando@truther.io",
+    "amount": 10,
     "source_chain": "SOL",
     "pricing_mode": "receive_x"
+  }'
+```
+
+```bash cURL — send_x (debit exactly $200 from your wallet)
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "fernando@truther.io",
+    "amount": 200,
+    "source_chain": "SOL",
+    "pricing_mode": "send_x"
   }'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json 200 Initiated
+```json 200 Completed
+{
+  "success": true,
+  "message": "Customer funded successfully",
+  "data": {
+    "transfer_id": "bridge_1778501099297_2ea87af00de1",
+    "status": "completed",
+    "source": {
+      "chain": "SOL",
+      "amount": 10
+    },
+    "destination": {
+      "token": "USD"
+    },
+    "pricing_mode": "receive_x",
+    "estimated_amount": "10.000000",
+    "estimated_time": "immediate"
+  }
+}
+```
+
+```json 200 Pending (top-up in progress)
 {
   "success": true,
   "message": "Funding initiated for customer",
   "data": {
-    "transfer_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "transfer_id": "bridge_1778501099297_2ea87af00de1",
     "status": "pending",
     "source": {
       "chain": "SOL",
-      "amount": 201.80
+      "amount": 10.00105711
     },
     "destination": {
-      "token": "EUR"
+      "token": "USD"
     },
     "pricing_mode": "receive_x",
-    "estimated_amount": "200.00",
+    "estimated_amount": "9.998943",
     "estimated_time": "2–5 minutes"
   }
 }
@@ -112,5 +145,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 </ResponseExample>
 
 <Note>
-  Save the `transfer_id` from the response. Use it with [Get Transfer Status](/api-reference/issuer/transfer-status) to poll until `status` is `completed`.
+  When `estimated_time` is `"immediate"` the transfer is already settled — no polling needed.
+  When `estimated_time` is `"2–5 minutes"`, save the `transfer_id` and poll
+  [Get Transfer Status](/api-reference/issuer/transfer-status) until `status` is `completed`.
 </Note>

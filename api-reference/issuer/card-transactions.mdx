@@ -1,0 +1,129 @@
+---
+title: "List Card Transactions"
+api: "GET /v1/card-issuer/card-transactions"
+description: "List card spending transactions across all customers in your issuer program"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField query="page" type="integer">Page number. Defaults to `1`.</ParamField>
+
+<ParamField query="limit" type="integer">Results per page. Defaults to `20`, max `100`.</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by transaction status. One of: `authorized`, `settled`, `declined`, `reversed`, `partially_reversed`, `failed`, `expired`.
+</ParamField>
+
+<ParamField query="customer_id" type="string">
+  Filter by customer — pass a `yativo_card_id` to see transactions for a specific customer.
+</ParamField>
+
+<RequestExample>
+```bash All transactions
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/card-transactions' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash Settled only
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/card-transactions?status=settled&limit=50' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash For one customer
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/card-transactions?customer_id=yativo_card_customer_8f9a...' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "transaction_id": "tx_9d8e7f6a5b4c3d2e",
+        "yativo_card_id": "yativo_card_customer_8f9a...",
+        "card_id": "card_token_abc123",
+        "type": "purchase",
+        "amount": 12.50,
+        "currency": "EUR",
+        "status": "settled",
+        "merchant": "Starbucks",
+        "merchant_category": "5812",
+        "merchant_city": "Paris",
+        "merchant_country": "FR",
+        "authorized_at": "2026-05-12T14:15:00.000Z",
+        "settled_at": "2026-05-13T02:00:00.000Z",
+        "created_at": "2026-05-12T14:15:00.000Z"
+      },
+      {
+        "transaction_id": "tx_1a2b3c4d5e6f7g8h",
+        "yativo_card_id": "yativo_card_customer_ab12...",
+        "card_id": "card_token_def456",
+        "type": "purchase",
+        "amount": 45.00,
+        "currency": "USD",
+        "status": "authorized",
+        "merchant": "Amazon",
+        "merchant_category": "5999",
+        "merchant_city": "Seattle",
+        "merchant_country": "US",
+        "authorized_at": "2026-05-12T16:30:00.000Z",
+        "settled_at": null,
+        "created_at": "2026-05-12T16:30:00.000Z"
+      }
+    ],
+    "total": 318,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+
+```json 403 Not approved
+{
+  "success": false,
+  "error": "NOT_APPROVED",
+  "message": "Card issuer program not approved"
+}
+```
+</ResponseExample>
+
+## Transaction fields
+
+| Field | Description |
+|---|---|
+| `transaction_id` | Unique identifier for this transaction |
+| `yativo_card_id` | The Yativo customer identifier who owns the card |
+| `card_id` | The card token the transaction was charged to |
+| `type` | Transaction kind — typically `purchase`, `refund`, or `withdrawal` |
+| `amount` | Transaction amount |
+| `currency` | Currency code (`USD`, `EUR`, `GBP`) |
+| `status` | Current status (see below) |
+| `merchant` | Merchant name |
+| `merchant_category` | Merchant category code (MCC) |
+| `merchant_city` | Merchant city |
+| `merchant_country` | Two-letter ISO country code |
+| `authorized_at` | When the transaction was authorized |
+| `settled_at` | When the transaction settled (`null` if still pending) |
+| `created_at` | When the transaction record was first created |
+
+## Transaction statuses
+
+| Status | Meaning |
+|---|---|
+| `authorized` | Approved at point of sale; funds are held pending settlement |
+| `settled` | Transaction has settled and funds have been debited |
+| `declined` | Transaction was declined |
+| `reversed` | Transaction was fully reversed |
+| `partially_reversed` | Transaction was partially reversed |
+| `failed` | Transaction failed after authorization |
+| `expired` | Authorization expired before settlement |
+
+<Note>
+  Transactions are recorded in real time as card events arrive. For per-customer transaction history, use [Customer Card Transactions](/api-reference/issuer/customer-card-transactions). Transaction events are also delivered via [webhooks](/api-reference/issuer/webhooks) (`transaction.authorized`, `transaction.settled`, `transaction.declined`, `transaction.reversed`).
+</Note>

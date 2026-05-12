@@ -1,0 +1,131 @@
+---
+title: "Customer Card Transactions"
+api: "GET /v1/card-issuer/customers/{customerId}/card-transactions"
+description: "List card spending transactions for a specific customer"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="customerId" type="string" required>
+  Customer identifier — accepts `yativo_card_id`, MongoDB `_id`, or `external_customer_id`.
+</ParamField>
+
+<ParamField query="page" type="integer">Page number. Defaults to `1`.</ParamField>
+
+<ParamField query="limit" type="integer">Results per page. Defaults to `20`, max `100`.</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by transaction status. One of: `authorized`, `settled`, `declined`, `reversed`, `partially_reversed`, `failed`, `expired`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers/yativo_card_customer_8f9a.../card-transactions' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash Settled only
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers/yativo_card_customer_8f9a.../card-transactions?status=settled' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "data": {
+    "customer_id": "yativo_card_customer_8f9a...",
+    "currency": "EUR",
+    "transactions": [
+      {
+        "transaction_id": "tx_9d8e7f6a5b4c3d2e",
+        "type": "purchase",
+        "amount": 12.50,
+        "currency": "EUR",
+        "status": "settled",
+        "merchant": "Starbucks",
+        "merchant_category": "5812",
+        "merchant_city": "Paris",
+        "merchant_country": "FR",
+        "authorized_at": "2026-05-12T14:15:00.000Z",
+        "settled_at": "2026-05-13T02:00:00.000Z",
+        "created_at": "2026-05-12T14:15:00.000Z"
+      },
+      {
+        "transaction_id": "tx_3f4g5h6i7j8k9l0m",
+        "type": "purchase",
+        "amount": 8.99,
+        "currency": "EUR",
+        "status": "authorized",
+        "merchant": "Netflix",
+        "merchant_category": "7922",
+        "merchant_city": null,
+        "merchant_country": "NL",
+        "authorized_at": "2026-05-12T10:00:00.000Z",
+        "settled_at": null,
+        "created_at": "2026-05-12T10:00:00.000Z"
+      }
+    ],
+    "total": 24,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+
+```json 404 Not found
+{
+  "success": false,
+  "error": "CUSTOMER_NOT_FOUND"
+}
+```
+
+```json 403 Not approved
+{
+  "success": false,
+  "error": "NOT_APPROVED",
+  "message": "Card issuer program not approved"
+}
+```
+</ResponseExample>
+
+## Response fields
+
+The response includes a top-level `currency` field showing the customer's card currency, followed by a paginated `transactions` array.
+
+| Field | Description |
+|---|---|
+| `customer_id` | The identifier passed in the path |
+| `currency` | The customer's card currency (`USD`, `EUR`, `GBP`) |
+| `transactions[].transaction_id` | Unique identifier for this transaction |
+| `transactions[].type` | Transaction kind — typically `purchase`, `refund`, or `withdrawal` |
+| `transactions[].amount` | Transaction amount |
+| `transactions[].currency` | Transaction currency (may differ from card currency for foreign transactions) |
+| `transactions[].status` | Current status (see below) |
+| `transactions[].merchant` | Merchant name |
+| `transactions[].merchant_category` | Merchant category code (MCC) |
+| `transactions[].merchant_city` | Merchant city |
+| `transactions[].merchant_country` | Two-letter ISO country code |
+| `transactions[].authorized_at` | When the transaction was authorized |
+| `transactions[].settled_at` | When the transaction settled (`null` if still pending) |
+| `transactions[].created_at` | When the transaction record was first created |
+
+## Transaction statuses
+
+| Status | Meaning |
+|---|---|
+| `authorized` | Approved at point of sale; funds are held pending settlement |
+| `settled` | Transaction has settled and funds have been debited |
+| `declined` | Transaction was declined |
+| `reversed` | Transaction was fully reversed |
+| `partially_reversed` | Transaction was partially reversed |
+| `failed` | Transaction failed after authorization |
+| `expired` | Authorization expired before settlement |
+
+<Note>
+  To view transactions across all customers at once, use [List Card Transactions](/api-reference/issuer/card-transactions). Real-time transaction events are also delivered via [webhooks](/api-reference/issuer/webhooks).
+</Note>

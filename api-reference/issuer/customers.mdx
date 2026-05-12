@@ -22,6 +22,10 @@ authMethod: "bearer"
   `kyc_completed`, `card_created`, `active`.
 </ParamField>
 
+<ParamField query="include_balances" type="boolean">
+  Include balance fields for each customer's account wallet. Defaults to `true`. Pass `false` for faster responses when balances are not needed.
+</ParamField>
+
 <RequestExample>
 ```bash All customers
 curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers' \
@@ -30,6 +34,11 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers' \
 
 ```bash Filter by status
 curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=kyc_initiated' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash Skip balances (faster)
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?include_balances=false' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -44,32 +53,41 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=k
         "customer_id": "69f0bdf29a84752db9cc8ff9",
         "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
         "external_customer_id": "usr_8821",
-        "email": "priya@yourapp.com",
-        "flow_status": "kyc_initiated",
-        "step": 3,
-        "next_action": "Awaiting KYC approval from Gnosis Pay",
-        "safe_deployed": false,
-        "currency": null,
-        "cards_count": 0,
-        "created_at": "2026-04-25T10:00:00.000Z"
-      },
-      {
-        "customer_id": "6627f3a2c5d4e100123abcde",
-        "yativo_card_id": "yativo_card_customer_ab12..._1769031332999",
-        "external_customer_id": "usr_7714",
-        "email": "tom@yourapp.com",
+        "email": "alice@yourapp.com",
         "flow_status": "active",
         "step": 6,
         "next_action": "Card is active — customer can spend",
         "safe_deployed": true,
         "currency": "USD",
+        "ledger_balance": 45.23,
+        "available_balance": 38.50,
+        "pending_balance": 6.73,
+        "balance_freshness": "realtime",
         "cards_count": 1,
         "created_at": "2026-04-20T08:00:00.000Z"
+      },
+      {
+        "customer_id": "6627f3a2c5d4e100123abcde",
+        "yativo_card_id": "yativo_card_customer_ab12..._1769031332999",
+        "external_customer_id": "usr_7714",
+        "email": "bob@yourapp.com",
+        "flow_status": "kyc_initiated",
+        "step": 3,
+        "next_action": "Awaiting KYC verification",
+        "safe_deployed": false,
+        "currency": null,
+        "ledger_balance": null,
+        "available_balance": null,
+        "pending_balance": null,
+        "balance_freshness": null,
+        "cards_count": 0,
+        "created_at": "2026-04-25T10:00:00.000Z"
       }
     ],
     "total": 87,
     "page": 1,
-    "limit": 20
+    "limit": 20,
+    "balances_included": true
   }
 }
 ```
@@ -83,19 +101,32 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers?status=k
 ```
 </ResponseExample>
 
+## Balance fields
+
+Each customer object includes three balance fields (all `null` when the wallet is not deployed or `include_balances=false`):
+
+| Field | Description |
+|---|---|
+| `ledger_balance` | Total token balance in the customer's account wallet |
+| `available_balance` | Spendable balance after deducting pending authorizations |
+| `pending_balance` | Amount held for authorized but not yet settled transactions |
+| `balance_freshness` | `"realtime"` when sourced from live card notifications, `"on_chain"` when fetched directly from the blockchain |
+
+Balances are updated in real time whenever the card provider sends a balance change notification (e.g. after a card purchase). For wallets where no such notification has been received yet, a live on-chain query is made as a fallback — in that case `available_balance` equals `ledger_balance` since pending information is not available from the chain alone.
+
 ## Onboarding stages
 
 | `flow_status` | `step` | `next_action` |
 |---|---|---|
 | `otp_requested` | 1 | Customer must verify the OTP sent to their email |
 | `otp_verified` | 2 | Complete KYC — call the kyc-link endpoint |
-| `kyc_initiated` | 3 | Awaiting KYC approval from Gnosis Pay |
+| `kyc_initiated` | 3 | Awaiting KYC verification |
 | `kyc_completed` | 4 | Submit source-of-funds questionnaire |
-| `safe_deploying` | 5 | Safe wallet is being deployed — wait a few minutes |
+| `safe_deploying` | 5 | Account wallet is being deployed — wait a few minutes |
 | `card_created` / `active` | 6 | Card is active — customer can spend |
 
 ## Using customer identifiers
 
 The `id` field is the canonical identifier for a customer card record. You can also use `yativo_card_id`, `external_customer_id`, or `email` interchangeably in endpoints that accept a customer identifier (e.g. [Fund Customer](/api-reference/issuer/fund-customer), [Look Up Customer](/api-reference/issuer/lookup-customer)).
 
-Customers with `safe_deployed: false` cannot be funded yet — the Safe wallet deploys automatically once KYC is approved.
+Customers with `safe_deployed: false` cannot be funded yet — the account wallet deploys automatically once KYC is approved.

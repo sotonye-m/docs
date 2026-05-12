@@ -507,8 +507,12 @@
               "api-reference/issuer/transfers",
               "api-reference/issuer/transfer-status",
               "api-reference/issuer/customer-transfers",
+              "api-reference/issuer/card-transactions",
+              "api-reference/issuer/customer-card-transactions",
               "api-reference/issuer/deposits",
               "api-reference/issuer/customers",
+              "api-reference/issuer/aggregate-balances",
+              "api-reference/issuer/webhooks",
               "api-reference/issuer/lookup-customer",
               "api-reference/issuer/program-card-limits"
             ]
