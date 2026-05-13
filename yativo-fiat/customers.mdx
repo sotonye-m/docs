@@ -97,25 +97,44 @@ curl -X POST 'https://api.yativo.com/api/v1/customer' \
 
 ## Get customer
 
-Retrieve a single customer along with their virtual accounts, transactions, and linked cards.
+Retrieve a single customer's profile. By default only the core profile fields are returned. Use the `include` query parameter to embed related data in the same response.
 
 ```
-GET /customer/customer/{customer_id}
+GET /customer/{customer_id}
 ```
 
 <ParamField path="customer_id" type="string" required>
   The customer ID (UUID).
 </ParamField>
 
+<ParamField query="include" type="string">
+  Comma-separated list of relations to embed. Accepted values: `deposits`, `payouts`, `virtualaccounts`, `virtual_cards`, `crypto_wallets`. Pass `all` to include every relation at once.
+
+  **Examples**
+  - `?include=all`
+  - `?include=deposits,payouts`
+  - `?include=virtualaccounts,virtual_cards`
+</ParamField>
+
 <RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/customer/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
+```bash All relations
+curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx?include=all' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash Specific relations
+curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx?include=deposits,virtualaccounts' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash Profile only (no include)
+curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json Success
+```json Success (?include=all)
 {
   "status": "success",
   "status_code": 200,
@@ -131,6 +150,25 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/customer/xxxxxxx-xxxx-xxxx-x
     "customer_kyc_reject_reason": null,
     "created_at": "2026-03-26T10:00:00.000000Z",
     "kyc_verified_date": "2026-03-26T12:00:00.000000Z",
+    "customer_deposit": [
+      {
+        "transaction_id": "txn_xxxxxx",
+        "transaction_amount": "500.00",
+        "transaction_currency": "BRL",
+        "transaction_status": "Complete",
+        "transaction_purpose": "Top-up",
+        "created_at": "2026-03-27T08:00:00.000000Z"
+      }
+    ],
+    "customer_payouts": [
+      {
+        "transaction_id": "txn_yyyyyy",
+        "transaction_amount": "200.00",
+        "transaction_currency": "BRL",
+        "transaction_payout_details": { "status": "Complete" },
+        "created_at": "2026-03-28T09:00:00.000000Z"
+      }
+    ],
     "customer_virtualaccounts": [
       {
         "account_id": "va_xxxxxx",
@@ -139,12 +177,36 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/customer/xxxxxxx-xxxx-xxxx-x
         "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
       }
     ],
-    "customer_deposit": [],
-    "customer_payouts": []
+    "customer_virtual_cards": [],
+    "customer_crypto_wallets": []
+  }
+}
+```
+
+```json Profile only (no include param)
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Customer retrieved successfully",
+  "data": {
+    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "customer_name": "Jane Doe",
+    "customer_email": "jane@example.com",
+    "customer_phone": "+5511999999999",
+    "customer_country": "BRA",
+    "customer_status": "active",
+    "customer_kyc_status": "approved",
+    "customer_kyc_reject_reason": null,
+    "created_at": "2026-03-26T10:00:00.000000Z",
+    "kyc_verified_date": "2026-03-26T12:00:00.000000Z"
   }
 }
 ```
 </ResponseExample>
+
+<Note>
+  The `include` parameter is **additive** — fields not included in the request are simply omitted from the response rather than returning empty arrays.
+</Note>
 
 ---
 

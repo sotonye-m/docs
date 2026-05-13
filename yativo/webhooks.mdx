@@ -9,65 +9,63 @@ Webhooks let Yativo push event data to your server the moment something happens,
 
 ## Create a Webhook
 
-**POST** `/webhook/create`
+**POST** `/webhooks/create`
 
-<ParamField body="url" type="string" required>
-  The HTTPS URL Yativo will POST events to.
+<ParamField body="webhook_name" type="string" required>
+  A human-readable name for this webhook endpoint (e.g. "Production Deposits").
 </ParamField>
 
-<ParamField body="events" type="array" required>
-  Array of event types to subscribe to. Use `["*"]` to subscribe to all events.
+<ParamField body="webhook_url" type="string" required>
+  The HTTPS or HTTP URL Yativo will POST events to.
 </ParamField>
 
-<ParamField body="description" type="string">
-  Optional human-readable description.
+<ParamField body="webhook_secret" type="string" required>
+  A secret string you generate. Yativo uses it to sign every delivery so your server can verify the payload is genuine.
+</ParamField>
+
+<ParamField body="whitelist_ips" type="array">
+  Optional allowlist of source IP addresses. When set, Yativo will only deliver events from these IPs. Leave empty to allow all.
 </ParamField>
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/webhook/create \
+curl -X POST https://crypto-api.yativo.com/api/v1/webhooks/create \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://your-server.com/webhooks/yativo",
-    "events": ["deposit.confirmed", "withdrawal.completed", "transaction.failed"],
-    "description": "Production webhook"
+    "webhook_name": "Production webhook",
+    "webhook_url": "https://your-server.com/webhooks/yativo",
+    "webhook_secret": "my_super_secret_string"
   }'
 ```
 
 ```json Response
 {
-  "id": "wh_01abc123",
-  "url": "https://your-server.com/webhooks/yativo",
-  "events": ["deposit.confirmed", "withdrawal.completed", "transaction.failed"],
-  "secret": "whsec_abc123xyz...",
-  "status": "active",
-  "created_at": "2026-03-26T10:00:00Z"
+  "status": "success",
+  "status_code": "200",
+  "message": "successful request",
+  "data": {
+    "_id": "664abc123def456789000001",
+    "webhook_name": "Production webhook",
+    "webhook_url": "https://your-server.com/webhooks/yativo",
+    "user_id": "664abc123def456789000000",
+    "status": "active",
+    "createdAt": "2026-03-26T10:00:00.000Z"
+  }
 }
 ```
 
 <Warning>
-  Store the `secret` immediately. You'll use it to verify webhook signatures. It cannot be retrieved later.
+  Store `webhook_secret` securely (e.g. in an environment variable). Use it to verify the `X-Webhook-Signature` header on every incoming delivery.
 </Warning>
 
 ---
 
 ## List Webhooks
 
-**GET** `/webhook/list`
+**GET** `/webhooks`
 
 ```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/webhook/list \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
----
-
-## Get a Webhook
-
-**GET** `/webhook/{id}`
-
-```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/webhook/wh_01abc123 \
+curl -X GET https://crypto-api.yativo.com/api/v1/webhooks \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -75,17 +73,27 @@ curl -X GET https://crypto-api.yativo.com/api/webhook/wh_01abc123 \
 
 ## Update a Webhook
 
-**PUT** `/webhook/{id}`
+**POST** `/webhooks/edit`
 
-Update the URL, events, or description. Any field omitted retains its current value.
+Pass `webhook_id` plus any fields you want to change. Omitted fields keep their current value.
+
+<ParamField body="webhook_id" type="string" required>
+  The `_id` of the webhook to update.
+</ParamField>
+
+<ParamField body="webhook_name" type="string">Updated name.</ParamField>
+<ParamField body="webhook_url" type="string">Updated delivery URL.</ParamField>
+<ParamField body="webhook_secret" type="string">Rotated secret.</ParamField>
+<ParamField body="whitelist_ips" type="array">Updated IP allowlist.</ParamField>
+<ParamField body="status" type="string">Set to `"active"` or `"inactive"` to pause/resume delivery.</ParamField>
 
 ```bash cURL
-curl -X PUT https://crypto-api.yativo.com/api/webhook/wh_01abc123 \
+curl -X POST https://crypto-api.yativo.com/api/v1/webhooks/edit \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "events": ["*"],
-    "description": "Updated to all events"
+    "webhook_id": "664abc123def456789000001",
+    "status": "inactive"
   }'
 ```
 
@@ -93,64 +101,31 @@ curl -X PUT https://crypto-api.yativo.com/api/webhook/wh_01abc123 \
 
 ## Delete a Webhook
 
-**DELETE** `/webhook/{id}`
+**POST** `/webhooks/delete`
+
+<ParamField body="webhook_id" type="string" required>
+  The `_id` of the webhook to delete.
+</ParamField>
 
 ```bash cURL
-curl -X DELETE https://crypto-api.yativo.com/api/webhook/wh_01abc123 \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+curl -X POST https://crypto-api.yativo.com/api/v1/webhooks/delete \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "webhook_id": "664abc123def456789000001"
+  }'
 ```
 
 ---
 
-## Activate / Deactivate
+## View Event Logs
 
-Temporarily pause a webhook without deleting it.
+**GET** `/webhook/get-event-logs`
 
-**POST** `/webhook/{id}/activate`
-
-**POST** `/webhook/{id}/deactivate`
+Returns a log of events processed through the webhook system.
 
 ```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/webhook/wh_01abc123/deactivate \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
----
-
-## View Webhook Events
-
-**GET** `/webhook/{id}/events`
-
-Returns a paginated log of all events delivered to this webhook, including status and response codes.
-
-```bash cURL
-curl -X GET https://crypto-api.yativo.com/api/webhook/wh_01abc123/events \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
----
-
-## Retry a Failed Event
-
-**POST** `/webhook/events/{id}/retry`
-
-Re-delivers a specific event that previously failed or was not acknowledged.
-
-```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/webhook/events/evt_01def456/retry \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
----
-
-## Test a Webhook
-
-**POST** `/webhook/{id}/test`
-
-Sends a test payload to your endpoint so you can verify your handler is working.
-
-```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/webhook/wh_01abc123/test \
+curl -X GET https://crypto-api.yativo.com/api/v1/webhook/get-event-logs \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -158,9 +133,9 @@ curl -X POST https://crypto-api.yativo.com/api/webhook/wh_01abc123/test \
 
 ## Signature Verification
 
-Every webhook request includes an `X-Webhook-Signature` header. This is an HMAC-SHA256 signature of the raw request body, computed using your webhook secret.
+Every webhook delivery includes an `X-Webhook-Signature` header. This is an HMAC-SHA256 signature of the raw request body, computed using your `webhook_secret`.
 
-**Always verify the signature** before processing webhook events. This confirms the request came from Yativo and was not tampered with.
+**Always verify the signature** before processing events. This confirms the request genuinely came from Yativo and was not tampered with.
 
 <Tabs>
   <Tab title="TypeScript / Node.js">
@@ -200,6 +175,7 @@ Every webhook request includes an `X-Webhook-Signature` header. This is an HMAC-
     ```python
     import hmac
     import hashlib
+    import os
     from flask import request, abort
 
     WEBHOOK_SECRET = os.environ['YATIVO_WEBHOOK_SECRET']
@@ -271,9 +247,9 @@ All webhook payloads share the same envelope:
 </Accordion>
 
 <Accordion title="Use HTTPS">
-  Yativo only delivers webhooks to HTTPS endpoints. HTTP endpoints will be rejected at configuration time.
+  Always use HTTPS endpoints in production so payloads cannot be intercepted in transit. The API accepts HTTP URLs but they should only be used for local development and testing.
 </Accordion>
 
 <Accordion title="Monitor the event log">
-  Check `/webhook/{id}/events` regularly to spot delivery failures before they become business problems.
+  Check `GET /webhook/get-event-logs` regularly to spot delivery failures before they become business problems.
 </Accordion>

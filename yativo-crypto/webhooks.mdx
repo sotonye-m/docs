@@ -9,16 +9,32 @@ For webhook management (creating, updating, deleting webhook endpoints), see the
 
 <Accordion title="Type Definitions">
 ```typescript
-interface Webhook {
+interface GeneralWebhook {
+  _id: string;
+  webhook_name: string;
+  webhook_url: string;
+  user_id: string;
+  status: "active" | "inactive" | "deleted";
+  whitelist_ips: string[];
+  createdAt: string;
+}
+
+interface CardWebhook {
   webhook_id: string;
   url: string;
-  events: WebhookEventType[];
+  events: string[];
+  secret: string;           // only returned at create time or GET single
+  enabled: boolean;
   description?: string;
-  status: "active" | "inactive";
+  last_success_at?: string;
+  last_failure_at?: string;
+  consecutive_failures: number;
   created_at: string;
+  updated_at: string;
 }
 
 type WebhookEventType =
+  // Deposit / withdrawal / general
   | "deposit.detected"
   | "deposit.confirmed"
   | "withdrawal.initiated"
@@ -28,17 +44,56 @@ type WebhookEventType =
   | "transaction.failed"
   | "swap.completed"
   | "swap.failed"
-  | "card.funded"
-  | "card.transaction.completed"
-  | "card.transaction.failed"
   | "iban.activated"
   | "iban.transfer.received"
-  | "gas.low";
+  | "autoforward.completed"
+  | "gas.low"
+  // Card lifecycle (card webhook system)
+  | "card.created"
+  | "card.activated"
+  | "card.frozen"
+  | "card.unfrozen"
+  | "card.voided"
+  | "card.lost"
+  | "card.stolen"
+  | "card.cancelled"
+  | "card.deactivated"
+  // Card transactions
+  | "transaction.authorized"
+  | "transaction.declined"
+  | "transaction.settled"
+  | "transaction.reversed"
+  | "transaction.refund.created"
+  | "transaction.refund.settled"
+  // Customer / master wallet funding
+  | "customer.funded"
+  | "customer.balance.updated"
+  | "master_wallet.deposit"
+  | "master_wallet.swap"
+  | "master_wallet.customer_funded"
+  | "master_wallet.withdrawal"
+  // Card wallet on-chain
+  | "wallet.deployed"
+  | "wallet.deposit.detected"
+  | "wallet.deposit.confirmed"
+  | "wallet.balance.low"
+  // KYC
+  | "kyc.submitted"
+  | "kyc.approved"
+  | "kyc.rejected"
+  | "kyc.pending_review";
 
 interface CreateWebhookRequest {
-  url: string;
-  events: WebhookEventType[];
-  description?: string;
+  // General webhook (POST /webhooks/create)
+  webhook_name: string;        // required
+  webhook_url: string;         // required
+  webhook_secret: string;      // required - you supply this
+  whitelist_ips?: string[];
+
+  // Card webhook (POST /yativo-card/webhooks)
+  // url: string;              // required, must be HTTPS
+  // events?: string[];        // default ["*"] - all events
+  // description?: string;
 }
 ```
 </Accordion>
@@ -80,9 +135,35 @@ interface CreateWebhookRequest {
 
 | Event | Fired When |
 |-------|-----------|
-| `card.funded` | A card's balance has been topped up |
-| `card.transaction.completed` | A card payment has been approved and settled |
-| `card.transaction.failed` | A card payment was declined or failed |
+| `card.created` | A new card has been issued |
+| `card.activated` | A card has been activated and is ready to use |
+| `card.frozen` | A card has been temporarily frozen |
+| `card.unfrozen` | A frozen card has been re-enabled |
+| `card.voided` | A card has been voided |
+| `card.lost` | A card has been marked as lost |
+| `card.stolen` | A card has been reported stolen |
+| `card.cancelled` | A card has been cancelled |
+| `card.deactivated` | A card has been permanently deactivated |
+| `transaction.authorized` | A card transaction has been authorized |
+| `transaction.declined` | A card transaction was declined |
+| `transaction.settled` | A card transaction has settled |
+| `transaction.reversed` | A card transaction has been reversed |
+| `transaction.refund.created` | A refund has been initiated for a card transaction |
+| `transaction.refund.settled` | A card transaction refund has settled |
+| `customer.funded` | A card customer's balance has been topped up |
+| `customer.balance.updated` | A card customer's balance has changed |
+| `master_wallet.deposit` | A deposit arrived in the card program master wallet |
+| `master_wallet.swap` | A swap executed in the card program master wallet |
+| `master_wallet.customer_funded` | Master wallet funds allocated to a customer |
+| `master_wallet.withdrawal` | A withdrawal from the card program master wallet |
+| `wallet.deployed` | A card customer smart wallet has been deployed on-chain |
+| `wallet.deposit.detected` | An inbound transaction detected for a card wallet |
+| `wallet.deposit.confirmed` | An inbound transaction confirmed for a card wallet |
+| `wallet.balance.low` | A card wallet balance dropped below its configured threshold |
+| `kyc.submitted` | A KYC submission has been received |
+| `kyc.approved` | A KYC check has been approved |
+| `kyc.rejected` | A KYC check has been rejected |
+| `kyc.pending_review` | A KYC submission is awaiting manual review |
 
 ### IBAN Events
 
@@ -196,12 +277,12 @@ All payloads share the same envelope structure:
 }
 ```
 
-### card.transaction.completed
+### transaction.settled
 
 ```json
 {
   "id": "evt_05mno345",
-  "type": "card.transaction.completed",
+  "type": "transaction.settled",
   "created_at": "2026-03-26T11:00:00Z",
   "data": {
     "card_id": "card_01abc",
@@ -210,7 +291,7 @@ All payloads share the same envelope structure:
     "merchant_category": "Shopping",
     "amount": "49.99",
     "currency": "USD",
-    "status": "approved",
+    "status": "settled",
     "new_balance": "450.01"
   }
 }
@@ -258,7 +339,11 @@ All payloads share the same envelope structure:
 
 ## Signature Verification
 
-Every webhook request includes an `X-Webhook-Signature` header. Always verify it before processing:
+There are two signature schemes depending on which webhook system the event is delivered from.
+
+### General webhooks (`X-Webhook-Signature`)
+
+Events delivered via the main webhook system (`POST /webhooks/create`) use a plain HMAC-SHA256 of the raw request body:
 
 ```typescript
 import crypto from 'crypto';
@@ -269,30 +354,197 @@ function verifySignature(rawBody: Buffer, signature: string, secret: string): bo
 }
 ```
 
-See the [Webhook Management](/yativo/webhooks) page for verification examples in Python and PHP.
+### Card webhooks (`X-Yativo-Signature`)
+
+Events delivered via the card webhook system (`POST /yativo-card/webhooks`) are signed with a timestamp to prevent replay attacks. Two headers are sent:
+
+| Header | Value |
+|--------|-------|
+| `X-Yativo-Signature` | `sha256=<hmac>` |
+| `X-Yativo-Timestamp` | Unix timestamp (seconds) |
+
+The HMAC is computed over `"${timestamp}.${JSON.stringify(payload)}"`:
+
+```typescript
+import crypto from 'crypto';
+
+function verifyCardWebhookSignature(
+  payload: object,
+  signature: string,       // value of X-Yativo-Signature header
+  timestamp: string,       // value of X-Yativo-Timestamp header
+  secret: string           // your webhook secret (starts with whsec_)
+): boolean {
+  // Reject if timestamp is more than 5 minutes old
+  const ts = parseInt(timestamp, 10);
+  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
+
+  const signedPayload = `${timestamp}.${JSON.stringify(payload)}`;
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', secret)
+    .update(signedPayload)
+    .digest('hex');
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+```
+
+See the [Webhook Management](/yativo/webhooks) page for Python and PHP examples for the general webhook system.
 
 ---
 
 ## Setting Up Webhooks
 
-Use the webhook management API to register your endpoint:
+Yativo Crypto has two webhook systems depending on what you need to monitor:
+
+| System | Best for | Endpoint |
+|--------|----------|----------|
+| **General webhooks** | Deposits, withdrawals, swaps, gas, IBAN | `POST /webhooks/create` |
+| **Card webhooks** | Card lifecycle, transactions, KYC, customer funding | `POST /yativo-card/webhooks` |
+
+---
+
+### General Webhooks
+
+Register an endpoint to receive deposit, withdrawal, swap, IBAN, and system events:
 
 ```bash
-curl -X POST https://crypto-api.yativo.com/api/v1/webhook/create \
+curl -X POST https://crypto-api.yativo.com/api/v1/webhooks/create \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://your-server.com/webhooks/yativo-crypto",
-    "events": [
-      "deposit.confirmed",
-      "withdrawal.completed",
-      "withdrawal.failed",
-      "swap.completed",
-      "card.transaction.completed",
-      "gas.low"
-    ],
-    "description": "Yativo Crypto production webhook"
+    "webhook_name": "Crypto production webhook",
+    "webhook_url": "https://your-server.com/webhooks/yativo-crypto",
+    "webhook_secret": "my_super_secret_string"
   }'
 ```
 
-For full webhook management documentation (list, update, delete, retry), see [Webhook Management](/yativo/webhooks).
+For managing (list, edit, delete) general webhooks, see [Webhook Management](/yativo/webhooks).
+
+---
+
+### Card Webhooks
+
+Card webhooks use a dedicated management API under `/yativo-card/webhooks`. The secret is **auto-generated** on creation — you do not supply one.
+
+#### Create a card webhook
+
+**POST** `/yativo-card/webhooks`
+
+<ParamField body="url" type="string" required>
+  The HTTPS endpoint to receive card events.
+</ParamField>
+
+<ParamField body="events" type="array">
+  Event types to subscribe to. Defaults to `["*"]` (all events). See the [Card Events](#card-events-1) table above for the full list.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional label for this subscription.
+</ParamField>
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/webhooks \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-server.com/webhooks/yativo-card",
+    "events": ["transaction.authorized", "transaction.settled", "card.created"],
+    "description": "Card events for order fulfillment"
+  }'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "webhook_id": "664abc123def456789000001",
+    "url": "https://your-server.com/webhooks/yativo-card",
+    "events": ["transaction.authorized", "transaction.settled", "card.created"],
+    "secret": "whsec_abc123def456...",
+    "created_at": "2026-03-26T10:00:00.000Z"
+  }
+}
+```
+
+<Warning>
+  Save the `secret` immediately — it is only returned at creation time. Use it to verify `X-Yativo-Signature` on every delivery.
+</Warning>
+
+#### List card webhooks
+
+**GET** `/yativo-card/webhooks`
+
+```bash
+curl -X GET https://crypto-api.yativo.com/api/v1/yativo-card/webhooks \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Get a card webhook (includes secret)
+
+**GET** `/yativo-card/webhooks/:webhookId`
+
+```bash
+curl -X GET https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/664abc123def456789000001 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Update a card webhook
+
+**PUT** `/yativo-card/webhooks/:webhookId`
+
+```bash
+curl -X PUT https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/664abc123def456789000001 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": ["*"],
+    "enabled": true
+  }'
+```
+
+Set `"enabled": false` to pause delivery without deleting the subscription.
+
+#### Delete a card webhook
+
+**DELETE** `/yativo-card/webhooks/:webhookId`
+
+```bash
+curl -X DELETE https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/664abc123def456789000001 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Rotate the signing secret
+
+**POST** `/yativo-card/webhooks/:webhookId/rotate-secret`
+
+Generates a new secret and invalidates the old one immediately.
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/664abc123def456789000001/rotate-secret \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+#### Delivery history
+
+**GET** `/yativo-card/webhooks/:webhookId/deliveries`
+
+Query params: `limit`, `offset`, `status`, `eventType`
+
+```bash
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/664abc123def456789000001/deliveries?limit=20&status=failed' \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**GET** `/yativo-card/webhooks/deliveries/all` — All deliveries across all subscriptions.
+
+#### Retry a failed delivery
+
+**POST** `/yativo-card/webhooks/:webhookId/deliveries/:deliveryId/retry`
+
+```bash
+curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/664abc123def456789000001/deliveries/664abc000000000000000099/retry \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
