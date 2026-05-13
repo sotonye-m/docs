@@ -323,9 +323,6 @@ async function handleEvent(event: WebhookEvent): Promise<void> {
     case "swap.failed":
       await handleSwapFailed(event.data);
       break;
-    case "card.transaction.approved":
-      await handleCardTransaction(event.data);
-      break;
     default:
       console.log(`Unhandled event type: ${event.type}`);
   }
@@ -425,22 +422,15 @@ After 7 failed attempts, the event is marked as **permanently failed** and no fu
 
 ### Card Events
 
-| Event | Description |
-|-------|-------------|
-| `card.transaction.approved` | Authorization approved |
-| `card.transaction.declined` | Authorization declined (includes `declineReason`) |
-| `card.transaction.completed` | Settlement cleared |
-| `card.transaction.reversed` | Transaction reversed or refunded |
-| `card.funding.completed` | Card top-up completed |
-| `card.spending_limit.reached` | Card spending limit hit |
+<Note>
+  Card issuer program events (`transaction.authorized`, `transaction.settled`, `card.created`, `customer.funded`, etc.) are delivered through a separate webhook system. See [Webhook Events](/api-reference/issuer/webhooks) for the full reference and subscription setup at `POST /v1/yativo-card/webhooks`.
+</Note>
 
 ### KYC & Customer Events
 
 | Event | Description |
 |-------|-------------|
 | `kyc.status_changed` | KYC status updated (includes new status) |
-| `customer.kyc.approved` | Customer KYC approved (issuer program) |
-| `customer.kyc.rejected` | Customer KYC rejected |
 
 ### IBAN Events
 

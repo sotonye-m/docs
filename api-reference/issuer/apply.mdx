@@ -52,16 +52,21 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
     "id": "69ecc05a4fc8c9c148ed1a9a",
     "status": "pending",
     "funding_structure": "master_wallet",
-    "preferred_chain": "SOL"
+    "preferred_chain": "SOL",
+    "iban_enabled": false
   }
 }
 ```
 
-```json 409 Already enrolled
+```json 409 Already applied
 {
   "success": false,
-  "error": "ALREADY_ENROLLED",
-  "message": "You already have an active card issuer program."
+  "error": "ALREADY_APPLIED",
+  "message": "Application already exists with status: pending",
+  "data": {
+    "status": "pending",
+    "applied_at": "2026-04-01T10:00:00.000Z"
+  }
 }
 ```
 

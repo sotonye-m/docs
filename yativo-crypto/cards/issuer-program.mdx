@@ -131,10 +131,10 @@ Master wallet issuers (`funding_structure: master_wallet`) have two types of wal
 
 ### Source wallets (SOL and/or XDC)
 
-These are the wallets you deposit USDC into. SOL deposits are bridged automatically to your settlement wallet. XDC deposits are bridged manually on your own schedule (XDC deposits accrue yield while held).
+These are the wallets you deposit USDC into. SOL deposits are settled automatically to your master wallet balance. XDC deposits are settled manually on your own schedule (XDC deposits accrue yield while held).
 
-| Chain | Token deposited | Bridge | Time |
-|-------|-----------------|--------|------|
+| Chain | Token deposited | Settlement | Time |
+|-------|-----------------|-----------|------|
 | SOL | USDC_SOL | Automatic | ~2–5 min |
 | XDC | USDC_XDC | Manual | ~20 min |
 
@@ -144,7 +144,7 @@ These are auto-provisioned on approval. All three currency balances share the sa
 
 | Balance | Funded by | Used for |
 |---------|-----------|----------|
-| USD | USDC bridge from SOL/XDC | Funding cards in USD regions |
+| USD | USDC deposited via SOL/XDC | Funding cards in USD regions |
 | EUR | Swap from USD | Funding cards in EUR regions |
 | GBP | Swap from USD | Funding cards in GBP regions |
 
@@ -261,7 +261,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 
 | Mode | You specify | Customer receives |
 |------|-------------|-----------------|
-| `send_x` | The amount you send from your master wallet | Less than `amount` (bridge fees deducted) |
+| `send_x` | The amount you send from your master wallet | Less than `amount` (transfer fees deducted) |
 | `receive_x` | The amount the customer should receive | More than `amount` is sent from your master wallet (you absorb fees) |
 
 <Note>
@@ -328,21 +328,21 @@ GET /card-issuer/customers?status=kyc_approved
 
 ## Deposit History (XDC)
 
-XDC deposits are tracked individually so you can choose when to bridge each one.
+XDC deposits are tracked individually so you can choose when to settle each one.
 
 ```bash
 # List deposits
 curl 'https://crypto-api.yativo.com/api/v1/card-issuer/deposits' \
   -H 'Authorization: Bearer YOUR_TOKEN'
 
-# Manually trigger bridge for a specific XDC deposit
+# Manually trigger settlement for a specific XDC deposit
 curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/deposits/{depositId}/fund' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{ "destination_token": "USDC" }'
 ```
 
-Deposits in `awaiting_manual` status can be manually triggered. SOL deposits are bridged automatically.
+Deposits in `awaiting_manual` status can be manually triggered. SOL deposits are settled automatically.
 
 ---
 
@@ -353,7 +353,7 @@ curl 'https://crypto-api.yativo.com/api/v1/card-issuer/funding-history?page=1&li
   -H 'Authorization: Bearer YOUR_TOKEN'
 ```
 
-Returns all bridge transactions initiated from your master wallet, with status, amounts, and chain details.
+Returns all funding transfers initiated from your master wallet, with status, amounts, and chain details.
 
 ---
 
@@ -385,15 +385,18 @@ Your current limits are always visible in `GET /card-issuer/status` under `limit
 
 ## Webhooks
 
-Subscribe to issuer events using the [Webhooks API](/yativo-crypto/webhooks):
+Subscribe to issuer events via `POST /v1/yativo-card/webhooks`. See [Webhook Events](/api-reference/issuer/webhooks) for the full event reference, payload examples, and signature verification.
+
+Key events to subscribe to:
 
 | Event | Description |
 |-------|-------------|
-| `issuer.program.approved` | Your program application was approved |
-| `issuer.customer.kyc_approved` | A customer's KYC was approved |
-| `issuer.customer.card_created` | A card was issued for a customer |
-| `issuer.funding.completed` | A card funding bridge settled successfully |
-| `issuer.funding.failed` | A card funding attempt failed |
+| `customer.funded` | A customer's card wallet was credited |
+| `customer.funding.failed` | A funding transfer failed |
+| `master_wallet.deposit` | Funds arrived in your master wallet |
+| `card.created` | A card was issued to a customer |
+| `transaction.authorized` | A card transaction was authorized |
+| `transaction.declined` | A card transaction was declined |
 
 ---
 
@@ -401,5 +404,5 @@ Subscribe to issuer events using the [Webhooks API](/yativo-crypto/webhooks):
 
 - [Card overview](/yativo-crypto/cards/overview)
 - [Customer onboarding](/yativo-crypto/cards/onboarding)
-- [Webhooks](/yativo-crypto/webhooks)
+- [Webhook Events](/api-reference/issuer/webhooks)
 - [Supported chains](/yativo-crypto/supported-chains)

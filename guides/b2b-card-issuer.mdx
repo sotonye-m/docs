@@ -554,7 +554,7 @@ Yativo Admin
   └── sets program ceiling (e.g. max 3 virtual per customer)
         └── You (the Issuer)
               └── can set per-customer override ≤ program ceiling
-                    └── Gnosis hard cap: 5 active cards combined
+                    └── Platform hard cap: 5 active cards combined
 ```
 
 The defaults on a new program are **1 virtual, 1 physical, 2 total** per customer.
@@ -1146,18 +1146,33 @@ If you need to reset a customer who already has a card, contact Yativo support �
 
 ## Webhook Events
 
-Subscribe to webhooks for real-time events. See [Webhook Integration](/guides/webhook-integration).
+Subscribe to webhooks for real-time events. See [Webhook Events](/api-reference/issuer/webhooks) for payload examples, signature verification, and the full event reference.
 
 | Event | Trigger |
 |---|---|
-| `customer.kyc.approved` | KYC passed — wallet is being provisioned |
-| `customer.kyc.rejected` | KYC failed — redirect customer to retry |
-| `customer.card.created` | Card issued successfully |
-| `card.transaction.approved` | Purchase approved |
-| `card.transaction.declined` | Purchase declined |
-| `card.transaction.completed` | Settlement complete |
-| `card.funded` | Funding transfer completed |
-| `card.funding.failed` | Funding transfer failed |
+| `customer.funded` | Funding transfer completed into a customer's card wallet |
+| `customer.funding.failed` | Funding transfer failed |
+| `master_wallet.customer_funded` | Master wallet debited for a customer funding (includes `remaining_balance` on direct transfers) |
+| `master_wallet.deposit` | Funds received into your master wallet |
+| `master_wallet.swap` | Token swap submitted from your master wallet |
+| `card.created` | New card issued to a customer |
+| `card.activated` | Physical card activated |
+| `card.frozen` | Card frozen |
+| `card.unfrozen` | Card unfrozen |
+| `card.voided` | Card permanently voided |
+| `card.lost` | Card reported lost |
+| `card.stolen` | Card reported stolen |
+| `card.cancelled` | Card cancelled |
+| `transaction.authorized` | Card transaction authorized at point of sale |
+| `transaction.settled` | Transaction cleared and settled |
+| `transaction.declined` | Transaction declined |
+| `transaction.reversed` | Transaction reversed |
+| `transaction.refund.created` | Refund created |
+| `customer.balance.updated` | Customer balance changed after a spend, top-up, or authorization |
+
+<Note>
+  KYC status changes are not delivered as webhooks — poll [Get Customer](/api-reference/issuer/customer) or [Look Up Customer](/api-reference/issuer/lookup-customer) to check `kyc_status` after directing customers through the KYC link.
+</Note>
 
 ---
 

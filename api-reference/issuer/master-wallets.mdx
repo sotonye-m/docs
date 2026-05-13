@@ -52,9 +52,11 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets' \
 | Key | Currency | Notes |
 |---|---|---|
 | `sol` | USDC on Solana | Primary deposit chain — send USDC here |
-| `xdc` | USDC on XDC | Alternative deposit chain |
+| `xdc` | USDC on XDC | Alternative deposit chain — `null` if XDC is not enabled for your program |
 | `usdc` | USD spend balance | Available for funding USD-denomination cards |
 | `eur` | EUR spend balance | Available for funding EUR-denomination cards |
 | `gbp` | GBP spend balance | Available for funding GBP-denomination cards |
+
+`usdc`, `eur`, and `gbp` balances have no `address` field — they are settlement balances managed internally. `sol` and `xdc` include an `address` field for depositing USDC.
 
 Use [Swap Token](/api-reference/issuer/swap-token) to convert between `usdc`, `eur`, and `gbp` balances.

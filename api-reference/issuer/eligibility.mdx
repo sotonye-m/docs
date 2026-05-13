@@ -27,7 +27,10 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/eligibility' \
   "data": {
     "eligible": true,
     "enrolled": false,
-    "status": null
+    "status": null,
+    "visibility": null,
+    "funding_structure": null,
+    "eligible_since": "2026-03-15T09:00:00.000Z"
   }
 }
 ```
@@ -38,7 +41,10 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/eligibility' \
   "data": {
     "eligible": true,
     "enrolled": true,
-    "status": "approved"
+    "status": "approved",
+    "visibility": "visible",
+    "funding_structure": "master_wallet",
+    "eligible_since": "2026-03-15T09:00:00.000Z"
   }
 }
 ```
@@ -49,7 +55,10 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/eligibility' \
   "data": {
     "eligible": false,
     "enrolled": false,
-    "status": null
+    "status": null,
+    "visibility": null,
+    "funding_structure": null,
+    "eligible_since": null
   }
 }
 ```

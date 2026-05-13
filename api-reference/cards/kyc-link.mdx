@@ -17,8 +17,7 @@ authMethod: "bearer"
   Call this endpoint after OTP verification. The returned `kyc_url` should be opened by the
   customer in their browser or embedded in your app. They will complete identity verification
   (government ID upload + liveness check) through the hosted flow. After completion, poll
-  [Check KYC Status](/api-reference/cards/kyc-status) or listen for the
-  `customer.kyc.approved` webhook.
+  [Check KYC Status](/api-reference/cards/kyc-status) until `kyc_status` is `approved` — KYC completion is not delivered as a webhook.
 </Note>
 
 <RequestExample>

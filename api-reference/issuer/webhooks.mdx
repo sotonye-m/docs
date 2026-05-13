@@ -7,14 +7,55 @@ description: "Real-time notifications for card issuer program events."
 
 Yativo sends webhook notifications to your registered HTTPS endpoint via HTTP POST whenever a program event occurs. Each request is signed with HMAC-SHA256 so you can verify it genuinely came from Yativo.
 
-You can subscribe to events and manage your webhook endpoints via the [Webhooks API](/api-reference/webhooks/create).
+Subscribe and manage your webhook endpoints via the Card Issuer Webhooks API.
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://api.yourapp.com/webhooks/yativo",
+    "events": ["customer.funded", "customer.funding.failed", "transaction.authorized", "transaction.settled"],
+    "description": "Production card issuer webhook"
+  }'
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "webhook_id": "68241abc2f3d4e5f6a7b8c9d",
+    "url": "https://api.yourapp.com/webhooks/yativo",
+    "events": ["customer.funded", "customer.funding.failed", "transaction.authorized", "transaction.settled"],
+    "secret": "whsec_a8f3c2e1d4b7f9e2c5a3b6d8f1e4c7a2b5d8e1f4c7a2b5d8",
+    "created_at": "2026-05-12T14:00:00.000Z"
+  }
+}
+```
+
+<Warning>
+  The `secret` is returned only at creation time. Store it immediately — if you lose it, rotate it via `POST /v1/yativo-card/webhooks/:webhookId/rotate-secret`.
+</Warning>
+
+Pass `"events": ["*"]` to receive all event types. Other management endpoints:
+
+| Method | Path | Action |
+|---|---|---|
+| `GET` | `/v1/yativo-card/webhooks` | List all subscriptions |
+| `GET` | `/v1/yativo-card/webhooks/:webhookId` | Get one subscription (returns secret) |
+| `PUT` | `/v1/yativo-card/webhooks/:webhookId` | Update URL, events, or enabled state |
+| `DELETE` | `/v1/yativo-card/webhooks/:webhookId` | Delete subscription |
+| `POST` | `/v1/yativo-card/webhooks/:webhookId/rotate-secret` | Rotate signing secret |
+| `GET` | `/v1/yativo-card/webhooks/:webhookId/deliveries` | Delivery history for one webhook |
+| `GET` | `/v1/yativo-card/webhooks/deliveries/all` | All deliveries across webhooks |
+| `POST` | `/v1/yativo-card/webhooks/deliveries/:deliveryId/retry` | Retry a failed delivery |
 
 ## Event categories
 
 | Category | Events |
 |---|---|
-| **Master Wallet** | Deposits, token swaps, customer funding, withdrawals |
-| **Customer Funding** | Funds received into a customer's card wallet |
+| **Master Wallet** | Deposits, token swaps, customer funding |
+| **Customer Funding** | Funds received or failed into a customer's card wallet, balance updates |
 | **Card Lifecycle** | Card created, activated, frozen, unfrozen, voided, lost, stolen, cancelled, deactivated |
 | **Card Transactions** | Authorization, settlement, decline, reversal, refund |
 
@@ -25,8 +66,8 @@ You can subscribe to events and manage your webhook endpoints via the [Webhooks 
 | `master_wallet.deposit` | Funds received into your master wallet |
 | `master_wallet.swap` | Token swap submitted (e.g. USD → EUR) |
 | `master_wallet.customer_funded` | Master wallet debited to fund a customer |
-| `master_wallet.withdrawal` | Withdrawal initiated from master wallet |
 | `customer.funded` | Customer's card wallet received funds |
+| `customer.funding.failed` | Funding transfer failed (wallet misconfigured, insufficient balance, or network error) |
 | `customer.balance.updated` | Customer's card balance changed (after spend, top-up, or authorization) |
 | `card.created` | New card issued to a customer |
 | `card.activated` | Card activated |
@@ -60,7 +101,9 @@ All webhook events share a common envelope. The `data` object contains event-spe
 
 ### `master_wallet.deposit`
 
-Fired when funds arrive in your master wallet. The `status` field is `processing` while the settlement is in flight, and `settled` once confirmed.
+You will receive this event **twice** for a single deposit: once immediately when funds are detected (`processing`), and again when settlement is confirmed (`settled`). The payload shape differs between the two states.
+
+**`status: "processing"`** — fired as soon as the incoming deposit is detected.
 
 ```json
 {
@@ -68,7 +111,23 @@ Fired when funds arrive in your master wallet. The `status` field is `processing
   "type": "master_wallet.deposit",
   "created_at": "2026-05-12T14:00:00.000Z",
   "data": {
-    "settlement_id": "bridge_abc123def456",
+    "settlement_id": "bridge_1745123456_2ea87af00de1",
+    "source_amount": 500.00,
+    "tx_hash": "5KtP3MzXYZABCDE1234567890abcdef12345678901234567890abcdef1234567",
+    "status": "processing"
+  }
+}
+```
+
+**`status: "settled"`** — fired once the funds are settled into your master wallet.
+
+```json
+{
+  "id": "evt_1747058520000_def456",
+  "type": "master_wallet.deposit",
+  "created_at": "2026-05-12T14:02:00.000Z",
+  "data": {
+    "settlement_id": "bridge_1745123456_2ea87af00de1",
     "source_amount": 500.00,
     "settled_amount": 499.75,
     "status": "settled"
@@ -90,6 +149,7 @@ Fired when a token swap is submitted from your master wallet.
     "from_token": "USD",
     "to_token": "EUR",
     "amount": 1000.00,
+    "expected_output": 921.50,
     "status": "submitted"
   }
 }
@@ -97,7 +157,7 @@ Fired when a token swap is submitted from your master wallet.
 
 ### `customer.funded`
 
-Fired when a customer's card wallet has been credited.
+Fired when a customer's card wallet has been credited. The `transfer_id` can be looked up via [Get Transfer](/api-reference/issuer/transfer-status).
 
 ```json
 {
@@ -105,11 +165,49 @@ Fired when a customer's card wallet has been credited.
   "type": "customer.funded",
   "created_at": "2026-05-12T14:10:00.000Z",
   "data": {
-    "transfer_id": "bridge_xyz789",
+    "transfer_id": "bridge_1745128800_9fc12ab3e4d5",
     "customer_id": "69f0bdf29a84752db9cc8ff9",
     "amount": 50.00,
     "currency": "USD",
     "status": "completed"
+  }
+}
+```
+
+### `customer.funding.failed`
+
+Fired when a funding transfer to a customer's card wallet fails.
+
+```json
+{
+  "id": "evt_1747059000000_fail01",
+  "type": "customer.funding.failed",
+  "created_at": "2026-05-12T14:10:00.000Z",
+  "data": {
+    "customer_id": "69f0bdf29a84752db9cc8ff9",
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "amount": 50.00,
+    "currency": "USD"
+  }
+}
+```
+
+### `master_wallet.customer_funded`
+
+Fired alongside `customer.funded` whenever your master wallet is debited. Includes `remaining_balance` when the transfer settles immediately; omitted when the balance updates asynchronously.
+
+```json
+{
+  "id": "evt_1747059001000_mwf01",
+  "type": "master_wallet.customer_funded",
+  "created_at": "2026-05-12T14:10:00.000Z",
+  "data": {
+    "transfer_id": "bridge_1745128800_9fc12ab3e4d5",
+    "customer_id": "69f0bdf29a84752db9cc8ff9",
+    "amount": 50.00,
+    "currency": "USD",
+    "status": "completed",
+    "remaining_balance": 114.98
   }
 }
 ```
@@ -131,6 +229,10 @@ Fired when a card is frozen, either by your program or by the customer.
   }
 }
 ```
+
+<Note>
+  The `card_id` field in webhook events is the card token identifier. This may differ from the `card_id` returned by the [Get Customer](/api-reference/issuer/customer) endpoint. Use `yativo_card_id` as the stable cross-reference between webhook events and API responses.
+</Note>
 
 ### `customer.balance.updated`
 
@@ -212,7 +314,11 @@ const crypto = require('crypto');
 function verifyWebhook(body, signature, timestamp, secret) {
   const signed = `${timestamp}.${JSON.stringify(body)}`;
   const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(signed).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
 }
 ```
 
@@ -222,8 +328,22 @@ function verifyWebhook(body, signature, timestamp, secret) {
 
 ## Retry policy
 
-Yativo retries failed webhook deliveries using exponential backoff. Respond with any HTTP `2xx` status code to acknowledge receipt and prevent retries. If your endpoint returns a non-`2xx` response or times out, Yativo will retry the delivery up to several times over the following hours.
+Yativo retries failed webhook deliveries using exponential backoff. Respond with any HTTP `2xx` status code to acknowledge receipt and prevent retries.
+
+| Attempt | Delay after previous attempt |
+|---------|------------------------------|
+| 1 (initial) | — |
+| 2 | 1 minute |
+| 3 | 5 minutes |
+| 4 | 30 minutes |
+| 5 | 2 hours |
+| 6 | 12 hours |
+| 7 | 24 hours |
+
+After 7 failed attempts the delivery is marked **permanently failed** — no further automatic retries. You can manually replay individual deliveries via `POST /v1/yativo-card/webhooks/deliveries/:deliveryId/retry`.
+
+If your endpoint fails 100 consecutive deliveries, Yativo will automatically disable the subscription to protect your program's event queue. Re-enable it via `PUT /v1/yativo-card/webhooks/:webhookId` with `{ "enabled": true }` after fixing the issue.
 
 <Note>
-  To avoid processing duplicate events, use the top-level `id` field (e.g. `evt_1747058400000_abc123`) as an idempotency key. You can also use the `X-Yativo-Delivery-Id` request header, which carries the same value.
+  To avoid processing duplicate events, use the top-level `id` field (e.g. `evt_1747058400000_abc123`) as an idempotency key. The `X-Yativo-Delivery-Id` header carries the delivery record ID (a separate identifier used to retry individual deliveries via the API).
 </Note>

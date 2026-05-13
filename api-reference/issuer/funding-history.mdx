@@ -14,7 +14,7 @@ authMethod: "bearer"
 <ParamField query="limit" type="integer">Results per page. Defaults to `20`, max `100`.</ParamField>
 
 <ParamField query="status" type="string">
-  Filter by status: `initiated`, `pending`, `completed`, `failed`.
+  Filter by status: `pending`, `hop1_processing`, `hop1_complete`, `hop2_processing`, `completed`, `failed`, `refunded`.
 </ParamField>
 
 <ParamField query="customer_id" type="string">Filter by customer ID.</ParamField>
@@ -33,17 +33,16 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/funding-history?st
 {
   "success": true,
   "data": {
-    "transactions": [
+    "transfers": [
       {
-        "id": "6627f3a2c5d4e100123abcde",
-        "bridge_id": "bridge_01HX9KZMB3F7VNQ",
+        "transfer_id": "bridge_1743508800_2ea87af00de1",
         "source_chain": "SOL",
         "source_amount": 201.80,
-        "destination_token": "EUR",
+        "destination_currency": "EUR",
         "destination_amount": 200.00,
         "status": "completed",
         "customer_id": "6627f3a2c5d4e100123def",
-        "created_at": "2026-04-01T12:00:00.000Z",
+        "initiated_at": "2026-04-01T12:00:00.000Z",
         "completed_at": "2026-04-01T12:08:42.000Z"
       }
     ],

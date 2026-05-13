@@ -44,14 +44,15 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/master-wallets/sw
 ```json 200 Swap initiated
 {
   "success": true,
-  "message": "Swap initiated from USD to EUR",
+  "message": "Swap initiated: 1000 USD → EUR",
   "data": {
-    "swap_id": "swap_01HX9ABC123",
-    "from_token": "USDC",
+    "swap_id": "0x7a8b9c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f",
+    "status": "submitted",
+    "from_token": "USD",
     "to_token": "EUR",
-    "from_amount": 1000,
-    "estimated_output": 924.50,
-    "status": "pending",
+    "amount": 1000,
+    "expected_output": 924.50,
+    "fee_amount": "1.20",
     "estimated_time": "1-5 minutes"
   }
 }

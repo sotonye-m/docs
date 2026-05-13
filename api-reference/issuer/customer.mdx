@@ -150,7 +150,7 @@ Each object in `cards` represents one card issued to this customer. Full card nu
 
 | Field | Description |
 |---|---|
-| `card_id` | Card identifier |
+| `card_id` | Card account identifier. Note: webhook events carry a separate `card_id` that is the card token — use `yativo_card_id` to correlate across both. |
 | `last_four` | Last four digits of the card number |
 | `card_type` | `virtual` or `physical` |
 | `status` | `active`, `frozen`, `blocked`, `lost`, or `voided` |

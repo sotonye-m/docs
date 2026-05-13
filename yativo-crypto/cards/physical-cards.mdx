@@ -376,7 +376,30 @@ After your card is shipped, you will receive a tracking number via the order sta
 
 ## Physical Card Activation
 
-Physical cards are typically activated automatically once delivered. If your card requires manual activation, use the card activation endpoint or follow the instructions included with your card delivery.
+Before a physical card can be activated, a **12.00 USDC** one-time activation fee must be paid. Send 12 USDC (SPL) on Solana to your card wallet address. The fee is detected automatically — once confirmed, you can call the activation endpoint with your activation code.
+
+<Note>
+  Activation fees are subject to review and may change. The current fee will always be returned in the `402` response if payment is still outstanding.
+</Note>
+
+If the fee has not been paid, the activation endpoint returns `HTTP 402` with the payment address:
+
+```json
+{
+  "success": false,
+  "error_code": "ACTIVATION_FEE_REQUIRED",
+  "message": "A 12.00 USDC activation fee is required...",
+  "data": {
+    "fee_amount": "12.00",
+    "fee_currency": "USDC",
+    "payment_address": "SoLFundingWalletAddressXXX",
+    "network": "solana",
+    "fees_subject_to_review": true
+  }
+}
+```
+
+Once the payment is detected your activation call will succeed normally.
 
 <Tip>
   Set your PIN as soon as you receive your card and before your first chip-and-PIN transaction to ensure smooth usage at point-of-sale terminals.

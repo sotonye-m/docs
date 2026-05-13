@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/txn_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/bridge_1745123456_2ea87af00de1' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -25,14 +25,14 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/txn_01HX
 {
   "success": true,
   "data": {
-    "transfer_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "transfer_id": "bridge_1745123456_2ea87af00de1",
     "status": "hop1_processing",
     "source": {
       "chain": "SOL",
       "amount": 201.80
     },
     "destination": {
-      "token": "EUR",
+      "currency": "EUR",
       "amount": null
     },
     "fees": {
@@ -51,14 +51,14 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/txn_01HX
 {
   "success": true,
   "data": {
-    "transfer_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "transfer_id": "bridge_1745123456_2ea87af00de1",
     "status": "completed",
     "source": {
       "chain": "SOL",
       "amount": 201.80
     },
     "destination": {
-      "token": "EUR",
+      "currency": "EUR",
       "amount": 200.00
     },
     "fees": {
