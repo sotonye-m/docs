@@ -7,7 +7,7 @@ sidebarTitle: "Card Issuer Webhooks"
 Card issuer webhooks let Yativo push event notifications to your server the moment something happens in your program — a deposit settles, a customer's card is funded, a transaction is authorized, or a card is frozen. This guide covers every step from registering a URL to handling the complete event lifecycle.
 
 <Note>
-  Card issuer webhooks use a separate service and endpoint from the general Yativo crypto webhooks. Register them at `POST /v1/yativo-card/webhooks`, not `/v1/webhook/create-webhook`. The two systems are independent.
+  Card issuer events and general crypto events (deposits, swaps, transactions) are delivered through the same webhook service. Register once at `POST /v1/webhook/create-webhook` and subscribe to any combination of event types.
 </Note>
 
 ---
@@ -224,16 +224,16 @@ function verifySignature(string $rawBody, string $signature, string $timestamp, 
 
 ## Step 2 — Register Your Webhook
 
-Once your endpoint is live, register it with Yativo to start receiving events.
+Register your endpoint at the unified webhook endpoint. You can subscribe to card issuer events, general crypto events, or any mix.
 
 <CodeGroup>
 
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/webhook/create-webhook' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "url": "https://api.yourapp.com/webhooks/yativo/card-issuer",
+    "url": "https://api.yourapp.com/webhooks/yativo",
     "events": [
       "master_wallet.deposit",
       "master_wallet.swap",
@@ -262,7 +262,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks' \
 
 ```typescript TypeScript
 const response = await fetch(
-  "https://crypto-api.yativo.com/api/v1/yativo-card/webhooks",
+  "https://crypto-api.yativo.com/api/v1/webhook/create-webhook",
   {
     method: "POST",
     headers: {
@@ -270,8 +270,8 @@ const response = await fetch(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      url: "https://api.yourapp.com/webhooks/yativo/card-issuer",
-      events: ["*"], // Subscribe to all card issuer events
+      url: "https://api.yourapp.com/webhooks/yativo",
+      events: ["*"], // Subscribe to all events
       description: "Production card issuer webhook",
     }),
   }
@@ -287,10 +287,10 @@ console.log("Secret:", data.secret); // Store securely — also retrievable via 
 
 ```json Response
 {
-  "success": true,
+  "status": true,
   "data": {
     "webhook_id": "68241abc2f3d4e5f6a7b8c9d",
-    "url": "https://api.yourapp.com/webhooks/yativo/card-issuer",
+    "url": "https://api.yourapp.com/webhooks/yativo",
     "events": ["master_wallet.deposit", "customer.funded", "..."],
     "secret": "whsec_a8f3c2e1d4b7f9e2c5a3b6d8f1e4c7a2b5d8e1f4c7a2b5d8",
     "created_at": "2026-05-12T14:00:00.000Z"
@@ -302,7 +302,7 @@ console.log("Secret:", data.secret); // Store securely — also retrievable via 
   The `secret` is included in the creation response and is also retrievable later via `GET /v1/yativo-card/webhooks/:webhookId`. Store it in a secure environment variable or secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault). If you need to invalidate a compromised secret, rotate it via `POST /v1/yativo-card/webhooks/:webhookId/rotate-secret`.
 </Warning>
 
-Pass `"events": ["*"]` to receive every event type. You can narrow the list later via the update endpoint.
+Pass `"events": ["*"]` to receive every event type. You can narrow the list later via `PUT /v1/yativo-card/webhooks/:webhookId`.
 
 ---
 
@@ -994,11 +994,11 @@ Use the sandbox environment to test your webhook handler without real funds:
 
 ```bash
 # Register a sandbox webhook pointing at your local ngrok tunnel
-curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/yativo-card/webhooks' \
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/webhook/create-webhook' \
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "url": "https://abc123.ngrok-free.app/webhooks/yativo/card-issuer",
+    "url": "https://abc123.ngrok-free.app/webhooks/yativo",
     "events": ["*"],
     "description": "Local dev webhook"
   }'

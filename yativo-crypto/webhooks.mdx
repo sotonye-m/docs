@@ -9,21 +9,11 @@ For webhook management (creating, updating, deleting webhook endpoints), see the
 
 <Accordion title="Type Definitions">
 ```typescript
-interface GeneralWebhook {
-  _id: string;
-  webhook_name: string;
-  webhook_url: string;
-  user_id: string;
-  status: "active" | "inactive" | "deleted";
-  whitelist_ips: string[];
-  createdAt: string;
-}
-
-interface CardWebhook {
+interface Webhook {
   webhook_id: string;
   url: string;
-  events: string[];
-  secret: string;           // only returned at create time or GET single
+  events: string[];           // ["*"] for all events
+  secret: string;             // only returned at create time or GET single
   enabled: boolean;
   description?: string;
   last_success_at?: string;
@@ -33,8 +23,14 @@ interface CardWebhook {
   updated_at: string;
 }
 
+interface CreateWebhookRequest {
+  url: string;                // required — must be HTTPS
+  events?: string[];          // default ["*"] — all events
+  description?: string;
+}
+
 type WebhookEventType =
-  // Deposit / withdrawal / general
+  // Deposits & withdrawals
   | "deposit.detected"
   | "deposit.confirmed"
   | "withdrawal.initiated"
@@ -48,7 +44,7 @@ type WebhookEventType =
   | "iban.transfer.received"
   | "autoforward.completed"
   | "gas.low"
-  // Card lifecycle (card webhook system)
+  // Card lifecycle
   | "card.created"
   | "card.activated"
   | "card.frozen"
@@ -64,37 +60,13 @@ type WebhookEventType =
   | "transaction.settled"
   | "transaction.reversed"
   | "transaction.refund.created"
-  | "transaction.refund.settled"
-  // Customer / master wallet funding
+  // Customer & master wallet funding
   | "customer.funded"
+  | "customer.funding.failed"
   | "customer.balance.updated"
   | "master_wallet.deposit"
   | "master_wallet.swap"
-  | "master_wallet.customer_funded"
-  | "master_wallet.withdrawal"
-  // Card wallet on-chain
-  | "wallet.deployed"
-  | "wallet.deposit.detected"
-  | "wallet.deposit.confirmed"
-  | "wallet.balance.low"
-  // KYC
-  | "kyc.submitted"
-  | "kyc.approved"
-  | "kyc.rejected"
-  | "kyc.pending_review";
-
-interface CreateWebhookRequest {
-  // General webhook (POST /webhooks/create)
-  webhook_name: string;        // required
-  webhook_url: string;         // required
-  webhook_secret: string;      // required - you supply this
-  whitelist_ips?: string[];
-
-  // Card webhook (POST /yativo-card/webhooks)
-  // url: string;              // required, must be HTTPS
-  // events?: string[];        // default ["*"] - all events
-  // description?: string;
-}
+  | "master_wallet.customer_funded";
 ```
 </Accordion>
 
