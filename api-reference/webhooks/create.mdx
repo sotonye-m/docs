@@ -9,20 +9,26 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField body="url" type="string" required>
+<ParamField body="webhook_url" type="string" required>
   The HTTPS URL that will receive webhook POST requests.
 </ParamField>
 
-<ParamField body="events" type="array" required>
-  Array of event types to subscribe to. Example events:
+<ParamField body="subscribed_events" type="array">
+  Array of event slugs to subscribe to. Omit to subscribe to no events by default, or combine with `receive_all_events: true` to receive everything. Example slugs:
+  - `deposit.detected`
+  - `deposit.confirmed`
   - `transaction.confirmed`
   - `transaction.failed`
   - `swap.completed`
-  - `iban.activated`
+  - `swap.failed`
 </ParamField>
 
-<ParamField body="description" type="string" required>
-  A human-readable description of this webhook's purpose.
+<ParamField body="webhook_name" type="string">
+  A human-readable name for this webhook.
+</ParamField>
+
+<ParamField body="receive_all_events" type="boolean">
+  Set to `true` to receive every event type regardless of `subscribed_events`. Default: `false`.
 </ParamField>
 
 <RequestExample>
@@ -31,9 +37,9 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/webhook/create-webhook' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "url": "https://your-app.com/webhooks/yativo",
-    "events": ["transaction.confirmed", "transaction.failed", "swap.completed"],
-    "description": "Production webhook for transaction events"
+    "webhook_url": "https://your-app.com/webhooks/yativo",
+    "subscribed_events": ["deposit.detected", "deposit.confirmed", "transaction.confirmed", "transaction.failed", "swap.completed", "swap.failed"],
+    "webhook_name": "Production webhook"
   }'
 ```
 </RequestExample>
@@ -45,11 +51,11 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/webhook/create-webhook' \
   "message": "Webhook created successfully",
   "data": {
     "_id": "whk_67e91cbe7747bdb0ba25abcd",
-    "webhook_name": "My Webhook",
+    "webhook_name": "Production webhook",
     "webhook_url": "https://your-app.com/webhooks/yativo",
     "account_id": "acc_6615c3b2e55d9ff7bc0a5678",
     "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
-    "receive_all_events": true,
+    "receive_all_events": false,
     "status": "active",
     "createdAt": "2026-03-28T10:00:00.000Z"
   }
