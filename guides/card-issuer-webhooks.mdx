@@ -1,0 +1,1015 @@
+---
+title: "Card Issuer Webhooks"
+description: "Receive real-time event notifications across the full card issuer lifecycle — from master wallet deposits to card transactions"
+sidebarTitle: "Card Issuer Webhooks"
+---
+
+Card issuer webhooks let Yativo push event notifications to your server the moment something happens in your program — a deposit settles, a customer's card is funded, a transaction is authorized, or a card is frozen. This guide covers every step from registering a URL to handling the complete event lifecycle.
+
+<Note>
+  Card issuer webhooks use a separate service and endpoint from the general Yativo crypto webhooks. Register them at `POST /v1/yativo-card/webhooks`, not `/v1/webhook/create-webhook`. The two systems are independent.
+</Note>
+
+---
+
+## How It Works
+
+Your server exposes a public HTTPS URL. Yativo sends a signed `POST` request to that URL each time an event occurs in your issuer program. Your server verifies the signature, acknowledges receipt with HTTP `200`, and processes the event.
+
+```
+Yativo event occurs
+       │
+       ▼
+POST https://your-app.com/webhooks/yativo
+       │
+       ▼
+Verify X-Yativo-Signature header
+       │
+       ▼
+Return HTTP 200 immediately
+       │
+       ▼
+Process event asynchronously
+```
+
+---
+
+## Step 1 — Build Your Webhook Endpoint
+
+Your endpoint must:
+- Accept `POST` requests at a public HTTPS URL
+- Capture the **raw request body** before JSON-parsing it (required for signature verification)
+- Return HTTP `2xx` within **30 seconds**
+- Process event logic asynchronously after returning 200
+
+<Tabs>
+
+<Tab title="TypeScript (Express)">
+
+```typescript
+import express from "express";
+import crypto from "crypto";
+
+const app = express();
+
+// Use express.raw() — not express.json() — so you have the raw body for signature verification
+app.post(
+  "/webhooks/yativo/card-issuer",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const signature = req.headers["x-yativo-signature"] as string;
+    const timestamp = req.headers["x-yativo-timestamp"] as string;
+    const secret = process.env.YATIVO_WEBHOOK_SECRET!;
+
+    if (!verifySignature(req.body, signature, timestamp, secret)) {
+      return res.status(401).json({ error: "Invalid signature" });
+    }
+
+    // Acknowledge immediately — Yativo waits up to 30 seconds
+    res.sendStatus(200);
+
+    // Parse and dispatch asynchronously
+    const event = JSON.parse(req.body.toString());
+    setImmediate(() => handleCardIssuerEvent(event).catch(console.error));
+  }
+);
+
+function verifySignature(
+  rawBody: Buffer,
+  signature: string,
+  timestamp: string,
+  secret: string
+): boolean {
+  if (!signature || !timestamp) return false;
+  const signed = `${timestamp}.${rawBody.toString("utf8")}`;
+  const expected =
+    "sha256=" +
+    crypto.createHmac("sha256", secret).update(signed).digest("hex");
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expected)
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function handleCardIssuerEvent(event: any) {
+  // Use event.id as an idempotency key — the same event may be delivered more than once
+  const alreadyProcessed = await db.webhookEvents.findById(event.id);
+  if (alreadyProcessed) return;
+
+  switch (event.type) {
+    case "master_wallet.deposit":
+      await handleMasterWalletDeposit(event.data);
+      break;
+    case "customer.funded":
+      await handleCustomerFunded(event.data);
+      break;
+    case "customer.funding.failed":
+      await handleCustomerFundingFailed(event.data);
+      break;
+    case "transaction.authorized":
+      await handleTransactionAuthorized(event.data);
+      break;
+    case "transaction.settled":
+      await handleTransactionSettled(event.data);
+      break;
+    case "transaction.declined":
+      await handleTransactionDeclined(event.data);
+      break;
+    case "card.frozen":
+    case "card.unfrozen":
+    case "card.voided":
+      await handleCardStatusChange(event.type, event.data);
+      break;
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
+  }
+
+  await db.webhookEvents.insert({ id: event.id, type: event.type, processedAt: new Date() });
+}
+```
+
+</Tab>
+
+<Tab title="Python (Flask)">
+
+```python
+from flask import Flask, request, jsonify
+import hmac
+import hashlib
+import threading
+import os
+
+app = Flask(__name__)
+
+@app.route("/webhooks/yativo/card-issuer", methods=["POST"])
+def card_issuer_webhook():
+    raw_body = request.get_data()
+    signature = request.headers.get("X-Yativo-Signature", "")
+    timestamp = request.headers.get("X-Yativo-Timestamp", "")
+    secret = os.environ["YATIVO_WEBHOOK_SECRET"]
+
+    if not verify_signature(raw_body, signature, timestamp, secret):
+        return jsonify({"error": "Invalid signature"}), 401
+
+    event = request.get_json(force=True)
+
+    # Respond immediately, dispatch in background
+    thread = threading.Thread(target=handle_event, args=(event,))
+    thread.daemon = True
+    thread.start()
+
+    return "", 200
+
+
+def verify_signature(raw_body: bytes, signature: str, timestamp: str, secret: str) -> bool:
+    if not signature or not timestamp:
+        return False
+    signed = f"{timestamp}.{raw_body.decode('utf-8')}"
+    expected = "sha256=" + hmac.new(
+        secret.encode("utf-8"), signed.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(signature, expected)
+```
+
+</Tab>
+
+<Tab title="PHP">
+
+```php
+<?php
+
+$rawBody = file_get_contents("php://input");
+$signature = $_SERVER["HTTP_X_YATIVO_SIGNATURE"] ?? "";
+$timestamp  = $_SERVER["HTTP_X_YATIVO_TIMESTAMP"] ?? "";
+$secret     = getenv("YATIVO_WEBHOOK_SECRET");
+
+if (!verifySignature($rawBody, $signature, $timestamp, $secret)) {
+    http_response_code(401);
+    echo json_encode(["error" => "Invalid signature"]);
+    exit;
+}
+
+// Acknowledge immediately
+http_response_code(200);
+echo "OK";
+if (function_exists("fastcgi_finish_request")) {
+    fastcgi_finish_request();
+}
+
+$event = json_decode($rawBody, true);
+handleEvent($event);
+
+
+function verifySignature(string $rawBody, string $signature, string $timestamp, string $secret): bool {
+    if (empty($signature) || empty($timestamp)) return false;
+    $signed   = "{$timestamp}.{$rawBody}";
+    $expected = "sha256=" . hash_hmac("sha256", $signed, $secret);
+    return hash_equals($expected, $signature);
+}
+```
+
+</Tab>
+
+</Tabs>
+
+<Warning>
+  Always use a timing-safe comparison (`timingSafeEqual`, `hmac.compare_digest`, `hash_equals`). A regular `===` check is vulnerable to timing attacks.
+</Warning>
+
+---
+
+## Step 2 — Register Your Webhook
+
+Once your endpoint is live, register it with Yativo to start receiving events.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks' \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://api.yourapp.com/webhooks/yativo/card-issuer",
+    "events": [
+      "master_wallet.deposit",
+      "master_wallet.swap",
+      "master_wallet.customer_funded",
+      "customer.funded",
+      "customer.funding.failed",
+      "customer.balance.updated",
+      "card.created",
+      "card.activated",
+      "card.frozen",
+      "card.unfrozen",
+      "card.voided",
+      "card.lost",
+      "card.stolen",
+      "card.cancelled",
+      "card.deactivated",
+      "transaction.authorized",
+      "transaction.settled",
+      "transaction.declined",
+      "transaction.reversed",
+      "transaction.refund.created"
+    ],
+    "description": "Production card issuer webhook"
+  }'
+```
+
+```typescript TypeScript
+const response = await fetch(
+  "https://crypto-api.yativo.com/api/v1/yativo-card/webhooks",
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.YATIVO_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      url: "https://api.yourapp.com/webhooks/yativo/card-issuer",
+      events: ["*"], // Subscribe to all card issuer events
+      description: "Production card issuer webhook",
+    }),
+  }
+);
+
+const { data } = await response.json();
+
+console.log("Webhook ID:", data.webhook_id);
+console.log("Secret:", data.secret); // Store securely — also retrievable via GET /v1/yativo-card/webhooks/:webhookId
+```
+
+</CodeGroup>
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "webhook_id": "68241abc2f3d4e5f6a7b8c9d",
+    "url": "https://api.yourapp.com/webhooks/yativo/card-issuer",
+    "events": ["master_wallet.deposit", "customer.funded", "..."],
+    "secret": "whsec_a8f3c2e1d4b7f9e2c5a3b6d8f1e4c7a2b5d8e1f4c7a2b5d8",
+    "created_at": "2026-05-12T14:00:00.000Z"
+  }
+}
+```
+
+<Warning>
+  The `secret` is included in the creation response and is also retrievable later via `GET /v1/yativo-card/webhooks/:webhookId`. Store it in a secure environment variable or secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault). If you need to invalidate a compromised secret, rotate it via `POST /v1/yativo-card/webhooks/:webhookId/rotate-secret`.
+</Warning>
+
+Pass `"events": ["*"]` to receive every event type. You can narrow the list later via the update endpoint.
+
+---
+
+## Step 3 — Verify Signatures
+
+Every webhook POST includes three security headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-Yativo-Signature` | `sha256=<HMAC-SHA256 hex>` of the signed string |
+| `X-Yativo-Timestamp` | Unix timestamp (seconds) when the event was dispatched |
+| `X-Yativo-Event` | The event type (e.g. `customer.funded`) |
+| `X-Yativo-Delivery-Id` | Unique delivery ID — used to retry individual deliveries |
+
+The signature is computed as:
+
+```
+HMAC-SHA256(secret, "<timestamp>.<raw JSON body>")
+```
+
+The `<raw JSON body>` is the exact bytes received — not re-serialized. This is why you must capture the raw body before JSON-parsing.
+
+**Replay attack protection:** Also check that the timestamp is within 5 minutes of your server clock. Discard requests that are older.
+
+```typescript
+function verifySignature(
+  rawBody: Buffer,
+  signature: string,
+  timestamp: string,
+  secret: string
+): boolean {
+  if (!signature || !timestamp) return false;
+
+  // Guard against replay attacks
+  const age = Math.abs(Date.now() / 1000 - parseInt(timestamp, 10));
+  if (age > 300) return false; // older than 5 minutes
+
+  const signed = `${timestamp}.${rawBody.toString("utf8")}`;
+  const expected =
+    "sha256=" +
+    crypto.createHmac("sha256", secret).update(signed).digest("hex");
+
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expected)
+    );
+  } catch {
+    return false;
+  }
+}
+```
+
+---
+
+## The Event Lifecycle
+
+The following diagram shows the full lifecycle of a card issuer program, and where webhook events fire at each stage.
+
+### Master wallet deposit → settled
+
+When you send USDC to your master wallet deposit address, two `master_wallet.deposit` events fire: one when the deposit is first detected, and one when it settles into your spendable balance.
+
+```
+You send USDC to your deposit address
+           │
+           ▼  (within seconds of on-chain confirmation)
+  ┌────────────────────────────────────┐
+  │  master_wallet.deposit             │
+  │  status: "processing"             │
+  └────────────────────────────────────┘
+           │
+           ▼  (~1–5 minutes — auto-settlement)
+  ┌────────────────────────────────────┐
+  │  master_wallet.deposit             │
+  │  status: "settled"                │
+  │  settled_amount: 499.75           │
+  └────────────────────────────────────┘
+           │
+           ▼
+  Master wallet balance updated
+```
+
+### Fund customer card
+
+When you call `POST /v1/card-issuer/fund-customer`, two events fire in tandem: `master_wallet.customer_funded` (your master wallet was debited) and `customer.funded` (the customer's card wallet was credited).
+
+```
+POST /v1/card-issuer/fund-customer
+           │
+           ▼
+  ┌────────────────────────────────────┐
+  │  master_wallet.customer_funded     │
+  │  Your master wallet debited       │
+  └────────────────────────────────────┘
+           │
+  ┌────────────────────────────────────┐
+  │  customer.funded                   │
+  │  Customer card wallet credited    │
+  └────────────────────────────────────┘
+           │
+  ┌────────────────────────────────────┐
+  │  customer.balance.updated          │
+  │  New card balance snapshot        │
+  └────────────────────────────────────┘
+```
+
+If the funding transfer fails (e.g. network error or insufficient master wallet balance), only `customer.funding.failed` fires.
+
+### Card transaction lifecycle
+
+When your customer uses their card, events fire at each stage of the authorization → settlement cycle.
+
+```
+Customer taps card at merchant
+           │
+           ▼
+  ┌────────────────────────────────────┐
+  │  transaction.authorized            │
+  │  Funds reserved (hold placed)     │
+  └────────────────────────────────────┘
+           │
+  ┌────────────────────────────────────┐
+  │  customer.balance.updated          │
+  │  available_balance reduced        │
+  └────────────────────────────────────┘
+           │
+           ▼  (merchant batch clearing, typically same day)
+  ┌────────────────────────────────────┐
+  │  transaction.settled               │
+  │  Hold released, charge finalized  │
+  └────────────────────────────────────┘
+           │
+  ┌────────────────────────────────────┐
+  │  customer.balance.updated          │
+  │  ledger_balance reduced           │
+  └────────────────────────────────────┘
+```
+
+A declined authorization fires `transaction.declined` instead of `transaction.authorized`. A reversal fires `transaction.reversed`.
+
+### Card status changes
+
+Card lifecycle events fire whenever a card's status changes — whether triggered by your API, by the customer, or by a compliance action.
+
+```
+card.created        → Virtual card issued to a customer
+card.activated      → Physical card activated (physical cards only)
+card.frozen         → Spending temporarily paused
+card.unfrozen       → Spending re-enabled (upstream status: "active")
+card.voided         → Card permanently deactivated
+card.lost           → Card reported lost (new card required)
+card.stolen         → Card reported stolen (new card required)
+card.cancelled      → Card cancelled
+card.deactivated    → Card deactivated
+```
+
+---
+
+## Event Reference
+
+### Envelope
+
+All events share this structure. The `data` object is event-specific.
+
+```json
+{
+  "id": "evt_1747058400000_abc123",
+  "type": "customer.funded",
+  "created_at": "2026-05-12T14:10:00.000Z",
+  "data": { }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique event ID — use as idempotency key |
+| `type` | string | Event type |
+| `created_at` | ISO 8601 | When the event was generated |
+| `data` | object | Event-specific payload (see below) |
+
+### `master_wallet.deposit`
+
+Fires twice per deposit: once when detected (`processing`), once when settled (`settled`).
+
+```json Processing
+{
+  "id": "evt_1747058400000_abc123",
+  "type": "master_wallet.deposit",
+  "created_at": "2026-05-12T14:00:00.000Z",
+  "data": {
+    "settlement_id": "dep_1745123456_2ea87af00de1",
+    "source_amount": 500.00,
+    "tx_hash": "5KtP3MzXYZABCDE1234567890abcdef12345678901234567890abcdef1234567",
+    "status": "processing"
+  }
+}
+```
+
+```json Settled
+{
+  "id": "evt_1747058520000_def456",
+  "type": "master_wallet.deposit",
+  "created_at": "2026-05-12T14:02:00.000Z",
+  "data": {
+    "settlement_id": "dep_1745123456_2ea87af00de1",
+    "source_amount": 500.00,
+    "settled_amount": 499.75,
+    "status": "settled"
+  }
+}
+```
+
+### `master_wallet.swap`
+
+Fired when a currency swap is submitted from your master wallet (e.g. USD → EUR).
+
+```json
+{
+  "id": "evt_1747058700000_ghi789",
+  "type": "master_wallet.swap",
+  "created_at": "2026-05-12T14:05:00.000Z",
+  "data": {
+    "swap_id": "0x4a1b2c3d...",
+    "from_token": "USD",
+    "to_token": "EUR",
+    "amount": 1000.00,
+    "expected_output": 921.50,
+    "status": "submitted"
+  }
+}
+```
+
+### `master_wallet.customer_funded`
+
+Fired alongside `customer.funded` whenever your master wallet is debited. Includes `remaining_balance` when available.
+
+```json
+{
+  "id": "evt_1747059001000_mwf01",
+  "type": "master_wallet.customer_funded",
+  "created_at": "2026-05-12T14:10:00.000Z",
+  "data": {
+    "transfer_id": "tx_1745128800_9fc12ab3e4d5",
+    "customer_id": "69f0bdf29a84752db9cc8ff9",
+    "amount": 50.00,
+    "currency": "USD",
+    "status": "completed",
+    "remaining_balance": 114.98
+  }
+}
+```
+
+### `customer.funded`
+
+Fired when a customer's card wallet has been successfully credited.
+
+```json
+{
+  "id": "evt_1747059000000_ghi789",
+  "type": "customer.funded",
+  "created_at": "2026-05-12T14:10:00.000Z",
+  "data": {
+    "transfer_id": "tx_1745128800_9fc12ab3e4d5",
+    "customer_id": "69f0bdf29a84752db9cc8ff9",
+    "amount": 50.00,
+    "currency": "USD",
+    "status": "completed"
+  }
+}
+```
+
+### `customer.funding.failed`
+
+Fired when a funding transfer to a customer's card wallet fails.
+
+```json
+{
+  "id": "evt_1747059000000_fail01",
+  "type": "customer.funding.failed",
+  "created_at": "2026-05-12T14:10:00.000Z",
+  "data": {
+    "customer_id": "69f0bdf29a84752db9cc8ff9",
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "amount": 50.00,
+    "currency": "USD"
+  }
+}
+```
+
+### `customer.balance.updated`
+
+Fired after any card balance change — top-up, purchase authorization, settlement, or reversal.
+
+```json
+{
+  "id": "evt_1747060200000_stu901",
+  "type": "customer.balance.updated",
+  "created_at": "2026-05-12T14:30:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "ledger_balance": 45.23,
+    "available_balance": 38.50,
+    "pending_balance": 6.73,
+    "currency": "EUR",
+    "timestamp": "2026-05-12T14:30:00.000Z"
+  }
+}
+```
+
+### `card.created`
+
+Fired when a new virtual card is issued to a customer. `card_id` is the card token identifier. `type` and `status` reflect values from the upstream card provider and may be `null` depending on the event payload received.
+
+```json
+{
+  "id": "evt_1747057800000_abc001",
+  "type": "card.created",
+  "created_at": "2026-05-12T13:50:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "type": null,
+    "status": null,
+    "timestamp": "2026-05-12T13:50:00.000Z"
+  }
+}
+```
+
+### `card.activated`
+
+Fired when a physical card is activated by the cardholder. Virtual cards do not fire this event.
+
+```json
+{
+  "id": "evt_1747057900000_act01",
+  "type": "card.activated",
+  "created_at": "2026-05-12T13:52:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "timestamp": "2026-05-12T13:52:00.000Z"
+  }
+}
+```
+
+### `card.frozen` / `card.unfrozen`
+
+For `card.frozen` the `status` field reflects the upstream frozen status string. For `card.unfrozen` the `status` field is `"active"` — the upstream provider reports the card status returning to active when a freeze is lifted.
+
+```json card.frozen
+{
+  "id": "evt_1747059600000_mno345",
+  "type": "card.frozen",
+  "created_at": "2026-05-12T14:20:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "status": "Frozen",
+    "timestamp": "2026-05-12T14:20:00.000Z"
+  }
+}
+```
+
+```json card.unfrozen
+{
+  "id": "evt_1747059700000_unf01",
+  "type": "card.unfrozen",
+  "created_at": "2026-05-12T14:21:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "status": "active",
+    "timestamp": "2026-05-12T14:21:00.000Z"
+  }
+}
+```
+
+<Note>
+  The `card_id` in webhook events is the card token identifier and may differ from the `card_id` returned by the Get Customer API. Use `yativo_card_id` as the stable cross-reference between events and API responses.
+</Note>
+
+### `card.lost` / `card.stolen` / `card.voided` / `card.cancelled` / `card.deactivated`
+
+Same shape as `card.frozen` — the envelope `type` identifies the event and `data.status` reflects the upstream status string for that change.
+
+```json
+{
+  "id": "evt_1747059900000_pqr678",
+  "type": "card.lost",
+  "created_at": "2026-05-12T14:25:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "status": "Lost",
+    "timestamp": "2026-05-12T14:25:00.000Z"
+  }
+}
+```
+
+### `transaction.authorized`
+
+Fired when a card purchase is authorized. A `customer.balance.updated` event follows immediately.
+
+<Note>
+  `transaction.authorized` can fire twice for the same card transaction — once when the authorization is created and again when it is cleared. Both events carry the same `transaction_id`. Use `data.transaction_id` (not `event.id`) as the key for transaction-level deduplication in your handler.
+</Note>
+
+```json
+{
+  "id": "evt_1747059300000_jkl012",
+  "type": "transaction.authorized",
+  "created_at": "2026-05-12T14:15:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "transaction_id": "tx_9d8e7f...",
+    "type": "purchase",
+    "amount": 12.50,
+    "currency": "EUR",
+    "merchant": "Starbucks",
+    "merchant_category": "5812",
+    "merchant_city": "Paris",
+    "merchant_country": "FR",
+    "status": "AUTHORIZED",
+    "timestamp": "2026-05-12T14:15:00.000Z"
+  }
+}
+```
+
+### `transaction.settled`
+
+Fired when the merchant batch clears and the authorization is finalized.
+
+```json
+{
+  "id": "evt_1747063800000_uvw234",
+  "type": "transaction.settled",
+  "created_at": "2026-05-12T15:30:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "transaction_id": "tx_9d8e7f...",
+    "amount": 12.50,
+    "currency": "EUR",
+    "merchant": "Starbucks",
+    "status": "SETTLED",
+    "timestamp": "2026-05-12T15:30:00.000Z"
+  }
+}
+```
+
+### `transaction.declined`
+
+Fired when a card transaction is declined.
+
+```json
+{
+  "id": "evt_1747059400000_dec01",
+  "type": "transaction.declined",
+  "created_at": "2026-05-12T14:16:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "transaction_id": "tx_declined_xyz...",
+    "type": "purchase",
+    "amount": 200.00,
+    "currency": "EUR",
+    "merchant": "Amazon",
+    "status": "DECLINED",
+    "timestamp": "2026-05-12T14:16:00.000Z"
+  }
+}
+```
+
+### `transaction.reversed`
+
+Fired when an authorization is reversed (e.g. a cancelled hold before settlement).
+
+```json
+{
+  "id": "evt_1747060000000_rev01",
+  "type": "transaction.reversed",
+  "created_at": "2026-05-12T14:26:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "transaction_id": "tx_9d8e7f...",
+    "amount": 12.50,
+    "currency": "EUR",
+    "status": "REVERSED",
+    "timestamp": "2026-05-12T14:26:00.000Z"
+  }
+}
+```
+
+### `transaction.refund.created`
+
+Fired when a merchant issues a refund.
+
+```json
+{
+  "id": "evt_1747064000000_ref01",
+  "type": "transaction.refund.created",
+  "created_at": "2026-05-12T15:32:00.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "card_id": "card_token_abc123",
+    "transaction_id": "tx_9d8e7f...",
+    "amount": 12.50,
+    "currency": "EUR",
+    "status": "REFUNDED",
+    "timestamp": "2026-05-12T15:32:00.000Z"
+  }
+}
+```
+
+---
+
+## Managing Webhooks
+
+### List all subscriptions
+
+```bash
+GET /v1/yativo-card/webhooks
+Authorization: Bearer YOUR_TOKEN
+```
+
+### Get one subscription
+
+```bash
+GET /v1/yativo-card/webhooks/:webhookId
+Authorization: Bearer YOUR_TOKEN
+```
+
+### Update URL, events, or enabled state
+
+```bash
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/68241abc...' \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://api.yourapp.com/webhooks/yativo/v2",
+    "events": ["customer.funded", "transaction.authorized", "transaction.declined"],
+    "enabled": true
+  }'
+```
+
+### Rotate signing secret
+
+```bash
+POST /v1/yativo-card/webhooks/:webhookId/rotate-secret
+Authorization: Bearer YOUR_TOKEN
+```
+
+The response returns the new secret — store it immediately, then update your environment variable.
+
+### Delete a subscription
+
+```bash
+DELETE /v1/yativo-card/webhooks/:webhookId
+Authorization: Bearer YOUR_TOKEN
+```
+
+### Delivery history
+
+```bash
+# Deliveries for one webhook
+GET /v1/yativo-card/webhooks/:webhookId/deliveries
+
+# All deliveries across webhooks
+GET /v1/yativo-card/webhooks/deliveries/all
+```
+
+### Retry a failed delivery
+
+```bash
+POST /v1/yativo-card/webhooks/deliveries/:deliveryId/retry
+Authorization: Bearer YOUR_TOKEN
+```
+
+---
+
+## Retry Policy
+
+If your endpoint returns a non-2xx response, times out (> 30 s), or is unreachable, Yativo retries using exponential backoff:
+
+| Attempt | Delay after previous attempt |
+|---------|------------------------------|
+| 1 (initial) | — |
+| 2 | 1 minute |
+| 3 | 5 minutes |
+| 4 | 30 minutes |
+| 5 | 2 hours |
+| 6 | 12 hours |
+| 7 | 24 hours |
+
+After 7 failed attempts the delivery is marked **permanently failed** — no further automatic retries. Replay it manually via `POST /v1/yativo-card/webhooks/deliveries/:deliveryId/retry`.
+
+If your endpoint fails **100 consecutive deliveries**, Yativo automatically disables the subscription to protect your program's event queue. Re-enable it with `PUT /v1/yativo-card/webhooks/:webhookId` and `{ "enabled": true }` after resolving the issue.
+
+---
+
+## Best Practices
+
+**Return 200 first, process after.** Yativo waits up to 30 seconds for a response. Enqueue the event to a job queue (BullMQ, Celery, SQS) before returning — don't block on database writes or downstream calls.
+
+**Deduplicate with `event.id`.** The same event can be delivered more than once. Store processed event IDs in a database table with a unique constraint and skip duplicates.
+
+**Do not return 200 speculatively.** Only acknowledge when you have successfully enqueued the event. If your queue is unavailable, return 500 to trigger a retry.
+
+**Handle unknown event types gracefully.** Log and ignore event types you don't recognise rather than throwing an error. Yativo adds new event types over time — unknown types should not break your handler.
+
+**Subscribe to the events you need.** Use a focused event list rather than `"*"` in production to reduce noise and make your handler logic explicit.
+
+---
+
+## Idempotent Handler Pattern
+
+```typescript
+async function handleCardIssuerEvent(event: {
+  id: string;
+  type: string;
+  data: any;
+}) {
+  // 1. Deduplicate
+  const exists = await db.processedEvents.findUnique({ where: { id: event.id } });
+  if (exists) return;
+
+  // 2. Process
+  switch (event.type) {
+    case "master_wallet.deposit":
+      if (event.data.status === "settled") {
+        await updateMasterWalletBalance(event.data.settled_amount);
+      }
+      break;
+
+    case "customer.funded":
+      await creditCustomerLedger(event.data.customer_id, event.data.amount, event.data.currency);
+      break;
+
+    case "customer.funding.failed":
+      await flagFailedFunding(event.data.customer_id, event.data.amount);
+      await notifyOpsTeam(event);
+      break;
+
+    case "customer.balance.updated":
+      await syncCustomerBalance(event.data.yativo_card_id, {
+        ledger: event.data.ledger_balance,
+        available: event.data.available_balance,
+        pending: event.data.pending_balance,
+      });
+      break;
+
+    case "transaction.authorized":
+      await recordPendingTransaction(event.data);
+      break;
+
+    case "transaction.settled":
+      await finalizeTransaction(event.data.transaction_id);
+      break;
+
+    case "transaction.declined":
+      await notifyCustomerOfDecline(event.data.yativo_card_id);
+      break;
+
+    case "card.frozen":
+    case "card.voided":
+    case "card.lost":
+    case "card.stolen":
+      await updateCardStatus(event.data.yativo_card_id, event.data.status);
+      break;
+  }
+
+  // 3. Mark processed
+  await db.processedEvents.create({ data: { id: event.id, processedAt: new Date() } });
+}
+```
+
+---
+
+## Testing
+
+Use the sandbox environment to test your webhook handler without real funds:
+
+- **Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/v1/`
+- **Register webhooks** the same way as production — use the same endpoint `POST /v1/yativo-card/webhooks`
+- **Expose your local server** using [ngrok](https://ngrok.com) or [Hookdeck](https://hookdeck.com) during development
+
+```bash
+# Register a sandbox webhook pointing at your local ngrok tunnel
+curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/yativo-card/webhooks' \
+  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://abc123.ngrok-free.app/webhooks/yativo/card-issuer",
+    "events": ["*"],
+    "description": "Local dev webhook"
+  }'
+```
+
+---
+
+## Related
+
+- [Card Issuer Program guide](/guides/b2b-card-issuer)
+- [Webhook Events API reference](/api-reference/issuer/webhooks)
+- [Fund Customer API](/api-reference/issuer/fund-customer)
+- [Funding deposits](/api-reference/issuer/deposits)
+- [General webhook integration](/guides/webhook-integration)

@@ -337,6 +337,7 @@
               "guides/send-crypto",
               "guides/issue-crypto-cards",
               "guides/b2b-card-issuer",
+              "guides/card-issuer-webhooks",
               "guides/iban-onboarding",
               "guides/swap-tokens",
               "guides/webhook-integration",
