@@ -15,7 +15,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/bridge_1745123456_2ea87af00de1' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/tx_1745123456_2ea87af00de1' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -25,7 +25,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/bridge_1
 {
   "success": true,
   "data": {
-    "transfer_id": "bridge_1745123456_2ea87af00de1",
+    "transfer_id": "tx_1745123456_2ea87af00de1",
     "status": "hop1_processing",
     "source": {
       "chain": "SOL",
@@ -51,7 +51,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/bridge_1
 {
   "success": true,
   "data": {
-    "transfer_id": "bridge_1745123456_2ea87af00de1",
+    "transfer_id": "tx_1745123456_2ea87af00de1",
     "status": "completed",
     "source": {
       "chain": "SOL",

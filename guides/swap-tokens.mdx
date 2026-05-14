@@ -321,7 +321,7 @@ print(swap.status)   # "pending"
 
 <Step title="Monitor swap status">
 
-Poll the swap history endpoint or listen for `swap.completed` / `swap.failed` webhooks.
+Poll the swap history endpoint to monitor status. For master wallet swaps, you can also subscribe to the `master_wallet.swap` webhook event.
 
 <CodeGroup>
 

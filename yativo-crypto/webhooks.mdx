@@ -30,20 +30,21 @@ interface CreateWebhookRequest {
 }
 
 type WebhookEventType =
-  // Deposits & withdrawals
+  // Deposits
   | "deposit.detected"
   | "deposit.confirmed"
-  | "withdrawal.initiated"
-  | "withdrawal.completed"
-  | "withdrawal.failed"
-  | "transaction.completed"
+  // Transactions
+  | "transaction.initiated"
+  | "transaction.submitted"
   | "transaction.failed"
-  | "swap.completed"
-  | "swap.failed"
+  // IBAN
   | "iban.activated"
   | "iban.transfer.received"
-  | "autoforward.completed"
-  | "gas.low"
+  // KYC
+  | "kyc.submitted"
+  | "kyc.approved"
+  | "kyc.rejected"
+  | "kyc.pending_review"
   // Card lifecycle
   | "card.created"
   | "card.activated"
@@ -81,27 +82,14 @@ type WebhookEventType =
 | `deposit.detected` | An inbound transaction is detected on-chain (unconfirmed) |
 | `deposit.confirmed` | An inbound transaction has reached sufficient block confirmations |
 
-### Withdrawal Events
-
-| Event | Fired When |
-|-------|-----------|
-| `withdrawal.initiated` | A withdrawal transaction has been broadcast to the network |
-| `withdrawal.completed` | A withdrawal has been confirmed on-chain |
-| `withdrawal.failed` | A withdrawal failed (insufficient funds, network error, etc.) |
-
 ### Transaction Events
 
 | Event | Fired When |
 |-------|-----------|
-| `transaction.completed` | Any transaction (deposit or withdrawal) has been fully confirmed |
+| `transaction.initiated` | An outbound transaction has been created and queued |
+| `transaction.submitted` | A transaction has been broadcast to the blockchain |
 | `transaction.failed` | A transaction failed for any reason |
-
-### Swap Events
-
-| Event | Fired When |
-|-------|-----------|
-| `swap.completed` | A token swap has settled and destination tokens have been delivered |
-| `swap.failed` | A swap failed; source funds have been returned |
+| `transaction.{type}.completed` | A transaction of the given type completed (e.g. `transaction.withdrawal.completed`) |
 
 ### Card Events
 
@@ -121,21 +109,12 @@ type WebhookEventType =
 | `transaction.settled` | A card transaction has settled |
 | `transaction.reversed` | A card transaction has been reversed |
 | `transaction.refund.created` | A refund has been initiated for a card transaction |
-| `transaction.refund.settled` | A card transaction refund has settled |
 | `customer.funded` | A card customer's balance has been topped up |
+| `customer.funding.failed` | A funding transfer to a customer's card wallet failed |
 | `customer.balance.updated` | A card customer's balance has changed |
 | `master_wallet.deposit` | A deposit arrived in the card program master wallet |
 | `master_wallet.swap` | A swap executed in the card program master wallet |
 | `master_wallet.customer_funded` | Master wallet funds allocated to a customer |
-| `master_wallet.withdrawal` | A withdrawal from the card program master wallet |
-| `wallet.deployed` | A card customer smart wallet has been deployed on-chain |
-| `wallet.deposit.detected` | An inbound transaction detected for a card wallet |
-| `wallet.deposit.confirmed` | An inbound transaction confirmed for a card wallet |
-| `wallet.balance.low` | A card wallet balance dropped below its configured threshold |
-| `kyc.submitted` | A KYC submission has been received |
-| `kyc.approved` | A KYC check has been approved |
-| `kyc.rejected` | A KYC check has been rejected |
-| `kyc.pending_review` | A KYC submission is awaiting manual review |
 
 ### IBAN Events
 
@@ -144,12 +123,14 @@ type WebhookEventType =
 | `iban.activated` | An IBAN account has been activated and is ready to receive funds |
 | `iban.transfer.received` | A SEPA transfer has been received into the IBAN account |
 
-### System Events
+### KYC Events
 
 | Event | Fired When |
 |-------|-----------|
-| `autoforward.completed` | An auto-forward rule has executed and funds have been moved |
-| `gas.low` | A gas station's balance has dropped below the configured threshold |
+| `kyc.submitted` | A KYC submission has been received |
+| `kyc.approved` | A KYC check has been approved |
+| `kyc.rejected` | A KYC check has been rejected |
+| `kyc.pending_review` | A KYC submission is awaiting manual review |
 
 ---
 
@@ -188,27 +169,6 @@ All payloads share the same envelope structure:
 }
 ```
 
-### withdrawal.completed
-
-```json
-{
-  "id": "evt_02def456",
-  "type": "withdrawal.completed",
-  "created_at": "2026-03-26T10:07:30Z",
-  "data": {
-    "transaction_id": "txn_01pqr456",
-    "asset_id": "asset_01xyz789",
-    "chain": "ethereum",
-    "ticker": "USDC",
-    "amount": "100.00",
-    "to_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
-    "tx_hash": "0xabc123def456789...",
-    "fee_usd": "3.18",
-    "new_balance": "400.00"
-  }
-}
-```
-
 ### transaction.failed
 
 ```json
@@ -223,28 +183,6 @@ All payloads share the same envelope structure:
     "amount": "1000.00",
     "error_code": "insufficient_balance",
     "error_message": "Wallet balance (400.00 USDC) is less than requested amount (1000.00 USDC)"
-  }
-}
-```
-
-### swap.completed
-
-```json
-{
-  "id": "evt_04jkl012",
-  "type": "swap.completed",
-  "created_at": "2026-03-26T10:08:20Z",
-  "data": {
-    "swap_id": "swap_01def456",
-    "from_chain": "ethereum",
-    "from_ticker": "USDC",
-    "from_amount": "500.00",
-    "to_chain": "solana",
-    "to_ticker": "USDC_SOL",
-    "to_amount": "498.71",
-    "to_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-    "source_tx_hash": "0xabc123...",
-    "destination_tx_hash": "5KtP3jNHGXi..."
   }
 }
 ```
@@ -311,24 +249,7 @@ All payloads share the same envelope structure:
 
 ## Signature Verification
 
-There are two signature schemes depending on which webhook system the event is delivered from.
-
-### General webhooks (`X-Webhook-Signature`)
-
-Events delivered via the main webhook system (`POST /webhooks/create`) use a plain HMAC-SHA256 of the raw request body:
-
-```typescript
-import crypto from 'crypto';
-
-function verifySignature(rawBody: Buffer, signature: string, secret: string): boolean {
-  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex'));
-}
-```
-
-### Card webhooks (`X-Yativo-Signature`)
-
-Events delivered via the card webhook system (`POST /yativo-card/webhooks`) are signed with a timestamp to prevent replay attacks. Two headers are sent:
+Every webhook delivery is signed with a timestamp to prevent replay attacks. Two headers are sent:
 
 | Header | Value |
 |--------|-------|
@@ -340,7 +261,7 @@ The HMAC is computed over `"${timestamp}.${JSON.stringify(payload)}"`:
 ```typescript
 import crypto from 'crypto';
 
-function verifyCardWebhookSignature(
+function verifyWebhookSignature(
   payload: object,
   signature: string,       // value of X-Yativo-Signature header
   timestamp: string,       // value of X-Yativo-Timestamp header
@@ -363,54 +284,20 @@ function verifyCardWebhookSignature(
 }
 ```
 
-See the [Webhook Management](/yativo/webhooks) page for Python and PHP examples for the general webhook system.
+See the [Webhook Integration guide](/guides/webhook-integration) for Python and PHP examples.
 
 ---
 
 ## Setting Up Webhooks
 
-Yativo Crypto has two webhook systems depending on what you need to monitor:
-
-| System | Best for | Endpoint |
-|--------|----------|----------|
-| **General webhooks** | Deposits, withdrawals, swaps, gas, IBAN | `POST /webhooks/create` |
-| **Card webhooks** | Card lifecycle, transactions, KYC, customer funding | `POST /yativo-card/webhooks` |
-
----
-
-### General Webhooks
-
-Register an endpoint to receive deposit, withdrawal, swap, IBAN, and system events:
-
-```bash
-curl -X POST https://crypto-api.yativo.com/api/v1/webhooks/create \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "webhook_name": "Crypto production webhook",
-    "webhook_url": "https://your-server.com/webhooks/yativo-crypto",
-    "webhook_secret": "my_super_secret_string"
-  }'
-```
-
-For managing (list, edit, delete) general webhooks, see [Webhook Management](/yativo/webhooks).
-
----
-
-### Card Webhooks
-
-Card webhooks use a dedicated management API under `/yativo-card/webhooks`. The secret is **auto-generated** on creation — you do not supply one.
-
-#### Create a card webhook
-
-**POST** `/yativo-card/webhooks`
+All events — deposits, swaps, card lifecycle, card transactions, customer funding — are delivered through a single webhook service. Register once at `POST /v1/webhook/create-webhook` and subscribe to any combination of event types.
 
 <ParamField body="url" type="string" required>
-  The HTTPS endpoint to receive card events.
+  The HTTPS endpoint to receive events.
 </ParamField>
 
 <ParamField body="events" type="array">
-  Event types to subscribe to. Defaults to `["*"]` (all events). See the [Card Events](#card-events-1) table above for the full list.
+  Event slugs to subscribe to. Pass `["*"]` (or omit) to receive all events.
 </ParamField>
 
 <ParamField body="description" type="string">
@@ -418,23 +305,24 @@ Card webhooks use a dedicated management API under `/yativo-card/webhooks`. The 
 </ParamField>
 
 ```bash
-curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/webhooks \
+curl -X POST https://crypto-api.yativo.com/api/v1/webhook/create-webhook \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://your-server.com/webhooks/yativo-card",
-    "events": ["transaction.authorized", "transaction.settled", "card.created"],
-    "description": "Card events for order fulfillment"
+    "url": "https://your-server.com/webhooks/yativo",
+    "events": ["deposit.confirmed", "transaction.authorized", "transaction.settled", "card.created"],
+    "description": "Production webhook"
   }'
 ```
 
 ```json Response
 {
-  "success": true,
+  "status": true,
+  "message": "Webhook created successfully",
   "data": {
     "webhook_id": "664abc123def456789000001",
-    "url": "https://your-server.com/webhooks/yativo-card",
-    "events": ["transaction.authorized", "transaction.settled", "card.created"],
+    "url": "https://your-server.com/webhooks/yativo",
+    "events": ["deposit.confirmed", "transaction.authorized", "transaction.settled", "card.created"],
     "secret": "whsec_abc123def456...",
     "created_at": "2026-03-26T10:00:00.000Z"
   }
@@ -442,7 +330,7 @@ curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/webhooks \
 ```
 
 <Warning>
-  Save the `secret` immediately — it is only returned at creation time. Use it to verify `X-Yativo-Signature` on every delivery.
+  Store the `secret` securely. It is also retrievable later via `GET /v1/yativo-card/webhooks/:webhookId`. Use it to verify `X-Yativo-Signature` on every delivery.
 </Warning>
 
 #### List card webhooks
@@ -514,9 +402,9 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/664abc123
 
 #### Retry a failed delivery
 
-**POST** `/yativo-card/webhooks/:webhookId/deliveries/:deliveryId/retry`
+**POST** `/yativo-card/webhooks/deliveries/:deliveryId/retry`
 
 ```bash
-curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/664abc123def456789000001/deliveries/664abc000000000000000099/retry \
+curl -X POST https://crypto-api.yativo.com/api/v1/yativo-card/webhooks/deliveries/664abc000000000000000099/retry \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```

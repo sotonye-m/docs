@@ -315,15 +315,15 @@ print(completed.transaction_hash)
 
 <Step title="Handle completion via webhook (recommended)">
 
-Rather than polling, register a webhook for `transaction.confirmed` and `transaction.failed` events to receive push notifications when transactions settle.
+Rather than polling, register a webhook for `transaction.{type}.completed` and `transaction.failed` events to receive push notifications when transactions settle.
 
 ```typescript TypeScript (webhook handler)
-case "transaction.confirmed": {
+case "transaction.withdrawal.completed": {
   const { transactionId, toAddress, amount, asset, txHash } = event.data;
 
   await db.payouts.markCompleted(transactionId, {
     txHash,
-    confirmedAt: event.createdAt,
+    confirmedAt: event.created_at,
   });
 
   await notifyUserPayoutSent({ toAddress, amount, asset });
@@ -358,5 +358,5 @@ case "transaction.failed": {
 
 ## Next Steps
 
-- See **[Webhook Integration](/guides/webhook-integration)** for the full `transaction.confirmed` event payload.
+- See **[Webhook Integration](/guides/webhook-integration)** for the full `transaction.withdrawal.completed` and `transaction.failed` event payloads.
 - Use **[Swap Tokens](/guides/swap-tokens)** to exchange assets before sending.

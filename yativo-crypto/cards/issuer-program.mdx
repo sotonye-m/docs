@@ -112,7 +112,7 @@ curl 'https://crypto-api.yativo.com/api/v1/card-issuer/status' \
     "stats": {
       "total_cards_issued": 47,
       "total_funded_amount": 12840.00,
-      "total_bridge_fees_paid": 12.40
+      "total_fees_paid": 12.40
     },
     "limits": {
       "max_cards": 1000,
@@ -272,7 +272,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/fund-customer' \
 {
   "success": true,
   "data": {
-    "bridge_id": "bridge_1745123456_abc123",
+    "transfer_id": "tx_1745123456_abc123",
     "status": "pending",
     "source": { "chain": "SOL", "amount": 102.50, "wallet": "9gHp7q..." },
     "destination": { "token": "EUR" },
@@ -385,7 +385,7 @@ Your current limits are always visible in `GET /card-issuer/status` under `limit
 
 ## Webhooks
 
-Subscribe to issuer events via `POST /v1/yativo-card/webhooks`. See [Webhook Events](/api-reference/issuer/webhooks) for the full event reference, payload examples, and signature verification.
+Subscribe to issuer events via `POST /v1/webhook/create-webhook`. See [Webhook Events](/api-reference/issuer/webhooks) for the full event reference, payload examples, and signature verification.
 
 Key events to subscribe to:
 

@@ -288,6 +288,7 @@ console.log("Secret:", data.secret); // Store securely — also retrievable via 
 ```json Response
 {
   "status": true,
+  "message": "Webhook created successfully",
   "data": {
     "webhook_id": "68241abc2f3d4e5f6a7b8c9d",
     "url": "https://api.yourapp.com/webhooks/yativo",
@@ -308,7 +309,7 @@ Pass `"events": ["*"]` to receive every event type. You can narrow the list late
 
 ## Step 3 — Verify Signatures
 
-Every webhook POST includes three security headers:
+Every webhook POST includes four security headers:
 
 | Header | Description |
 |--------|-------------|
@@ -989,7 +990,7 @@ async function handleCardIssuerEvent(event: {
 Use the sandbox environment to test your webhook handler without real funds:
 
 - **Sandbox base URL:** `https://crypto-sandbox.yativo.com/api/v1/`
-- **Register webhooks** the same way as production — use the same endpoint `POST /v1/yativo-card/webhooks`
+- **Register webhooks** the same way as production — use the same endpoint `POST /v1/webhook/create-webhook`
 - **Expose your local server** using [ngrok](https://ngrok.com) or [Hookdeck](https://hookdeck.com) during development
 
 ```bash

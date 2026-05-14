@@ -7,10 +7,10 @@ description: "Real-time notifications for card issuer program events."
 
 Yativo sends webhook notifications to your registered HTTPS endpoint via HTTP POST whenever a program event occurs. Each request is signed with HMAC-SHA256 so you can verify it genuinely came from Yativo.
 
-Subscribe and manage your webhook endpoints via the Card Issuer Webhooks API.
+Register your endpoint at the unified webhook endpoint. Card issuer events and general crypto events share the same service — subscribe to any combination.
 
 ```bash
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/webhook/create-webhook' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -22,7 +22,8 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks' \
 
 ```json
 {
-  "success": true,
+  "status": true,
+  "message": "Webhook created successfully",
   "data": {
     "webhook_id": "68241abc2f3d4e5f6a7b8c9d",
     "url": "https://api.yourapp.com/webhooks/yativo",
@@ -34,7 +35,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/webhooks' \
 ```
 
 <Warning>
-  The `secret` is returned only at creation time. Store it immediately — if you lose it, rotate it via `POST /v1/yativo-card/webhooks/:webhookId/rotate-secret`.
+  Store the `secret` securely — use a secrets manager or environment variable. The secret is also retrievable later via `GET /v1/yativo-card/webhooks/:webhookId`. If compromised, rotate it via `POST /v1/yativo-card/webhooks/:webhookId/rotate-secret`.
 </Warning>
 
 Pass `"events": ["*"]` to receive all event types. Other management endpoints:
@@ -111,7 +112,7 @@ You will receive this event **twice** for a single deposit: once immediately whe
   "type": "master_wallet.deposit",
   "created_at": "2026-05-12T14:00:00.000Z",
   "data": {
-    "settlement_id": "bridge_1745123456_2ea87af00de1",
+    "settlement_id": "dep_1745123456_2ea87af00de1",
     "source_amount": 500.00,
     "tx_hash": "5KtP3MzXYZABCDE1234567890abcdef12345678901234567890abcdef1234567",
     "status": "processing"
@@ -127,7 +128,7 @@ You will receive this event **twice** for a single deposit: once immediately whe
   "type": "master_wallet.deposit",
   "created_at": "2026-05-12T14:02:00.000Z",
   "data": {
-    "settlement_id": "bridge_1745123456_2ea87af00de1",
+    "settlement_id": "dep_1745123456_2ea87af00de1",
     "source_amount": 500.00,
     "settled_amount": 499.75,
     "status": "settled"
@@ -165,7 +166,7 @@ Fired when a customer's card wallet has been credited. The `transfer_id` can be 
   "type": "customer.funded",
   "created_at": "2026-05-12T14:10:00.000Z",
   "data": {
-    "transfer_id": "bridge_1745128800_9fc12ab3e4d5",
+    "transfer_id": "tx_1745128800_9fc12ab3e4d5",
     "customer_id": "69f0bdf29a84752db9cc8ff9",
     "amount": 50.00,
     "currency": "USD",
@@ -202,7 +203,7 @@ Fired alongside `customer.funded` whenever your master wallet is debited. Includ
   "type": "master_wallet.customer_funded",
   "created_at": "2026-05-12T14:10:00.000Z",
   "data": {
-    "transfer_id": "bridge_1745128800_9fc12ab3e4d5",
+    "transfer_id": "tx_1745128800_9fc12ab3e4d5",
     "customer_id": "69f0bdf29a84752db9cc8ff9",
     "amount": 50.00,
     "currency": "USD",
@@ -302,17 +303,21 @@ Fired when a card is reported lost.
 
 Every webhook request includes an `X-Yativo-Signature` header and an `X-Yativo-Timestamp` header. The event type is also in the `X-Yativo-Event` header and the unique delivery ID in `X-Yativo-Delivery-Id`. Verify signature and timestamp before processing the event.
 
-The signature is computed over the entire JSON envelope (the object with `id`, `type`, `created_at`, and `data`).
+The signature is computed over the raw request body (the exact JSON bytes received), prefixed with the timestamp.
 
 ```javascript
 const crypto = require('crypto');
 
-// Called inside your POST webhook handler:
-// req.body is the parsed JSON envelope
-// req.headers['x-yativo-signature'] is the signature
-// req.headers['x-yativo-timestamp'] is the Unix timestamp (string)
-function verifyWebhook(body, signature, timestamp, secret) {
-  const signed = `${timestamp}.${JSON.stringify(body)}`;
+// Use express.raw({ type: 'application/json' }) so req.body is a Buffer, not a parsed object.
+// req.headers['x-yativo-signature'] — the HMAC signature
+// req.headers['x-yativo-timestamp'] — Unix timestamp (string)
+function verifyWebhook(rawBody, signature, timestamp, secret) {
+  if (!signature || !timestamp) return false;
+
+  // Reject replays older than 5 minutes
+  if (Math.abs(Date.now() / 1000 - parseInt(timestamp, 10)) > 300) return false;
+
+  const signed = `${timestamp}.${rawBody.toString('utf8')}`;
   const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(signed).digest('hex');
   try {
     return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
@@ -323,7 +328,7 @@ function verifyWebhook(body, signature, timestamp, secret) {
 ```
 
 <Warning>
-  Always verify the signature before trusting the payload. Reject requests where the timestamp is more than 5 minutes old to guard against replay attacks.
+  Always verify the signature before trusting the payload. Use `express.raw({ type: 'application/json' })` (not `express.json()`) so you have the raw bytes for verification.
 </Warning>
 
 ## Retry policy

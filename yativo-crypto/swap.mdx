@@ -259,5 +259,5 @@ curl -X GET "https://crypto-api.yativo.com/api/v1/swap/history?limit=20&offset=0
 | `failed` | Swap failed; source funds are returned |
 
 <Tip>
-  Subscribe to the `swap.completed` and `swap.failed` webhook events to get real-time notifications instead of polling the history endpoint.
+  Subscribe to `["*"]` or the `master_wallet.swap` webhook event to get real-time notifications on swap status changes instead of polling the history endpoint.
 </Tip>
