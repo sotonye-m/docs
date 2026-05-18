@@ -188,6 +188,58 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VN
 
 ---
 
+## Set Card PIN
+
+<Note>
+  The `pin_set` field in the view-token response tells you whether Yativo has received a `physical.card.pin.changed` webhook for this card. Use it to decide whether to prompt the cardholder to set their PIN — the same `enabled_views: ["pin"]` view also handles PIN **changes**.
+</Note>
+
+Card PINs are set and changed through Yativo's **hosted secure page** — the cardholder types their PIN directly inside a sandboxed iframe. The PIN never touches your backend.
+
+**How to show the PIN-setup page:**
+
+1. Call `POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token` with `enabled_views: ["pin"]`
+2. Open the returned `secure_view_url` in an `<iframe>` or WebView
+3. The cardholder enters and confirms their 4-digit PIN inside the hosted page
+4. Once saved, `pin_set` becomes `true` on the card record — card details can now be displayed
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{ "enabled_views": ["pin"] }'
+```
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "secure_view_url": "https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGci...",
+    "pin_set": false,
+    "enabled_views": ["pin"],
+    "expires_at": "2026-05-18T12:05:00.000Z"
+  }
+}
+```
+
+Embed the URL:
+
+```html
+<iframe
+  src="https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGci..."
+  title="Set Card PIN"
+  width="420" height="520"
+  style="border:0; border-radius:16px;"
+  allow="clipboard-read; clipboard-write">
+</iframe>
+```
+
+<Card title="PIN setup — full reference" icon="lock" href="/api-reference/cards/set-pin">
+  Step-by-step flow, response examples, `pin_set` monitoring, and the card details gate explained.
+</Card>
+
+---
+
 ## Freeze a Card
 
 Temporarily suspend a card. All transactions on a frozen card will be declined until unfrozen.
@@ -289,82 +341,6 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/cards/card_01HX9K
 <Warning>
   Voiding a card is permanent. If you only need to temporarily stop spending, use [freeze](#freeze-a-card) instead.
 </Warning>
-
----
-
-## Set Card PIN
-
-Setting a PIN requires a two-step process: first request an OTP, then submit the OTP along with the new PIN.
-
-### Step 1 — Request OTP
-
-```
-POST /yativo-card/cards/{cardId}/pin/otp
-```
-
-<RequestExample>
-```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/pin/otp' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{}'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "otp_sent": true,
-    "delivery_method": "email",
-    "expires_in_seconds": 300
-  }
-}
-```
-</ResponseExample>
-
-### Step 2 — Set PIN
-
-```
-POST /yativo-card/cards/{cardId}/pin/set
-```
-
-<ParamField path="cardId" type="string" required>
-  The card ID for which to set the PIN.
-</ParamField>
-
-<ParamField body="otp" type="string" required>
-  The one-time password received via email or SMS.
-</ParamField>
-
-<ParamField body="pin" type="string" required>
-  The new 4-digit PIN. Must be numeric only.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/pin/set' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "otp": "847291",
-    "pin": "4821"
-  }'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "pin_set": true,
-    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5"
-  }
-}
-```
-</ResponseExample>
 
 ---
 

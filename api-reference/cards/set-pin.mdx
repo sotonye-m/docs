@@ -1,0 +1,194 @@
+---
+title: "Set Card PIN"
+description: "Let a cardholder set their PIN through Yativo's secure hosted page — no PIN ever touches your server."
+---
+
+Card PINs are set — and changed — through Yativo's **hosted secure page**, powered by the Gnosis Pay Partner Secure Elements (PSE) service. The cardholder types their PIN directly inside a sandboxed iframe. Your backend never receives or processes the PIN value.
+
+<Note>
+  The same `enabled_views: ["pin"]` view handles both **initial PIN setup** and **PIN changes**. Show it whenever a cardholder wants to set or update their PIN.
+</Note>
+
+<Note>
+  **`pin_set` is informational, not a hard gate.** Yativo tracks `pin_set` from the `physical.card.pin.changed` webhook — Gnosis Pay does not expose this value via their API. The flag may lag behind reality if the webhook was missed or the cardholder set their PIN through another path. Use it as a UI hint (e.g. show a "Set PIN" prompt) rather than blocking access server-side.
+</Note>
+
+---
+
+## How it works
+
+<Steps>
+  <Step title="Your backend requests a PIN view token">
+    Call `POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/view-token` with `enabled_views: ["pin"]`.
+  </Step>
+  <Step title="You receive a secure_view_url">
+    The response contains a short-lived `secure_view_url` that loads the hosted PIN-setting page.
+  </Step>
+  <Step title="Cardholder sets their PIN in the iframe">
+    Open the URL in an `<iframe>` or WebView. The cardholder enters and confirms their 4-digit PIN directly inside the hosted page. The PIN never leaves the PSE iframe.
+  </Step>
+  <Step title="Gnosis Pay fires a webhook">
+    Once the PIN is saved, Gnosis Pay sends a `physical.card.pin.changed` event to your webhook endpoint. Yativo updates `pin_set: true` on the card record automatically.
+  </Step>
+  <Step title="Card details are now accessible">
+    With `pin_set: true`, you can request a view token with `enabled_views: ["data"]` or `["data", "pin"]` to display the full card number and other details.
+  </Step>
+</Steps>
+
+---
+
+## Step 1 — Request a PIN view token
+
+```
+POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/view-token
+```
+
+<ParamField path="yativoCardId" type="string" required>
+  The Yativo Card account ID (`yativo_card_id`).
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The card ID to set the PIN for.
+</ParamField>
+
+<ParamField body="enabled_views" type="array" required>
+  Pass `["pin"]` to open the PIN-setting form. Pass `["data", "pin"]` to show both card details and PIN (only works after PIN is already set).
+</ParamField>
+
+<ParamField body="theme" type="object">
+  Optional brand customization — `accent_color`, `logo_url`, `background_color`, etc. See [Secure Card Display](/yativo-crypto/cards/secure-display) for all options.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd1234_1769031332068/cards/afeb85fe-02f8-48da-b61e-84ad02704167/view-token' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "enabled_views": ["pin"],
+    "theme": {
+      "accent_color": "#6366f1",
+      "logo_url": "https://yourapp.com/logo.png"
+    }
+  }'
+```
+
+```javascript Node.js
+const response = await fetch(
+  'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd1234_1769031332068/cards/afeb85fe-02f8-48da-b61e-84ad02704167/view-token',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      enabled_views: ['pin'],
+      theme: { accent_color: '#6366f1' },
+    }),
+  }
+);
+const { data } = await response.json();
+// Send data.secure_view_url to your frontend
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Token created
+{
+  "success": true,
+  "data": {
+    "secure_view_url": "https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGci...",
+    "url": "https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGci...",
+    "expires_at": "2026-05-18T12:05:00.000Z",
+    "last_four": "4291",
+    "card_type": "physical",
+    "holder_name": "Jane Doe",
+    "pin_set": false,
+    "enabled_views": ["pin"],
+    "requires_access_code": false
+  }
+}
+```
+
+</ResponseExample>
+
+---
+
+## Step 2 — Embed the hosted PIN page
+
+Pass `secure_view_url` as the `src` of an iframe. No SDK or client-side JavaScript required.
+
+```html
+<iframe
+  src="https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGci..."
+  title="Set Card PIN"
+  width="420"
+  height="520"
+  style="border: 0; border-radius: 16px;"
+  allow="clipboard-read; clipboard-write"
+></iframe>
+```
+
+<Tip>
+  Recommended dimensions for PIN-only view: `420 × 520px`. For combined card details + PIN view: `420 × 740px`.
+</Tip>
+
+---
+
+## Theme customization
+
+Pass a `theme` object in the view-token request to brand the hosted PIN page. All theme fields are optional.
+
+```bash
+curl -X POST '.../view-token' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "enabled_views": ["pin"],
+    "theme": {
+      "accent_color": "#6366f1",
+      "background_color": "#f5f1ea",
+      "logo_url": "https://yourapp.com/logo.png",
+      "border_radius": 16,
+      "font_family": "Inter, sans-serif"
+    }
+  }'
+```
+
+Theme fields: `accent_color`, `background_color`, `panel_color`, `text_color`, `muted_color`, `border_radius`, `font_family`, `logo_url`. See [Secure Card Display](/yativo-crypto/cards/secure-display) for the full reference.
+
+---
+
+## Checking `pin_set` status
+
+After the PIN is set, the Gnosis Pay `physical.card.pin.changed` webhook fires and Yativo updates `pin_set: true` on the card record. You can read this via:
+
+- **Card issuers** — `GET /v1/card-issuer/customers/{customerId}` → `data.cards[n].pin_set`
+- **End users** — `GET /v1/yativo-card/my-account` → `data.account.cards[n].pin_set`
+- **View-token response** — `data.pin_set` is returned on every `POST .../view-token` call
+
+The `next_action` field on the issuer customer record will read:
+
+> `"Card is active — customer must set card PIN before in-store (PSE) payments will work"`
+
+until `pin_set` becomes `true`.
+
+<Warning>
+  `pin_set` reflects the **last known state from the webhook**. Gnosis Pay does not expose this flag via their partner API, so if the webhook was missed or the PIN was set through another path, the value may be stale. Treat it as a UI hint — not an authoritative server-side gate.
+</Warning>
+
+---
+
+## Notes
+
+| Detail | Value |
+|--------|-------|
+| PIN input | Cardholder types directly into the hosted iframe — PIN never reaches your server |
+| PIN format | 4 digits (`0000`–`9999`) |
+| Initial set & change | Same `enabled_views: ["pin"]` view handles both |
+| Confirmation | `physical.card.pin.changed` webhook → `pin_set: true` in DB |
+| `pin_set` reliability | Informational — sourced from webhook only, not Gnosis API |
+| Issuer theme | Pass `theme` in the view-token request — applies to the hosted PIN page |
+| Online vs chip PIN | PSE updates the **online PIN**. The chip PIN syncs automatically on first ATM use |
+| Works for | Physical cards |

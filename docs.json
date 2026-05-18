@@ -451,6 +451,7 @@
               "api-reference/cards/get",
               "api-reference/cards/freeze",
               "api-reference/cards/unfreeze",
+              "api-reference/cards/set-pin",
               "api-reference/cards/ephemeral-token",
               "api-reference/cards/get-wallet",
               "api-reference/cards/funding-address",

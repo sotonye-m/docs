@@ -127,6 +127,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VN
     "secure_view_url": "https://crypto-api.yativo.com/api/v1/card-view?token=eyJhbGciOiJIUzI1NiIs...",
     "expires_at": "2026-03-26T12:01:00Z",
     "last_four": "4242",
+    "pin_set": true,
     "enabled_views": ["data", "pin"],
     "requires_access_code": false
   }
@@ -140,6 +141,7 @@ interface ViewTokenResponse {
   secure_view_url: string;          // Hosted page URL — embed this in an iframe
   expires_at: string;               // ISO 8601 — token is invalid after this
   last_four: string;                // Last 4 digits — safe to display without the iframe
+  pin_set: boolean;                 // Whether the cardholder has set a PIN — ["data"] is blocked until true
   enabled_views: string[];          // Which views are active: ["data"] | ["pin"] | ["data", "pin"]
   requires_access_code: boolean;    // True if access_code was set; user must enter it before details are shown
 }
@@ -343,11 +345,11 @@ export function SecureCardDisplay({ enabledViews = ['data', 'pin'], height = 740
 | `enabled_views` value | What the hosted page shows |
 |---|---|
 | `["data"]` | Card number (PAN), CVV, expiry — no PIN tab |
-| `["pin"]` | View current PIN / set new PIN — no card number tab |
+| `["pin"]` | PIN setup / change form — no card number tab |
 | `["data", "pin"]` | Both tabs, user can switch between them |
 
 <Note>
-  Card data and PIN are rendered by separate internal components on the hosted page. Each view type is independently secured — requesting `["data"]` does not expose any PIN functionality.
+  The view-token response includes `pin_set` — the last known state from the `physical.card.pin.changed` webhook. Use it to decide in your UI whether to prompt the cardholder to set or change their PIN before viewing card details. `pin_set: false` does not block the token request; it is informational only.
 </Note>
 
 ---
