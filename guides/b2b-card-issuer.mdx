@@ -972,6 +972,7 @@ Content-Type: application/json
     "last_four": "4291",
     "card_type": "virtual",
     "holder_name": "John Doe",
+    "pin_set": true,
     "enabled_views": ["data", "pin"],
     "requires_access_code": true,
     "usage_notes": [
@@ -983,7 +984,33 @@ Content-Type: application/json
 }
 ```
 
-Open `secure_view_url` in a browser tab, iframe, or mobile WebView. The URL is short-lived (60 seconds by default). Request a new one each time the customer wants to view their card.
+Open `secure_view_url` in a browser tab, iframe, or mobile WebView. The URL is short-lived. Request a new one each time the customer wants to view their card.
+
+The response includes `pin_set` — the last known state from the `physical.card.pin.changed` webhook. Use it in your UI to decide whether to prompt the customer to set their PIN before showing card details.
+
+### Customer PIN setup and change
+
+Every card starts with `pin_set: false`. The customer must set a PIN before chip-and-PIN or ATM transactions will work. Use the same view-token endpoint with `enabled_views: ["pin"]` to show the PIN setup page — this also handles PIN **changes**.
+
+```bash
+POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/view-token
+Authorization: Bearer YOUR_ISSUER_TOKEN
+Content-Type: application/json
+
+{
+  "enabled_views": ["pin"],
+  "theme": {
+    "accent_color": "#6366f1",
+    "logo_url": "https://yourapp.com/logo.png"
+  }
+}
+```
+
+Open the returned `secure_view_url` for your customer in an iframe or WebView. The cardholder enters their 4-digit PIN directly in the hosted page — it never passes through your backend. Once saved, Gnosis Pay fires a `physical.card.pin.changed` webhook and Yativo updates `pin_set: true` on the card record.
+
+<Note>
+  `pin_set` is sourced from the webhook, not from the Gnosis API. Use it as a UI hint to prompt customers who haven't yet set a PIN — not as a hard access gate.
+</Note>
 
 ---
 

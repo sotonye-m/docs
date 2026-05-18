@@ -385,78 +385,20 @@ Your current limits are always visible in `GET /card-issuer/status` under `limit
 
 ## PIN Management
 
-Every card issued through the Card Issuer Program starts with `pin_set: false`. The customer **must set a PIN** before in-store (PSE / chip-and-PIN) or ATM transactions will work. Online card-not-present transactions do not require a PIN.
+Every card — virtual and physical — starts with `pin_set: false`. The customer must set a PIN before chip-and-PIN or ATM transactions will work. Online card-not-present transactions do not require a PIN.
 
-If a card is active but has no PIN set, the `next_action` field in `GET /card-issuer/customers/:id` will read:
+If a card is active but has no PIN set, the `next_action` field in `GET /v1/card-issuer/customers/{customerId}` will read:
 
 > `"Card is active — customer must set card PIN before in-store (PSE) payments will work"`
 
-### Checking PIN status
-
-The PIN status is exposed at two levels:
-
-**Per-card** — in the `cards` array of `GET /card-issuer/customers/:id`:
-
-```json
-{
-  "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
-  "card_type": "virtual",
-  "status": "active",
-  "pin_set": false
-}
-```
-
-**Per-customer** — the top-level `pin_set` boolean is `true` only when **every** card the customer holds has a PIN configured:
-
-```json
-{
-  "cards_count": 1,
-  "pin_set": false
-}
-```
-
-You can filter customers that still need to set their PIN using:
-
-```bash
-GET /api/card-issuer/customers?status=card_created
-```
-
-Then check each customer's `pin_set` field to identify who still needs to set their PIN.
-
-### How customers set their PIN
-
-The customer calls the PIN endpoint using **their own credentials** (not the issuer's). The PIN is encrypted client-side and never sent in plaintext:
-
-**Step 1 — Get a session key (5-min TTL, single-use):**
-
-```bash
-POST /api/v1/yativo-card/{yativoCardId}/cards/physical/{cardId}/pin-session
-Authorization: Bearer <CUSTOMER_ACCESS_TOKEN>
-```
-
-**Step 2 — Submit the encrypted PIN:**
-
-```bash
-PUT /api/v1/yativo-card/{yativoCardId}/cards/physical/{cardId}/pin
-Authorization: Bearer <CUSTOMER_ACCESS_TOKEN>
-Content-Type: application/json
-
-{
-  "sessionId": "<session_id from step 1>",
-  "encryptedPin": "<AES-256-GCM ciphertext+authTag in hex>",
-  "iv": "<12-byte IV in hex>"
-}
-```
-
-On success, `pin_set` flips to `true` immediately. See [Set Card PIN](/api-reference/cards/set-pin) for the full reference including a Node.js encryption example.
-
-<Note>
-  The PIN endpoint path includes `/physical/` for legacy reasons but works for both virtual and physical cards.
-</Note>
-
-<Warning>
-  **Backward compatibility**: cards created before this feature was introduced also start with `pin_set: false`. PSE transactions on those cards will fail at the Gnosis level if a PIN has not been configured. Prompt customers who have existing active cards to set their PIN.
-</Warning>
+<CardGroup cols={2}>
+  <Card title="Setting a Card PIN" icon="lock" href="/yativo-crypto/cards/set-pin">
+    Full guide — PSE-hosted flow, iframe embed, brand theming, `pin_set` monitoring, and webhook confirmation.
+  </Card>
+  <Card title="API Reference — Secure View" icon="key" href="/api-reference/cards/customer-secure-view">
+    Full parameter reference for the view-token endpoint.
+  </Card>
+</CardGroup>
 
 ---
 

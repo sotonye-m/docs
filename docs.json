@@ -278,7 +278,8 @@
               "yativo-crypto/cards/disputes",
               "yativo-crypto/cards/spending-limits",
               "yativo-crypto/cards/iban",
-              "yativo-crypto/cards/issuer-program"
+              "yativo-crypto/cards/issuer-program",
+              "yativo-crypto/cards/set-pin"
             ]
           },
           {
