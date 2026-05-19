@@ -3,7 +3,9 @@ title: "Setting a Card PIN"
 description: "Let cardholders set or change their PIN through Yativo's hosted secure page — works for both virtual and physical cards"
 ---
 
-Every card — virtual and physical — starts with `pin_set: false`. Cardholders must set a PIN before chip-and-PIN or ATM transactions will work. Online (card-not-present) transactions do not require a PIN.
+Every card — virtual and physical — starts with `pin_set: false`. **Cardholders must set their PIN before card details (card number, CVV) can be viewed, and before chip-and-PIN or ATM transactions will work.**
+
+When you call the view-token endpoint and `pin_set` is `false`, the API returns a `422 PIN_NOT_SET` error with a ready-to-use `pin_setup_url`. Open that URL in an iframe or WebView and the cardholder can set their PIN immediately — then retry the view-token request once the webhook confirms.
 
 Card PINs are set and changed through Yativo's **hosted secure page**, powered by Gnosis Pay's Partner Secure Elements (PSE). The cardholder types their PIN directly inside a sandboxed iframe hosted by Yativo. The PIN never passes through your backend.
 
@@ -183,7 +185,7 @@ GET /v1/card-issuer/customers?status=card_created
 Then filter the results by `pin_set: false`.
 
 <Note>
-  `pin_set` may lag if the webhook was delayed or the cardholder set their PIN through another path. Use it as a UI hint — not a hard server-side gate.
+  `pin_set` reflects the last state received via webhook and may lag if a webhook was delayed. If a cardholder reports unexpected `PIN_NOT_SET` errors after completing PIN setup, they can retry — the server will re-evaluate when the webhook catches up.
 </Note>
 
 ---

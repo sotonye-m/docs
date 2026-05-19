@@ -3,6 +3,12 @@ title: "Secure Card Display"
 description: "Display sensitive card details and PIN in a secure hosted iframe — card data and PIN each require a separate view token"
 ---
 
+<Warning>
+  **Cardholders must set their PIN before card details can be viewed.**
+
+  If `pin_set` is `false` the API returns a `422 PIN_NOT_SET` error with a ready-to-use `pin_setup_url`. Open that URL so the cardholder can set their PIN, then retry the view-token request. See [Setting a Card PIN](/yativo-crypto/cards/set-pin).
+</Warning>
+
 <Note>
   Card details (PAN, CVV, expiry) and the card PIN each use **separate view tokens**. You must request the correct `enabled_views` for each use case. Never reuse a token between sessions.
 </Note>
@@ -12,9 +18,10 @@ description: "Display sensitive card details and PIN in a secure hosted iframe �
 Sensitive card data is never returned in plain API responses. Instead, Yativo hosts a secure card view page and provides you with a short-lived URL to embed in your application:
 
 1. Your backend calls `POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token`
-2. Yativo returns a `secure_view_url` — a hosted, tokenized page
-3. Your frontend embeds that URL in an `<iframe>`
-4. The hosted page renders the sensitive data directly — your application never touches the raw values
+2. If `pin_set` is `false`, the API returns `PIN_NOT_SET` and a `pin_setup_url` — direct the cardholder there first
+3. Once PIN is set, Yativo returns a `secure_view_url` — a hosted, tokenized page
+4. Your frontend embeds that URL in an `<iframe>`
+5. The hosted page renders the sensitive data directly — your application never touches the raw values
 
 <Warning>
   View tokens expire quickly. Always request a fresh token immediately before rendering and never cache or log `secure_view_url`.
@@ -120,16 +127,34 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VN
 </RequestExample>
 
 <ResponseExample>
-```json Success
+```json 200 PIN already set
 {
-  "status": "success",
+  "success": true,
   "data": {
-    "secure_view_url": "https://crypto-api.yativo.com/api/v1/card-view?token=eyJhbGciOiJIUzI1NiIs...",
+    "secure_view_url": "https://crypto-api.yativo.com/api/yativo-card/view/eyJhbGciOiJIUzI1NiIs...",
     "expires_at": "2026-03-26T12:01:00Z",
     "last_four": "4242",
+    "card_type": "virtual",
+    "holder_name": "Jane Doe",
     "pin_set": true,
     "enabled_views": ["data", "pin"],
     "requires_access_code": false
+  }
+}
+```
+
+```json 422 PIN not set
+{
+  "success": false,
+  "error_code": "PIN_NOT_SET",
+  "message": "The cardholder has not set a card PIN yet. Direct them to pin_setup_url to set their PIN before accessing card details.",
+  "data": {
+    "pin_setup_url": "https://crypto-api.yativo.com/api/yativo-card/view/eyJhbGciOiJIUzI1NiIs...",
+    "expires_at": "2026-03-26T12:01:00Z",
+    "last_four": "4242",
+    "card_type": "virtual",
+    "holder_name": "Jane Doe",
+    "pin_set": false
   }
 }
 ```
@@ -137,13 +162,24 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VN
 
 <Accordion title="Response Type Definitions">
 ```typescript
-interface ViewTokenResponse {
+interface ViewTokenSuccess {
   secure_view_url: string;          // Hosted page URL — embed this in an iframe
   expires_at: string;               // ISO 8601 — token is invalid after this
   last_four: string;                // Last 4 digits — safe to display without the iframe
-  pin_set: boolean;                 // Whether the cardholder has set a PIN — ["data"] is blocked until true
+  card_type: string;                // "virtual" | "physical"
+  holder_name: string | null;       // Cardholder display name
+  pin_set: boolean;                 // Always true when this response is returned
   enabled_views: string[];          // Which views are active: ["data"] | ["pin"] | ["data", "pin"]
   requires_access_code: boolean;    // True if access_code was set; user must enter it before details are shown
+}
+
+interface ViewTokenPinNotSet {      // Returned when pin_set is false (HTTP 422)
+  pin_setup_url: string;            // Hosted PIN setup page — direct the cardholder here
+  expires_at: string;
+  last_four: string;
+  card_type: string;
+  holder_name: string | null;
+  pin_set: false;
 }
 ```
 </Accordion>
@@ -216,13 +252,23 @@ app.post('/api/card-view-token', async (req, res) => {
     }
   );
 
+  const payload = await response.json();
+
+  // PIN not yet set — return the setup URL so your frontend can redirect the cardholder
+  if (!response.ok && payload.error_code === 'PIN_NOT_SET') {
+    return res.status(422).json({
+      error_code: 'PIN_NOT_SET',
+      message: payload.message,
+      pin_setup_url: payload.data?.pin_setup_url,
+    });
+  }
+
   if (!response.ok) {
     return res.status(502).json({ error: 'Failed to get view token' });
   }
 
-  const data = await response.json();
   // Return only the URL — do not cache it
-  res.json(data.data);
+  res.json(payload.data);
 });
 ```
   </Tab>
@@ -349,7 +395,7 @@ export function SecureCardDisplay({ enabledViews = ['data', 'pin'], height = 740
 | `["data", "pin"]` | Both tabs, user can switch between them |
 
 <Note>
-  The view-token response includes `pin_set` — the last known state from the `physical.card.pin.changed` webhook. Use it to decide in your UI whether to prompt the cardholder to set or change their PIN before viewing card details. `pin_set: false` does not block the token request; it is informational only.
+  `pin_set` reflects the last known state from card activity webhooks. If `pin_set` is `false` the view-token request returns a `PIN_NOT_SET` error and a `pin_setup_url` — not a `secure_view_url`. Direct the cardholder to the setup URL, wait for the webhook confirmation, then retry.
 </Note>
 
 ---
