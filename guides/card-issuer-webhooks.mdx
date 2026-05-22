@@ -753,12 +753,36 @@ Same shape as `card.frozen` — the envelope `type` identifies the event and `da
 }
 ```
 
+### Transaction event field reference
+
+All `transaction.*` events share the same `data` shape. Fields are populated from card network data and some may be `null` depending on the transaction type or network.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `yativo_card_id` | string | Stable card identifier — use this as the cross-reference key |
+| `card_id` | string \| null | Card token from the card network |
+| `transaction_id` | string \| null | Network transaction ID — may be `null` for some transaction types |
+| `type` | string \| null | Transaction type as reported by the card network (e.g. `"Payment"`, `"Refund"`) |
+| `amount` | float \| null | Transaction amount as a decimal number |
+| `amount_minor` | integer \| null | `amount` in minor units (cents) |
+| `currency` | string \| null | ISO 4217 alpha-3 currency code (e.g. `"EUR"`, `"USD"`, `"BRL"`) |
+| `merchant` | string \| null | Merchant name — `null` for contactless/tap or when not provided by the network |
+| `merchant_category` | string \| null | Merchant category code (MCC) |
+| `merchant_city` | string \| null | Merchant city — `null` when not provided |
+| `merchant_country` | string \| null | ISO 3166 alpha-2 country code (e.g. `"FR"`, `"BR"`) — `null` when not provided |
+| `status` | string \| null | Raw status string from the card network — values vary (e.g. `"Approved"`, `"Declined"`) |
+| `timestamp` | ISO 8601 | When the card network event occurred |
+
+<Warning>
+  `status` and `type` values are passed through directly from the card network and are not normalized. Do not hard-code comparisons against specific strings — check for membership in an expected set and handle unknowns gracefully.
+</Warning>
+
 ### `transaction.authorized`
 
 Fired when a card purchase is authorized. A `customer.balance.updated` event follows immediately.
 
 <Note>
-  `transaction.authorized` can fire twice for the same card transaction — once when the authorization is created and again when it is cleared. Both events carry the same `transaction_id`. Use `data.transaction_id` (not `event.id`) as the key for transaction-level deduplication in your handler.
+  `transaction.authorized` can fire twice for the same card transaction — once when the authorization is created and again when it is cleared. Both events carry the same `transaction_id`. Use `data.transaction_id` (not `event.id`) as the key for transaction-level deduplication in your handler. `transaction_id` may be `null` for some transaction types — in that case fall back to `event.id`.
 </Note>
 
 ```json
@@ -768,9 +792,9 @@ Fired when a card purchase is authorized. A `customer.balance.updated` event fol
   "created_at": "2026-05-12T14:15:00.000Z",
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a...",
-    "card_id": "card_token_abc123",
-    "transaction_id": "tx_9d8e7f...",
-    "type": "purchase",
+    "card_id": "544599049",
+    "transaction_id": null,
+    "type": "Payment",
     "amount": 12.50,
     "amount_minor": 1250,
     "currency": "EUR",
@@ -778,7 +802,7 @@ Fired when a card purchase is authorized. A `customer.balance.updated` event fol
     "merchant_category": "5812",
     "merchant_city": "Paris",
     "merchant_country": "FR",
-    "status": "AUTHORIZED",
+    "status": "Approved",
     "timestamp": "2026-05-12T14:15:00.000Z"
   }
 }
@@ -795,13 +819,17 @@ Fired when the merchant batch clears and the authorization is finalized.
   "created_at": "2026-05-12T15:30:00.000Z",
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a...",
-    "card_id": "card_token_abc123",
-    "transaction_id": "tx_9d8e7f...",
+    "card_id": "544599049",
+    "transaction_id": null,
+    "type": "Payment",
     "amount": 12.50,
     "amount_minor": 1250,
     "currency": "EUR",
-    "merchant": "Starbucks",
-    "status": "SETTLED",
+    "merchant": null,
+    "merchant_category": "7298",
+    "merchant_city": null,
+    "merchant_country": "BR",
+    "status": "Approved",
     "timestamp": "2026-05-12T15:30:00.000Z"
   }
 }
@@ -818,14 +846,17 @@ Fired when a card transaction is declined.
   "created_at": "2026-05-12T14:16:00.000Z",
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a...",
-    "card_id": "card_token_abc123",
-    "transaction_id": "tx_declined_xyz...",
-    "type": "purchase",
+    "card_id": "544599049",
+    "transaction_id": null,
+    "type": "Payment",
     "amount": 200.00,
     "amount_minor": 20000,
     "currency": "EUR",
-    "merchant": "Amazon",
-    "status": "DECLINED",
+    "merchant": null,
+    "merchant_category": "5411",
+    "merchant_city": null,
+    "merchant_country": "DE",
+    "status": "Declined",
     "timestamp": "2026-05-12T14:16:00.000Z"
   }
 }
