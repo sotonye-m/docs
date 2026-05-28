@@ -1,0 +1,317 @@
+---
+title: "Withdrawing Funds from a Customer Card"
+description: "Pull funds from a customer's card balance back to your master wallet — with real-time webhook events for every stage"
+sidebarTitle: "Card Withdrawals"
+---
+
+As a card issuer you can withdraw funds from any customer's card balance directly back to your master wallet. The withdrawal is initiated with a single API call — Yativo handles the signing and submission to the card network automatically. The funds go through a short processing window before settling in your master wallet.
+
+<Note>
+  Withdrawals are available to **master wallet** programs only. The destination is always your program's master wallet for the matching currency — the same wallet you use to fund customer cards.
+</Note>
+
+---
+
+## How It Works
+
+```
+POST /v1/card-issuer/withdraw-from-card
+         │
+         ▼
+  Card balance debited (processing)
+         │
+         ├── card.withdrawal.initiated  ← fires immediately
+         │
+         ▼
+  Funds clear through the card network (~3 minutes)
+         │
+         ├── card.withdrawal.settled    ← funds have arrived in master wallet
+         └── card.withdrawal.failed     ← cleared; no funds moved
+```
+
+You receive a `card.withdrawal.initiated` webhook the moment the withdrawal is accepted, and a `card.withdrawal.settled` (or `card.withdrawal.failed`) webhook once the card network finishes processing — typically within a few minutes.
+
+---
+
+## Identify the Card
+
+Use **any** of these identifiers in the `id` field:
+
+| Identifier | When to use |
+|---|---|
+| `yativo_card_id` | Most precise — always unique per card. **Recommended.** |
+| `external_customer_id` | Your own reference ID set at onboarding |
+| `customer_id` (ObjectId) | Yativo's internal customer document ID |
+| `email` | Convenient, but only works when the customer has **exactly one** card |
+
+<Warning>
+  **Email with multiple cards:** If the email resolves to more than one card, the request returns a `422 MULTIPLE_CARDS` error. Use `GET /v1/card-issuer/customers` to list all cards and their `yativo_card_id`s, then retry with a specific `yativo_card_id`.
+</Warning>
+
+---
+
+## Initiate a Withdrawal
+
+```bash
+POST /v1/card-issuer/withdraw-from-card
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+```
+
+```json Request
+{
+  "id": "yc_a1b2c3d4e5f6",
+  "amount": 50
+}
+```
+
+**Request fields**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | ✓ | Card identifier — see table above |
+| `amount` | number | ✓ | Amount to withdraw in the card's currency (e.g. `50` = $50.00 USD) |
+
+---
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "withdrawal_id": "cwd_1748012345678_x7k2qp",
+    "yativo_card_id": "yc_a1b2c3d4e5f6",
+    "amount": 50.0,
+    "amount_minor": 5000,
+    "currency": "USD",
+    "status": "initiated",
+    "message": "Withdrawal initiated. Funds will arrive in your master wallet shortly.",
+    "estimated_settlement_at": "2026-05-23T14:35:00.000Z"
+  }
+}
+```
+
+Store `withdrawal_id` — you will receive it back in every subsequent webhook event for this withdrawal, making it easy to correlate.
+
+---
+
+### Error Responses
+
+**Email with multiple cards**
+```json
+{
+  "success": false,
+  "error": "MULTIPLE_CARDS",
+  "message": "This email is linked to multiple cards. Use yativo_card_id to specify which card to withdraw from.",
+  "hint": "Call GET /api/card-issuer/customers to list all cards and their yativo_card_ids."
+}
+```
+
+**Insufficient balance**
+```json
+{
+  "success": false,
+  "error": "INSUFFICIENT_BALANCE",
+  "message": "Available balance (30.00 USD) is less than the requested amount (50.00 USD).",
+  "available": 30.0,
+  "available_minor": 3000,
+  "currency": "USD"
+}
+```
+
+**Card not found**
+```json
+{
+  "success": false,
+  "error": "CARD_NOT_FOUND",
+  "message": "No active card found for the provided identifier."
+}
+```
+
+---
+
+## Webhook Events
+
+Subscribe to these event types when registering your webhook:
+
+| Event | When it fires |
+|---|---|
+| `card.withdrawal.initiated` | Withdrawal accepted and queued on the card network |
+| `card.withdrawal.settled` | Funds cleared and credited to your master wallet |
+| `card.withdrawal.failed` | Withdrawal rejected or failed; no funds moved |
+| `master_wallet.withdrawal` | Companion to `settled` — confirms the master wallet credit |
+
+---
+
+### `card.withdrawal.initiated`
+
+Fires immediately after the withdrawal is accepted. The card's available balance is reduced at this point.
+
+```json
+{
+  "event": "card.withdrawal.initiated",
+  "timestamp": "2026-05-23T14:32:00.000Z",
+  "data": {
+    "withdrawal_id": "cwd_1748012345678_x7k2qp",
+    "yativo_card_id": "yc_a1b2c3d4e5f6",
+    "amount": 50.0,
+    "amount_minor": 5000,
+    "currency": "USD",
+    "status": "initiated",
+    "estimated_settlement_at": "2026-05-23T14:35:00.000Z"
+  }
+}
+```
+
+---
+
+### `card.withdrawal.settled`
+
+Fires once the card network confirms the withdrawal. Funds are now in your master wallet.
+
+```json
+{
+  "event": "card.withdrawal.settled",
+  "timestamp": "2026-05-23T14:35:12.000Z",
+  "data": {
+    "withdrawal_id": "cwd_1748012345678_x7k2qp",
+    "yativo_card_id": "yc_a1b2c3d4e5f6",
+    "amount": 50.0,
+    "amount_minor": 5000,
+    "currency": "USD",
+    "tx_hash": "0xa8739436c44460738a4147055530e450f8b55694e2448875e72cd25eb29cd21f",
+    "card_balance": 143.97,
+    "card_balance_minor": 14397,
+    "status": "settled",
+    "settled_at": "2026-05-23T14:35:12.000Z"
+  }
+}
+```
+
+**Settled payload fields**
+
+| Field | Type | Description |
+|---|---|---|
+| `withdrawal_id` | string | Matches the ID from the initiated event |
+| `yativo_card_id` | string | The card the funds were withdrawn from |
+| `amount` | float | Amount withdrawn |
+| `amount_minor` | integer | Amount in minor units (cents) |
+| `currency` | string | `USD`, `EUR`, or `GBP` |
+| `tx_hash` | string \| null | On-chain blockchain transaction hash of the settlement. Use this for reconciliation. `null` if the chain hash was not available at settlement time. |
+| `card_balance` | float | Card's remaining available balance after the withdrawal |
+| `card_balance_minor` | integer | Remaining balance in minor units |
+| `status` | string | Always `"settled"` |
+| `settled_at` | ISO 8601 | Timestamp when settlement was confirmed |
+
+---
+
+### `card.withdrawal.failed`
+
+Fires if the card network rejects the withdrawal. No funds are moved.
+
+```json
+{
+  "event": "card.withdrawal.failed",
+  "timestamp": "2026-05-23T14:35:05.000Z",
+  "data": {
+    "withdrawal_id": "cwd_1748012345678_x7k2qp",
+    "yativo_card_id": "yc_a1b2c3d4e5f6",
+    "amount": 50.0,
+    "amount_minor": 5000,
+    "currency": "USD",
+    "reason": "Withdrawal rejected by card network",
+    "status": "failed",
+    "timestamp": "2026-05-23T14:35:05.000Z"
+  }
+}
+```
+
+---
+
+### `master_wallet.withdrawal`
+
+A companion event to `card.withdrawal.settled`. Confirms the credit on the master wallet side. Use this if you reconcile master wallet movements separately.
+
+```json
+{
+  "event": "master_wallet.withdrawal",
+  "timestamp": "2026-05-23T14:35:12.000Z",
+  "data": {
+    "withdrawal_id": "cwd_1748012345678_x7k2qp",
+    "yativo_card_id": "yc_a1b2c3d4e5f6",
+    "amount": 50.0,
+    "amount_minor": 5000,
+    "currency": "USD",
+    "destination_address": "0x920abe21a7eb39DF5f5A42AE97F4Cd061d5AdD9b",
+    "tx_hash": "0xa8739436c44460738a4147055530e450f8b55694e2448875e72cd25eb29cd21f",
+    "status": "settled",
+    "settled_at": "2026-05-23T14:35:12.000Z"
+  }
+}
+```
+
+---
+
+## Handling Events in Code
+
+```typescript
+async function handleWithdrawalEvent(event: CardIssuerEvent) {
+  const { withdrawal_id, yativo_card_id, amount, currency, status } = event.data;
+
+  switch (event.event) {
+    case "card.withdrawal.initiated":
+      // Mark the withdrawal as in-progress in your system
+      await db.withdrawals.update(withdrawal_id, { status: "processing" });
+      break;
+
+    case "card.withdrawal.settled":
+      // Withdrawal complete — update your records and reflect the master wallet credit
+      await db.withdrawals.update(withdrawal_id, { status: "settled" });
+      await db.masterWallet.credit(amount, currency);
+      break;
+
+    case "card.withdrawal.failed":
+      // No funds moved — alert your ops team if needed
+      await db.withdrawals.update(withdrawal_id, {
+        status: "failed",
+        reason: event.data.reason,
+      });
+      break;
+  }
+}
+```
+
+---
+
+## Amount Fields
+
+Every webhook payload exposes the amount in two formats:
+
+| Field | Format | Example |
+|---|---|---|
+| `amount` | Decimal float | `50.00` |
+| `amount_minor` | Integer minor units (cents) | `5000` |
+
+Use `amount_minor` for arithmetic to avoid floating-point rounding issues.
+
+---
+
+## Settlement Timing
+
+Withdrawals are processed through the card network and typically settle within **a few minutes**. During this window:
+
+- The card's available balance is reduced immediately
+- The card may be temporarily restricted from new transactions
+- If the withdrawal fails, the hold is released automatically and the balance is restored
+
+Plan your UX so that you communicate the pending state clearly — `card.withdrawal.initiated` means "in progress", not "done". Only `card.withdrawal.settled` means the funds are available in your master wallet.
+
+---
+
+## Tips
+
+- **Always use `yativo_card_id`** when customers have multiple cards. Email lookup is a convenience shortcut for single-card customers only.
+- **Reconcile with `withdrawal_id`** — every event carries the same `withdrawal_id`, making it straightforward to match initiated → settled/failed without storing extra state.
+- **Do not retry on `initiated`** — once a withdrawal is initiated, attempting the same amount again will create a second withdrawal. Wait for the `settled` or `failed` event before deciding to retry.
+- **Check `master_wallet.balance.updated`** to confirm your master wallet balance is what you expect after the credit.

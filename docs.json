@@ -274,6 +274,7 @@
               "yativo-crypto/cards/secure-display",
               "yativo-crypto/cards/physical-cards",
               "yativo-crypto/cards/funding",
+              "yativo-crypto/cards/withdrawal",
               "yativo-crypto/cards/transactions",
               "yativo-crypto/cards/disputes",
               "yativo-crypto/cards/spending-limits",

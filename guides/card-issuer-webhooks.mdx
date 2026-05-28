@@ -534,7 +534,7 @@ All amount fields are provided as both a decimal float and an integer in minor u
     "wallet_balance": 999.50,
     "wallet_balance_minor": 99950,
     "currency": "USD",
-    "tx_hash": null,
+    "tx_hash": "0xa8739436c44460738a4147055530e450f8b55694e2448875e72cd25eb29cd21f",
     "status": "settled"
   }
 }
@@ -551,7 +551,7 @@ All amount fields are provided as both a decimal float and an integer in minor u
 | `wallet_balance_minor` | integer \| null | `wallet_balance` in minor units (cents). |
 | `currency` | string | Wallet currency (e.g. `USD`, `EUR`, `GBP`). Present on `settled` events. |
 | `settlement_id` | string \| null | Bridge or settlement transaction reference. |
-| `tx_hash` | string \| null | On-chain transaction hash (when available). |
+| `tx_hash` | string \| null | On-chain blockchain transaction hash. Present on both `processing` and `settled` events when the underlying chain transaction is known. Use this for reconciliation and accounting. |
 
 ### `master_wallet.swap`
 
@@ -577,7 +577,7 @@ Fired when a currency swap is submitted from your master wallet (e.g. USD → EU
 
 ### `master_wallet.customer_funded`
 
-Fired alongside `customer.funded` whenever your master wallet is debited. Includes `remaining_balance` when available.
+Fired alongside `customer.funded` whenever your master wallet is debited. Includes `remaining_balance` when available and `tx_hash` with the on-chain transaction hash of the funding transfer.
 
 ```json
 {
@@ -590,6 +590,7 @@ Fired alongside `customer.funded` whenever your master wallet is debited. Includ
     "amount": 50.00,
     "amount_minor": 5000,
     "currency": "USD",
+    "tx_hash": "0xa8739436c44460738a4147055530e450f8b55694e2448875e72cd25eb29cd21f",
     "status": "completed",
     "remaining_balance": 114.98,
     "remaining_balance_minor": 11498
@@ -612,6 +613,7 @@ Fired when a customer's card wallet has been successfully credited.
     "amount": 50.00,
     "amount_minor": 5000,
     "currency": "USD",
+    "tx_hash": "0xa8739436c44460738a4147055530e450f8b55694e2448875e72cd25eb29cd21f",
     "status": "completed"
   }
 }
@@ -761,7 +763,8 @@ All `transaction.*` events share the same `data` shape. Fields are populated fro
 |-------|------|-------|
 | `yativo_card_id` | string | Stable card identifier — use this as the cross-reference key |
 | `card_id` | string \| null | Card token from the card network |
-| `transaction_id` | string \| null | Network transaction ID — may be `null` for some transaction types |
+| `transaction_id` | string \| null | Network transaction ID. Use this as the key for deduplication. Falls back to the webhook event `id` when not provided by the card network. |
+| `blockchain_tx_hash` | string \| null | On-chain transaction hash when the card network includes one. `null` for most card-network transactions where settlement is off-chain. |
 | `type` | string \| null | Transaction type as reported by the card network (e.g. `"Payment"`, `"Refund"`) |
 | `amount` | float \| null | Transaction amount as a decimal number |
 | `amount_minor` | integer \| null | `amount` in minor units (cents) |
@@ -782,7 +785,7 @@ All `transaction.*` events share the same `data` shape. Fields are populated fro
 Fired when a card purchase is authorized. A `customer.balance.updated` event follows immediately.
 
 <Note>
-  `transaction.authorized` can fire twice for the same card transaction — once when the authorization is created and again when it is cleared. Both events carry the same `transaction_id`. Use `data.transaction_id` (not `event.id`) as the key for transaction-level deduplication in your handler. `transaction_id` may be `null` for some transaction types — in that case fall back to `event.id`.
+  `transaction.authorized` can fire twice for the same card transaction — once when the authorization is created and again when it is cleared. Both events carry the same `transaction_id`. Use `data.transaction_id` (not `event.id`) as the key for transaction-level deduplication in your handler. If `transaction_id` is `null`, fall back to `event.id`.
 </Note>
 
 ```json
@@ -793,7 +796,8 @@ Fired when a card purchase is authorized. A `customer.balance.updated` event fol
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a...",
     "card_id": "544599049",
-    "transaction_id": null,
+    "transaction_id": "tx_9d8e7f6a5b4c3d2e1f",
+    "blockchain_tx_hash": null,
     "type": "Payment",
     "amount": 12.50,
     "amount_minor": 1250,
@@ -820,7 +824,8 @@ Fired when the merchant batch clears and the authorization is finalized.
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a...",
     "card_id": "544599049",
-    "transaction_id": null,
+    "transaction_id": "tx_9d8e7f6a5b4c3d2e1f",
+    "blockchain_tx_hash": null,
     "type": "Payment",
     "amount": 12.50,
     "amount_minor": 1250,
@@ -847,7 +852,8 @@ Fired when a card transaction is declined.
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a...",
     "card_id": "544599049",
-    "transaction_id": null,
+    "transaction_id": "tx_9d8e7f6a5b4c3d2e1f",
+    "blockchain_tx_hash": null,
     "type": "Payment",
     "amount": 200.00,
     "amount_minor": 20000,

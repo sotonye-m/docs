@@ -46,7 +46,15 @@ POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token
 </ParamField>
 
 <ParamField body="enabled_views" type="array">
-  Which views to enable on the hosted page. Accepted values: `"data"` (card number, CVV, expiry), `"pin"` (view/set PIN). Omit to show all available views.
+  Which views to enable on the hosted page. Accepted values:
+
+  | Value | Tab shown |
+  |---|---|
+  | `"data"` | Card number, CVV, expiry |
+  | `"pin-view"` | Reveal current PIN |
+  | `"pin-set"` | Set or change PIN |
+
+  Combine freely, e.g. `["data", "pin-view", "pin-set"]`. The page renders one tab per value.
 </ParamField>
 
 <ParamField body="access_code" type="string">
@@ -54,7 +62,7 @@ POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token
 </ParamField>
 
 <ParamField body="theme" type="object">
-  Optional theme customization for the hosted page. All fields are optional.
+  Optional per-request theme tokens for the hosted page wrapper. For full CSS control — including card data text colors and fonts — set persistent customization via `PUT /api/card-issuer/pse-customization` (see [Custom CSS](#custom-css) below). All `theme` fields are optional.
 </ParamField>
 
 <ParamField body="theme.accent_color" type="string">
@@ -99,21 +107,30 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VN
   }'
 ```
 
-```bash Card details + PIN
+```bash Card details + view PIN
 curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
-    "enabled_views": ["data", "pin"]
+    "enabled_views": ["data", "pin-view"]
   }'
 ```
 
-```bash With custom theme + access code
+```bash Card details + set/change PIN
 curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
-    "enabled_views": ["data", "pin"],
+    "enabled_views": ["data", "pin-set"]
+  }'
+```
+
+```bash All three tabs + access code
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "enabled_views": ["data", "pin-view", "pin-set"],
     "access_code": "1234",
     "theme": {
       "accent_color": "#0f766e",
@@ -137,7 +154,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VN
     "card_type": "virtual",
     "holder_name": "Jane Doe",
     "pin_set": true,
-    "enabled_views": ["data", "pin"],
+    "enabled_views": ["data", "pin-view", "pin-set"],
     "requires_access_code": false
   }
 }
@@ -169,7 +186,7 @@ interface ViewTokenSuccess {
   card_type: string;                // "virtual" | "physical"
   holder_name: string | null;       // Cardholder display name
   pin_set: boolean;                 // Always true when this response is returned
-  enabled_views: string[];          // Which views are active: ["data"] | ["pin"] | ["data", "pin"]
+  enabled_views: string[];          // Which views are active — any combination of "data" | "pin-view" | "pin-set"
   requires_access_code: boolean;    // True if access_code was set; user must enter it before details are shown
 }
 
@@ -227,7 +244,7 @@ app.post('/api/card-view-token', async (req, res) => {
   const { enabled_views, access_code, theme } = req.body;
 
   // 2. Validate enabled_views — only accept known values
-  const VALID_VIEWS = ['data', 'pin'];
+  const VALID_VIEWS = ['data', 'pin-view', 'pin-set'];
   if (enabled_views && !enabled_views.every(v => VALID_VIEWS.includes(v))) {
     return res.status(400).json({ error: 'Invalid enabled_views' });
   }
@@ -287,7 +304,7 @@ const result = await sdk.cards.getViewToken(
   'yc_01HX9KZMB3F7VNQP8R2WDGT4E5',   // yativoCardId
   'card_01HX9KZMB3F7VNQP8R2WDGT4E5',  // cardId
   {
-    enabled_views: ['data', 'pin'],
+    enabled_views: ['data', 'pin-view', 'pin-set'],
     theme: {
       accent_color: '#813AE3',
       border_radius: 16,
@@ -335,7 +352,7 @@ return res.json({ url: result.data.secure_view_url });
 import { useEffect, useRef, useState } from 'react';
 
 interface CardViewProps {
-  enabledViews?: ('data' | 'pin')[];
+  enabledViews?: ('data' | 'pin-view' | 'pin-set')[];
   height?: number;
 }
 
@@ -388,11 +405,18 @@ export function SecureCardDisplay({ enabledViews = ['data', 'pin'], height = 740
 
 ## View options reference
 
-| `enabled_views` value | What the hosted page shows |
-|---|---|
-| `["data"]` | Card number (PAN), CVV, expiry — no PIN tab |
-| `["pin"]` | PIN setup / change form — no card number tab |
-| `["data", "pin"]` | Both tabs, user can switch between them |
+| Value | Tab label | What it renders |
+|---|---|---|
+| `"data"` | Card Details | Card number (PAN), CVV, expiry |
+| `"pin-view"` | View PIN | Reveals the cardholder's current PIN |
+| `"pin-set"` | Change PIN | Form to set or change the PIN |
+
+Pass an array with any combination:
+- `["data"]` — card details only
+- `["pin-set"]` — PIN setup only (e.g. initial onboarding)
+- `["data", "pin-view"]` — card details + reveal PIN
+- `["data", "pin-set"]` — card details + change PIN
+- `["data", "pin-view", "pin-set"]` — all three tabs
 
 <Note>
   `pin_set` reflects the last known state from card activity webhooks. If `pin_set` is `false` the view-token request returns a `PIN_NOT_SET` error and a `pin_setup_url` — not a `secure_view_url`. Direct the cardholder to the setup URL, wait for the webhook confirmation, then retry.
@@ -414,6 +438,145 @@ curl -X POST '.../view-token' \
 
 # Your user will see a prompt to enter 7291 before card details are shown
 ```
+
+---
+
+## Customization
+
+<a id="custom-css"></a>
+
+The secure view page supports two levels of customization: per-request theme tokens and persistent CSS overrides.
+
+### Theme tokens (per request)
+
+Pass a `theme` object in the view-token request to apply brand colors, fonts, and a logo. These take effect immediately on every URL you generate.
+
+| Field | What it affects | Default |
+|---|---|---|
+| `accent_color` | Active tab, status indicators, spinner, eyebrow label | `#0f766e` |
+| `background_color` | Page background | `#f5f1ea` |
+| `panel_color` | Hero header, tab strip, and iframe frame background | `#fffaf7` |
+| `text_color` | Primary text | `#1e2a24` |
+| `muted_color` | Inactive tab labels, secondary text | `#6b746e` |
+| `border_radius` | All rounded corners in px (clamped 8–36) | `24` |
+| `font_family` | Font for the page shell | system sans-serif |
+| `logo_url` | Logo displayed in the header alongside the cardholder name | none |
+
+All fields are optional. Unset fields fall back to the defaults above.
+
+```bash
+curl -X POST '.../view-token' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "enabled_views": ["data", "pin-view", "pin-set"],
+    "theme": {
+      "accent_color": "#6366f1",
+      "background_color": "#f8f8fc",
+      "panel_color": "#ffffff",
+      "border_radius": 16,
+      "font_family": "Inter, sans-serif",
+      "logo_url": "https://yourapp.com/logo.png"
+    }
+  }'
+```
+
+### Custom CSS (persistent, issuer-level)
+
+For fine-grained control over colors, typography, and spacing, you can supply raw CSS that is stored against your issuer account and applied to every secure view URL you generate.
+
+The page has two layers — your CSS affects them differently:
+
+**Layer 1 — Page shell** (injected directly into the page `<style>` block)
+
+The Yativo-rendered wrapper: background, header, tabs, status bar, frame container. All standard CSS applies normally.
+
+**Layer 2 — Card data area** (extracted and applied as SDK inline styles)
+
+The card number, expiry, and CVV are rendered inside a cross-origin secure iframe. Yativo extracts a specific set of selectors from your stylesheet and forwards them as inline style overrides to the secure card SDK. Only these selectors reach inside the iframe.
+
+<Warning>
+  For security, the following patterns are stripped before storage: `@import`, external `url()` references, `expression()`, and `behavior:`. Inline data URIs for images (`data:image/png;base64,...`) are allowed.
+</Warning>
+
+#### Supported selectors
+
+**Page shell**
+
+| Selector | What it styles |
+|---|---|
+| `body` | Page background |
+| `.panel` | Outer layout wrapper (no visual style by default) |
+| `.hero` | Header card (background, border, shadow) |
+| `.eyebrow` | "Secure Card View" label |
+| `.tab`, `.tab.active` | Tab strip buttons (Card Details / View PIN / Change PIN) |
+| `.frame` | Container around the secure card data area |
+| `.status`, `.status.ready`, `.status.error` | Status bar text |
+| `.footer` | Countdown timer |
+
+**Card data area**
+
+| Selector | What it overrides |
+|---|---|
+| `.pse-container` | Card data container (background, border, border-radius) |
+| `.pse-card-field` | Individual field rows |
+| `.pse-card-label` | Field labels ("CARD NUMBER", "EXPIRES", "CVV") |
+| `.pse-card-value` | Field values — the actual card number, expiry, CVV text |
+| `.pse-copy-button` | Copy-to-clipboard button (background, border, `color`) |
+
+#### Manage your customization
+
+```bash
+# Set
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/card-issuer/pse-customization' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{ "custom_css": "body { background: #f0f0f5; } .hero { background: #ffffff; } ..." }'
+
+# Retrieve
+curl 'https://crypto-api.yativo.com/api/v1/card-issuer/pse-customization' \
+  -H 'Authorization: Bearer YOUR_API_KEY'
+
+# Clear (revert to defaults)
+curl -X PUT 'https://crypto-api.yativo.com/api/v1/card-issuer/pse-customization' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{ "custom_css": "" }'
+```
+
+#### Example: brand colours + Inter font
+
+```css
+/* ── Page shell ── */
+body  { background: #f8f8fc; }
+.hero { background: #ffffff; border-color: rgba(0,0,0,0.08); }
+.tab  { color: #6b7280; background: #ffffff; border-color: rgba(0,0,0,0.08); }
+.tab.active { background: #6366f1; border-color: #6366f1; color: #ffffff; }
+.frame { background: #ffffff; border-color: rgba(0,0,0,0.08); }
+.status.ready { color: #6366f1; }
+.footer { color: #9ca3af; }
+
+/* ── Card data area ── */
+.pse-container  { background-color: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; }
+.pse-card-field { background-color: #ffffff; border-bottom-color: rgba(0,0,0,0.06); }
+.pse-card-label { color: #9ca3af; font-size: 11px; font-family: Inter, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; }
+.pse-card-value { color: #111827; font-size: 14px; font-family: Inter, sans-serif; }
+.pse-copy-button { color: #374151; background: transparent; border-color: rgba(0,0,0,0.12); }
+```
+
+### Known limitations
+
+<Warning>
+  **Keep the page shell light.** The card data iframe is rendered by the card network in light mode and cannot be changed. Applying a dark background to `.frame` or `body` will make the card number, expiry, and CVV unreadable. Use light backgrounds for the page shell and style the card data area with dark text on white.
+</Warning>
+
+<Warning>
+  **Copy button icon color cannot be changed.** The clipboard SVG inside `.pse-copy-button` has a hardcoded fill. Setting `color` on `.pse-copy-button` affects the button border and background only — not the icon itself.
+</Warning>
+
+<Warning>
+  **View PIN and Change PIN are always light-mode.** These tabs are rendered entirely by the card network's secure iframe and cannot be themed via custom CSS.
+</Warning>
 
 ---
 

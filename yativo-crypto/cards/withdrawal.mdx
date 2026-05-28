@@ -1,0 +1,217 @@
+---
+title: "Card Withdrawal"
+description: "Pull funds from a customer's card account back to your master wallet — on-chain USDC settlement in approximately 3 minutes"
+---
+
+<Note>
+  Card withdrawal is only available for issuers using the **master wallet** funding structure. The funds are settled on-chain directly to your issuer master wallet.
+</Note>
+
+## How it works
+
+A card withdrawal moves USDC from a customer's card account (their on-chain Safe) back to your issuer master wallet in a single API call:
+
+1. You call `POST /api/card-issuer/withdraw-from-card` with a customer identifier and amount
+2. Yativo fetches EIP-712 typed data from the card network, signs it server-side using the card's EOA, and submits the transaction
+3. A delay relay holds the transaction for **~3 minutes** — the card is temporarily frozen during this window
+4. Once the delay elapses the transfer executes on-chain and your master wallet is credited
+5. Two webhooks fire: `card.withdrawal.settled` (customer-scoped) and `master_wallet.withdrawal` (issuer-scoped)
+
+---
+
+## API
+
+```
+POST /api/card-issuer/withdraw-from-card
+```
+
+**Authentication:** Bearer token (your issuer API key)
+
+<ParamField body="id" type="string" required>
+  Identifies the customer's card. Accepts any of:
+  - `yativo_card_id` — e.g. `yativo_card_customer_...`
+  - `external_id` — the ID you assigned during onboarding
+  - `customer_id` — the Yativo internal customer ObjectId
+  - `email` — only valid when the customer has exactly one card; returns `422` if ambiguous
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount to withdraw in display units (e.g. `1`, `25.50`). Must be positive and not exceed the card's available balance.
+</ParamField>
+
+<RequestExample>
+```bash Withdraw $1
+curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/withdraw-from-card' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "id": "yativo_card_customer_abc123...",
+    "amount": 1
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Submitted
+{
+  "success": true,
+  "message": "Withdrawal submitted. Processing through delay relay (~3 min). Cards are temporarily frozen.",
+  "withdrawal_id": "wth_01HXABCDEF...",
+  "amount": 1,
+  "currency": "USD",
+  "status": "processing"
+}
+```
+
+```json 400 Insufficient balance
+{
+  "success": false,
+  "error": "INSUFFICIENT_BALANCE",
+  "message": "Available balance is $0.50. Requested $1.00."
+}
+```
+
+```json 422 Ambiguous customer
+{
+  "success": false,
+  "error": "AMBIGUOUS_CUSTOMER",
+  "message": "Multiple cards found for this email. Use yativo_card_id instead."
+}
+```
+</ResponseExample>
+
+---
+
+## Timing
+
+| Stage | Time |
+|---|---|
+| API response (withdrawal accepted) | Immediate |
+| Card frozen (delay relay active) | Immediately after submission |
+| On-chain settlement | ~3 minutes after submission |
+| Card unfrozen | After settlement confirms |
+| Webhooks delivered | After settlement confirms |
+
+The 3-minute delay is enforced by the card network's on-chain delay relay module and cannot be shortened.
+
+---
+
+## Webhooks
+
+Subscribe to these events to track withdrawal lifecycle:
+
+### `card.withdrawal.settled`
+
+Fires when the withdrawal confirms on-chain. Scoped to the customer's card account.
+
+```json
+{
+  "event": "card.withdrawal.settled",
+  "data": {
+    "withdrawal_id": "wth_01HXABCDEF...",
+    "yativo_card_id": "yativo_card_customer_...",
+    "amount": 1.00,
+    "amount_minor": 100,
+    "currency": "USD",
+    "card_balance": 10.87,
+    "card_balance_minor": 1087,
+    "tx_hash": "0xabc123...",
+    "status": "settled",
+    "timestamp": "2026-05-28T13:10:45.000Z"
+  }
+}
+```
+
+### `master_wallet.withdrawal`
+
+Fires at the same time as `card.withdrawal.settled`. Scoped to your issuer master wallet — confirms your wallet has been credited.
+
+```json
+{
+  "event": "master_wallet.withdrawal",
+  "data": {
+    "withdrawal_id": "wth_01HXABCDEF...",
+    "yativo_card_id": "yativo_card_customer_...",
+    "amount": 1.00,
+    "amount_minor": 100,
+    "currency": "USD",
+    "tx_hash": "0xabc123...",
+    "status": "settled",
+    "timestamp": "2026-05-28T13:10:45.000Z"
+  }
+}
+```
+
+### `card.withdrawal.failed`
+
+Fires if the on-chain transaction is rejected.
+
+```json
+{
+  "event": "card.withdrawal.failed",
+  "data": {
+    "withdrawal_id": "wth_01HXABCDEF...",
+    "yativo_card_id": "yativo_card_customer_...",
+    "amount": 1.00,
+    "amount_minor": 100,
+    "currency": "USD",
+    "reason": "Transaction reverted",
+    "status": "failed",
+    "timestamp": "2026-05-28T13:10:45.000Z"
+  }
+}
+```
+
+### `customer.balance.updated`
+
+Fires when the card balance changes — including after a withdrawal settles.
+
+```json
+{
+  "event": "customer.balance.updated",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_...",
+    "ledger_balance": 10.87,
+    "ledger_balance_minor": 1087,
+    "available_balance": 10.87,
+    "available_balance_minor": 1087,
+    "pending_balance": 0,
+    "pending_balance_minor": 0,
+    "currency": "USD",
+    "timestamp": "2026-05-28T13:10:45.000Z"
+  }
+}
+```
+
+Subscribe to all four events to handle the full lifecycle:
+
+```json
+{
+  "events": [
+    "card.withdrawal.settled",
+    "card.withdrawal.failed",
+    "master_wallet.withdrawal",
+    "customer.balance.updated"
+  ]
+}
+```
+
+---
+
+## Notes
+
+- **Card is frozen during processing.** From submission until on-chain confirmation (~3 min), the card cannot be used for purchases.
+- **Settlement is on-chain and irreversible.** Once submitted the transaction cannot be cancelled. Verify the amount and customer before calling the endpoint.
+- **Master wallet receives USDC on Gnosis Chain.** The credited token matches the customer's card denomination. For USD cards this is USDC (`0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0`).
+- **`amount_minor` is in cents** (1 USD = 100 minor units), regardless of the on-chain token decimals.
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Fund a Customer Card" icon="arrow-down-to-arc" href="/yativo-crypto/cards/funding">
+    Move funds from your master wallet to a customer card.
+  </Card>
+  <Card title="Transactions" icon="list" href="/yativo-crypto/cards/transactions">
+    View card spending and transaction history.
+  </Card>
+</CardGroup>

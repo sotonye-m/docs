@@ -15,7 +15,7 @@ Card PINs are set and changed through Yativo's **hosted secure page**, powered b
 
 <Steps>
   <Step title="Your backend requests a PIN view token">
-    Call `POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/view-token` with `enabled_views: ["pin"]` using your issuer credentials. Pass your brand `theme` to customise the page.
+    Call `POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/view-token` with `enabled_views: ["pin-set"]` for initial setup or PIN change, or `["pin-view"]` to reveal the current PIN. Pass your brand `theme` to customise the page.
   </Step>
   <Step title="You receive a secure_view_url">
     The response includes a short-lived `secure_view_url` and the current `pin_set` status for that card.
@@ -28,7 +28,7 @@ Card PINs are set and changed through Yativo's **hosted secure page**, powered b
   </Step>
 </Steps>
 
-The same flow handles both **initial PIN setup** and **PIN changes** — use `enabled_views: ["pin"]` in both cases.
+The same flow handles both **initial PIN setup** and **PIN changes** — use `enabled_views: ["pin-set"]` in both cases.
 
 ---
 
@@ -49,7 +49,16 @@ POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/view-token
 </ParamField>
 
 <ParamField body="enabled_views" type="array" required>
-  Pass `["pin"]` to show only the PIN form. Pass `["data", "pin"]` to show card details and PIN together (only after `pin_set: true`).
+  Controls which tabs appear on the hosted page. Accepted values:
+
+  | Value | Tab shown |
+  |---|---|
+  | `"pin-set"` | Set or change PIN |
+  | `"pin-view"` | Reveal current PIN (requires `pin_set: true`) |
+  | `"data"` | Card number, CVV, expiry (requires `pin_set: true`) |
+
+  Pass `["pin-set"]` for initial setup or PIN change. Pass `["data", "pin-view", "pin-set"]` to show all three tabs at once.
+  The legacy value `"pin"` is accepted as an alias for `"pin-set"`.
 </ParamField>
 
 <ParamField body="theme" type="object">
@@ -72,7 +81,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   -H 'Authorization: Bearer YOUR_ISSUER_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "enabled_views": ["pin"],
+    "enabled_views": ["pin-set"],
     "theme": {
       "accent_color": "#6366f1",
       "background_color": "#f5f5f5",
@@ -92,7 +101,7 @@ const response = await fetch(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      enabled_views: ['pin'],
+      enabled_views: ['pin-set'],
       theme: {
         accent_color: '#6366f1',
         logo_url: 'https://yourapp.com/logo.png',
@@ -212,7 +221,7 @@ Subscribe to `physical.card.pin.changed` on your webhook endpoint. Yativo update
 |--------|-------|
 | Works for | Virtual and physical cards |
 | PIN format | Exactly 4 digits (`0000`–`9999`) |
-| Initial setup & change | Same `enabled_views: ["pin"]` flow for both |
+| Initial setup & change | Same `enabled_views: ["pin-set"]` flow for both |
 | PIN never touches your server | Entered directly in the Yativo-hosted iframe |
 | Brand customisation | Pass `theme` in the token request — applies to the hosted PIN page |
 | Confirmation | `physical.card.pin.changed` webhook → `pin_set: true` |
