@@ -491,9 +491,9 @@ The page has two layers — your CSS affects them differently:
 
 The Yativo-rendered wrapper: background, header, tabs, status bar, frame container. All standard CSS applies normally.
 
-**Layer 2 — Card data area** (extracted and applied as SDK inline styles)
+**Layer 2 — Card data area** (forwarded to the secure card SDK)
 
-The card number, expiry, and CVV are rendered inside a cross-origin secure iframe. Yativo extracts a specific set of selectors from your stylesheet and forwards them as inline style overrides to the secure card SDK. Only these selectors reach inside the iframe.
+The card number, expiry, and CVV are rendered inside a cross-origin secure iframe. Yativo extracts a specific set of selectors from your stylesheet and forwards them to the secure card SDK, which applies them to the card data elements. Background colors, borders, label fonts, and copy-button styles apply reliably. **Card digit text color** (`color` on `.pse-card-value`) is controlled by the card network's own stylesheet — it does not update through this API alone. To enable custom digit text colors (e.g. white digits on a dark background), contact Yativo to activate program-level card data theming for your account.
 
 <Warning>
   For security, the following patterns are stripped before storage: `@import`, external `url()` references, `expression()`, and `behavior:`. Inline data URIs for images (`data:image/png;base64,...`) are allowed.
@@ -521,7 +521,7 @@ The card number, expiry, and CVV are rendered inside a cross-origin secure ifram
 | `.pse-container` | Card data container (background, border, border-radius) |
 | `.pse-card-field` | Individual field rows |
 | `.pse-card-label` | Field labels ("CARD NUMBER", "EXPIRES", "CVV") |
-| `.pse-card-value` | Field values — the actual card number, expiry, CVV text |
+| `.pse-card-value` | Field value layout (background, font-size, padding). **`color` (digit text color) requires program-level theming — contact Yativo.** |
 | `.pse-copy-button` | Copy-to-clipboard button (background, border, `color`) |
 
 #### Manage your customization
@@ -560,14 +560,15 @@ body  { background: #f8f8fc; }
 .pse-container  { background-color: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; }
 .pse-card-field { background-color: #ffffff; border-bottom-color: rgba(0,0,0,0.06); }
 .pse-card-label { color: #9ca3af; font-size: 11px; font-family: Inter, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; }
-.pse-card-value { color: #111827; font-size: 14px; font-family: Inter, sans-serif; }
+/* .pse-card-value color (digit text) requires program-level theming — contact Yativo to enable */
+.pse-card-value { font-size: 14px; font-family: Inter, sans-serif; }
 .pse-copy-button { color: #374151; background: transparent; border-color: rgba(0,0,0,0.12); }
 ```
 
 ### Known limitations
 
 <Warning>
-  **Keep the page shell light.** The card data iframe is rendered by the card network in light mode and cannot be changed. Applying a dark background to `.frame` or `body` will make the card number, expiry, and CVV unreadable. Use light backgrounds for the page shell and style the card data area with dark text on white.
+  **Dark-theme digit text requires program-level setup.** Card digit text color is controlled by the card network's internal stylesheet, which is not overridden by the CSS you supply via this API alone. If your product uses a dark panel background and you need white card digits, contact Yativo to enable dark-mode digit rendering for your program. Once activated, you can theme the full card data area dark — including digit text color — using `.pse-card-value { color: #ffffff; }` in your stored CSS.
 </Warning>
 
 <Warning>
