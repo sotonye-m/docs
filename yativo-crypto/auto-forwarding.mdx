@@ -117,6 +117,41 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/auto-forwarding/forward' \
 
 ---
 
+## Forwarding Thresholds
+
+Yativo applies a minimum value threshold before executing a forward. This ensures the on-chain transfer cost is economical relative to the amount being moved.
+
+### Per-wallet minimum ($1 USD)
+
+Deposits with an equivalent value below **$1 USD** are not forwarded immediately. Instead they accumulate in the source wallet until the cumulative total reaches $1 USD, at which point the entire accumulated balance is forwarded in a single transaction.
+
+This is automatic — no configuration is required. Your forwarding rule fires as normal; only the timing changes for sub-threshold deposits.
+
+**Example:** A wallet receives three deposits of $0.30 USDC each. The first two are held. After the third, the total ($0.90) is still below $1 and remains accumulated. The next deposit that pushes the total to or past $1 triggers the forward for the full accumulated amount.
+
+<Note>
+  Your rule's `min_amount` field is evaluated against the transaction amount in token units and is separate from this USD threshold. Both conditions must be satisfied for a forward to execute.
+</Note>
+
+### Cross-wallet batch ($10 USD)
+
+When you have **multiple wallets** accumulating small deposits, forwarding efficiency is improved further by batching across wallets. Once the combined accumulated balance across **all** of your wallets for the same network and token reaches **$10 USD**, all pending wallets are forwarded together in a single batch — sharing one on-chain gas cost.
+
+This means deposits can forward earlier than the per-wallet $1 threshold if the cross-wallet cumulative total reaches $10 first.
+
+**Example:** You have five wallets, each holding $2 USDC in accumulated deposits ($10 total). When the fifth wallet's deposit brings the cross-wallet total to $10, all five wallets forward simultaneously in one batch.
+
+### Threshold summary
+
+| Condition | Behaviour |
+|-----------|-----------|
+| Deposit ≥ $1 USD | Forward executes immediately per your rule |
+| Deposit < $1 USD, wallet total < $1 USD | Accumulated — held until wallet total ≥ $1 USD |
+| Wallet total ≥ $1 USD | Single-wallet batch forward triggered |
+| Cross-wallet total ≥ $10 USD | All wallets with pending accumulations forward together |
+
+---
+
 ## Webhook Events
 
 | Event | Trigger |

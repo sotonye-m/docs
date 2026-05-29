@@ -141,6 +141,24 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VN
     }
   }'
 ```
+
+```bash Dark theme (white card digits)
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VNQP8R2WDGT4E5/cards/card_01HX9KZMB3F7VNQP8R2WDGT4E5/view-token' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "enabled_views": ["data"],
+    "theme": {
+      "accent_color": "#a78bfa",
+      "background_color": "#0f0f13",
+      "panel_color": "#1c1c24",
+      "text_color": "#f4f4f5",
+      "muted_color": "#71717a",
+      "border_radius": 16,
+      "font_family": "Inter, sans-serif"
+    }
+  }'
+```
 </RequestExample>
 
 <ResponseExample>
@@ -565,10 +583,30 @@ body  { background: #f8f8fc; }
 .pse-copy-button { color: #374151; background: transparent; border-color: rgba(0,0,0,0.12); }
 ```
 
-### Known limitations
+### Dark theme
+
+When you pass dark colors in `theme.panel_color` or `theme.background_color`, the page wrapper automatically detects the luminance of those colors and applies `color-scheme: dark` to the card data frame. The card SDK picks this up and renders the card digits in white — no extra configuration in your request is required.
+
+**One-time setup:** dark-mode digit rendering must be activated at the program level before dark themes take effect. Contact Yativo to enable it for your program. After activation, any request where `panel_color` or `background_color` is dark will automatically render white digits.
+
+```bash
+# Dark panel → white digits (once program-level activation is complete)
+curl -X POST '.../view-token' \
+  -d '{
+    "enabled_views": ["data"],
+    "theme": {
+      "panel_color": "#1c1c24",
+      "background_color": "#0f0f13",
+      "text_color": "#f4f4f5",
+      "accent_color": "#a78bfa"
+    }
+  }'
+```
+
+### Other known limitations
 
 <Warning>
-  **Dark-theme digit text requires program-level setup.** Card digit text color is controlled by the card network's internal stylesheet, which is not overridden by the CSS you supply via this API alone. If your product uses a dark panel background and you need white card digits, contact Yativo to enable dark-mode digit rendering for your program. Once activated, you can theme the full card data area dark — including digit text color — using `.pse-card-value { color: #ffffff; }` in your stored CSS.
+  **Dark-theme digit text requires program-level setup.** Dark-mode digit rendering must be enabled for your program by Yativo before dark `panel_color`/`background_color` values produce white digits. Once activated, passing any dark color in those fields is sufficient — no per-request flag is needed.
 </Warning>
 
 <Warning>
