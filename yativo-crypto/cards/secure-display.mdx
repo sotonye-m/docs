@@ -74,7 +74,7 @@ POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token
 </ParamField>
 
 <ParamField body="theme.panel_color" type="string">
-  Card panel background color (hex).
+  Card panel background color (hex). When this value (or `background_color`) is a dark color, the page automatically applies `color-scheme: dark` to the card data frame, rendering card digits in white.
 </ParamField>
 
 <ParamField body="theme.text_color" type="string">
@@ -539,7 +539,7 @@ The card number, expiry, and CVV are rendered inside a cross-origin secure ifram
 | `.pse-container` | Card data container (background, border, border-radius) |
 | `.pse-card-field` | Individual field rows |
 | `.pse-card-label` | Field labels ("CARD NUMBER", "EXPIRES", "CVV") |
-| `.pse-card-value` | Field value layout (background, font-size, padding). **`color` (digit text color) requires program-level theming — contact Yativo.** |
+| `.pse-card-value` | Field value layout (background, font-size, padding). Digit text color is set automatically when a dark theme is detected — see [Dark theme](#dark-theme). |
 | `.pse-copy-button` | Copy-to-clipboard button (background, border, `color`) |
 
 #### Manage your customization
@@ -578,19 +578,16 @@ body  { background: #f8f8fc; }
 .pse-container  { background-color: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; }
 .pse-card-field { background-color: #ffffff; border-bottom-color: rgba(0,0,0,0.06); }
 .pse-card-label { color: #9ca3af; font-size: 11px; font-family: Inter, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; }
-/* .pse-card-value color (digit text) requires program-level theming — contact Yativo to enable */
 .pse-card-value { font-size: 14px; font-family: Inter, sans-serif; }
 .pse-copy-button { color: #374151; background: transparent; border-color: rgba(0,0,0,0.12); }
 ```
 
 ### Dark theme
 
-When you pass dark colors in `theme.panel_color` or `theme.background_color`, the page wrapper automatically detects the luminance of those colors and applies `color-scheme: dark` to the card data frame. The card SDK picks this up and renders the card digits in white — no extra configuration in your request is required.
-
-**One-time setup:** dark-mode digit rendering must be activated at the program level before dark themes take effect. Contact Yativo to enable it for your program. After activation, any request where `panel_color` or `background_color` is dark will automatically render white digits.
+Passing a dark color in `theme.panel_color` or `theme.background_color` is all that is needed to enable dark mode. The page wrapper measures the luminance of those colors and automatically sets `color-scheme: dark` on the card data frame — the card SDK responds by rendering digits in white. No extra flag or request parameter is required.
 
 ```bash
-# Dark panel → white digits (once program-level activation is complete)
+# Dark panel → white digits (automatic)
 curl -X POST '.../view-token' \
   -d '{
     "enabled_views": ["data"],
@@ -603,11 +600,11 @@ curl -X POST '.../view-token' \
   }'
 ```
 
-### Other known limitations
+<Note>
+  If card digits still appear dark after passing dark colors, the card program may not have dark-mode digit support configured at the card network level. Contact Yativo to verify your program's configuration.
+</Note>
 
-<Warning>
-  **Dark-theme digit text requires program-level setup.** Dark-mode digit rendering must be enabled for your program by Yativo before dark `panel_color`/`background_color` values produce white digits. Once activated, passing any dark color in those fields is sufficient — no per-request flag is needed.
-</Warning>
+### Known limitations
 
 <Warning>
   **Copy button icon color cannot be changed.** The clipboard SVG inside `.pse-copy-button` has a hardcoded fill. Setting `color` on `.pse-copy-button` affects the button border and background only — not the icon itself.
