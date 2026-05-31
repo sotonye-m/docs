@@ -677,7 +677,7 @@ Fired when a customer's account wallet balance increases — i.e. a deposit has 
 
 ### `customer.balance.updated`
 
-Fired after any card balance change — top-up, purchase authorization, settlement, or reversal.
+Fired after any card balance change — top-up, purchase authorization, settlement, reversal, or periodic reconciliation.
 
 ```json
 {
@@ -693,13 +693,25 @@ Fired after any card balance change — top-up, purchase authorization, settleme
     "pending_balance": 6.73,
     "pending_balance_minor": 673,
     "currency": "EUR",
+    "balance_source": "live",
     "timestamp": "2026-05-12T14:30:00.000Z"
   }
 }
 ```
 
+| Field | Type | Description |
+|---|---|---|
+| `ledger_balance` | float | Total balance in the customer's account wallet |
+| `ledger_balance_minor` | integer | `ledger_balance` in minor units (cents) |
+| `available_balance` | float | Spendable balance after pending authorizations |
+| `available_balance_minor` | integer | `available_balance` in minor units (cents) |
+| `pending_balance` | float \| null | Held for authorized but not yet settled transactions. `null` when no pending authorizations |
+| `pending_balance_minor` | integer \| null | `pending_balance` in minor units (cents) |
+| `currency` | string \| null | `USD`, `EUR`, or `GBP` |
+| `balance_source` | string \| null | `"reconciliation"` when fired by the background reconciliation job; absent or `null` for live card events |
+
 <Note>
-  Balance fields are provided as both a decimal float (`ledger_balance`) and an integer in minor units (`ledger_balance_minor` = cents). For example, `45.23 EUR` → `ledger_balance: 45.23`, `ledger_balance_minor: 4523`. `pending_balance` / `pending_balance_minor` may be `null` when there are no pending authorizations.
+  `pending_balance` / `pending_balance_minor` are always `null` when `balance_source` is `"reconciliation"` — the reconciliation job reads the on-chain settled balance and cannot determine pending authorizations. Use `available_balance` for spendable funds.
 </Note>
 
 ### `card.created`
