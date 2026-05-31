@@ -40,8 +40,11 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers/usr_8821
     "currency": "EUR",
     "safe_deployed": true,
     "ledger_balance": 145.50,
+    "ledger_balance_minor": 14550,
     "available_balance": 132.00,
+    "available_balance_minor": 13200,
     "pending_balance": 13.50,
+    "pending_balance_minor": 1350,
     "balance_freshness": "realtime",
     "balance_updated_at": "2026-05-12T14:30:00.000Z",
     "cards_count": 2,
@@ -95,8 +98,11 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers/usr_8821
     "currency": null,
     "safe_deployed": false,
     "ledger_balance": null,
+    "ledger_balance_minor": null,
     "available_balance": null,
+    "available_balance_minor": null,
     "pending_balance": null,
+    "pending_balance_minor": null,
     "balance_freshness": null,
     "balance_updated_at": null,
     "cards_count": 0,
@@ -139,13 +145,18 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/customers/usr_8821
 
 Balance is wallet-level — all cards issued to a customer share the same balance. Fields are `null` until the account wallet is deployed.
 
-| Field | Description |
-|---|---|
-| `ledger_balance` | Total token balance in the customer's account wallet |
-| `available_balance` | Spendable balance after deducting pending authorizations |
-| `pending_balance` | Amount held for authorized but not yet settled transactions |
-| `balance_freshness` | `"realtime"` — sourced from live card notifications; `"on_chain"` — fetched directly from the blockchain (no pending info available) |
-| `balance_updated_at` | Timestamp of the last card notification that updated the balance (`null` when on-chain fallback was used) |
+Balance values are returned as both a decimal float and an integer in minor units (cents). For example, `$145.50` → `ledger_balance: 145.50`, `ledger_balance_minor: 14550`. All fields are `null` until the account wallet is deployed.
+
+| Field | Type | Description |
+|---|---|---|
+| `ledger_balance` | float \| null | Total token balance in the customer's account wallet |
+| `ledger_balance_minor` | integer \| null | `ledger_balance` in minor units (cents) |
+| `available_balance` | float \| null | Spendable balance after deducting pending authorizations |
+| `available_balance_minor` | integer \| null | `available_balance` in minor units (cents) |
+| `pending_balance` | float \| null | Amount held for authorized but not yet settled transactions |
+| `pending_balance_minor` | integer \| null | `pending_balance` in minor units (cents) |
+| `balance_freshness` | string \| null | `"realtime"` — from live card notifications; `"on_chain"` — fetched from blockchain (no pending info) |
+| `balance_updated_at` | string \| null | ISO 8601 timestamp of the last balance notification (`null` for on-chain fallback) |
 
 ## Card fields
 

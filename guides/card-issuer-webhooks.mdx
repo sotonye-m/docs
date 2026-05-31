@@ -238,9 +238,11 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/webhook/create-webhook' \
       "master_wallet.deposit",
       "master_wallet.swap",
       "master_wallet.customer_funded",
+      "master_wallet.withdrawal",
       "customer.funded",
       "customer.funding.failed",
       "customer.balance.updated",
+      "wallet.deposit.confirmed",
       "card.created",
       "card.activated",
       "card.frozen",
@@ -637,6 +639,41 @@ Fired when a funding transfer to a customer's card wallet fails.
   }
 }
 ```
+
+### `wallet.deposit.confirmed`
+
+Fired when a customer's account wallet balance increases — i.e. a deposit has arrived. This is the primary event for detecting incoming funds to a customer card wallet.
+
+```json
+{
+  "id": "evt_1747060100000_dep01",
+  "type": "wallet.deposit.confirmed",
+  "created_at": "2026-05-12T14:29:45.000Z",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...",
+    "amount": 50.00,
+    "amount_minor": 5000,
+    "new_balance": 145.50,
+    "new_balance_minor": 14550,
+    "currency": "EUR",
+    "timestamp": "2026-05-12T14:29:45.000Z"
+  }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `amount` | float | Amount deposited (balance delta) |
+| `amount_minor` | integer | `amount` in minor units (cents) |
+| `new_balance` | float | Customer's new total balance after the deposit |
+| `new_balance_minor` | integer | `new_balance` in minor units (cents) |
+| `currency` | string \| null | Card currency (`USD`, `EUR`, `GBP`) |
+
+<Note>
+  A `customer.balance.updated` event fires for the same balance change. `wallet.deposit.confirmed` fires only when the balance increased; `customer.balance.updated` fires for all balance changes including spend and reversal.
+</Note>
+
+---
 
 ### `customer.balance.updated`
 
