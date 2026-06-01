@@ -1,0 +1,160 @@
+---
+title: "Create Deposit (Payin)"
+description: "Initiate an incoming payment using a payin gateway"
+---
+
+Initiate a customer deposit via a supported payin gateway. Optionally pass a `quote_id` from `POST /exchange-rate` to lock the rate and amount before redirecting the customer.
+
+```
+POST https://api.yativo.com/api/v1/wallet/deposits/new
+```
+
+<Note>
+  Requires `Idempotency-Key` header. Retrieve available gateways and their IDs with `GET /payment-methods/payin?country={iso2}`.
+</Note>
+
+## Request body
+
+<ParamField body="gateway" type="integer" required>
+  The payin gateway ID. Get valid IDs from `GET /payment-methods/payin?country={iso2}`.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  The wallet currency to credit (e.g. `"USD"`, `"BRL"`). Must match one of the gateway's supported base currencies.
+</ParamField>
+
+<ParamField body="amount" type="number">
+  Amount to deposit in the local (payin) currency. Required if `quote_id` is not provided. If `quote_id` is present, the amount is taken from the quote.
+</ParamField>
+
+<ParamField body="quote_id" type="string">
+  A quote ID from `POST /exchange-rate` (created with `method_type: "payin"`). When supplied, the locked amount and rate from the quote are used — `amount` is ignored.
+</ParamField>
+
+<ParamField body="redirect_url" type="string">
+  URL to redirect the customer to after completing the payment on the gateway's hosted page.
+</ParamField>
+
+<RequestExample>
+```bash cURL — with quote_id
+curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: deposit-001' \
+  -d '{
+    "gateway": 20,
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "currency": "USD",
+    "redirect_url": "https://your-app.com/deposit/complete"
+  }'
+```
+
+```bash cURL — without quote_id
+curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: deposit-002' \
+  -d '{
+    "gateway": 15,
+    "amount": 1000,
+    "currency": "BRL",
+    "redirect_url": "https://your-app.com/deposit/complete"
+  }'
+```
+
+```javascript Node.js
+// Step 1: Create a payin quote
+const quoteRes = await fetch('https://api.yativo.com/api/v1/exchange-rate', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    from_currency: 'BRL',
+    to_currency: 'USD',
+    method_id: 15,
+    method_type: 'payin',
+    amount: 1000,
+  }),
+});
+const { data: quote } = await quoteRes.json();
+
+// Step 2: Initiate the deposit
+const depositRes = await fetch('https://api.yativo.com/api/v1/wallet/deposits/new', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': `deposit-${Date.now()}`,
+  },
+  body: JSON.stringify({
+    gateway: 15,
+    quote_id: quote.quote_id,
+    currency: 'USD',
+    redirect_url: 'https://your-app.com/deposit/complete',
+  }),
+});
+const deposit = await depositRes.json();
+// Redirect customer to deposit.data.checkout_url
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "id": "dep-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "gateway": "monnet",
+    "deposit_currency": "BRL",
+    "deposit_amount": "1000.00",
+    "receive_amount": "9.36",
+    "receive_currency": "USD",
+    "status": "pending",
+    "checkout_url": "https://checkout.gateway.com/pay/abc123",
+    "reference": "REF-2026060101",
+    "created_at": "2026-06-01T10:00:00.000000Z"
+  }
+}
+```
+
+```json Expired quote
+{
+  "status": "error",
+  "status_code": 400,
+  "message": "Quote has expired. Please generate a new quote."
+}
+```
+
+```json Invalid gateway
+{
+  "status": "error",
+  "status_code": 404,
+  "message": "Payment gateway not found"
+}
+```
+
+```json Below minimum
+{
+  "status": "error",
+  "status_code": 400,
+  "message": "Minimum deposit amount is 5 BRL"
+}
+```
+
+```json Validation error
+{
+  "status": "error",
+  "status_code": 422,
+  "message": "Request failed",
+  "data": {
+    "gateway": ["The gateway field is required."],
+    "currency": ["The currency field is required."]
+  }
+}
+```
+</ResponseExample>
+
+<Note>
+  After a successful response, redirect the customer to `checkout_url` to complete payment on the gateway's hosted page. Once completed, the customer is returned to your `redirect_url` and a `deposit.completed` webhook fires.
+</Note>

@@ -1,0 +1,48 @@
+---
+title: "Get Payout"
+description: "Retrieve a single payout by ID"
+---
+
+Returns details for a specific payout.
+
+```
+GET https://api.yativo.com/api/v1/payout/fetch/{payout_id}
+```
+
+<ParamField path="payout_id" type="string" required>
+  The UUID of the payout to retrieve.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/payout/fetch/txn-a1b2c3d4-e5f6-7890-abcd-ef1234567890' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "id": "txn-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "amount": "250.00",
+    "currency": "CLP",
+    "status": "completed",
+    "beneficiary_id": 42,
+    "created_at": "2026-06-01T10:00:00.000000Z",
+    "updated_at": "2026-06-01T10:02:00.000000Z"
+  }
+}
+```
+
+```json Not found
+{
+  "status": "error",
+  "status_code": 404,
+  "message": "Payout not found"
+}
+```
+</ResponseExample>

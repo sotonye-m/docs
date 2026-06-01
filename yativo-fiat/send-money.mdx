@@ -147,26 +147,22 @@ curl -X GET 'https://api.yativo.com/api/v1/beneficiary/form/show/21' \
 
 ## Step 4: Create a Beneficiary
 
-Create a beneficiary record for the recipient:
+Create a beneficiary record for the recipient. The `beneficiary_id` returned here is used to attach bank details in Step 5.
 
 ```
 POST /beneficiaries
 ```
 
-<ParamField body="first_name" type="string" required>
-  Recipient's first name.
+<ParamField body="name" type="string" required>
+  Recipient's full name (individual) or legal business name.
 </ParamField>
 
-<ParamField body="last_name" type="string" required>
-  Recipient's last name.
-</ParamField>
-
-<ParamField body="email" type="string">
+<ParamField body="email" type="string" required>
   Recipient's email address.
 </ParamField>
 
 <ParamField body="country" type="string" required>
-  ISO 3166-1 alpha-3 country code.
+  ISO 3166-1 alpha-3 country code (e.g. `CHL`, `MEX`, `BRA`).
 </ParamField>
 
 <ParamField body="type" type="string" required>
@@ -178,10 +174,9 @@ POST /beneficiaries
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
+  -H 'Idempotency-Key: create-beneficiary-001' \
   -d '{
-    "first_name": "Carlos",
-    "last_name": "Mendez",
+    "name": "Carlos Mendez",
     "email": "carlos@example.com",
     "country": "CHL",
     "type": "individual"
@@ -193,11 +188,15 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries' \
 ```json Success
 {
   "status": "success",
+  "status_code": 201,
+  "message": "Beneficiary created successfully",
   "data": {
-    "id": "benef_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "first_name": "Carlos",
-    "last_name": "Mendez",
-    "country": "CHL"
+    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "name": "Carlos Mendez",
+    "email": "carlos@example.com",
+    "type": "individual",
+    "country": "CHL",
+    "created_at": "2026-04-02T10:00:00.000000Z"
   }
 }
 ```
@@ -296,16 +295,21 @@ POST /sendmoney/quote
   Amount in the source currency.
 </ParamField>
 
+<ParamField body="beneficiary_payment_method_id" type="string" required>
+  The payment method ID saved in Step 5. This links the quote to the destination account so that executing `POST /sendmoney` knows where to deliver funds.
+</ParamField>
+
 <RequestExample>
 ```bash USD → CLP
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
+  -H 'Idempotency-Key: quote-001' \
   -d '{
     "from_currency": "USD",
     "to_currency": "CLP",
-    "amount": 500
+    "amount": 500,
+    "beneficiary_payment_method_id": "pm-3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d"
   }'
 ```
 </RequestExample>
@@ -441,6 +445,27 @@ For compliance, submit the purpose of a transaction after initiating it:
 ```
 POST /sendmoney/purpose
 ```
+
+<ParamField body="transaction_id" type="string" required>
+  The transaction ID returned from `POST /sendmoney`.
+</ParamField>
+
+<ParamField body="purpose" type="string" required>
+  A short description of the payment purpose, e.g. `"family_support"`, `"business_payment"`, `"invoice"`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney/purpose' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: purpose-001' \
+  -d '{
+    "transaction_id": "a0e9e50e-81be-4bd0-9941-0151e68b9e97",
+    "purpose": "family_support"
+  }'
+```
+</RequestExample>
 
 <Note>
   Yativo supports payouts to LATAM (CHL, MEX, BRA, PER, COL, ARG), USA, and Europe. Contact your integration team for additional corridors.

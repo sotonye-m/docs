@@ -1,0 +1,43 @@
+---
+title: "Get Redeem Instructions"
+description: "Retrieve the redemption code and instructions for a purchased gift card"
+---
+
+Retrieve the gift card code and redemption instructions for a completed purchase.
+
+```
+GET https://api.yativo.com/api/v1/giftcards/redeem/{transactionId}
+```
+
+<ParamField path="transactionId" type="string" required>
+  The `transaction_id` from the purchase response.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/giftcards/redeem/gc-a1b2c3d4-e5f6-7890-abcd-ef1234567890' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Giftcard instruction retrieved successfully",
+  "data": {
+    "transaction_id": "gc-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "product_name": "Amazon US",
+    "redemption_code": "AMZN-XXXX-XXXX-XXXX",
+    "pin": "1234",
+    "instructions": "Visit amazon.com/redeem and enter your gift card code.",
+    "expiry_date": "2028-06-01"
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Gift card codes are sensitive. Display them only to the intended recipient — do not log or store them on your servers.
+</Warning>

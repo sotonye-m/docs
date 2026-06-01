@@ -1,0 +1,91 @@
+---
+title: "Batch Payout"
+description: "Send multiple payments to different beneficiaries in a single request"
+openapi: "POST https://api.yativo.com/api/v1/payout/batch"
+---
+
+Submit an array of payouts in one request. Each item is processed independently — partial failures return in an `errors` object without rolling back successful items.
+
+```
+POST https://api.yativo.com/api/v1/payout/batch
+```
+
+<Note>
+  Requires `Idempotency-Key` header. If your wallet balance is insufficient for the total amount, the entire batch is rejected before any item is processed.
+</Note>
+
+<ParamField body="payouts" type="array" required>
+  Array of payout objects.
+
+  <Expandable title="payouts item fields">
+    <ParamField body="amount" type="number" required>
+      Amount to send for this payout.
+    </ParamField>
+    <ParamField body="beneficiary_details_id" type="number" required>
+      The saved beneficiary payment method ID.
+    </ParamField>
+    <ParamField body="beneficiary_id" type="number">
+      Optional beneficiary UUID for tracking.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/payout/batch' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: batch-payroll-june-001' \
+  -d '{
+    "payouts": [
+      { "amount": 500, "beneficiary_details_id": 41 },
+      { "amount": 750, "beneficiary_details_id": 42 },
+      { "amount": 300, "beneficiary_details_id": 43 }
+    ]
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.yativo.com/api/v1/payout/batch', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': `batch-${Date.now()}`,
+  },
+  body: JSON.stringify({
+    payouts: [
+      { amount: 500, beneficiary_details_id: 41 },
+      { amount: 750, beneficiary_details_id: 42 },
+    ],
+  }),
+});
+```
+</RequestExample>
+
+<ResponseExample>
+```json All successful
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "0": { "transaction_id": "txn-aaa", "status": "processing", "amount": "500.00" },
+    "1": { "transaction_id": "txn-bbb", "status": "processing", "amount": "750.00" },
+    "2": { "transaction_id": "txn-ccc", "status": "processing", "amount": "300.00" }
+  }
+}
+```
+
+```json Partial failure
+{
+  "status": "error",
+  "status_code": 400,
+  "data": {
+    "errors": {
+      "1": { "error": "Beneficiary not found" }
+    }
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,248 @@
+---
+title: "Gift Cards"
+description: "Purchase and redeem digital gift cards from hundreds of global brands"
+---
+
+Yativo's gift card API (powered by Reloadly) lets you purchase digital gift cards across hundreds of brands globally — ideal for rewards programs, employee incentives, or customer cashback products. The cost is deducted from your USD wallet at purchase time.
+
+---
+
+## List Gift Card Categories
+
+Browse available gift card categories to help filter the product catalog.
+
+```
+GET https://api.yativo.com/api/v1/giftcards/categories
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/giftcards/categories' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Categories fetched successfully",
+  "data": [
+    { "id": 1, "name": "Entertainment" },
+    { "id": 2, "name": "Gaming" },
+    { "id": 3, "name": "Shopping" },
+    { "id": 4, "name": "Food & Dining" },
+    { "id": 5, "name": "Travel" }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## List Available Gift Cards
+
+Browse all purchasable gift card products. Filter by country or category.
+
+```
+GET https://api.yativo.com/api/v1/giftcards
+```
+
+<ParamField query="country" type="string">
+  Filter by ISO 3166-1 alpha-2 country code (e.g. `US`, `BR`, `MX`, `NG`).
+</ParamField>
+
+<ParamField query="category_id" type="number">
+  Filter by category ID from the categories endpoint.
+</ParamField>
+
+<RequestExample>
+```bash All US gift cards
+curl -X GET 'https://api.yativo.com/api/v1/giftcards?country=US' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```bash Gaming cards
+curl -X GET 'https://api.yativo.com/api/v1/giftcards?category_id=2' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Operators retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "name": "Amazon US",
+      "brand": "Amazon",
+      "country": "US",
+      "currency": "USD",
+      "min_amount": 1,
+      "max_amount": 500,
+      "fixed_amounts": [10, 25, 50, 100],
+      "category": "Shopping"
+    },
+    {
+      "id": 2,
+      "name": "Netflix US",
+      "brand": "Netflix",
+      "country": "US",
+      "currency": "USD",
+      "min_amount": 15,
+      "max_amount": 100,
+      "fixed_amounts": [15, 25, 50, 100],
+      "category": "Entertainment"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Purchase a Gift Card
+
+Purchase a gift card for a specific product. The amount is debited from your USD wallet.
+
+```
+POST https://api.yativo.com/api/v1/giftcards
+```
+
+<Note>
+  Requires `Idempotency-Key` header. The cost is charged to your wallet at purchase time — purchases are non-refundable.
+</Note>
+
+<ParamField body="product_id" type="number" required>
+  The gift card product ID from the list endpoint.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Face value of the gift card in its native currency. Must be within the product's `min_amount` and `max_amount` range, or match one of its `fixed_amounts`.
+</ParamField>
+
+<ParamField body="quantity" type="number">
+  Number of cards to purchase (default: 1).
+</ParamField>
+
+<ParamField body="recipient_email" type="string">
+  Email address to deliver the gift card code to. Optional — if omitted, the code is returned in the API response only.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/giftcards' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: giftcard-amazon-001' \
+  -d '{
+    "product_id": 1,
+    "amount": 50,
+    "quantity": 1,
+    "recipient_email": "jane@example.com"
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.yativo.com/api/v1/giftcards', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': `gc-${Date.now()}`,
+  },
+  body: JSON.stringify({
+    product_id: 1,
+    amount: 50,
+    quantity: 1,
+    recipient_email: 'jane@example.com',
+  }),
+});
+const data = await response.json();
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Giftcard request submitted successfully",
+  "data": {
+    "transaction_id": "gc-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "product_name": "Amazon US",
+    "amount": 50,
+    "currency": "USD",
+    "status": "completed",
+    "created_at": "2026-06-01T10:00:00.000000Z"
+  }
+}
+```
+
+```json Insufficient balance
+{
+  "status": "error",
+  "status_code": 402,
+  "message": "Insufficient wallet balance"
+}
+```
+
+```json Validation error
+{
+  "status": "error",
+  "status_code": 422,
+  "message": "Validation Error",
+  "data": {
+    "product_id": ["The product id field is required."],
+    "amount": ["The amount field is required."]
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Redeem / Get Card Instructions
+
+Retrieve the redemption instructions and gift card code for a completed gift card purchase.
+
+```
+GET https://api.yativo.com/api/v1/giftcards/redeem/{transactionId}
+```
+
+<ParamField path="transactionId" type="string" required>
+  The `transaction_id` returned from the purchase endpoint.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/giftcards/redeem/gc-a1b2c3d4-e5f6-7890-abcd-ef1234567890' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Giftcard instruction retrieved successfully",
+  "data": {
+    "transaction_id": "gc-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "product_name": "Amazon US",
+    "redemption_code": "AMZN-XXXX-XXXX-XXXX",
+    "pin": "1234",
+    "instructions": "Visit amazon.com/redeem and enter your gift card code.",
+    "expiry_date": "2028-06-01"
+  }
+}
+```
+</ResponseExample>
+
+<Warning>
+  Gift card redemption codes are sensitive. Treat them like cash — display them only to the intended recipient and do not log them in your application.
+</Warning>

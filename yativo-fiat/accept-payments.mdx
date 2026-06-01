@@ -239,6 +239,52 @@ curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/history/990
 
 ---
 
+## Alternative: Gateway-Based Deposits (Quote Flow)
+
+For payment gateways that involve a hosted checkout (rather than a push to a standing account number), use the two-step quote flow.
+
+### Step 1: Quote the deposit
+
+Call `POST /exchange-rate` with `method_type: "payin"` and the gateway's `method_id` to lock the exchange rate and get a `quote_id`:
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "from_currency": "BRL",
+    "to_currency": "USD",
+    "method_id": 15,
+    "method_type": "payin",
+    "amount": 1000
+  }'
+```
+
+### Step 2: Initiate the deposit
+
+Pass the `quote_id` to lock the rate, plus a `redirect_url` for after the customer completes payment on the hosted page:
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: deposit-001' \
+  -d '{
+    "gateway": 15,
+    "quote_id": "QUOTE_ID_FROM_STEP_1",
+    "currency": "USD",
+    "redirect_url": "https://your-app.com/deposit/complete"
+  }'
+```
+
+The response contains a `checkout_url` — redirect the customer there to complete the payment. Once done they return to your `redirect_url` and you receive a `deposit.completed` webhook.
+
+<Note>
+  Use virtual accounts (Step 3 above) for recurring or standing deposit addresses. Use the gateway quote flow when the customer initiates a one-time payment on a specific date and you want to lock the rate before they pay.
+</Note>
+
+---
+
 ## Alternative: Crypto Deposits
 
 To accept cryptocurrency deposits, retrieve your crypto wallet addresses:

@@ -213,12 +213,14 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxx
 ## List all customers
 
 ```
-GET /customer/customer
+GET /customer
 ```
+
+Supports filtering by `kyc_status`, `country`, `email`, and pagination via `page` / `per_page`.
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/customer/customer' \
+curl -X GET 'https://api.yativo.com/api/v1/customer?page=1&per_page=15' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -243,10 +245,73 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/customer' \
   ],
   "pagination": {
     "total": 142,
-    "per_page": 20,
+    "per_page": 15,
     "current_page": 1,
-    "last_page": 8
+    "last_page": 10
   }
+}
+```
+</ResponseExample>
+
+---
+
+## Update customer
+
+Update mutable fields on a customer record. Only include the fields you want to change.
+
+```
+PUT /customer/{customer_id}
+```
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: update-customer-001' \
+  -d '{
+    "customer_phone": "+5511988887777"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Customer updated successfully",
+  "data": {
+    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "customer_name": "Jane Doe",
+    "customer_phone": "+5511988887777",
+    "updated_at": "2026-04-02T14:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## Delete customer
+
+```
+DELETE /customer/{customer_id}
+```
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Customer deleted successfully"
 }
 ```
 </ResponseExample>

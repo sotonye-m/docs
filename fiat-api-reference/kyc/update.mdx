@@ -3,14 +3,14 @@ title: "Update KYC Submission"
 description: "Update an existing KYC or KYB submission with corrected or additional information"
 ---
 
-Update a previously submitted KYC or KYB record. Use this endpoint when a customer needs to correct information or provide additional documents after a rejection.
+Update a previously submitted KYC or KYB record. Use this endpoint when a customer needs to correct information or provide additional documents — typically after a rejection. Only include fields you want to change.
 
 ```
-PUT /customer/kyc/update
+PUT https://api.yativo.com/api/v1/customer/kyc/update
 ```
 
 <Note>
-  Requires `Idempotency-Key` header. Uses the same schema as the initial submission — include `customer_id` and `type`, plus any fields you wish to update.
+  Include an `Idempotency-Key` header on every request. Supply `customer_id` and `type`, then any fields you want to update. Fields not included are left unchanged.
 </Note>
 
 ## Request body
@@ -23,18 +23,18 @@ PUT /customer/kyc/update
   `"individual"` or `"business"` — must match the original submission type.
 </ParamField>
 
-All other fields from the original submission schema can be included to update their values. Only include fields you want to change.
+All other fields from the original submission schema can be included to update their values. See [Submit Individual KYC](/fiat-api-reference/kyc/submit-individual) or [Submit Business KYC](/fiat-api-reference/kyc/submit-business) for the full field reference.
 
 <RequestExample>
-```bash cURL — Update individual KYC
+```bash cURL
 curl -X PUT 'https://api.yativo.com/api/v1/customer/kyc/update' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: kyc-update-alex-smith-2026-002' \
+  -H 'Idempotency-Key: kyc-update-2026-002' \
   -d '{
     "customer_id": "c586066b-0f29-468f-b775-15483871a202",
     "type": "individual",
-    "selfie_image": "https://example.com/docs/selfie-v2.jpg",
+    "selfie_image": "https://storage.yativo.com/documents/abc/selfie-v2.jpg",
     "identifying_information": [
       {
         "type": "passport",
@@ -42,10 +42,36 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/kyc/update' \
         "number": "P00012345",
         "date_issued": "2020-01-01",
         "expiration_date": "2030-01-01",
-        "image_front_file": "https://example.com/docs/front-highres.jpg"
+        "image_front_file": "https://storage.yativo.com/documents/abc/passport-front-hd.jpg"
       }
     ]
   }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.yativo.com/api/v1/customer/kyc/update', {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': `kyc-update-${customerId}-${Date.now()}`,
+  },
+  body: JSON.stringify({
+    customer_id: customerId,
+    type: 'individual',
+    selfie_image: newSelfieUrl,
+    identifying_information: [{
+      type: 'passport',
+      issuing_country: 'US',
+      number: 'P00012345',
+      date_issued: '2020-01-01',
+      expiration_date: '2030-01-01',
+      image_front_file: newPassportFrontUrl,
+    }],
+  }),
+});
+
+const data = await response.json();
 ```
 </RequestExample>
 
@@ -59,7 +85,19 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/kyc/update' \
     "customer_id": "c586066b-0f29-468f-b775-15483871a202",
     "type": "individual",
     "status": "submitted",
-    "updated_at": "2026-04-02T15:00:00.000000Z"
+    "updated_at": "2026-06-01T15:00:00.000000Z"
+  }
+}
+```
+
+```json Validation error
+{
+  "status": "failed",
+  "status_code": 422,
+  "message": "Request failed",
+  "data": {
+    "customer_id": ["The customer id field is required."],
+    "type": ["The selected type is invalid."]
   }
 }
 ```

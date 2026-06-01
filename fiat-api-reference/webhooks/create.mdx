@@ -10,7 +10,7 @@ POST /business/webhook
 ```
 
 <Note>
-  Requires an `Idempotency-Key` header. Update an existing webhook URL with `PUT /business/webhook`.
+  Requires an `Idempotency-Key` header. To update an existing webhook, send `PUT /business/webhook/{webhook}` with the webhook ID returned from this endpoint.
 </Note>
 
 ## Request Body

@@ -16,10 +16,9 @@ Tokens expire after a set period. Use `GET /auth/refresh-token` to get a new one
 
 ## API key hygiene
 
-- **One key per service** — create a separate key for each backend service or environment so you can rotate or revoke a single key without affecting others.
-- **Minimal permissions** — scope each key to only the permissions it needs (e.g. `transactions:read` for a reporting service, not full access).
-- **Never expose keys client-side** — API keys belong on your server. Do not embed them in mobile apps, browser JavaScript, or public repositories.
-- **Rotate regularly** — revoke and reissue keys on a schedule or immediately after any suspected exposure.
+- **One key per environment** — use separate App Secrets for development, staging, and production so you can rotate or revoke one without affecting the others.
+- **Never expose keys client-side** — API credentials belong on your server. Do not embed them in mobile apps, browser JavaScript, or public repositories.
+- **Rotate after suspected exposure** — revoke your App Secret in the dashboard and generate a new one immediately if you believe it has been compromised.
 - **Store in secrets managers** — use environment variables or a dedicated secrets manager (AWS Secrets Manager, HashiCorp Vault, etc.), not plaintext config files.
 
 ---
@@ -38,7 +37,7 @@ function verifySignature(rawBody, signature, secret) {
     .digest('hex');
 
   return crypto.timingSafeEqual(
-    Buffer.from(`sha256=${hmac}`),
+    Buffer.from(hmac),
     Buffer.from(signature)
   );
 }
@@ -65,7 +64,7 @@ For production environments, restrict outbound API calls to Yativo's IP ranges a
 For mutating requests (payouts, deposits, transfers), use the `Idempotency-Key` header to safely retry without risk of duplicate transactions:
 
 ```bash
-curl -X POST 'https://api.yativo.com/api/sendmoney' \
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Idempotency-Key: your-unique-request-id-abc123' \
   -H 'Content-Type: application/json' \
@@ -91,7 +90,7 @@ When a limit is hit, the API returns `429 Too Many Requests` with a `Retry-After
 
 ## Sensitive data handling
 
-- Card details (PAN, CVV, PIN) are never returned in plain API responses — use the [Secure Card Display](/yativo-crypto/cards/secure-display) hosted iframe for that.
+- Virtual card sensitive details (full PAN, CVV) are returned only on the card detail endpoint and should be displayed in-app temporarily — never logged or stored on your servers.
 - Yativo is PCI-DSS compliant. Do not log or store raw card data in your systems.
 - Customer PII (names, emails, phone numbers) should be treated as sensitive. Limit access in your systems to only those who need it.
 

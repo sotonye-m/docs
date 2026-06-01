@@ -1,0 +1,72 @@
+---
+title: "Process Swap"
+description: "Execute a currency swap between two wallet balances"
+---
+
+Execute the currency conversion. Debits the `from_currency` wallet and credits the `to_currency` wallet at the live rate.
+
+```
+POST https://api.yativo.com/api/v1/swap/process
+```
+
+<Note>
+  Requires `Idempotency-Key` header. Use a **new, unique key** for the process step — different from any key used in `/swap/init`.
+</Note>
+
+<ParamField body="from_currency" type="string" required>
+  The source wallet currency code.
+</ParamField>
+
+<ParamField body="to_currency" type="string" required>
+  The target wallet currency code.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount in the source currency to convert.
+</ParamField>
+
+<ParamField body="transaction_purpose" type="string">
+  Optional description recorded on the transaction.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/swap/process' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: swap-process-001' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "BRL",
+    "amount": 500,
+    "transaction_purpose": "Fund BRL wallet for local payouts"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "from_currency": "USD",
+    "to_currency": "BRL",
+    "from_amount": "500.00",
+    "to_amount": "2491.00",
+    "exchange_rate": "4.9820",
+    "transaction_type": "currency_swap",
+    "created_at": "2026-06-01T10:00:00.000000Z"
+  }
+}
+```
+
+```json Insufficient balance
+{
+  "status": "error",
+  "status_code": 400,
+  "message": "Insufficient wallet balance"
+}
+```
+</ResponseExample>

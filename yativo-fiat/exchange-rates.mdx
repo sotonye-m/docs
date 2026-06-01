@@ -1,25 +1,29 @@
 ---
-title: "Exchange Rates"
-description: "Get real-time exchange rates and generate locked quotes before executing payments"
+title: "Exchange Rates & Quotes"
+description: "Generate locked quotes for payouts and deposits, or fetch live rates for display"
 ---
 
-Yativo provides two ways to get exchange rates:
+The `POST /exchange-rate` endpoint is the single source for pricing any transaction on Yativo. It returns a `quote_id` valid for 5 minutes — use this ID in the execution step to guarantee the rate and fee shown to your customer.
 
-1. **Live rate** — `POST /exchange-rate` for a current rate with fee breakdown
-2. **Send money quote** — `POST /sendmoney/quote` which locks the rate for 5 minutes and returns a `quote_id` to use when executing the transfer
+There are two modes:
 
-Using a `quote_id` guarantees the displayed rate and fee through execution time.
+| Mode | When to use |
+|---|---|
+| **With `method_id` + `method_type`** | Quote a specific payment method — returns exact fees for that rail |
+| **Without `method_id`** | Generic FX rate for display only |
 
 <Accordion title="Type Definitions">
 ```typescript
 interface ExchangeRateRequest {
-  from_currency: string;   // source currency (ISO 4217)
-  to_currency: string;     // target currency (ISO 4217)
-  amount: number;          // amount in the source currency
+  from_currency: string;    // source currency (ISO 4217)
+  to_currency: string;      // target currency (ISO 4217)
+  amount: number;           // amount in source currency
+  method_id?: number;       // payment method ID (from /payment-methods/payout or /payin)
+  method_type?: "payout" | "payin";  // required when method_id is provided
 }
 
 interface Quote {
-  quote_id: string;        // valid for 5 minutes
+  quote_id: string;         // valid for 5 minutes — use in /wallet/payout or /wallet/deposits/new
   from_currency: string;
   to_currency: string;
   rate: string;
@@ -29,16 +33,23 @@ interface Quote {
     total_transaction_fee_in_to_currency: string;
     customer_sent_amount: string;
     customer_receive_amount: string;
-    customer_total_amount_due: string;
+    customer_total_amount_due: string;  // total deducted from wallet
   };
   calculator: {
+    amount_due: number;
+    exchange_rate: number;
     fee_breakdown: {
       float: { wallet_currency: number; payout_currency: number };
       fixed: { wallet_currency: number; payout_currency: number };
       total: number;
     };
-    exchange_rate: number;
-    customer_receive_amount: { wallet_currency: number; payout_currency: number };
+    PayoutMethod?: {        // present when method_id was provided
+      id: number;
+      method_name: string;
+      country: string;
+      currency: string;
+      base_currency: string;
+    };
   };
 }
 ```
@@ -46,52 +57,76 @@ interface Quote {
 
 ---
 
-## Get Live Exchange Rate
-
-Returns the current rate and fee breakdown. Does **not** lock the rate.
+## Generate a Quote
 
 ```
 POST /exchange-rate
 ```
 
 <ParamField body="from_currency" type="string" required>
-  Source currency code (ISO 4217), e.g. `"USD"`, `"EUR"`.
+  Source currency (ISO 4217), e.g. `"USD"`, `"EUR"`.
 </ParamField>
 
 <ParamField body="to_currency" type="string" required>
-  Target currency code (ISO 4217), e.g. `"CLP"`, `"BRL"`, `"MXN"`.
+  Target currency (ISO 4217), e.g. `"USD"`, `"CLP"`, `"BRL"`, `"MXN"`.
 </ParamField>
 
 <ParamField body="amount" type="number" required>
-  Amount in the source currency to convert.
+  Amount in the source currency.
+</ParamField>
+
+<ParamField body="method_id" type="integer">
+  Payment method ID from `GET /payment-methods/payout` or `GET /payment-methods/payin`. Scopes the quote to the exact fees for that rail — required for checkout flows where you will execute at the quoted price.
+</ParamField>
+
+<ParamField body="method_type" type="string">
+  `"payout"` for sends/withdrawals or `"payin"` for deposits. Required when `method_id` is provided.
 </ParamField>
 
 <RequestExample>
-```bash USD → CLP
+```bash Payout quote (USD → USD via PayPal, method 21)
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
     "from_currency": "USD",
-    "to_currency": "CLP",
-    "amount": 500
+    "to_currency": "USD",
+    "method_id": 21,
+    "method_type": "payout",
+    "amount": 406
   }'
 ```
 
-```bash USD → BRL
+```bash FX display only (no method)
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
     "from_currency": "USD",
-    "to_currency": "BRL",
-    "amount": 1000
+    "to_currency": "MXN",
+    "amount": 200
   }'
+```
+
+```javascript Node.js
+const res = await fetch('https://api.yativo.com/api/v1/exchange-rate', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    from_currency: 'USD',
+    to_currency: 'USD',
+    method_id: 21,
+    method_type: 'payout',
+    amount: 406,
+  }),
+});
+const { data } = await res.json();
+// Show data.payout_data to customer, then use data.quote_id in /wallet/payout
 ```
 </RequestExample>
 
 <ResponseExample>
-```json Success
+```json With method_id
 {
   "status": "success",
   "status_code": 200,
@@ -99,81 +134,32 @@ curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
   "data": {
     "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
     "from_currency": "USD",
-    "to_currency": "CLP",
-    "rate": "950.00000000",
-    "amount": "500.00000000",
+    "to_currency": "USD",
+    "rate": "1.00000000",
+    "amount": "406.00000000",
     "payout_data": {
       "total_transaction_fee_in_from_currency": "11.15000000",
-      "total_transaction_fee_in_to_currency": "10592.50",
-      "customer_sent_amount": "500.00",
-      "customer_receive_amount": "462925.00",
-      "customer_total_amount_due": "511.15"
+      "total_transaction_fee_in_to_currency": "11.15",
+      "customer_sent_amount": "406.00",
+      "customer_receive_amount": "406.00",
+      "customer_total_amount_due": "417.15"
     },
     "calculator": {
+      "total_fee": { "wallet_currency": 11.15, "payout_currency": 11.15, "usd": 11.15 },
+      "amount_due": 417.15,
+      "exchange_rate": 1,
       "fee_breakdown": {
-        "float": { "wallet_currency": 10.15, "payout_currency": 9642.50 },
-        "fixed": { "wallet_currency": 1, "payout_currency": 950 },
+        "float": { "wallet_currency": 10.15, "payout_currency": 10.15 },
+        "fixed": { "wallet_currency": 1, "payout_currency": 1 },
         "total": 11.15
       },
-      "exchange_rate": 950,
-      "customer_receive_amount": { "wallet_currency": 500, "payout_currency": 475000 }
-    }
-  }
-}
-```
-</ResponseExample>
-
----
-
-## Get a Locked Quote for Send Money
-
-Lock a rate for 5 minutes when preparing a payment. The returned `quote_id` guarantees the rate when used in `POST /sendmoney`.
-
-```
-POST /sendmoney/quote
-```
-
-<ParamField body="from_currency" type="string" required>
-  Source currency code (e.g. `"USD"`).
-</ParamField>
-
-<ParamField body="to_currency" type="string" required>
-  Destination currency code (e.g. `"CLP"`, `"MXN"`, `"BRL"`).
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Amount in the source currency.
-</ParamField>
-
-<RequestExample>
-```bash USD → MXN
-curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
-  -d '{
-    "from_currency": "USD",
-    "to_currency": "MXN",
-    "amount": 200
-  }'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd",
-    "from_currency": "USD",
-    "to_currency": "MXN",
-    "rate": "17.20",
-    "amount": "200.00",
-    "payout_data": {
-      "total_transaction_fee_in_from_currency": "8.00",
-      "customer_sent_amount": "200.00",
-      "customer_receive_amount": "3268.00",
-      "customer_total_amount_due": "208.00"
+      "PayoutMethod": {
+        "id": 21,
+        "method_name": "PayPal",
+        "country": "PER",
+        "currency": "USD",
+        "base_currency": "USD"
+      }
     }
   }
 }
@@ -181,53 +167,99 @@ curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
 </ResponseExample>
 
 <Warning>
-  Quotes are valid for **5 minutes**. Execute the payment with `POST /sendmoney` within this window using the `quote_id`.
+  Quotes expire after **5 minutes**. Execute the transaction within this window — after expiry the `quote_id` is rejected and a new quote is required.
 </Warning>
 
 ---
 
-## Using the Quote ID
+## Execute the Quote
 
-Use the `quote_id` in a send money request to guarantee the locked rate:
+Use the `quote_id` in the appropriate execution endpoint:
 
-```bash
-curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-payout-key' \
-  -d '{
-    "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd"
-  }'
-```
-
-Or use it in a wallet payout:
+### For payouts
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-payout-key' \
+  -H 'Idempotency-Key: payout-001' \
   -d '{
     "debit_wallet": "USD",
-    "payment_method_id": 21,
-    "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd"
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "amount": 406,
+    "payment_method_id": 21
+  }'
+```
+
+### For deposits (payin)
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: deposit-001' \
+  -d '{
+    "gateway": 20,
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "currency": "USD",
+    "redirect_url": "https://your-app.com/deposit/complete"
   }'
 ```
 
 ---
 
-## Recommended Workflow
+## Get a Locked Quote for Send Money
+
+For sending money specifically (rather than wallet payouts), use the dedicated send money quote endpoint which also returns a `quote_id`:
 
 ```
-1. POST /sendmoney/quote                → get quote_id (5-min window)
-2. POST /sendmoney  (or /wallet/payout) → execute with quote_id
-3. GET /transaction/tracking/{id}       → monitor payment progress
+POST /sendmoney/quote
 ```
 
-Without a `quote_id`, the live market rate applies at execution time and may differ from the rate you quoted to your customer.
+<RequestExample>
+```bash USD → MXN
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: quote-001' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "MXN",
+    "amount": 200,
+    "beneficiary_payment_method_id": "pm-3a4b5c6d-7e8f-9a0b"
+  }'
+```
+</RequestExample>
+
+---
+
+## Complete Quote Workflow
+
+```
+1. GET /payment-methods/payout?country=...    → get method_id (e.g. 21)
+2. POST /exchange-rate                         → quote with method_id + method_type
+                                               → shows exact fees to customer
+                                               → returns quote_id (5-min window)
+3. POST /wallet/payout (or /deposits/new)      → execute with quote_id
+4. GET /transaction/tracking/{id}              → monitor status
+```
+
+---
+
+## Fee Breakdown
+
+The `calculator.fee_breakdown` object contains two fee components:
+
+| Component | Description |
+|---|---|
+| `float` | Percentage-based fee — scales with amount |
+| `fixed` | Flat fee — charged regardless of amount |
+| `total` | Sum of float + fixed in both wallet and payout currencies |
+
+Always display `payout_data.customer_total_amount_due` to the customer — this is the exact amount that will be debited from their wallet.
 
 ---
 
 ## Rate Limits
 
-Maximum **100 requests per minute** per API key.
+The exchange rate endpoint is limited to **30 requests per minute** per API key. Cache quotes client-side for display rather than calling on every user keystroke.

@@ -1,0 +1,255 @@
+---
+title: "Payouts"
+description: "Send single payments or bulk disbursements to multiple beneficiaries in one request"
+---
+
+Yativo provides two payout paths depending on your use case:
+
+| Path | Best for |
+|---|---|
+| `POST /payout/simple` | A single payment to one beneficiary |
+| `POST /payout/batch` | Multiple payments to different beneficiaries in one request |
+
+Both require a saved beneficiary with an attached payment method. See [Send Money](/yativo-fiat/send-money) for setting up beneficiaries.
+
+<Note>
+  All payout requests require an `Idempotency-Key` header and the `chargeWallet` middleware — meaning your wallet balance is charged at submission time.
+</Note>
+
+---
+
+## Single Payout
+
+Send one payment to a saved beneficiary payment method.
+
+```
+POST https://api.yativo.com/api/v1/payout/simple
+```
+
+<ParamField body="amount" type="number" required>
+  Amount to send in the debit wallet currency.
+</ParamField>
+
+<ParamField body="beneficiary_details_id" type="number" required>
+  The ID of the saved beneficiary payment method (from `POST /beneficiaries/payment-methods`).
+</ParamField>
+
+<ParamField body="beneficiary_id" type="string">
+  Optional beneficiary UUID. Useful for tracking but not required if `beneficiary_details_id` is provided.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/payout/simple' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: payout-simple-001' \
+  -d '{
+    "amount": 250,
+    "beneficiary_details_id": 42
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.yativo.com/api/v1/payout/simple', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': `payout-simple-${Date.now()}`,
+  },
+  body: JSON.stringify({
+    amount: 250,
+    beneficiary_details_id: 42,
+  }),
+});
+const data = await response.json();
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "transaction_id": "txn-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "status": "processing",
+    "amount": "250.00",
+    "currency": "CLP",
+    "beneficiary_id": 42,
+    "created_at": "2026-06-01T10:00:00.000000Z"
+  }
+}
+```
+
+```json Insufficient balance
+{
+  "status": "error",
+  "status_code": 402,
+  "message": "Insufficient wallet balance"
+}
+```
+</ResponseExample>
+
+---
+
+## Batch Payout
+
+Send multiple payments in a single request. Each item in the `payouts` array is processed independently — partial failures are returned in an `errors` array rather than rolling back the entire batch.
+
+```
+POST https://api.yativo.com/api/v1/payout/batch
+```
+
+<ParamField body="payouts" type="array" required>
+  Array of payout objects to process.
+
+  <Expandable title="payouts item fields">
+    <ParamField body="amount" type="number" required>
+      Amount to send for this payout.
+    </ParamField>
+    <ParamField body="beneficiary_details_id" type="number" required>
+      The saved beneficiary payment method ID.
+    </ParamField>
+    <ParamField body="beneficiary_id" type="number">
+      Optional beneficiary UUID for tracking.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<Warning>
+  Batch payouts are processed within a database transaction — if your wallet has insufficient balance for the total amount, the entire batch is rejected before processing begins. Individual line-item errors (e.g. invalid beneficiary) are returned in the `errors` object and do not affect other items.
+</Warning>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/payout/batch' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: batch-payout-june-payroll-001' \
+  -d '{
+    "payouts": [
+      { "amount": 500, "beneficiary_details_id": 41 },
+      { "amount": 750, "beneficiary_details_id": 42 },
+      { "amount": 300, "beneficiary_details_id": 43 }
+    ]
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.yativo.com/api/v1/payout/batch', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': `batch-${Date.now()}`,
+  },
+  body: JSON.stringify({
+    payouts: [
+      { amount: 500, beneficiary_details_id: 41 },
+      { amount: 750, beneficiary_details_id: 42 },
+      { amount: 300, beneficiary_details_id: 43 },
+    ],
+  }),
+});
+const data = await response.json();
+```
+
+```python Python
+import requests, time
+
+response = requests.post(
+    'https://api.yativo.com/api/v1/payout/batch',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': f'batch-{int(time.time())}',
+    },
+    json={
+        'payouts': [
+            {'amount': 500, 'beneficiary_details_id': 41},
+            {'amount': 750, 'beneficiary_details_id': 42},
+            {'amount': 300, 'beneficiary_details_id': 43},
+        ]
+    }
+)
+```
+</RequestExample>
+
+<ResponseExample>
+```json All successful
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "0": { "transaction_id": "txn-aaa", "status": "processing", "amount": "500.00" },
+    "1": { "transaction_id": "txn-bbb", "status": "processing", "amount": "750.00" },
+    "2": { "transaction_id": "txn-ccc", "status": "processing", "amount": "300.00" }
+  }
+}
+```
+
+```json Partial failure
+{
+  "status": "error",
+  "status_code": 400,
+  "data": {
+    "errors": {
+      "1": { "error": "Beneficiary not found" }
+    }
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## List Payouts
+
+Retrieve a paginated list of all your payouts.
+
+```
+GET https://api.yativo.com/api/v1/payout/get
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/payout/get' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Get Single Payout
+
+```
+GET https://api.yativo.com/api/v1/payout/fetch/{payout_id}
+```
+
+<ParamField path="payout_id" type="string" required>
+  The UUID of the payout to retrieve.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/payout/fetch/txn-a1b2c3d4-e5f6-7890-abcd-ef1234567890' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Payout vs. Wallet Payout
+
+| | `POST /payout/simple` or `/batch` | `POST /wallet/payout` |
+|--|---|---|
+| **Beneficiary required** | Yes — `beneficiary_details_id` | Yes — `beneficiary_id` |
+| **Quote support** | No | Yes — pass `quote_id` for locked rate |
+| **Bulk support** | Yes (`/batch`) | No |
+| **Use case** | Disbursements, payroll | Single cross-currency payments with rate lock |
+
+For a single payment where you want to lock a rate first, use `POST /sendmoney/quote` → `POST /wallet/payout`. For payroll-style bulk disbursements without rate locking, use `POST /payout/batch`.

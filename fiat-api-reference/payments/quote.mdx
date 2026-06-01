@@ -1,56 +1,18 @@
 ---
-title: "Get Exchange Rate / Quote"
-description: "Get a locked exchange rate quote for currency conversion before initiating a payout"
+title: "Get Exchange Rate"
+description: "Get a real-time exchange rate and fee breakdown before executing a payment"
 ---
 
-Get a real-time exchange rate quote for converting between currencies. The returned `quote_id` locks the rate for **5 minutes** and can be used in the payout endpoint to guarantee the shown rate.
-
-```
-GET /exchange-rate
-```
-
-## Query parameters
-
-<ParamField query="from" type="string" required>
-  Source currency code (e.g. `USD`, `EUR`).
-</ParamField>
-
-<ParamField query="to" type="string" required>
-  Destination currency code (e.g. `CLP`, `MXN`, `BRL`).
-</ParamField>
-
-<ParamField query="amount" type="number" required>
-  Amount in the source currency to convert.
-</ParamField>
-
 <Note>
-  Quotes are locked for 5 minutes. After expiry, request a new quote before initiating the payout. Using a `quote_id` in a payout guarantees the exchange rate shown — without it, the live rate at execution time is used.
+  This file is superseded by [exchange-rate.mdx](/fiat-api-reference/payments/exchange-rate) and [send-money-quote.mdx](/fiat-api-reference/payments/send-money-quote). See those pages for the correct, documented endpoints.
 </Note>
 
-<RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/exchange-rate?from=USD&to=CLP&amount=100' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
-```
-</RequestExample>
+The exchange rate endpoint uses **POST**, not GET:
 
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "status_code": 200,
-  "message": "Request successful",
-  "data": {
-    "quote_id": "qte_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "from_currency": "USD",
-    "to_currency": "CLP",
-    "from_amount": 100.00,
-    "to_amount": 95240.00,
-    "exchange_rate": 952.40,
-    "fee": 2.50,
-    "fee_currency": "USD",
-    "expires_at": "2026-04-02T10:05:00.000000Z"
-  }
-}
 ```
-</ResponseExample>
+POST https://api.yativo.com/api/v1/exchange-rate
+```
+
+Pass `from_currency`, `to_currency`, and `amount` as a JSON body. Returns the current rate, fee breakdown, and a `quote_id` that can be used in `POST /sendmoney` or `POST /wallet/payout` to guarantee the quoted rate for 5 minutes.
+
+See [Exchange Rate reference](/fiat-api-reference/payments/exchange-rate) for the full parameter reference and response examples.

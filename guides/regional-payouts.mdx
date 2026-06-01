@@ -1,0 +1,382 @@
+---
+title: "Regional Payout Guide"
+description: "Country-by-country guide for sending payments via local rails — SPEI, PIX, ACH, SEPA, and more"
+---
+
+Each country Yativo supports has specific requirements for payment details, account number formats, and payout method IDs. This guide covers the exact fields needed for each corridor so you can build region-specific flows without trial and error.
+
+The general flow is the same for all regions:
+
+```
+GET /payment-methods/payout/countries       → confirm country is supported
+GET /payment-methods/payout?country={iso3}  → get payment_method_id for the rail
+GET /beneficiary/form/show/{id}             → get required account_details fields
+POST /beneficiaries                         → create beneficiary
+POST /beneficiaries/payment-methods         → save bank details
+POST /sendmoney/quote                       → lock rate
+POST /sendmoney                             → execute
+```
+
+---
+
+## Mexico — SPEI via CLABE
+
+**Payment rail:** SPEI (Sistema de Pagos Electrónicos Interbancarios)  
+**Key identifier:** CLABE — an 18-digit standardised bank code unique to each Mexican bank account  
+**Settlement time:** Same-day, typically within minutes
+
+### Required account details
+
+| Field | Format | Example |
+|---|---|---|
+| `clabe` | 18 digits | `"012345678901234567"` |
+
+The first 3 digits of a CLABE identify the bank, the next 3 the city, and the last is a check digit. Validating the check digit before submission reduces failure rates.
+
+<Accordion title="CLABE check digit validation (JavaScript)">
+```javascript
+function validateClabe(clabe) {
+  if (!/^\d{18}$/.test(clabe)) return false;
+  const weights = [3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7];
+  const sum = weights.reduce((acc, w, i) => acc + (parseInt(clabe[i]) * w) % 10, 0);
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return checkDigit === parseInt(clabe[17]);
+}
+```
+</Accordion>
+
+### Generate a CLABE for a customer
+
+If your platform needs to issue SPEI receive addresses (not just send to them), Yativo can generate valid CLABEs for your customers:
+
+```
+GET https://api.yativo.com/api/v1/clabe/generate
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/clabe/generate' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+### Full payout example
+
+```bash
+# 1. Get payment method ID for Mexico
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout?country=MEX' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+# → returns id: 30 (SPEI)
+
+# 2. Save beneficiary with CLABE
+curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: pm-mexico-001' \
+  -d '{
+    "beneficiary_id": "YOUR_BENEFICIARY_ID",
+    "payment_method_id": 30,
+    "account_details": {
+      "clabe": "012345678901234567"
+    }
+  }'
+
+# 3. Get a quote (USD → MXN)
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: quote-mx-001' \
+  -d '{ "from_currency": "USD", "to_currency": "MXN", "amount": 500, "beneficiary_payment_method_id": "PM_ID" }'
+
+# 4. Execute
+curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: send-mx-001' \
+  -d '{ "quote_id": "QUOTE_ID" }'
+```
+
+### Virtual accounts (receive MXN via SPEI)
+
+To receive SPEI payments for a customer, create a virtual account with currency `"MXNBASE"`:
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: va-mx-001' \
+  -d '{ "customer_id": "CUSTOMER_ID", "currency": "MXNBASE" }'
+```
+
+The returned `account_number` is a CLABE your customers can send SPEI transfers to.
+
+---
+
+## Brazil — PIX
+
+**Payment rail:** PIX (instant payment system by Banco Central do Brasil)  
+**Key identifier:** PIX key — a unique alias for a bank account  
+**Settlement time:** 24/7, under 10 seconds
+
+### PIX key types
+
+| Type | Field value | Example |
+|---|---|---|
+| CPF (tax ID) | `cpf` | `"12345678901"` (11 digits) |
+| CNPJ (company tax ID) | `cnpj` | `"12345678000190"` (14 digits) |
+| Phone number | `phone` | `"+5511999999999"` (E.164) |
+| Email | `email` | `"customer@example.com"` |
+| EVP (random key) | `evp` | `"e2ee3bd7-a7d7-4a9e-b8a1-abcdef123456"` |
+
+### Required account details
+
+| Field | Type | Description |
+|---|---|---|
+| `pix_key` | string | The recipient's PIX key value |
+| `pix_key_type` | string | One of: `"cpf"`, `"cnpj"`, `"phone"`, `"email"`, `"evp"` |
+
+### Example — send to a CPF PIX key
+
+```bash
+# Save beneficiary payment method for Brazil PIX
+curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: pm-brazil-001' \
+  -d '{
+    "beneficiary_id": "YOUR_BENEFICIARY_ID",
+    "payment_method_id": 40,
+    "account_details": {
+      "pix_key": "12345678901",
+      "pix_key_type": "cpf"
+    }
+  }'
+```
+
+### Virtual accounts (receive BRL via PIX)
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: va-br-001' \
+  -d '{ "customer_id": "CUSTOMER_ID", "currency": "BRL" }'
+```
+
+The returned `account_number` is a PIX key (EVP type) that any Brazilian bank account can pay to.
+
+<Note>
+  For virtual accounts, Yativo issues a KYC-linked endorsement (`brazil`). Customers without this endorsement cannot receive PIX deposits. Check `endorsements` in the KYC status response.
+</Note>
+
+---
+
+## Nigeria — NUBAN bank transfer
+
+**Payment rail:** Nigerian NUBAN (Nigeria Uniform Bank Account Number)  
+**Settlement time:** Same-day to next business day
+
+### KYC requirements
+
+Nigerian customers have **mandatory additional KYC fields** when submitting identity verification:
+
+| Field | Requirement | Format |
+|---|---|---|
+| `bvn` | Required when `nationality: "NG"` | Exactly 11 digits |
+| `nin` | Required when `nationality: "NG"` | Exactly 11 digits |
+
+Without both `bvn` and `nin`, KYC submission will fail validation for Nigerian nationals. See the [Individual KYC](/fiat-api-reference/kyc/submit-individual) reference.
+
+### Required account details for payouts
+
+| Field | Format | Example |
+|---|---|---|
+| `account_number` | 10-digit NUBAN | `"0123456789"` |
+| `bank_code` | 3-digit CBN bank code | `"044"` (Access Bank), `"058"` (GTBank) |
+| `account_name` | String | `"Jane Doe"` |
+
+### Common Nigerian bank codes
+
+| Bank | Code |
+|---|---|
+| Access Bank | `044` |
+| GTBank (Guaranty Trust) | `058` |
+| Zenith Bank | `057` |
+| First Bank | `011` |
+| UBA | `033` |
+| Fidelity Bank | `070` |
+| Sterling Bank | `232` |
+| Kuda Bank | `090267` |
+
+### Example
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: pm-ng-001' \
+  -d '{
+    "beneficiary_id": "YOUR_BENEFICIARY_ID",
+    "payment_method_id": 50,
+    "account_details": {
+      "account_number": "0123456789",
+      "bank_code": "044",
+      "account_name": "Jane Doe"
+    }
+  }'
+```
+
+---
+
+## United States — ACH / Wire
+
+**Payment rail:** ACH (Automated Clearing House) or domestic wire  
+**Settlement time:** ACH 1–3 business days; Wire same-day
+
+### Required account details
+
+| Field | Format | Example |
+|---|---|---|
+| `account_number` | Bank account number | `"123456789"` |
+| `routing_number` | 9-digit ABA routing number | `"021000021"` |
+| `account_type` | `"checking"` or `"savings"` | `"checking"` |
+| `account_name` | Name on account | `"Alex Smith"` |
+
+### Virtual accounts (receive USD)
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: va-us-001' \
+  -d '{ "customer_id": "CUSTOMER_ID", "currency": "USDBASE" }'
+```
+
+---
+
+## Europe — SEPA
+
+**Payment rail:** SEPA Credit Transfer (SCT) or SEPA Instant (SCT Inst)  
+**Settlement time:** Standard SCT next business day; SCT Inst within 10 seconds
+
+### Required account details
+
+| Field | Format | Example |
+|---|---|---|
+| `iban` | IBAN (up to 34 chars) | `"DE89370400440532013000"` |
+| `bic` | BIC/SWIFT code | `"COBADEFFXXX"` |
+| `account_name` | Account holder name | `"Maria Schmidt"` |
+
+### Virtual accounts (receive EUR via SEPA)
+
+```bash
+# Standard EUR SEPA
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -d '{ "customer_id": "CUSTOMER_ID", "currency": "EURBASE" }'
+
+# Germany-specific EUR SEPA (EURDE)
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -d '{ "customer_id": "CUSTOMER_ID", "currency": "EURDE" }'
+```
+
+---
+
+## Chile — Bank Transfer
+
+**Payment rail:** Local bank transfer (RUT-based)  
+**Settlement time:** Same-day (business hours)
+
+### Required account details
+
+| Field | Format | Example |
+|---|---|---|
+| `account_number` | Bank account number | `"12345678"` |
+| `bank_code` | Bank code | `"001"` (BancoEstado), `"009"` (Scotiabank) |
+| `account_type` | `"checking"` or `"savings"` (corriente / ahorro) | `"checking"` |
+| `rut` | Chilean RUT number | `"12345678-9"` |
+
+---
+
+## Colombia — Bank Transfer / Nequi / DaviPlata
+
+**Payment rail:** Local bank ACH, Nequi, or DaviPlata  
+**Settlement time:** Same-day
+
+### Required account details
+
+| Field | Format |
+|---|---|
+| `account_number` | Bank account number |
+| `bank_code` | Bank code |
+| `account_type` | `"checking"` or `"savings"` |
+| `document_type` | `"CC"` (cédula), `"NIT"` (company), `"CE"` (foreigner) |
+| `document_number` | ID number |
+
+---
+
+## Peru — CCI Bank Transfer
+
+**Payment rail:** CCI (Código de Cuenta Interbancario)  
+**Settlement time:** 1–2 business days
+
+### Required account details
+
+| Field | Format | Example |
+|---|---|---|
+| `account_number` | 20-digit CCI | `"00215601234567891234"` |
+| `bank_code` | Bank code | `"002"` (BCP), `"011"` (BBVA) |
+
+---
+
+## Argentina — CVU / CBU
+
+**Payment rail:** CBU (Clave Bancaria Uniforme) or CVU (Mercado Pago / digital wallets)  
+**Settlement time:** Same-day for CVU; 1–2 days for CBU
+
+### Required account details (payouts)
+
+| Field | Format | Example |
+|---|---|---|
+| `cbu_cvu` | 22-digit CBU or CVU | `"0000003100097845599238"` |
+| `alias` | Optional CBU alias | `"ALIAS.PAGO.CUENTA"` |
+
+### Virtual accounts (receive ARS) — Argentina-specific requirements
+
+Argentina virtual accounts require additional customer identity fields that are **not needed for other countries**. The customer must be an Argentine resident.
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: va-ar-001' \
+  -d '{
+    "customer_id": "CUSTOMER_ID",
+    "currency": "ARS",
+    "document_id": "A23E4567",
+    "document_type": "CUIT"
+  }'
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `currency` | Yes | Must be `"ARS"` |
+| `document_id` | Yes | Customer's official document number |
+| `document_type` | Yes | `"CUIT"` (tax ID for companies/self-employed), `"CUIL"` (labour ID for individuals), or `"CDI"` (foreign resident ID) |
+
+<Note>
+  CUIT is used for companies and self-employed individuals. CUIL is for employees. CDI is for foreign residents without a CUIL. When in doubt for an individual customer, use `CUIL`.
+</Note>
+
+---
+
+## Getting the exact fields for any method
+
+Use the form fields endpoint to get the precise required fields dynamically — they may change as rails evolve:
+
+```bash
+# Replace 30 with the payment_method_id from GET /payment-methods/payout?country=...
+curl -X GET 'https://api.yativo.com/api/v1/beneficiary/form/show/30' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+This returns the exact fields with labels, validation rules, and whether each is required — the authoritative source for building your payment forms.

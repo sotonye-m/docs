@@ -24,7 +24,7 @@ POST /wallet/payout
 </ParamField>
 
 <ParamField body="quote_id" type="string">
-  A quote ID from `GET /exchange-rate`. When provided, the exchange rate is locked and `amount` is taken from the quote. Recommended to guarantee rates.
+  A quote ID from `POST /exchange-rate` or `POST /sendmoney/quote`. When provided, the exchange rate is locked and `amount` is taken from the quote. Recommended to guarantee rates.
 </ParamField>
 
 <ParamField body="amount" type="number">
@@ -32,7 +32,7 @@ POST /wallet/payout
 </ParamField>
 
 <ParamField body="beneficiary_id" type="string">
-  The UUID of a saved beneficiary to pay. Either `beneficiary_id` or inline recipient details must be provided.
+  The UUID of a saved beneficiary to pay.
 </ParamField>
 
 <Warning>

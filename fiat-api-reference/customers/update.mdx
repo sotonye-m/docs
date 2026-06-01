@@ -6,7 +6,7 @@ description: "Update an existing customer's profile information"
 Update mutable fields on a customer record. Only include the fields you want to change.
 
 ```
-PUT /customer/customer/{customer_id}
+PUT https://api.yativo.com/api/v1/customer/{customer_id}
 ```
 
 <Note>
@@ -39,7 +39,7 @@ PUT /customer/customer/{customer_id}
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/customer/customer/c586066b-0f29-468f-b775-15483871a202' \
+curl -X PUT 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-15483871a202' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: update-customer-alex-smith-002' \

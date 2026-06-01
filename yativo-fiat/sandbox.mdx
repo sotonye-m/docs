@@ -100,8 +100,11 @@ const headers = {
 const { data: customer } = await fetch(`${BASE}/customer`, {
   method: 'POST', headers,
   body: JSON.stringify({
-    first_name: 'Test', last_name: 'User',
-    email: 'test@example.com', country: 'BRA',
+    customer_name: 'Test User',
+    customer_email: 'test@example.com',
+    customer_phone: '+5511999999999',
+    customer_country: 'BRA',
+    customer_type: 'individual',
   }),
 }).then(r => r.json());
 

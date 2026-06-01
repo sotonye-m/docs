@@ -1,0 +1,183 @@
+---
+title: "Business Plans"
+description: "View available subscription plans and manage your account tier"
+---
+
+Yativo offers tiered business plans that unlock higher transaction limits, additional payment corridors, and priority support. Plans are billed in USD and charged directly from your USD wallet.
+
+---
+
+## Get Current Plan
+
+Returns your account's active subscription plan and its features.
+
+```
+GET https://api.yativo.com/api/v1/business/plans/current
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/plans/current' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "id": 1,
+    "name": "Starter",
+    "price": "0.00",
+    "currency": "USD",
+    "features": [
+      { "name": "Virtual Accounts", "value": "5" },
+      { "name": "Monthly Payout Volume", "value": "$50,000" },
+      { "name": "API Rate Limit", "value": "100 req/min" }
+    ],
+    "subscribed_at": "2026-01-01T00:00:00.000000Z"
+  }
+}
+```
+</ResponseExample>
+
+---
+
+## List All Plans
+
+Browse all available plans and their features.
+
+```
+GET https://api.yativo.com/api/v1/business/plans/all
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/plans/all' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": 1,
+      "name": "Starter",
+      "price": "0.00",
+      "currency": "USD",
+      "features": [
+        { "name": "Virtual Accounts", "value": "5" },
+        { "name": "Monthly Payout Volume", "value": "$50,000" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Growth",
+      "price": "99.00",
+      "currency": "USD",
+      "features": [
+        { "name": "Virtual Accounts", "value": "50" },
+        { "name": "Monthly Payout Volume", "value": "$500,000" },
+        { "name": "Priority Support", "value": "true" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Enterprise",
+      "price": "Custom",
+      "currency": "USD",
+      "features": [
+        { "name": "Virtual Accounts", "value": "Unlimited" },
+        { "name": "Monthly Payout Volume", "value": "Custom" },
+        { "name": "Dedicated Account Manager", "value": "true" }
+      ]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+---
+
+## Subscribe to a Plan
+
+Subscribe your account to a specific plan. The plan price is charged immediately from your USD wallet.
+
+```
+POST https://api.yativo.com/api/v1/business/plans/subscribe/{plan_id}
+```
+
+<Note>
+  Requires `Idempotency-Key` header. The plan cost is debited from your USD wallet at the time of subscription.
+</Note>
+
+<ParamField path="plan_id" type="number" required>
+  The ID of the plan to subscribe to (from the list plans endpoint).
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/plans/subscribe/2' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: subscribe-growth-001'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Subscription to Growth Business Plan successful",
+  "data": {
+    "plan_id": 2,
+    "plan_name": "Growth",
+    "subscribed_at": "2026-06-01T10:00:00.000000Z"
+  }
+}
+```
+
+```json Insufficient balance
+{
+  "status": "error",
+  "status_code": 402,
+  "message": "Insufficient wallet balance"
+}
+```
+</ResponseExample>
+
+---
+
+## Upgrade Plan
+
+Upgrade your existing plan to a higher tier. The cost difference is prorated and charged from your USD wallet.
+
+```
+PUT https://api.yativo.com/api/v1/business/plans/upgrade/{plan_id}
+```
+
+<ParamField path="plan_id" type="number" required>
+  The ID of the plan to upgrade to.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://api.yativo.com/api/v1/business/plans/upgrade/3' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: upgrade-enterprise-001'
+```
+</RequestExample>
+
+<Note>
+  Enterprise plans have `"price": "Custom"`. Upgrading to Enterprise will initiate a contact request with the Yativo sales team rather than charging your wallet immediately.
+</Note>

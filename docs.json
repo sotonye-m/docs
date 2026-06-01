@@ -4,8 +4,8 @@
   "name": "Yativo",
   "api": {
     "baseUrl": [
-      "https://crypto-sandbox.yativo.com/api/v1",
-      "https://crypto-api.yativo.com/api/v1"
+      "https://api.yativo.com/api/v1",
+      "https://smtp.yativo.com/api/v1"
     ],
     "auth": {
       "method": "bearer",
@@ -77,10 +77,12 @@
             "pages": [
               "yativo-fiat/accept-payments",
               "yativo-fiat/send-money",
+              "yativo-fiat/payouts",
               "yativo-fiat/exchange-rates",
               "yativo-fiat/deposits",
               "yativo-fiat/virtual-accounts",
-              "yativo-fiat/virtual-cards"
+              "yativo-fiat/virtual-cards",
+              "yativo-fiat/swap"
             ]
           },
           {
@@ -107,12 +109,26 @@
             ]
           },
           {
+            "group": "Products",
+            "pages": [
+              "yativo-fiat/gift-cards",
+              "yativo-fiat/plans"
+            ]
+          },
+          {
             "group": "Developer Tools",
             "pages": [
               "yativo-fiat/developer",
               "yativo-fiat/webhooks",
+              "yativo-fiat/ip-allowlist",
               "yativo-fiat/sandbox",
               "yativo-fiat/security"
+            ]
+          },
+          {
+            "group": "Regional Guides",
+            "pages": [
+              "guides/regional-payouts"
             ]
           }
         ]
@@ -163,7 +179,10 @@
           },
           {
             "group": "Deposits",
-            "pages": ["fiat-api-reference/deposits/list"]
+            "pages": [
+              "fiat-api-reference/deposits/create",
+              "fiat-api-reference/deposits/list"
+            ]
           },
           {
             "group": "Virtual Accounts",
@@ -220,10 +239,46 @@
             ]
           },
           {
+            "group": "Payouts",
+            "pages": [
+              "fiat-api-reference/payouts/simple",
+              "fiat-api-reference/payouts/batch",
+              "fiat-api-reference/payouts/list",
+              "fiat-api-reference/payouts/get"
+            ]
+          },
+          {
+            "group": "Currency Swap",
+            "pages": [
+              "fiat-api-reference/swap/init",
+              "fiat-api-reference/swap/process"
+            ]
+          },
+          {
+            "group": "Gift Cards",
+            "pages": [
+              "fiat-api-reference/giftcards/categories",
+              "fiat-api-reference/giftcards/list",
+              "fiat-api-reference/giftcards/purchase",
+              "fiat-api-reference/giftcards/redeem"
+            ]
+          },
+          {
+            "group": "IP Allowlist",
+            "pages": [
+              "fiat-api-reference/ip/list",
+              "fiat-api-reference/ip/create",
+              "fiat-api-reference/ip/update",
+              "fiat-api-reference/ip/delete"
+            ]
+          },
+          {
             "group": "Webhooks",
             "pages": [
               "fiat-api-reference/webhooks/create",
-              "fiat-api-reference/webhooks/list"
+              "fiat-api-reference/webhooks/list",
+              "fiat-api-reference/webhooks/delete",
+              "fiat-api-reference/webhooks/regenerate-secret"
             ]
           },
           {

@@ -53,8 +53,12 @@ curl -X GET 'https://api.yativo.com/api/v1/business/webhook' \
 ## Update Webhook URL
 
 ```
-PUT /business/webhook
+PUT /business/webhook/{webhook_id}
 ```
+
+<ParamField path="webhook_id" type="string" required>
+  The webhook ID returned when the webhook was created.
+</ParamField>
 
 <ParamField body="url" type="string" required>
   New destination URL.
@@ -62,7 +66,7 @@ PUT /business/webhook
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/business/webhook' \
+curl -X PUT 'https://api.yativo.com/api/v1/business/webhook/wh-01abc123' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \

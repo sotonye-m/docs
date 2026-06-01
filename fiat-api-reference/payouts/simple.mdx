@@ -1,0 +1,64 @@
+---
+title: "Single Payout"
+description: "Send one payment to a saved beneficiary payment method"
+openapi: "POST https://api.yativo.com/api/v1/payout/simple"
+---
+
+Send a single payment to a saved beneficiary. Debits your wallet at the time of submission.
+
+```
+POST https://api.yativo.com/api/v1/payout/simple
+```
+
+<Note>
+  Requires `Idempotency-Key` header. Your wallet is charged immediately on submission.
+</Note>
+
+<ParamField body="amount" type="number" required>
+  Amount to send in the debit wallet currency.
+</ParamField>
+
+<ParamField body="beneficiary_details_id" type="number" required>
+  The saved beneficiary payment method ID (from `POST /beneficiaries/payment-methods`).
+</ParamField>
+
+<ParamField body="beneficiary_id" type="string">
+  Optional beneficiary UUID for tracking.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/payout/simple' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: payout-simple-001' \
+  -d '{
+    "amount": 250,
+    "beneficiary_details_id": 42
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "transaction_id": "txn-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "status": "processing",
+    "amount": "250.00",
+    "created_at": "2026-06-01T10:00:00.000000Z"
+  }
+}
+```
+
+```json Insufficient balance
+{
+  "status": "error",
+  "status_code": 402,
+  "message": "Insufficient wallet balance"
+}
+```
+</ResponseExample>

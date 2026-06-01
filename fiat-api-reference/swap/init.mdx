@@ -1,0 +1,67 @@
+---
+title: "Initiate Swap"
+description: "Preview the exchange rate and converted amount before executing a currency swap"
+---
+
+Preview a currency swap. Returns the live rate and resulting amount without committing any funds. Use this to show customers a confirmation screen before calling `/swap/process`.
+
+```
+POST https://api.yativo.com/api/v1/swap/init
+```
+
+<Note>
+  Requires `Idempotency-Key` header. The rate shown here is indicative — it is fetched live again at execution time. Execute `/swap/process` promptly after previewing.
+</Note>
+
+<ParamField body="from_currency" type="string" required>
+  The source wallet currency code (ISO 4217), e.g. `"USD"`, `"EUR"`.
+</ParamField>
+
+<ParamField body="to_currency" type="string" required>
+  The target wallet currency code (ISO 4217), e.g. `"BRL"`, `"MXN"`.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Amount in the source currency to convert.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/swap/init' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: swap-init-001' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "BRL",
+    "amount": 500
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "from_currency": "USD",
+    "to_currency": "BRL",
+    "from_amount": "500.00",
+    "to_amount": "2491.00",
+    "exchange_rate": "4.9820",
+    "fee": "5.00",
+    "fee_currency": "USD"
+  }
+}
+```
+
+```json Invalid currencies
+{
+  "status": "error",
+  "status_code": 422,
+  "message": "Invalid currencies supplied"
+}
+```
+</ResponseExample>

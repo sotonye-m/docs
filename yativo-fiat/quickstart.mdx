@@ -158,20 +158,19 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
         "image_front_file": "https://example.com/kyc/passport-front.jpg"
       }
     ],
-    "employment_status": "Employed",
+    "employment_status": "employed",
     "most_recent_occupation_code": "132011",
-    "expected_monthly_payments_usd": "LessThan5K",
-    "source_of_funds": "Salary",
-    "account_purpose": "ReceiveSalary",
+    "expected_monthly_payments_usd": "0_4999",
+    "source_of_funds": "salary",
+    "account_purpose": "receive_salary",
     "acting_as_intermediary": false,
-    "usd_virtual_account": false,
-    "eur_virtual_account": false,
-    "eurde_virtual_account": false,
-    "gbp_virtual_account": false
+    "uploaded_documents": [
+      { "type": "bank_statement", "file": "https://example.com/kyc/bank-statement.pdf" }
+    ]
   }'
 ```
 
-See the full field reference at [/yativo-fiat/kyc](/yativo-fiat/kyc), including optional fields such as `account_purpose_other`, `uploaded_documents`, and `sumsub_token`.
+See the full field reference at [KYC & KYB](/yativo-fiat/kyc), including all enum values, Nigeria-specific fields, and document upload guidance.
 
 In sandbox, KYC approves automatically. In production, allow up to a few minutes for verification.
 

@@ -1,0 +1,38 @@
+---
+title: "Update IP Address"
+description: "Replace an existing allowlisted IP address"
+---
+
+Replace an existing allowlisted IP with a new one.
+
+```
+PUT https://api.yativo.com/api/v1/ip/{id}
+```
+
+<ParamField path="id" type="string" required>
+  The IP record ID to update.
+</ParamField>
+
+<ParamField body="ip_address" type="string" required>
+  The new IP address to replace the existing one.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://api.yativo.com/api/v1/ip/ip-a1b2c3' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: update-ip-001' \
+  -d '{ "ip_address": "203.0.113.20" }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "IP addresses updated and added to firewall."
+}
+```
+</ResponseExample>

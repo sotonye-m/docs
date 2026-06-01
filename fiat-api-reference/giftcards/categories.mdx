@@ -1,0 +1,34 @@
+---
+title: "List Gift Card Categories"
+description: "Retrieve available gift card categories"
+---
+
+Returns all gift card categories available on the platform. Use category IDs to filter the gift card catalog.
+
+```
+GET https://api.yativo.com/api/v1/giftcards/categories
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/giftcards/categories' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Categories fetched successfully",
+  "data": [
+    { "id": 1, "name": "Entertainment" },
+    { "id": 2, "name": "Gaming" },
+    { "id": 3, "name": "Shopping" },
+    { "id": 4, "name": "Food & Dining" },
+    { "id": 5, "name": "Travel" }
+  ]
+}
+```
+</ResponseExample>

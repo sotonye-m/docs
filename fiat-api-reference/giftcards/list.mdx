@@ -1,0 +1,48 @@
+---
+title: "List Gift Cards"
+description: "Browse available gift card products by country or category"
+---
+
+Returns all purchasable gift card products.
+
+```
+GET https://api.yativo.com/api/v1/giftcards
+```
+
+<ParamField query="country" type="string">
+  Filter by ISO 3166-1 alpha-2 country code (e.g. `US`, `BR`, `NG`).
+</ParamField>
+
+<ParamField query="category_id" type="number">
+  Filter by category ID from `GET /giftcards/categories`.
+</ParamField>
+
+<RequestExample>
+```bash US gift cards
+curl -X GET 'https://api.yativo.com/api/v1/giftcards?country=US' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Operators retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "name": "Amazon US",
+      "brand": "Amazon",
+      "country": "US",
+      "currency": "USD",
+      "min_amount": 1,
+      "max_amount": 500,
+      "fixed_amounts": [10, 25, 50, 100],
+      "category": "Shopping"
+    }
+  ]
+}
+```
+</ResponseExample>

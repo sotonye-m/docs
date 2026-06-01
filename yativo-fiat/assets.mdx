@@ -1,69 +1,23 @@
 ---
-title: "Assets"
-description: "Query supported assets and exchange rates for fiat operations"
+title: "Currencies & Assets"
+description: "Discover supported currencies, exchange rates, and payment corridors"
 ---
 
-Assets represent the currencies and payment rails available on the Yativo platform. Use these endpoints to discover what's supported and to get live exchange rates before executing transfers.
-
-<Accordion title="Type Definitions">
-```typescript
-interface Asset {
-  code: string;
-  name: string;
-  symbol: string;
-  type: "fiat";
-  countries: string[];
-  is_send_enabled: boolean;
-  is_receive_enabled: boolean;
-}
-
-interface ExchangeRate {
-  from: string;
-  to: string;
-  rate: string;
-  inverse_rate: string;
-  timestamp: string;
-}
-
-interface ConvertRequest {
-  from: string;
-  to: string;
-  amount: number;
-}
-
-interface ConvertResponse {
-  from: string;
-  to: string;
-  from_amount: string;
-  to_amount: string;
-  rate: string;
-  fee: string;
-  expires_at: string;
-}
-```
-</Accordion>
+Yativo supports a growing list of fiat currencies across payment corridors in Latin America, North America, Europe, and Africa. Use the endpoints on this page to discover what's available before building your integration.
 
 ---
 
-## List assets
+## Supported Currencies
 
-Get all assets (currencies) available on the platform.
+Returns all currencies available on the platform.
 
 ```
-GET /assets
+GET /currencies/all
 ```
-
-<ParamField query="type" type="string">
-  Filter by asset type. Currently `fiat`.
-</ParamField>
-
-<ParamField query="country" type="string">
-  Filter by supported country (ISO 3166-1 alpha-2).
-</ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://api.yativo.com/api/assets' \
+curl -X GET 'https://api.yativo.com/api/v1/currencies/all' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -72,34 +26,18 @@ curl -X GET 'https://api.yativo.com/api/assets' \
 ```json Success
 {
   "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
   "data": [
-    {
-      "code": "BRL",
-      "name": "Brazilian Real",
-      "symbol": "R$",
-      "type": "fiat",
-      "countries": ["BR"],
-      "is_send_enabled": true,
-      "is_receive_enabled": true
-    },
-    {
-      "code": "MXN",
-      "name": "Mexican Peso",
-      "symbol": "$",
-      "type": "fiat",
-      "countries": ["MX"],
-      "is_send_enabled": true,
-      "is_receive_enabled": true
-    },
-    {
-      "code": "USD",
-      "name": "US Dollar",
-      "symbol": "$",
-      "type": "fiat",
-      "countries": ["US"],
-      "is_send_enabled": true,
-      "is_receive_enabled": true
-    }
+    { "code": "USD", "name": "US Dollar", "symbol": "$" },
+    { "code": "EUR", "name": "Euro", "symbol": "€" },
+    { "code": "BRL", "name": "Brazilian Real", "symbol": "R$" },
+    { "code": "MXN", "name": "Mexican Peso", "symbol": "$" },
+    { "code": "CLP", "name": "Chilean Peso", "symbol": "$" },
+    { "code": "PEN", "name": "Peruvian Sol", "symbol": "S/" },
+    { "code": "COP", "name": "Colombian Peso", "symbol": "$" },
+    { "code": "ARS", "name": "Argentine Peso", "symbol": "$" },
+    { "code": "NGN", "name": "Nigerian Naira", "symbol": "₦" }
   ]
 }
 ```
@@ -107,74 +45,54 @@ curl -X GET 'https://api.yativo.com/api/assets' \
 
 ---
 
-## Get exchange rate
+## Payout Countries
 
-Retrieve the current exchange rate between two currencies.
+Returns the list of countries where outbound payments are supported:
 
 ```
-GET /assets/rate?from={code}&to={code}
+GET /payment-methods/payout/countries
 ```
 
-<ParamField query="from" type="string" required>
-  Source currency code (e.g. `USD`).
-</ParamField>
-
-<ParamField query="to" type="string" required>
-  Target currency code (e.g. `BRL`).
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/assets/rate?from=USD&to=BRL' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "from": "USD",
-    "to": "BRL",
-    "rate": "4.9820",
-    "inverse_rate": "0.2007",
-    "timestamp": "2026-03-26T10:00:00Z"
-  }
-}
+GET /payment-methods/payout?country={iso3}
 ```
-</ResponseExample>
+
+Use the second endpoint with a country's ISO 3166-1 alpha-3 code to see the specific payment rails available (SPEI, PIX, bank transfer, etc.) and their required form fields. See [Send Money](/yativo-fiat/send-money) for the full flow.
 
 ---
 
-## Convert amount
+## Payin Countries
 
-Get the converted amount and applicable fee for a specific conversion, without executing a transfer.
+Returns the list of countries where incoming deposits are supported:
 
 ```
-POST /assets/convert
+GET /payment-methods/payin/countries
 ```
 
-<ParamField body="from" type="string" required>
-  Source currency code.
-</ParamField>
+```
+GET /payment-methods/payin/currency?country={iso2}
+```
 
-<ParamField body="to" type="string" required>
-  Target currency code.
-</ParamField>
+Use the second endpoint to retrieve payin-specific currencies and gateways for a country. See [Accept Payments](/yativo-fiat/accept-payments) for the full deposit flow.
 
-<ParamField body="amount" type="number" required>
-  The amount in the source currency to convert.
-</ParamField>
+---
+
+## Exchange Rates
+
+Get a live exchange rate with fee breakdown:
+
+```
+POST /exchange-rate
+```
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://api.yativo.com/api/assets/convert' \
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "from": "USD",
-    "to": "BRL",
+    "from_currency": "USD",
+    "to_currency": "BRL",
     "amount": 1000
   }'
 ```
@@ -184,19 +102,51 @@ curl -X POST 'https://api.yativo.com/api/assets/convert' \
 ```json Success
 {
   "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
   "data": {
-    "from": "USD",
-    "to": "BRL",
-    "from_amount": "1000.00",
-    "to_amount": "4974.00",
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "from_currency": "USD",
+    "to_currency": "BRL",
     "rate": "4.9820",
-    "fee": "8.00",
-    "expires_at": "2026-03-26T10:05:00Z"
+    "amount": "1000.00",
+    "payout_data": {
+      "total_transaction_fee_in_from_currency": "15.00",
+      "total_transaction_fee_in_to_currency": "74.73",
+      "customer_sent_amount": "1000.00",
+      "customer_receive_amount": "4907.27",
+      "customer_total_amount_due": "1015.00"
+    }
   }
 }
 ```
 </ResponseExample>
 
 <Note>
-  Conversion quotes are indicative. To lock in a rate and initiate a transfer, use [Send Money](/yativo-fiat/send-money) — the quote step there returns a binding rate ID valid for 60 seconds.
+  This endpoint is rate-limited to 30 requests per minute. To lock in a rate for payment execution, use `POST /sendmoney/quote` — see [Exchange Rates](/yativo-fiat/exchange-rates) for a full comparison.
 </Note>
+
+---
+
+## Verification Locations
+
+Returns countries where Yativo supports customer KYC/KYB onboarding:
+
+```
+GET /auth/verification-locations
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/auth/verification-locations' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Next Steps
+
+- [Exchange Rates](/yativo-fiat/exchange-rates) — live rates and locked quotes
+- [Accept Payments](/yativo-fiat/accept-payments) — deposit flows by country
+- [Send Money](/yativo-fiat/send-money) — payout flows by country

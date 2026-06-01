@@ -52,7 +52,7 @@ async function createCustomer(token, customerData) {
       customer_name: customerData.name,
       customer_email: customerData.email,
       customer_phone: customerData.phone,
-      customer_country: customerData.country, // ISO 3166-1 alpha-3
+      customer_country: customerData.country, // ISO 3166-1 alpha-2, e.g. "US"
       customer_type: 'individual', // or 'business'
     }),
   });
@@ -111,8 +111,6 @@ function pollKycStatus(token, customerId, onComplete) {
       const data = await response.json();
       const status = data.data?.status;
 
-      console.log('KYC status:', status);
-
       if (status === 'approved') {
         clearInterval(intervalId);
         onComplete({ success: true, status, isVaApproved: data.data.is_va_approved });
@@ -169,11 +167,15 @@ function PersonalInfoStep({ onNext }) {
     birth_date: '',
     nationality: '',
     taxId: '',
+    // Nigerian nationals only
+    bvn: '',
+    nin: '',
   });
 
-  const handleChange = (field) => (e) => {
+  const handleChange = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
-  };
+
+  const isNigerian = form.nationality === 'NG';
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onNext(form); }}>
@@ -196,11 +198,11 @@ function PersonalInfoStep({ onNext }) {
         onChange={handleChange('email')}
         required
       />
+      {/* Gender accepts only "male" or "female" */}
       <select value={form.gender} onChange={handleChange('gender')} required>
         <option value="">Select gender</option>
         <option value="male">Male</option>
         <option value="female">Female</option>
-        <option value="other">Other</option>
       </select>
       <input
         type="date"
@@ -208,17 +210,89 @@ function PersonalInfoStep({ onNext }) {
         onChange={handleChange('birth_date')}
         required
       />
-      {/* Add remaining fields... */}
+      <input
+        placeholder="Nationality (ISO alpha-2, e.g. US)"
+        value={form.nationality}
+        onChange={handleChange('nationality')}
+        required
+      />
+      {isNigerian && (
+        <>
+          <input
+            placeholder="BVN (11 digits)"
+            value={form.bvn}
+            onChange={handleChange('bvn')}
+            maxLength={11}
+            required
+          />
+          <input
+            placeholder="NIN (11 digits)"
+            value={form.nin}
+            onChange={handleChange('nin')}
+            maxLength={11}
+            required
+          />
+        </>
+      )}
       <button type="submit">Next</button>
     </form>
   );
 }
 ```
 
-### Step 2: Collect residential address with proof of address
+<Note>
+  When `nationality` is `"NG"`, both `bvn` and `nin` (each exactly 11 digits) are required by the API. Show these fields conditionally based on the selected nationality.
+</Note>
+
+### Step 2: Upload files via Yativo storage
+
+Before submitting the KYC form, upload document images using Yativo's storage endpoint. This keeps payloads small and avoids base64 encoding large files.
+
+```javascript
+/**
+ * Upload a file to Yativo storage and return a hosted URL
+ * to pass into the KYC payload.
+ */
+async function uploadDocument(token, file) {
+  const formData = new FormData();
+  formData.append('document', file); // field name must be "document"
+
+  const response = await fetch('https://api.yativo.com/api/v1/storage/upload', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      // Do NOT set Content-Type — let the browser set it with the boundary
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.message || 'File upload failed');
+  }
+
+  const data = await response.json();
+  return data.data.url; // Pass this URL in the KYC payload
+}
+```
+
+You can also pass files as base64-encoded strings inline, but the hosted URL approach is recommended for files over ~500 KB.
+
+```javascript
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result); // Returns data URL (base64)
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+```
+
+### Step 3: Collect residential address
 
 ```jsx
-function AddressStep({ onNext }) {
+function AddressStep({ token, onNext }) {
   const [address, setAddress] = useState({
     street_line_1: '',
     city: '',
@@ -227,21 +301,23 @@ function AddressStep({ onNext }) {
     country: '',
   });
   const [proofFile, setProofFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const base64 = await fileToBase64(file);
-      setProofFile(base64);
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadDocument(token, file);
+      setProofFile(url);
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onNext({
-      ...address,
-      proof_of_address_file: proofFile,
-    });
+    onNext({ ...address, proof_of_address_file: proofFile });
   };
 
   return (
@@ -259,7 +335,7 @@ function AddressStep({ onNext }) {
         required
       />
       <input
-        placeholder="State"
+        placeholder="State / Province"
         value={address.state}
         onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value }))}
         required
@@ -271,20 +347,23 @@ function AddressStep({ onNext }) {
         required
       />
       <label>
-        Proof of Address (utility bill, bank statement)
+        Proof of Address (utility bill, bank statement, etc.)
         <input type="file" accept="image/*,.pdf" onChange={handleFileChange} required />
-        {proofFile && <img src={proofFile} alt="Preview" style={{ maxWidth: '200px' }} />}
+        {uploading && <span>Uploading…</span>}
+        {proofFile && <p>✓ Uploaded</p>}
       </label>
-      <button type="submit">Next</button>
+      <button type="submit" disabled={uploading || !proofFile}>
+        Next
+      </button>
     </form>
   );
 }
 ```
 
-### Step 3: Collect ID document
+### Step 4: Collect ID document
 
 ```jsx
-function IdDocumentStep({ onNext }) {
+function IdDocumentStep({ token, onNext }) {
   const [doc, setDoc] = useState({
     type: 'passport',
     issuing_country: '',
@@ -295,13 +374,14 @@ function IdDocumentStep({ onNext }) {
     image_back_file: null,
   });
 
-  const handleFileChange = (field) => async (e) => {
+  const handleFileUpload = (field) => async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const base64 = await fileToBase64(file);
-      setDoc((d) => ({ ...d, [field]: base64 }));
-    }
+    if (!file) return;
+    const url = await uploadDocument(token, file);
+    setDoc((d) => ({ ...d, [field]: url }));
   };
+
+  const needsBack = doc.type !== 'passport';
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onNext([doc]); }}>
@@ -311,7 +391,7 @@ function IdDocumentStep({ onNext }) {
       >
         <option value="passport">Passport</option>
         <option value="national_id">National ID</option>
-        <option value="drivers_license">Driver's License</option>
+        <option value="other">Other</option>
       </select>
       <input
         placeholder="Document Number"
@@ -319,28 +399,34 @@ function IdDocumentStep({ onNext }) {
         onChange={(e) => setDoc((d) => ({ ...d, number: e.target.value }))}
         required
       />
-      <input
-        type="date"
-        placeholder="Date Issued"
-        value={doc.date_issued}
-        onChange={(e) => setDoc((d) => ({ ...d, date_issued: e.target.value }))}
-        required
-      />
-      <input
-        type="date"
-        placeholder="Expiration Date"
-        value={doc.expiration_date}
-        onChange={(e) => setDoc((d) => ({ ...d, expiration_date: e.target.value }))}
-        required
-      />
+      <label>
+        Issue Date
+        <input
+          type="date"
+          value={doc.date_issued}
+          onChange={(e) => setDoc((d) => ({ ...d, date_issued: e.target.value }))}
+          required
+        />
+      </label>
+      <label>
+        Expiration Date
+        <input
+          type="date"
+          value={doc.expiration_date}
+          onChange={(e) => setDoc((d) => ({ ...d, expiration_date: e.target.value }))}
+          required
+        />
+      </label>
       <label>
         Front of Document
-        <input type="file" accept="image/*" onChange={handleFileChange('image_front_file')} required />
+        <input type="file" accept="image/*,.pdf" onChange={handleFileUpload('image_front_file')} required />
+        {doc.image_front_file && <p>✓ Front uploaded</p>}
       </label>
-      {doc.type !== 'passport' && (
+      {needsBack && (
         <label>
           Back of Document
-          <input type="file" accept="image/*" onChange={handleFileChange('image_back_file')} required />
+          <input type="file" accept="image/*,.pdf" onChange={handleFileUpload('image_back_file')} required />
+          {doc.image_back_file && <p>✓ Back uploaded</p>}
         </label>
       )}
       <button type="submit">Next</button>
@@ -349,7 +435,11 @@ function IdDocumentStep({ onNext }) {
 }
 ```
 
-### Step 4: Collect financial information
+### Step 5: Collect financial information
+
+<Warning>
+  The values sent to the API are snake_case identifiers, not display labels. Use the exact values below — the API will reject any other values.
+</Warning>
 
 ```jsx
 function FinancialInfoStep({ onNext }) {
@@ -358,9 +448,12 @@ function FinancialInfoStep({ onNext }) {
     most_recent_occupation_code: '',
     source_of_funds: '',
     account_purpose: '',
+    account_purpose_other: '',
     expected_monthly_payments_usd: '',
     acting_as_intermediary: false,
   });
+
+  const showOtherPurpose = financial.account_purpose === 'other';
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onNext(financial); }}>
@@ -370,61 +463,116 @@ function FinancialInfoStep({ onNext }) {
         required
       >
         <option value="">Employment Status</option>
-        <option value="Employed">Employed</option>
+        <option value="employed">Employed</option>
         <option value="self_employed">Self-Employed</option>
         <option value="unemployed">Unemployed</option>
         <option value="retired">Retired</option>
         <option value="student">Student</option>
+        <option value="homemaker">Homemaker</option>
+        <option value="exempt">Exempt</option>
       </select>
+
       <select
         value={financial.source_of_funds}
         onChange={(e) => setFinancial((f) => ({ ...f, source_of_funds: e.target.value }))}
         required
       >
         <option value="">Source of Funds</option>
-        <option value="Salary">Salary</option>
-        <option value="Business">Business</option>
-        <option value="Investment">Investment</option>
-        <option value="Savings">Savings</option>
+        <option value="salary">Salary</option>
+        <option value="business_income">Business Income</option>
+        <option value="company_funds">Company Funds</option>
+        <option value="savings">Savings</option>
+        <option value="investments_loans">Investments / Loans</option>
+        <option value="inheritance">Inheritance</option>
+        <option value="gifts">Gifts</option>
+        <option value="government_benefits">Government Benefits</option>
+        <option value="pension_retirement">Pension / Retirement</option>
+        <option value="sale_of_assets_real_estate">Sale of Assets / Real Estate</option>
+        <option value="ecommerce_reseller">E-commerce / Reseller</option>
+        <option value="gambling_proceeds">Gambling Proceeds</option>
+        <option value="someone_elses_funds">Someone Else's Funds</option>
       </select>
+
+      <select
+        value={financial.account_purpose}
+        onChange={(e) => setFinancial((f) => ({ ...f, account_purpose: e.target.value }))}
+        required
+      >
+        <option value="">Account Purpose</option>
+        <option value="receive_salary">Receive Salary</option>
+        <option value="business_transactions">Business Transactions</option>
+        <option value="purchase_goods_and_services">Purchase Goods & Services</option>
+        <option value="personal_or_living_expenses">Personal / Living Expenses</option>
+        <option value="payments_to_friends_or_family_abroad">Payments to Friends/Family Abroad</option>
+        <option value="receive_payment_for_freelancing">Receive Payment for Freelancing</option>
+        <option value="investment_purposes">Investment Purposes</option>
+        <option value="protect_wealth">Protect Wealth</option>
+        <option value="ecommerce_retail_payments">E-commerce / Retail Payments</option>
+        <option value="operating_a_company">Operating a Company</option>
+        <option value="charitable_donations">Charitable Donations</option>
+        <option value="other">Other</option>
+      </select>
+
+      {showOtherPurpose && (
+        <input
+          placeholder="Describe your account purpose"
+          value={financial.account_purpose_other}
+          onChange={(e) => setFinancial((f) => ({ ...f, account_purpose_other: e.target.value }))}
+          required
+        />
+      )}
+
       <select
         value={financial.expected_monthly_payments_usd}
         onChange={(e) => setFinancial((f) => ({ ...f, expected_monthly_payments_usd: e.target.value }))}
         required
       >
-        <option value="">Expected Monthly Volume</option>
-        <option value="LessThan5K">Less than $5,000</option>
-        <option value="5KTo50K">$5,000 – $50,000</option>
-        <option value="MoreThan50K">More than $50,000</option>
+        <option value="">Expected Monthly Volume (USD)</option>
+        <option value="0_4999">Less than $5,000</option>
+        <option value="5000_9999">$5,000 – $9,999</option>
+        <option value="10000_49999">$10,000 – $49,999</option>
+        <option value="50000_plus">$50,000 or more</option>
       </select>
-      <button type="submit">Submit KYC</button>
+
+      <label>
+        <input
+          type="checkbox"
+          checked={financial.acting_as_intermediary}
+          onChange={(e) => setFinancial((f) => ({ ...f, acting_as_intermediary: e.target.checked }))}
+        />
+        Acting on behalf of a third party
+      </label>
+
+      <button type="submit">Next</button>
     </form>
   );
 }
 ```
 
-### Step 5: Submit to the KYC API
+### Step 6: Submit to the KYC API
 
 ```javascript
 async function submitKYC(token, customerId, formData) {
   const payload = {
     customer_id: customerId,
-    type: 'individual',
-    // Optional: include signed_agreement_id when your workflow tracks agreement records.
-    signed_agreement_id: formData.signedAgreementId,
+    // Personal info
     ...formData.personal,
+    // Residential address (including proof_of_address_file URL)
     residential_address: formData.address,
+    // ID documents (array of document objects with uploaded URLs)
     identifying_information: formData.documents,
+    // Financial & purpose
     ...formData.financial,
-    // Include only when account_purpose is "other".
-    account_purpose_other: formData.financial.account_purpose_other,
-    usd_virtual_account: true,
-    eur_virtual_account: false,
-    eurde_virtual_account: false,
-    gbp_virtual_account: false,
-    // Optional: pass a Sumsub token when using Sumsub-assisted liveness checks.
-    sumsub_token: formData.sumsubToken,
+    // Selfie image URL from storage upload
+    selfie_image: formData.selfieUrl,
+    // Supporting documents
+    uploaded_documents: formData.supportingDocs,
   };
+
+  // Remove account_purpose_other unless account_purpose is "other"
+  if (payload.account_purpose !== 'other') {
+    delete payload.account_purpose_other;
+  }
 
   const response = await fetch('https://kyc.yativo.com/api/individual-kyc/submit', {
     method: 'POST',
@@ -445,41 +593,9 @@ async function submitKYC(token, customerId, formData) {
 }
 ```
 
----
-
-## File handling
-
-### Converting file uploads to base64
-
-```javascript
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result); // Returns data URL (base64)
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-```
-
-### Using file URLs instead
-
-If you have your own cloud storage (S3, GCS, Cloudinary, etc.), you can upload the file there first and pass the public URL to the KYC API instead of base64. This reduces payload size significantly.
-
-```javascript
-async function uploadToStorage(file) {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const response = await fetch('https://your-storage-api.com/upload', {
-    method: 'POST',
-    body: formData,
-  });
-
-  const { url } = await response.json();
-  return url; // Use this URL in the KYC payload
-}
-```
+<Note>
+  The KYC submission endpoint is at `https://kyc.yativo.com`, not the main API. The `Authorization` bearer token is the same one issued by `POST /auth/login`.
+</Note>
 
 ---
 
@@ -492,6 +608,7 @@ interface KycStatusResult {
   status: KycStatus;
   isVaApproved: boolean;
   rejectionReasons: string[];
+  kycLink: string;
 }
 
 function pollKycStatus(
@@ -511,6 +628,7 @@ function pollKycStatus(
       status: data.status,
       isVaApproved: data.is_va_approved,
       rejectionReasons: data.kyc_rejection_reasons ?? [],
+      kycLink: data.kyc_link,
     };
 
     onStatusChange(result);
@@ -564,7 +682,7 @@ app.post('/webhooks/yativo', (req, res) => {
 
   if (event === 'customer.kyc.rejected') {
     const { customer_id, rejection_reasons } = data;
-    // Notify customer, provide re-submission link
+    // Notify customer, share kyc_link for re-submission
     notifyCustomerRejection(customer_id, rejection_reasons);
   }
 
@@ -578,31 +696,31 @@ app.post('/webhooks/yativo', (req, res) => {
 
 **Progress indicators**
 
-Show a clear multi-step progress bar so customers know where they are in the verification process. For example: Personal Info → Address → Document Upload → Financial Info → Review.
+Show a clear multi-step progress bar so customers know where they are in the verification process. For individual KYC: Personal Info → Address & Documents → ID Document → Financial Info → Review & Submit.
 
 **Clear error messages**
 
-Display field-level validation errors immediately, not just on submit. Translate API error codes into user-friendly language.
+Display field-level validation errors immediately, not just on submit. Translate API error codes into user-friendly language. The API returns a `data` object with field-specific error arrays on `422` responses.
 
 **Document upload previews**
 
 Always show a preview of uploaded documents before submission. This helps customers catch blurry or incorrectly oriented images before they fail review.
 
 ```jsx
-function DocumentPreview({ file, label }) {
-  if (!file) return null;
-  const isImage = file.startsWith('data:image');
+function DocumentPreview({ url, label }) {
+  if (!url) return null;
+  const isImage = /\.(jpg|jpeg|png|heic)$/i.test(url) || url.startsWith('data:image');
   return (
     <div style={{ marginTop: 8 }}>
       <p style={{ fontSize: 12, color: '#666' }}>{label} preview:</p>
       {isImage ? (
         <img
-          src={file}
+          src={url}
           alt={label}
           style={{ maxWidth: 300, maxHeight: 200, objectFit: 'contain', border: '1px solid #ddd' }}
         />
       ) : (
-        <p style={{ color: '#888' }}>PDF uploaded</p>
+        <p style={{ color: '#888' }}>📄 PDF uploaded</p>
       )}
     </div>
   );
@@ -627,12 +745,13 @@ For the selfie step, display on-screen guidelines (oval face outline, lighting t
 
 **Retry on rejection**
 
-When a customer's KYC is rejected, share the Yativo hosted link from the `kyc_link` field in the status response so they can re-submit with corrections.
+When a customer's KYC is rejected, use the `kyc_link` from the status response to send them back to the hosted flow for corrections.
 
 ```javascript
 const statusData = await getKycStatus(token, customerId);
 if (statusData.status === 'rejected') {
   const kycLink = statusData.kyc_link;
   // Show retry button that redirects to kycLink
+  console.log('Rejection reasons:', statusData.kyc_rejection_reasons);
 }
 ```

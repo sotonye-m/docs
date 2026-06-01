@@ -11,13 +11,18 @@ Virtual accounts give each customer a unique local bank account number. When a p
 
 ## Supported Rails
 
-| Currency | Rail | Countries |
-|----------|------|-----------|
-| `BRL` | PIX | Brazil |
-| `MXNBASE` / `MXN` | SPEI | Mexico |
-| `USDBASE` | ACH / Wire | United States |
-| `EURBASE` / `EURDE` | SEPA | Europe / Germany |
-| `MXNUSD` | SPEI (USD-settled) | Mexico |
+| Currency | Rail | Countries | Extra required fields |
+|----------|------|-----------|---|
+| `BRL` | PIX | Brazil | — |
+| `MXNBASE` / `MXN` | SPEI | Mexico | — |
+| `USDBASE` | ACH / Wire | United States | — |
+| `EURBASE` / `EURDE` | SEPA | Europe / Germany | — |
+| `MXNUSD` | SPEI (USD-settled) | Mexico | — |
+| `ARS` | CVU/CBU | Argentina | `document_id`, `document_type` |
+
+<Note>
+  Argentina accounts require the customer's `document_id` and `document_type` (`"CUIT"`, `"CUIL"`, or `"CDI"`) in the create request. The customer must be an Argentine resident. See the [Regional Payouts guide](/guides/regional-payouts) for details.
+</Note>
 
 <Accordion title="Type Definitions">
 ```typescript
@@ -248,6 +253,149 @@ DELETE /business/virtual-account/delete-virtual-account/{id}
 <RequestExample>
 ```bash cURL
 curl -X DELETE 'https://api.yativo.com/api/v1/business/virtual-account/delete-virtual-account/va_xxxxxx' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+---
+
+## Bulk Account Creation
+
+Create virtual accounts for multiple customers in a single request. Useful when onboarding a batch of pre-verified customers.
+
+```
+POST https://api.yativo.com/api/v1/business/virtual-account/bulk-account-creation
+```
+
+<Note>
+  Requires `Idempotency-Key` header. All customers must have `is_va_approved: true` before bulk creation.
+</Note>
+
+<ParamField body="accounts" type="array" required>
+  Array of account creation objects.
+
+  <Expandable title="accounts item fields">
+    <ParamField body="customer_id" type="string" required>
+      The KYC-approved customer UUID.
+    </ParamField>
+    <ParamField body="currency" type="string" required>
+      Currency for the virtual account (e.g. `"BRL"`, `"MXNBASE"`, `"USDBASE"`).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/bulk-account-creation' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: bulk-va-june-001' \
+  -d '{
+    "accounts": [
+      { "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2", "currency": "BRL" },
+      { "customer_id": "c586066b-0f29-468f-b775-15483871a202", "currency": "BRL" },
+      { "customer_id": "f7e8d9c0-1a2b-3c4d-5e6f-7a8b9c0d1e2f", "currency": "MXNBASE" }
+    ]
+  }'
+```
+</RequestExample>
+
+---
+
+## Enable / Disable Virtual Account
+
+Suspend or reactivate a virtual account without deleting it. Suspended accounts stop receiving deposits.
+
+```
+PUT https://api.yativo.com/api/v1/business/virtual-account/enable_disable_virtual_account
+```
+
+<ParamField body="account_id" type="string" required>
+  The virtual account ID.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  `"enable"` or `"disable"`.
+</ParamField>
+
+<RequestExample>
+```bash Disable
+curl -X PUT 'https://api.yativo.com/api/v1/business/virtual-account/enable_disable_virtual_account' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: disable-va-001' \
+  -d '{
+    "account_id": "va_xxxxxx",
+    "action": "disable"
+  }'
+```
+
+```bash Re-enable
+curl -X PUT 'https://api.yativo.com/api/v1/business/virtual-account/enable_disable_virtual_account' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: enable-va-001' \
+  -d '{
+    "account_id": "va_xxxxxx",
+    "action": "enable"
+  }'
+```
+</RequestExample>
+
+---
+
+## Refund a Payin
+
+Reverse a specific incoming deposit back to the sender. Use this when a customer payment needs to be returned.
+
+```
+POST https://api.yativo.com/api/v1/business/virtual-account/refundPayin/{externalId}
+```
+
+<ParamField path="externalId" type="string" required>
+  The external transaction ID of the deposit to refund. This is returned in the `virtual_account.deposit` webhook payload.
+</ParamField>
+
+<Note>
+  Requires `Idempotency-Key` header. Refunds are subject to the availability of the underlying payment rail — not all currencies support reversals.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/refundPayin/TXNMP2HK81BHJ' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: refund-TXNMP2HK81BHJ-001'
+```
+</RequestExample>
+
+---
+
+## List All Virtual Account History
+
+Retrieve transaction history across all virtual accounts (not scoped to a specific account number):
+
+```
+GET https://api.yativo.com/api/v1/business/virtual-account/histories
+```
+
+---
+
+## Get Customer Virtual Accounts
+
+List all virtual accounts belonging to a specific customer:
+
+```
+GET https://api.yativo.com/api/v1/business/virtual-account/customer/accounts/{customerId}
+```
+
+<ParamField path="customerId" type="string" required>
+  The customer UUID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/customer/accounts/da44a3e6-eb5d-429f-8d17-357aa5a6cdf2' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
