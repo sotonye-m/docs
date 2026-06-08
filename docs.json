@@ -388,6 +388,7 @@
             "group": "Tutorials",
             "pages": [
               "guides/overview",
+              "guides/neobanking",
               "guides/accept-crypto-payments",
               "guides/payment-gateway",
               "guides/agentic-wallets",

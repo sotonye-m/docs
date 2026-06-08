@@ -1,0 +1,169 @@
+---
+title: "Neobanking Features"
+description: "A complete guide to using Yativo's built-in banking features — virtual accounts, send money, gift cards, transaction history, and monthly statements"
+---
+
+<Note>
+  This guide covers the **Yativo app** banking features available to end users. It is not an API integration guide — all functionality described here is managed through the Yativo interface, no code required.
+</Note>
+
+Yativo combines crypto asset management with a full set of neobanking features: receive real money into a virtual account, send funds globally, purchase and redeem gift cards, browse your full transaction history, and receive detailed monthly statements across all your accounts.
+
+---
+
+## Virtual Account Deposits
+
+Your Yativo account includes a **virtual account (VA)** — a real bank account number you can share with anyone to receive local currency deposits. When funds arrive, they are credited to your Yativo balance and you receive an email confirmation.
+
+### How it works
+
+1. Open the **Deposit** section of the app.
+2. Copy your virtual account number and routing details.
+3. Share those details with whoever is sending you money (a client, employer, family member, etc.).
+4. The sender transfers using their local bank — no crypto knowledge required on their end.
+5. Funds appear in your Yativo balance within the typical settlement window for your region (usually minutes to a few hours).
+6. You receive an email notification confirming the amount, currency, and sender name.
+
+### Supported regions
+
+Virtual accounts are available in supported countries. Your account details are shown in your local currency and banking format (account number + sort code, IBAN, CLABE, etc.) based on your registered country.
+
+<Tip>
+  Virtual accounts are ideal for receiving freelance payments, cross-border invoices, or regular income without asking senders to learn about crypto.
+</Tip>
+
+---
+
+## Send Money
+
+The **Send Money** feature lets you transfer funds to recipients in supported countries using your USDC wallet balance. Yativo converts at a competitive rate and delivers via local bank rails (SPEI, PIX, mobile money, and more).
+
+### Single transfer
+
+<Steps>
+  <Step title="Choose a beneficiary">
+    Search for an existing beneficiary or create a new one. Enter the recipient's name, country, bank details, and the payment method for their region.
+  </Step>
+  <Step title="Enter the amount">
+    Type the amount you want to send. Select the source currency (your wallet currency) and the destination currency. Yativo shows you the converted amount the recipient will receive before you confirm.
+  </Step>
+  <Step title="Review and confirm">
+    Review the transfer details — amount, recipient, rate, and fees — then confirm. Your USDC balance is debited immediately.
+  </Step>
+  <Step title="Track the transfer">
+    Open **Transaction History → Fiat Transfers** to see real-time status updates: initiated → processing → completed. Tap any row to open the tracking timeline.
+  </Step>
+</Steps>
+
+### Bulk transfer
+
+Need to pay multiple people at once? Use the **Bulk Transfer** tab:
+
+1. Click **Add Recipient** for each person.
+2. Fill in their name, country, currency, amount, and optional note.
+3. Click **Send All** — Yativo processes each transfer sequentially and updates the status of each row in real time.
+
+<Warning>
+  Each recipient in a bulk transfer is processed individually. A failure on one row does not cancel the others. Review any failed rows and retry if needed.
+</Warning>
+
+---
+
+## Gift Cards
+
+Yativo lets you **purchase** gift cards for popular brands across dozens of countries, and **redeem** them directly within the app — all funded from your USDC balance.
+
+### Purchasing a gift card
+
+1. Navigate to **Gift Cards** in the app.
+2. Filter by country and/or category (Entertainment, Food & Drink, Shopping, Gaming, etc.).
+3. Select a product and choose your denomination.
+4. Review the total USDC cost and confirm the purchase.
+5. Your redemption code (and PIN, if applicable) appears immediately on screen and is also emailed to you.
+
+### Redeeming a gift card
+
+If a gift card can be redeemed directly inside Yativo (e.g., to top up a balance):
+
+1. Go to **Gift Cards → Redeem**.
+2. Enter the transaction ID from your purchase or paste your redemption code.
+3. Confirm — the value is applied instantly.
+
+<Tip>
+  Check your email after every purchase — the confirmation contains your full redemption code, PIN, expiry date, and redemption instructions in one place.
+</Tip>
+
+---
+
+## Transaction History
+
+The **Transactions** page gives you a unified view of all activity across your Yativo accounts.
+
+### Crypto transactions
+
+The **All Crypto** tab shows every on-chain event on your wallets: deposits, withdrawals, swaps, and gas. Each row displays:
+
+- Date and time
+- Asset and chain
+- Amount
+- Transaction hash (truncated) for blockchain verification
+- Status (Confirmed, Pending, Failed)
+
+### Fiat transfers
+
+The **Fiat Transfers** tab covers all send money and payout activity. Click any row to open the **tracking drawer** — a slide-in panel with:
+
+- Full transfer details (recipient, amount, destination country)
+- A live timeline showing each processing step
+- Current status badge
+
+### Filters and export
+
+Use the search bar and status filters to narrow results. Click **Download PDF** to generate a printable statement of the currently visible transactions.
+
+---
+
+## Monthly Statements
+
+On the **1st of every month**, Yativo automatically emails you four separate account statements covering the previous calendar month:
+
+| Statement | What it covers |
+|-----------|---------------|
+| **Crypto Wallet Statement** | All on-chain deposits, withdrawals, and swaps across your crypto assets |
+| **Card Statement** | All card spend, merchant transactions, and top-ups |
+| **Banking Statement** | Send Money and payout transactions funded from your USDC wallet |
+| **Gift Card Statement** | All gift card purchases and redemptions |
+
+### What's included
+
+Each statement email contains:
+
+- A **summary section** — total received, total sent, transaction count for the period
+- A **full transaction table** — date, type, amount, recipient/merchant, and status for every transaction
+- A printable, professional layout suitable for your records or accounting
+
+<Note>
+  Statements are only sent for account types that had activity in the month. If you had no card transactions in a given month, no card statement is sent.
+</Note>
+
+### Statement period
+
+Statements cover **the previous full calendar month**. The statement sent on 1 February covers 1 January – 31 January, and so on.
+
+### Opting out
+
+Statements are part of Yativo's account notifications. You can manage your notification preferences from the **Settings → Notifications** section of the app.
+
+---
+
+## Summary
+
+| Feature | Where to find it |
+|---------|-----------------|
+| Virtual account details | Deposit → Virtual Account |
+| Send money (single or bulk) | Send Money |
+| Gift card purchase | Gift Cards → Shop |
+| Gift card redemption | Gift Cards → Redeem |
+| Crypto transaction history | Transactions → All Crypto |
+| Fiat transfer history + tracking | Transactions → Fiat Transfers |
+| Monthly statements | Delivered by email on the 1st of each month |
