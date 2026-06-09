@@ -537,6 +537,7 @@ All amount fields are provided as both a decimal float and an integer in minor u
     "wallet_balance_minor": 99950,
     "currency": "USD",
     "tx_hash": "0xa8739436c44460738a4147055530e450f8b55694e2448875e72cd25eb29cd21f",
+    "solana_tx_hash": "5KtP3MzXYZABCDE1234567890abcdef12345678901234567890abcdef1234567",
     "status": "settled"
   }
 }
@@ -553,7 +554,8 @@ All amount fields are provided as both a decimal float and an integer in minor u
 | `wallet_balance_minor` | integer \| null | `wallet_balance` in minor units (cents). |
 | `currency` | string | Wallet currency (e.g. `USD`, `EUR`, `GBP`). Present on `settled` events. |
 | `settlement_id` | string \| null | Bridge or settlement transaction reference. |
-| `tx_hash` | string \| null | On-chain blockchain transaction hash. Present on both `processing` and `settled` events when the underlying chain transaction is known. Use this for reconciliation and accounting. |
+| `tx_hash` | string \| null | On-chain transaction hash of the final settlement. On `processing` events this is the Solana deposit signature. On `settled` events this is the Gnosis chain transaction hash. |
+| `solana_tx_hash` | string \| null | Original Solana deposit transaction signature that triggered the bridge. Present on `settled` events for `USDC_SOL` deposits; `null` for all other deposit paths. |
 
 ### `master_wallet.swap`
 
