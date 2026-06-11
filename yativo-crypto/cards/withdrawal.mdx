@@ -15,7 +15,7 @@ A card withdrawal moves USDC from a customer's card account (their on-chain Safe
 2. Yativo fetches EIP-712 typed data from the card network, signs it server-side using the card's EOA, and submits the transaction
 3. A delay relay holds the transaction for **~3 minutes** — the card is temporarily frozen during this window
 4. Once the delay elapses the transfer executes on-chain and your master wallet is credited
-5. Two webhooks fire: `card.withdrawal.settled` (customer-scoped) and `master_wallet.withdrawal` (issuer-scoped)
+5. Three webhooks fire: `card.withdrawal.settled` (customer-scoped), `master_wallet.withdrawal` (issuer-scoped), and `master_wallet.deposit` (master wallet balance credited)
 
 ---
 
@@ -52,14 +52,19 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/withdraw-from-car
 </RequestExample>
 
 <ResponseExample>
-```json 200 Submitted
+```json 200 Initiated
 {
   "success": true,
-  "message": "Withdrawal submitted. Processing through delay relay (~3 min). Cards are temporarily frozen.",
-  "withdrawal_id": "wth_01HXABCDEF...",
-  "amount": 1,
-  "currency": "USD",
-  "status": "processing"
+  "data": {
+    "withdrawal_id": "cwd_1748012345678_x7k2qp",
+    "yativo_card_id": "yativo_card_customer_...",
+    "amount": 1.00,
+    "amount_minor": 100,
+    "currency": "USD",
+    "status": "initiated",
+    "message": "Withdrawal initiated. Funds will arrive in your master wallet shortly.",
+    "estimated_settlement_at": "2026-05-23T14:35:00.000Z"
+  }
 }
 ```
 
@@ -106,7 +111,7 @@ Fires when the withdrawal confirms on-chain. Scoped to the customer's card accou
 
 ```json
 {
-  "event": "card.withdrawal.settled",
+  "type": "card.withdrawal.settled",
   "data": {
     "withdrawal_id": "wth_01HXABCDEF...",
     "yativo_card_id": "yativo_card_customer_...",
@@ -117,10 +122,14 @@ Fires when the withdrawal confirms on-chain. Scoped to the customer's card accou
     "card_balance_minor": 1087,
     "tx_hash": "0xabc123...",
     "status": "settled",
-    "timestamp": "2026-05-28T13:10:45.000Z"
+    "settled_at": "2026-05-28T13:10:45.000Z"
   }
 }
 ```
+
+<Note>
+  `card_balance` and `card_balance_minor` are present when the settlement notification arrives directly from the card network. They are absent when settlement is confirmed via the on-chain fallback path — handle both shapes defensively.
+</Note>
 
 ### `master_wallet.withdrawal`
 
@@ -128,27 +137,55 @@ Fires at the same time as `card.withdrawal.settled`. Scoped to your issuer maste
 
 ```json
 {
-  "event": "master_wallet.withdrawal",
+  "type": "master_wallet.withdrawal",
   "data": {
     "withdrawal_id": "wth_01HXABCDEF...",
     "yativo_card_id": "yativo_card_customer_...",
     "amount": 1.00,
     "amount_minor": 100,
     "currency": "USD",
+    "destination_address": "0x920abe21a7eb39DF5f5A42AE97F4Cd061d5AdD9b",
     "tx_hash": "0xabc123...",
     "status": "settled",
-    "timestamp": "2026-05-28T13:10:45.000Z"
+    "settled_at": "2026-05-28T13:10:45.000Z"
+  }
+}
+```
+
+### `master_wallet.deposit`
+
+Also fires when the withdrawal settles — the master wallet balance increase from the returned funds is treated as a deposit credit. This event carries the on-chain `tx_hash` and includes `withdrawal_id` and `yativo_card_id` so you can correlate it back to the originating withdrawal.
+
+<Note>
+  You will receive **both** `master_wallet.withdrawal` and `master_wallet.deposit` for each settled withdrawal. `master_wallet.withdrawal` is the semantic event for a withdrawal completing. `master_wallet.deposit` reflects the master wallet balance increasing and is the event that carries the confirmed on-chain transaction hash. Use `withdrawal_id` to join them.
+</Note>
+
+```json
+{
+  "type": "master_wallet.deposit",
+  "data": {
+    "settlement_id": "6a294844e71b09a046f28103",
+    "withdrawal_id": "wth_01HXABCDEF...",
+    "yativo_card_id": "yativo_card_customer_...",
+    "deposit_amount": 1.00,
+    "deposit_amount_minor": 100,
+    "wallet_balance": 101.00,
+    "wallet_balance_minor": 10100,
+    "currency": "USD",
+    "tx_hash": "0xabc123...",
+    "solana_tx_hash": null,
+    "status": "settled"
   }
 }
 ```
 
 ### `card.withdrawal.failed`
 
-Fires if the on-chain transaction is rejected.
+Fires if the on-chain transaction is rejected. No funds are moved.
 
 ```json
 {
-  "event": "card.withdrawal.failed",
+  "type": "card.withdrawal.failed",
   "data": {
     "withdrawal_id": "wth_01HXABCDEF...",
     "yativo_card_id": "yativo_card_customer_...",
@@ -156,8 +193,7 @@ Fires if the on-chain transaction is rejected.
     "amount_minor": 100,
     "currency": "USD",
     "reason": "Transaction reverted",
-    "status": "failed",
-    "timestamp": "2026-05-28T13:10:45.000Z"
+    "status": "failed"
   }
 }
 ```
@@ -168,7 +204,7 @@ Fires when the card balance changes — including after a withdrawal settles.
 
 ```json
 {
-  "event": "customer.balance.updated",
+  "type": "customer.balance.updated",
   "data": {
     "yativo_card_id": "yativo_card_customer_...",
     "ledger_balance": 10.87,
@@ -183,7 +219,7 @@ Fires when the card balance changes — including after a withdrawal settles.
 }
 ```
 
-Subscribe to all four events to handle the full lifecycle:
+Subscribe to all five events to handle the full lifecycle:
 
 ```json
 {
@@ -191,6 +227,7 @@ Subscribe to all four events to handle the full lifecycle:
     "card.withdrawal.settled",
     "card.withdrawal.failed",
     "master_wallet.withdrawal",
+    "master_wallet.deposit",
     "customer.balance.updated"
   ]
 }

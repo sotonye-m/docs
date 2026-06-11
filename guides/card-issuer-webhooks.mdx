@@ -102,7 +102,10 @@ async function handleCardIssuerEvent(event: any) {
 
   switch (event.type) {
     case "master_wallet.deposit":
-      await handleMasterWalletDeposit(event.data);
+      if (event.data.status === "settled") {
+        // withdrawal_id present → this credit is from a card withdrawal settling
+        await handleMasterWalletDeposit(event.data);
+      }
       break;
     case "customer.funded":
       await handleCustomerFunded(event.data);
@@ -524,7 +527,7 @@ All amount fields are provided as both a decimal float and an integer in minor u
 }
 ```
 
-```json Settled
+```json Settled — regular deposit
 {
   "id": "evt_1747058520000_def456",
   "type": "master_wallet.deposit",
@@ -543,6 +546,31 @@ All amount fields are provided as both a decimal float and an integer in minor u
 }
 ```
 
+```json Settled — withdrawal credit
+{
+  "id": "evt_1747058520000_ghi012",
+  "type": "master_wallet.deposit",
+  "created_at": "2026-05-12T14:02:00.000Z",
+  "data": {
+    "settlement_id": "6a294844e71b09a046f28103",
+    "withdrawal_id": "cwd_1748012345678_x7k2qp",
+    "yativo_card_id": "yativo_card_customer_...",
+    "deposit_amount": 50.0,
+    "deposit_amount_minor": 5000,
+    "wallet_balance": 550.0,
+    "wallet_balance_minor": 55000,
+    "currency": "USD",
+    "tx_hash": "0xa8739436c44460738a4147055530e450f8b55694e2448875e72cd25eb29cd21f",
+    "solana_tx_hash": null,
+    "status": "settled"
+  }
+}
+```
+
+<Note>
+  `master_wallet.deposit` fires for two distinct scenarios: (1) a new deposit credited to your master wallet, and (2) funds returning to your master wallet when a card withdrawal settles. In the withdrawal case the payload includes `withdrawal_id` and `yativo_card_id` so you can correlate it with the originating `card.withdrawal.settled` and `master_wallet.withdrawal` events. When `withdrawal_id` is absent the event is a regular deposit.
+</Note>
+
 | Field | Type | Description |
 |-------|------|-------------|
 | `source_currency` | string | Currency/chain of the incoming deposit (e.g. `USDC_SOL`, `USDC_XDC`). Present on `processing` events only. |
@@ -550,12 +578,14 @@ All amount fields are provided as both a decimal float and an integer in minor u
 | `source_amount_minor` | integer | `source_amount` in minor units (cents). |
 | `deposit_amount` | float | Amount that arrived in your wallet after settlement. Present on `settled` events. |
 | `deposit_amount_minor` | integer | `deposit_amount` in minor units (cents). |
-| `wallet_balance` | float \| null | Total USD wallet balance after this deposit. Present on `settled` events fired from on-chain confirmation; `null` when fired from bridge completion. |
+| `wallet_balance` | float \| null | Total wallet balance after this credit. Present on `settled` events. |
 | `wallet_balance_minor` | integer \| null | `wallet_balance` in minor units (cents). |
 | `currency` | string | Wallet currency (e.g. `USD`, `EUR`, `GBP`). Present on `settled` events. |
-| `settlement_id` | string \| null | Bridge or settlement transaction reference. |
-| `tx_hash` | string \| null | On-chain transaction hash of the final settlement. On `processing` events this is the Solana deposit signature. On `settled` events this is the Gnosis chain transaction hash. |
-| `solana_tx_hash` | string \| null | Original Solana deposit transaction signature that triggered the bridge. Present on `settled` events for `USDC_SOL` deposits; `null` for all other deposit paths. |
+| `settlement_id` | string \| null | Internal settlement or bridge transaction reference. |
+| `tx_hash` | string \| null | On-chain transaction hash of the final settlement. |
+| `solana_tx_hash` | string \| null | Original Solana deposit transaction signature. Present for `USDC_SOL` deposits; `null` for all other paths including withdrawal credits. |
+| `withdrawal_id` | string \| null | Present only when this event is a withdrawal credit. Matches the `withdrawal_id` on the corresponding `card.withdrawal.settled` and `master_wallet.withdrawal` events. |
+| `yativo_card_id` | string \| null | Present only when this event is a withdrawal credit. Identifies the card the funds were withdrawn from. |
 
 ### `master_wallet.swap`
 
@@ -1079,11 +1109,22 @@ async function handleCardIssuerEvent(event: {
   switch (event.type) {
     case "master_wallet.deposit":
       if (event.data.status === "settled") {
-        // Always act on settled — this is the authoritative confirmation.
-        // One-step deposits fire only settled; two-step deposits fire processing then settled.
-        await updateMasterWalletBalance(event.data.settled_amount, event.data.currency);
+        if (event.data.withdrawal_id) {
+          // Withdrawal credit — funds returned from a card withdrawal.
+          // withdrawal_id links this back to the originating card.withdrawal.settled event.
+          await recordWithdrawalCredit(event.data.withdrawal_id, event.data.deposit_amount, event.data.tx_hash);
+        } else {
+          // Regular deposit — new funds arriving from an external source.
+          await updateMasterWalletBalance(event.data.deposit_amount, event.data.currency);
+        }
       }
-      // Ignore processing events until settled
+      // Ignore processing events — act only on settled
+      break;
+
+    case "master_wallet.withdrawal":
+      // Companion to card.withdrawal.settled — confirms master wallet was credited.
+      // Use for master wallet reconciliation; withdrawal_id is the join key.
+      await recordMasterWalletWithdrawalSettled(event.data.withdrawal_id, event.data.tx_hash);
       break;
 
     case "customer.funded":
