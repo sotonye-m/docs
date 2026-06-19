@@ -365,7 +365,7 @@ Authorization: Bearer YOUR_TOKEN
     "kyc_status": "approved",
     "flow_status": "kyc_completed",
     "terms_accepted": true,
-    "next_step": "source_of_funds"
+    "next_step": "create_virtual_card"
   }
 }
 ```
@@ -396,7 +396,19 @@ Authorization: Bearer YOUR_TOKEN
 Poll every 10 seconds for up to 10 minutes. When `next_step` is `retry_kyc`, fetch a fresh `kyc-link?refresh=true` and redirect the customer.
 
 <Tip>
-  When KYC transitions to `approved`, Yativo automatically provisions the customer's card wallet in the background. You do not need to call any wallet deployment endpoint — move directly to Source of Funds.
+  When KYC transitions to `approved`, two things happen automatically:
+
+  1. **Terms are accepted** on behalf of the customer. You will see `"terms_accepted": true` in this response. There is no customer-side `accept-terms` endpoint — this happens silently. (The `POST /yativo-card/{id}/terms` endpoint only exists for own-account users, not for B2B customers.)
+
+  2. **The card wallet (Safe) is deployed in the background.** You do not need to call a wallet deployment endpoint. Deployment typically completes within 60 seconds.
+
+  If card creation later fails with a Safe-not-ready error, use the fallback endpoint to force-trigger or verify deployment — it is idempotent and safe to call even if already deployed:
+
+  ```bash
+  POST /v1/yativo-card/customers/{yativoCardId}/safe/deploy
+  ```
+
+  A `200` response with `"already_deployed": true` confirms the Safe is ready.
 </Tip>
 
 ---
@@ -1401,6 +1413,34 @@ Every API response in the customer lifecycle includes `data.next_step`. Use it t
 | Re-creating customer after OTP failure | Duplicate records | Call `resend-otp` on the existing `yativo_card_id` |
 | Calling `kyc-link` for `otp_requested` customers | `SESSION_EXPIRED` or wrong step | Ensure OTP is verified before requesting KYC link |
 | Assuming Safe deploy needs manual call | Extra API call, possible conflict | For customers: Safe deploys **automatically** after KYC approval |
+| Looking for a customer-side `accept-terms` endpoint | No such endpoint exists in the customer namespace | Terms are auto-accepted when KYC is approved. Check `terms_accepted: true` in the KYC status response. |
+| Treating `INITIALIZATION_FAILED` as a no-op on first call | Customer never progresses | See below — the record may have been created. Always retry and check for `CUSTOMER_CARD_ALREADY_ACTIVE`. |
+
+---
+
+### Handling `INITIALIZATION_FAILED` on Onboard
+
+`POST /customers/onboard` performs several steps internally (wallet generation, SIWE signing, OTP request, DB write). In rare cases — typically a transient database timeout or network issue — the API returns `500 INITIALIZATION_FAILED` even though the customer record **was** successfully created and the OTP email was already sent.
+
+**Recovery pattern:** Retry the onboard call with the same email (and `external_customer_id` if you use one). One of two things will happen:
+
+1. **Success (201)** — the first call truly failed end-to-end. A fresh customer record is created.
+2. **`CUSTOMER_CARD_ALREADY_ACTIVE` (409)** — the first call partially succeeded. The response includes the `yativo_card_id` and `next_step` so you can pick up exactly where you left off:
+
+```json 409 CUSTOMER_CARD_ALREADY_ACTIVE
+{
+  "success": false,
+  "error_code": "CUSTOMER_CARD_ALREADY_ACTIVE",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f1f..._1781875244343",
+    "flow_status": "otp_requested",
+    "next_step": "verify_otp",
+    "external_customer_id": "6126"
+  }
+}
+```
+
+Use the returned `yativo_card_id` to call `POST /customers/{yativoCardId}/verify-otp` (the OTP email was already delivered on the first call). Do **not** treat `CUSTOMER_CARD_ALREADY_ACTIVE` as an error — it is the system telling you the card exists and showing you how to continue.
 
 ---
 
@@ -1434,6 +1474,7 @@ Every API response in the customer lifecycle includes `data.next_step`. Use it t
 | **Resume stuck onboarding** | `POST` | `/v1/yativo-card/customers/{id}/resume` |
 | Get KYC link | `GET` | `/v1/yativo-card/customers/{id}/kyc-link` |
 | Poll KYC status | `GET` | `/v1/yativo-card/customers/{id}/kyc-status` |
+| **Deploy Safe (fallback)** | `POST` | `/v1/yativo-card/customers/{id}/safe/deploy` |
 | Get SoF questions | `GET` | `/v1/yativo-card/customers/{id}/source-of-funds` |
 | Submit SoF answers | `POST` | `/v1/yativo-card/customers/{id}/source-of-funds` |
 | Request phone OTP | `POST` | `/v1/yativo-card/customers/{id}/phone/request-verification` |

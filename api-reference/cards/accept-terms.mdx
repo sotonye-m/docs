@@ -10,7 +10,11 @@ authMethod: "bearer"
 </ParamField>
 
 <Note>
-  This endpoint must be called after KYC is approved and before creating a card. Accepting terms is a one-time action per user.
+  This endpoint is for **own-account users** (users onboarding their own Yativo Card via `POST /v1/yativo-card/onboard`).
+
+  In the **B2B Card Issuer flow**, there is no customer-side accept-terms endpoint. Terms are automatically accepted by the platform when the customer's KYC is first approved — you will see `"terms_accepted": true` in the KYC status response. No separate call is required.
+
+  For own-account users, this must be called after KYC is approved and before creating a card. Accepting terms is a one-time action per user.
 </Note>
 
 <RequestExample>
