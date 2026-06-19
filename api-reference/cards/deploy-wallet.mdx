@@ -12,7 +12,7 @@ authMethod: "bearer"
 <Note>
   The card wallet must be initialized before you can fund it or create cards. This is a one-time setup step that activates the on-chain wallet infrastructure for the card account.
 
-  **For B2B Card Issuer customers** (`/v1/yativo-card/customers/{yativoCardId}/safe/deploy`): you do **not** need to call this — the Safe is deployed automatically in the background when KYC is first approved. This endpoint is available as a fallback if you need to force-trigger or verify deployment. It is idempotent and safe to call even if the Safe is already deployed.
+  **For B2B Card Issuer customers** use the customer-scoped path: `/v1/yativo-card/customers/{yativoCardId}/safe/deploy`. Call this explicitly after KYC approval before proceeding to card creation. Even when the platform deploys the Safe automatically in the background, card creation checks the local DB state — not Gnosis Pay directly — so this call is needed to sync the record. It is idempotent: if already deployed you will receive `"already_deployed": true`.
 </Note>
 
 <RequestExample>
@@ -22,7 +22,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbC
   -H 'Content-Type: application/json'
 ```
 
-```bash B2B Customer (fallback)
+```bash B2B Customer
 curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/safe/deploy' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json'

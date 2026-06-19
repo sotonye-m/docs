@@ -29,12 +29,24 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbC
 <ResponseExample>
 ```json
 {
-  "status": "success",
+  "success": true,
   "message": "Terms accepted successfully",
   "data": {
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
     "terms_accepted": true,
-    "accepted_at": "2026-03-26T12:00:00Z",
-    "terms_version": "2026-01"
+    "version": "TOS_GENERAL_VERSION_1",
+    "accepted_at": "2026-04-25T12:00:00.000Z",
+    "legal_acceptances": {
+      "terms_and_conditions": true,
+      "privacy_policy": true,
+      "age_confirmation": true,
+      "issuer_disclosure": true,
+      "fees_disclosure": true,
+      "confirmed_at": "2026-04-25T12:00:00.000Z",
+      "policy_version": "2026-04",
+      "disclosure_version": "2026-04"
+    },
+    "legal_acceptances_complete": true
   }
 }
 ```

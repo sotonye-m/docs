@@ -262,7 +262,7 @@ Content-Type: application/json
     "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
     "customer_id": "6627f3a2c5d4e100123abcde",
     "external_customer_id": "usr_8821",
-    "email": "priya@yourapp.com",
+    "email_masked": "pr***@yourapp.com",
     "next_step": "verify_otp",
     "otp_expires_in_seconds": 600
   }
@@ -395,23 +395,23 @@ Authorization: Bearer YOUR_TOKEN
 
 Poll every 10 seconds for up to 10 minutes. When `next_step` is `retry_kyc`, fetch a fresh `kyc-link?refresh=true` and redirect the customer.
 
-<Tip>
-  When KYC transitions to `approved`, two things happen automatically:
+<Warning>
+  After KYC approval, you **must** call both of these endpoints before creating a card — regardless of whether the background operations appear to have succeeded:
 
-  When KYC transitions to `approved`, Yativo fires two background operations — both can fail silently. If they do, card creation will block with a specific error. Use these fallbacks:
-
-  **1. Terms acceptance** — auto-triggered at KYC approval. If card creation returns `LEGAL_ACCEPTANCE_REQUIRED`, manually accept terms using the customer's `yativo_card_id`:
+  **1. Accept terms:**
   ```bash
   POST /v1/yativo-card/{yativoCardId}/terms
   ```
-  This endpoint works for both own-account and customer cards — just supply the customer's `yativo_card_id` as the path parameter. It is idempotent.
+  Works for both own-account and customer cards — supply the customer's `yativo_card_id` as the path parameter. This is idempotent. Skipping it causes `LEGAL_ACCEPTANCE_REQUIRED` at card creation.
 
-  **2. Safe (card wallet) deployment** — auto-triggered at KYC approval. If card creation returns `SAFE_NOT_DEPLOYED`, manually trigger deployment:
+  **2. Confirm Safe deployment:**
   ```bash
   POST /v1/yativo-card/customers/{yativoCardId}/safe/deploy
   ```
-  A `200` with `"already_deployed": true` means the Safe is ready. A `202` means deployment was accepted and will complete within ~60 seconds.
-</Tip>
+  Even when the platform auto-deploys the Safe in the background, card creation checks the **local DB state**, not Gnosis Pay directly. Calling this endpoint syncs the deployment status to the DB. You will typically receive `"already_deployed": true` (meaning Gnosis Pay already has it — this call just ensures the DB record is updated). Skipping it causes `SAFE_NOT_DEPLOYED` at card creation.
+
+  Both calls are idempotent. Call them in order after KYC approval, then proceed to Source of Funds.
+</Warning>
 
 ---
 
@@ -528,12 +528,21 @@ Authorization: Bearer YOUR_TOKEN
 ```json Response 201
 {
   "success": true,
+  "message": "Virtual card created successfully",
   "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
     "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
     "card_type": "virtual",
     "status": "active",
-    "last_four": "0892",
-    "activated_at": "2026-04-25T14:35:41.418Z"
+    "status_code": 1000,
+    "status_name": "Active",
+    "activated_at": "2026-04-25T14:35:41.418Z",
+    "total_cards": 1,
+    "funding_wallet": {
+      "address": "3vQ7GqN8kKTb2mFCdHrE8TvBcJgR2XpLmWqNzYsKdPh",
+      "network": "solana",
+      "asset": "USDC"
+    }
   }
 }
 ```
@@ -1243,8 +1252,18 @@ Every operation that can fail returns a `data.next_step` field and a `data.actio
       │
       └─► kyc_completed
               │
-              ▼  (auto background — no action needed)
+              ▼  POST /v1/yativo-card/{id}/terms  (idempotent — always call after KYC)
+         terms_accepted
+              │
+              ▼  POST /customers/{id}/safe/deploy  (idempotent — syncs DB state)
          safe_deployed
+              │
+              ▼  GET /customers/{id}/source-of-funds → POST /customers/{id}/source-of-funds
+      source_of_funds_completed
+              │
+              ▼  POST /customers/{id}/phone/request-verification
+                 POST /customers/{id}/phone/verify
+         phone_verified
               │
               ▼  POST /customers/{id}/cards/virtual
           card_created
@@ -1394,7 +1413,7 @@ Every API response in the customer lifecycle includes `data.next_step`. Use it t
 | `kyc_link` | Open `kyc_url` or embed SDK |
 | `kyc_status` | Start polling `kyc-status` |
 | `retry_kyc` | KYC rejected — show reason, get new link, redirect customer |
-| `create_virtual_card` | KYC done, Safe deployed — call `POST /cards/virtual` |
+| `create_virtual_card` | KYC approved — complete remaining steps (terms, safe deploy, source of funds, phone verification) then call `POST /cards/virtual` |
 | `none` | Customer is fully active, no further action |
 | `null` | Intermediate state — call `GET /progress` for full picture |
 
@@ -1414,7 +1433,7 @@ Every API response in the customer lifecycle includes `data.next_step`. Use it t
 | Not handling `kyc_rejected` | Customer stuck in KYC loop | Detect rejection in `kyc-status`, fetch fresh link, re-direct |
 | Re-creating customer after OTP failure | Duplicate records | Call `resend-otp` on the existing `yativo_card_id` |
 | Calling `kyc-link` for `otp_requested` customers | `SESSION_EXPIRED` or wrong step | Ensure OTP is verified before requesting KYC link |
-| Assuming Safe deploy needs manual call | Extra API call, possible conflict | For customers: Safe deploys **automatically** after KYC approval |
+| Skipping explicit Safe deploy call after KYC | `SAFE_NOT_DEPLOYED` at card creation | Auto-deploy is async via background job and may not update the DB before card creation — call `POST /customers/{id}/safe/deploy` explicitly to sync DB state |
 | Card creation fails with `LEGAL_ACCEPTANCE_REQUIRED` | Terms auto-accept failed silently at KYC approval | Call `POST /v1/yativo-card/{yativoCardId}/terms` using the customer's `yativo_card_id` — works for customer cards, idempotent |
 | Treating `INITIALIZATION_FAILED` as a no-op on first call | Customer never progresses | See below — the record may have been created. Always retry and check for `CUSTOMER_CARD_ALREADY_ACTIVE`. |
 
@@ -1476,8 +1495,8 @@ Use the returned `yativo_card_id` to call `POST /customers/{yativoCardId}/verify
 | **Resume stuck onboarding** | `POST` | `/v1/yativo-card/customers/{id}/resume` |
 | Get KYC link | `GET` | `/v1/yativo-card/customers/{id}/kyc-link` |
 | Poll KYC status | `GET` | `/v1/yativo-card/customers/{id}/kyc-status` |
-| **Deploy Safe (fallback)** | `POST` | `/v1/yativo-card/customers/{id}/safe/deploy` |
-| **Accept terms (fallback)** | `POST` | `/v1/yativo-card/{yativoCardId}/terms` |
+| **Deploy Safe** (sync DB after KYC) | `POST` | `/v1/yativo-card/customers/{id}/safe/deploy` |
+| **Accept terms** (after KYC) | `POST` | `/v1/yativo-card/{yativoCardId}/terms` |
 | Get SoF questions | `GET` | `/v1/yativo-card/customers/{id}/source-of-funds` |
 | Submit SoF answers | `POST` | `/v1/yativo-card/customers/{id}/source-of-funds` |
 | Request phone OTP | `POST` | `/v1/yativo-card/customers/{id}/phone/request-verification` |
