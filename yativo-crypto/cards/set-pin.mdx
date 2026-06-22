@@ -5,7 +5,11 @@ description: "Let cardholders set or change their PIN through Yativo's hosted se
 
 Every card — virtual and physical — starts with `pin_set: false`. **Cardholders must set their PIN before card details (card number, CVV) can be viewed, and before chip-and-PIN or ATM transactions will work.**
 
-When you call the view-token endpoint and `pin_set` is `false`, the API returns a `422 PIN_NOT_SET` error with a ready-to-use `pin_setup_url`. Open that URL in an iframe or WebView and the cardholder can set their PIN immediately — then retry the view-token request once the webhook confirms.
+To let a cardholder set their PIN, call the view-token endpoint with `enabled_views: ["pin-set"]`. The API always returns **200 OK** with a `secure_view_url` for PIN setup — regardless of whether `pin_set` is `true` or `false`. Open that URL in an iframe or WebView and the cardholder can set (or change) their PIN directly.
+
+<Note>
+  The `422 PIN_NOT_SET` error only occurs when you request **card data or PIN reveal** (`enabled_views: ["data"]`, `["pin-view"]`) while `pin_set` is still `false`. It does **not** occur when requesting `["pin-set"]` to set the PIN.
+</Note>
 
 Card PINs are set and changed through Yativo's **hosted secure page**, powered by Gnosis Pay's Partner Secure Elements (PSE). The cardholder types their PIN directly inside a sandboxed iframe hosted by Yativo. The PIN never passes through your backend.
 
@@ -18,7 +22,7 @@ Card PINs are set and changed through Yativo's **hosted secure page**, powered b
     Call `POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/view-token` with `enabled_views: ["pin-set"]` for initial setup or PIN change, or `["pin-view"]` to reveal the current PIN. Pass your brand `theme` to customise the page.
   </Step>
   <Step title="You receive a secure_view_url">
-    The response includes a short-lived `secure_view_url` and the current `pin_set` status for that card.
+    The API returns **200 OK** with a short-lived `secure_view_url` and the current `pin_set` status. This always succeeds for `["pin-set"]` requests — even when `pin_set` is `false`.
   </Step>
   <Step title="Show the hosted page to the cardholder">
     Open the URL in an `<iframe>`, mobile WebView, or a new browser tab in your app. The cardholder enters and confirms their 4-digit PIN inside the hosted page.
@@ -116,7 +120,7 @@ const { data } = await response.json();
 </RequestExample>
 
 <ResponseExample>
-```json 200 OK
+```json 200 OK — PIN not yet set
 {
   "success": true,
   "data": {
@@ -126,7 +130,23 @@ const { data } = await response.json();
     "card_type": "virtual",
     "holder_name": "Jane Doe",
     "pin_set": false,
-    "enabled_views": ["pin"],
+    "enabled_views": ["pin-set"],
+    "requires_access_code": false
+  }
+}
+```
+
+```json 200 OK — PIN already set (change PIN)
+{
+  "success": true,
+  "data": {
+    "secure_view_url": "https://crypto-api.yativo.com/api/v1/yativo-card/view/eyJhbGci...",
+    "expires_at": "2026-05-18T12:05:00.000Z",
+    "last_four": "4291",
+    "card_type": "virtual",
+    "holder_name": "Jane Doe",
+    "pin_set": true,
+    "enabled_views": ["pin-set"],
     "requires_access_code": false
   }
 }

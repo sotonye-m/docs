@@ -151,7 +151,18 @@ const data = await response.json();
 
 ## Idempotency
 
-If you call this endpoint again with the same `external_customer_id` or the same `email` while an active session already exists, the API returns a `409` with the existing `yativo_card_id` instead of creating a duplicate. Use the returned ID to resume the onboarding flow.
+This endpoint is safe to retry. If you call it again with the same `email` or `external_customer_id` while a session is already active, the API returns the existing card rather than creating a duplicate.
+
+### Handling `CUSTOMER_CARD_ALREADY_ACTIVE`
+
+When you receive this error code, treat it as a resume signal — not a failure. The customer's card was already created and their OTP was already sent. Read `next_step` from `data` and continue the onboarding flow from there:
+
+| `next_step` | What to do next |
+|---|---|
+| `verify_otp` | OTP has been sent — call `POST /customers/{yativoCardId}/verify-otp` |
+| `kyc_link` | OTP verified — call `GET /customers/{yativoCardId}/kyc-link` |
+| `continue` | Resume from the current `flow_status` |
+| `none` | Customer is fully onboarded — no action needed |
 
 If the customer has already completed onboarding (`flow_status` is `active`, `safe_deployed`, or `kyc_approved`), the API returns `409 CUSTOMER_ALREADY_ONBOARDED` with `next_step: "none"` — no further action is needed for this customer.
 

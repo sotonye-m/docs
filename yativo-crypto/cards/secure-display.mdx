@@ -4,9 +4,11 @@ description: "Display sensitive card details and PIN in a secure hosted iframe �
 ---
 
 <Warning>
-  **Cardholders must set their PIN before card details can be viewed.**
+  **Cardholders must set their PIN before card details or PIN reveal can be viewed.**
 
-  If `pin_set` is `false` the API returns a `422 PIN_NOT_SET` error with a ready-to-use `pin_setup_url`. Open that URL so the cardholder can set their PIN, then retry the view-token request. See [Setting a Card PIN](/yativo-crypto/cards/set-pin).
+  If `pin_set` is `false` and you request `["data"]` or `["pin-view"]`, the API returns a `422 PIN_NOT_SET` error with a ready-to-use `pin_setup_url`. Open that URL so the cardholder can set their PIN, then retry the view-token request.
+
+  To **set** the PIN, call with `enabled_views: ["pin-set"]` — this always returns **200 OK** and `secure_view_url`, regardless of `pin_set` status. See [Setting a Card PIN](/yativo-crypto/cards/set-pin).
 </Warning>
 
 <Note>
@@ -18,8 +20,8 @@ description: "Display sensitive card details and PIN in a secure hosted iframe �
 Sensitive card data is never returned in plain API responses. Instead, Yativo hosts a secure card view page and provides you with a short-lived URL to embed in your application:
 
 1. Your backend calls `POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token`
-2. If `pin_set` is `false`, the API returns `PIN_NOT_SET` and a `pin_setup_url` — direct the cardholder there first
-3. Once PIN is set, Yativo returns a `secure_view_url` — a hosted, tokenized page
+2. If you request `["data"]` or `["pin-view"]` and `pin_set` is `false`, the API returns `PIN_NOT_SET` and a `pin_setup_url` — direct the cardholder there to set their PIN first. If you request `["pin-set"]`, you always receive a `secure_view_url` regardless of `pin_set` status.
+3. Yativo returns a `secure_view_url` — a hosted, tokenized page
 4. Your frontend embeds that URL in an `<iframe>`
 5. The hosted page renders the sensitive data directly — your application never touches the raw values
 
@@ -48,13 +50,15 @@ POST /yativo-card/{yativoCardId}/cards/{cardId}/view-token
 <ParamField body="enabled_views" type="array">
   Which views to enable on the hosted page. Accepted values:
 
-  | Value | Tab shown |
-  |---|---|
-  | `"data"` | Card number, CVV, expiry |
-  | `"pin-view"` | Reveal current PIN |
-  | `"pin-set"` | Set or change PIN |
+  | Value | Tab shown | Requires `pin_set: true`? |
+  |---|---|---|
+  | `"data"` | Card number, CVV, expiry | Yes — returns `422 PIN_NOT_SET` if PIN not set |
+  | `"pin-view"` | Reveal current PIN | Yes — returns `422 PIN_NOT_SET` if PIN not set |
+  | `"pin-set"` | Set or change PIN | **No** — always returns `200` so the cardholder can set their PIN |
 
-  Combine freely, e.g. `["data", "pin-view", "pin-set"]`. The page renders one tab per value.
+  The legacy value `"pin"` is accepted as an alias for `"pin-set"`.
+
+  Combine freely, e.g. `["data", "pin-view", "pin-set"]`. The page renders one tab per value. If `pin_set` is `false` and `"pin-set"` is **not** in the request, the API returns `422 PIN_NOT_SET`. Including `"pin-set"` in any request bypasses that gate — the token is issued so the cardholder can set their PIN.
 </ParamField>
 
 <ParamField body="access_code" type="string">
@@ -208,7 +212,7 @@ interface ViewTokenSuccess {
   requires_access_code: boolean;    // True if access_code was set; user must enter it before details are shown
 }
 
-interface ViewTokenPinNotSet {      // Returned when pin_set is false (HTTP 422)
+interface ViewTokenPinNotSet {      // Returned when pin_set is false AND enabled_views does NOT include "pin-set" (HTTP 422)
   pin_setup_url: string;            // Hosted PIN setup page — direct the cardholder here
   expires_at: string;
   last_four: string;
@@ -437,7 +441,9 @@ Pass an array with any combination:
 - `["data", "pin-view", "pin-set"]` — all three tabs
 
 <Note>
-  `pin_set` reflects the last known state from card activity webhooks. If `pin_set` is `false` the view-token request returns a `PIN_NOT_SET` error and a `pin_setup_url` — not a `secure_view_url`. Direct the cardholder to the setup URL, wait for the webhook confirmation, then retry.
+  `pin_set` reflects the last known state from card activity webhooks. If `pin_set` is `false` and you request `["data"]` or `["pin-view"]`, the API returns a `PIN_NOT_SET` error with a `pin_setup_url` — direct the cardholder there to set their PIN, then retry once the webhook confirms.
+
+  Requesting `["pin-set"]` always returns a `secure_view_url` (HTTP 200) regardless of `pin_set` — use this to present the PIN setup screen without checking `pin_set` first.
 </Note>
 
 ---
