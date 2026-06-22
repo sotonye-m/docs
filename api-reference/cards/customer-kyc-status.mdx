@@ -73,6 +73,9 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
 
 | Status | Meaning |
 |---|---|
-| `pending` | Verification in progress |
+| `pending` | Not yet started, or documents have been requested |
+| `in_progress` | Documents submitted — processing under review |
+| `pending_review` | Resubmission requested — customer must supply additional info |
 | `approved` | Identity verified — card wallet auto-provisioned, proceed to source of funds |
 | `rejected` | Verification failed — customer must restart onboarding |
+| `expired` | KYC session expired — re-initiate the KYC link |

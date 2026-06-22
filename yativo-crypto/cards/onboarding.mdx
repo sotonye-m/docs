@@ -6,7 +6,7 @@ description: "Complete the required onboarding steps before creating and using Y
 <Accordion title="TypeScript Type Definitions">
 ```typescript
 interface KYCStatus {
-  status: "not_started" | "pending" | "approved" | "rejected";
+  status: "pending" | "in_progress" | "pending_review" | "approved" | "rejected" | "expired";
   message?: string;
 }
 ```
@@ -110,10 +110,12 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/kyc-status' \
 
 | Status | Description |
 |---|---|
-| `pending` | KYC review is in progress. Poll again in a few minutes. |
+| `pending` | Not yet started, or documents requested. Poll again shortly. |
+| `in_progress` | Documents submitted — under review. Poll again in a few minutes. |
+| `pending_review` | Resubmission requested — user must supply additional info via the KYC link. |
 | `approved` | Identity verified. Proceed to Step 3. |
 | `rejected` | Verification failed. See `rejection_reason` for details. |
-| `requires_action` | Additional documents or information needed from the user. |
+| `expired` | KYC session expired — call the KYC link endpoint to restart. |
 
 <Warning>
   You cannot proceed past this step until the KYC status is `approved`. If the status is `rejected`, contact support to understand next steps.

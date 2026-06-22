@@ -17,7 +17,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd
 </RequestExample>
 
 <ResponseExample>
-```json
+```json 200 Approved
 {
   "success": true,
   "message": "KYC status retrieved",
@@ -29,4 +29,55 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd
   }
 }
 ```
+
+```json 200 In Progress
+{
+  "success": true,
+  "message": "KYC status retrieved",
+  "data": {
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "kyc_status": "in_progress",
+    "terms_accepted": false,
+    "next_step": null
+  }
+}
+```
+
+```json 200 Pending Review
+{
+  "success": true,
+  "message": "KYC status retrieved",
+  "data": {
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "kyc_status": "pending_review",
+    "terms_accepted": false,
+    "next_step": null
+  }
+}
+```
+
+```json 200 Rejected
+{
+  "success": true,
+  "message": "KYC status retrieved",
+  "data": {
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "kyc_status": "rejected",
+    "rejection_reason": "Document not accepted",
+    "terms_accepted": false,
+    "next_step": "retry_kyc"
+  }
+}
+```
 </ResponseExample>
+
+### KYC Status Values
+
+| Status | Meaning |
+|---|---|
+| `pending` | Not yet started, or documents have been requested |
+| `in_progress` | Documents submitted — processing under review |
+| `pending_review` | Resubmission requested — additional info needed |
+| `approved` | Identity verified — proceed to accept terms |
+| `rejected` | Verification failed — retry KYC |
+| `expired` | KYC session expired — re-initiate the KYC link |
