@@ -6,7 +6,10 @@ description: "Let a cardholder set their PIN through Yativo's secure hosted page
 Card PINs are set — and changed — through Yativo's **hosted secure page**, powered by the Gnosis Pay Partner Secure Elements (PSE) service. The cardholder types their PIN directly inside a sandboxed iframe. Your backend never receives or processes the PIN value.
 
 <Note>
-  The same `enabled_views: ["pin"]` view handles both **initial PIN setup** and **PIN changes**. Show it whenever a cardholder wants to set or update their PIN.
+  **First-time PIN setup and PIN changes use different response shapes.**
+
+  - **First-time setup** (`pin_set: false`): any call to `view-token` returns `422 PIN_NOT_SET`. The response body includes `data.pin_setup_url` — open that URL for PIN setup. You do not need to pass `enabled_views: ["pin"]`; the API auto-selects the PIN-setup view.
+  - **PIN change** (`pin_set: true`): call `view-token` with `enabled_views: ["pin"]`. You get `200` with `data.secure_view_url` — open that for PIN change.
 </Note>
 
 <Note>
@@ -17,21 +20,31 @@ Card PINs are set — and changed — through Yativo's **hosted secure page**, p
 
 ## How it works
 
+### First-time PIN setup (`pin_set: false`)
+
 <Steps>
-  <Step title="Your backend requests a PIN view token">
-    Call `POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/view-token` with `enabled_views: ["pin"]`.
+  <Step title="Call view-token (any enabled_views)">
+    Call `POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/view-token`. You do not need to pass `enabled_views: ["pin"]` — the API detects that the PIN is not set and overrides the view automatically.
   </Step>
-  <Step title="You receive a secure_view_url">
-    The response contains a short-lived `secure_view_url` that loads the hosted PIN-setting page.
+  <Step title="You receive 422 PIN_NOT_SET with pin_setup_url">
+    The API returns HTTP 422 with `error_code: "PIN_NOT_SET"`. The response body includes `data.pin_setup_url` — a short-lived URL pre-configured for PIN setup.
   </Step>
-  <Step title="Cardholder sets their PIN in the iframe">
-    Open the URL in an `<iframe>` or WebView. The cardholder enters and confirms their 4-digit PIN directly inside the hosted page. The PIN never leaves the PSE iframe.
+  <Step title="Open pin_setup_url in an iframe or WebView">
+    Pass `data.pin_setup_url` to your frontend. The cardholder enters and confirms their 4-digit PIN directly in the hosted page. The PIN never leaves the iframe.
   </Step>
   <Step title="Gnosis Pay fires a webhook">
-    Once the PIN is saved, Gnosis Pay sends a `physical.card.pin.changed` event to your webhook endpoint. Yativo updates `pin_set: true` on the card record automatically.
+    Once saved, Gnosis Pay sends a `physical.card.pin.changed` event. Yativo updates `pin_set: true` on the card record automatically.
   </Step>
-  <Step title="Card details are now accessible">
-    With `pin_set: true`, you can request a view token with `enabled_views: ["data"]` or `["data", "pin"]` to display the full card number and other details.
+</Steps>
+
+### PIN change (`pin_set: true`)
+
+<Steps>
+  <Step title="Call view-token with enabled_views: [&quot;pin&quot;]">
+    Call `POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/view-token` with `enabled_views: ["pin"]`.
+  </Step>
+  <Step title="You receive 200 with secure_view_url">
+    The API returns HTTP 200 with `data.secure_view_url` — open that in an iframe or WebView for the PIN change form.
   </Step>
 </Steps>
 
