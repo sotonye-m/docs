@@ -48,7 +48,8 @@ Pass `"events": ["*"]` to receive all event types. Other management endpoints:
 | `DELETE` | `/v1/yativo-card/webhooks/:webhookId` | Delete subscription |
 | `POST` | `/v1/yativo-card/webhooks/:webhookId/rotate-secret` | Rotate signing secret |
 | `GET` | `/v1/yativo-card/webhooks/:webhookId/deliveries` | Delivery history for one webhook |
-| `GET` | `/v1/yativo-card/webhooks/deliveries/all` | All deliveries across webhooks |
+| `GET` | `/v1/yativo-card/webhooks/deliveries/all` | All deliveries across all webhooks |
+| `GET` | `/v1/yativo-card/webhooks/deliveries/:deliveryId` | Single delivery detail (full payload + attempt log) |
 | `POST` | `/v1/yativo-card/webhooks/deliveries/:deliveryId/retry` | Retry a failed delivery |
 
 ## Event categories
@@ -330,6 +331,47 @@ function verifyWebhook(rawBody, signature, timestamp, secret) {
 <Warning>
   Always verify the signature before trusting the payload. Use `express.raw({ type: 'application/json' })` (not `express.json()`) so you have the raw bytes for verification.
 </Warning>
+
+## Delivery history
+
+Both delivery history endpoints accept the same query parameters:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `limit` | number | `50` | Number of records to return. Maximum `100`. |
+| `offset` | number | `0` | Number of records to skip — use for pagination. |
+| `status` | string | — | Filter by delivery status: `success` or `failed`. |
+| `eventType` | string | — | Filter by event type, e.g. `card.transaction.created`. |
+
+Results are sorted newest first.
+
+```bash Examples
+# Last 30 deliveries
+GET /v1/yativo-card/webhooks/deliveries/all?limit=30
+
+# Only failed deliveries
+GET /v1/yativo-card/webhooks/deliveries/all?status=failed
+
+# Failed transaction events, most recent 20
+GET /v1/yativo-card/webhooks/deliveries/all?status=failed&eventType=card.transaction.created&limit=20
+
+# Failed deliveries for one specific webhook
+GET /v1/yativo-card/webhooks/{webhookId}/deliveries?status=failed
+```
+
+Each record in the response includes:
+
+| Field | Description |
+|---|---|
+| `delivery_id` | ID used to fetch details or trigger a manual retry |
+| `event_type` | The event that triggered this delivery |
+| `status` | `success` or `failed` |
+| `attempt_count` | How many delivery attempts have been made |
+| `last_response_code` | HTTP status code from your endpoint on the last attempt |
+| `delivered_at` | Timestamp of successful delivery (`null` if still failing) |
+| `created_at` | When the delivery was first attempted |
+
+To see the full payload and per-attempt log for a delivery, call `GET /v1/yativo-card/webhooks/deliveries/:deliveryId`.
 
 ## Retry policy
 
