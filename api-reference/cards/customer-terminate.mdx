@@ -1,7 +1,7 @@
 ---
-title: "Terminate Customer Card"
+title: "Void Customer Card"
 api: "POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/void"
-description: "Permanently terminate a customer's card. This action is irreversible."
+description: "Permanently void a customer's virtual card. This action is irreversible and only applies to virtual cards."
 authMethod: "bearer"
 ---
 
@@ -14,12 +14,11 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField path="cardId" type="string" required>
-  The card ID to terminate.
+  The virtual card ID to void.
 </ParamField>
 
 <Warning>
-  Card termination is permanent and irreversible. The customer must go through full card
-  creation again if they need a new card.
+  Voiding is permanent and irreversible — the card is cancelled on the card network immediately. Only **virtual cards** can be voided. For physical cards, use [Freeze](/api-reference/cards/customer-freeze) to block transactions instead.
 </Warning>
 
 <RequestExample>
@@ -34,12 +33,29 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
 ```json 200 OK
 {
   "success": true,
-  "message": "Card terminated successfully",
+  "message": "Card marked as void successfully",
   "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
     "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
-    "status": "Terminated",
-    "terminated_at": "2026-04-01T14:00:00.000Z"
+    "is_void": true,
+    "voided_at": "2026-04-01T14:00:00.000Z"
   }
+}
+```
+
+```json 422 Physical card
+{
+  "success": false,
+  "error_code": "VIRTUAL_CARD_ONLY",
+  "message": "Only virtual cards can be voided"
+}
+```
+
+```json 422 Already voided
+{
+  "success": false,
+  "error_code": "CARD_ALREADY_VOIDED",
+  "message": "Card is already voided"
 }
 ```
 </ResponseExample>

@@ -1,0 +1,53 @@
+---
+title: "Report Customer Card Stolen"
+api: "POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/stolen"
+description: "Permanently block a customer's card by reporting it as stolen. Works on both virtual and physical cards."
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="yativoCardId" type="string" required>
+  The customer's `yativo_card_id`.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The card ID to report as stolen.
+</ParamField>
+
+<Warning>
+  This action is **permanent and irreversible**. Once a card is marked stolen it cannot be reactivated. Use [Freeze](/api-reference/cards/customer-freeze) if you need a reversible block.
+</Warning>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/cards/afeb85fe-02f8-48da-b61e-84ad02704167/stolen' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "message": "Card marked as stolen successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
+    "is_stolen": true,
+    "reported_at": "2026-06-23T10:00:00.000Z"
+  }
+}
+```
+
+```json 409 Already stolen
+{
+  "success": false,
+  "error_code": "CARD_ALREADY_STOLEN",
+  "message": "Card is already marked as stolen"
+}
+```
+</ResponseExample>

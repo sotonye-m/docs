@@ -477,12 +477,14 @@ Content-Type: application/json
 }
 ```
 
-### Terminate a Card (irreversible)
+### Void a Card (irreversible, virtual only)
 
 ```bash
 POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/void
 Authorization: Bearer YOUR_TOKEN
 ```
+
+Permanently cancels a virtual card on the card network. Physical cards cannot be voided — use freeze to block transactions instead.
 
 ---
 
@@ -505,5 +507,5 @@ Authorization: Bearer YOUR_TOKEN
 | Get deposit address | `GET` | `/v1/yativo-card/{id}/wallet/funding-address` |
 | Freeze card | `POST` | `/v1/yativo-card/{id}/cards/{cardId}/freeze` |
 | Unfreeze card | `POST` | `/v1/yativo-card/{id}/cards/{cardId}/unfreeze` |
-| Terminate card | `POST` | `/v1/yativo-card/{id}/cards/{cardId}/void` |
+| Void card (virtual only) | `POST` | `/v1/yativo-card/{id}/cards/{cardId}/void` |
 | View transactions | `GET` | `/v1/yativo-card/{id}/transactions` |

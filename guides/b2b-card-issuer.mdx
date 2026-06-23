@@ -1508,7 +1508,9 @@ Use the returned `yativo_card_id` to call `POST /customers/{yativoCardId}/verify
 | Check onboarding progress | `GET` | `/v1/yativo-card/customers/{id}/progress` |
 | Freeze card | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/freeze` |
 | Unfreeze card | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/unfreeze` |
-| Terminate card | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/void` |
+| Void card (virtual only) | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/void` |
+| Report card lost | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/lost` |
+| Report card stolen | `POST` | `/v1/yativo-card/customers/{id}/cards/{cardId}/stolen` |
 | Get transactions | `GET` | `/v1/yativo-card/customers/{id}/cards/{cardId}/transactions` |
 | Get spending limits | `GET` | `/v1/yativo-card/customers/{id}/wallet/limits` |
 | Set spending limit | `PUT` | `/v1/yativo-card/customers/{id}/wallet/limits` |
