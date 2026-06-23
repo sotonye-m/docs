@@ -1,21 +1,23 @@
 ---
 title: "Remove IP Address"
-description: "Remove an IP address from your allowlist"
+description: "Remove a specific IP address from your allowlist"
 ---
 
-Remove an IP from the allowlist. If this is the last entry, allowlisting is effectively disabled and all IPs will be permitted.
+Remove a single IP address from the allowlist. Pass the IP address itself as the path parameter.
 
 ```
-DELETE https://api.yativo.com/api/v1/ip/{id}
+DELETE https://api.yativo.com/api/v1/ip/{ipAddress}
 ```
 
-<ParamField path="id" type="string" required>
-  The IP record ID to remove.
+## Path parameters
+
+<ParamField path="ipAddress" type="string" required>
+  The IP address to remove (e.g. `203.0.113.10`).
 </ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X DELETE 'https://api.yativo.com/api/v1/ip/ip-a1b2c3' \
+curl -X DELETE 'https://api.yativo.com/api/v1/ip/203.0.113.10' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -23,17 +25,7 @@ curl -X DELETE 'https://api.yativo.com/api/v1/ip/ip-a1b2c3' \
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
-  "status_code": 200,
   "message": "IP address removed from whitelist and firewall."
-}
-```
-
-```json Not found
-{
-  "status": "error",
-  "status_code": 400,
-  "message": "IP address not found"
 }
 ```
 </ResponseExample>

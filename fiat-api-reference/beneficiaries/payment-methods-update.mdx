@@ -1,38 +1,53 @@
 ---
 title: "Update Payment Method"
-description: "Update account details for a saved beneficiary payment method"
+description: "Update a saved beneficiary payment method"
 ---
 
-Update the account details of an existing beneficiary payment method.
+Update an existing beneficiary payment method. All required fields must be provided — this is a full replacement of the payment method record.
 
 ```
-PUT /beneficiaries/payment-methods/update/{id}
+PUT /v1/beneficiaries/payment-methods/update/{id}
 ```
 
 <Note>
-  Requires `Idempotency-Key` header.
+  Requires an `Idempotency-Key` header.
 </Note>
 
 ## Path parameters
 
-<ParamField path="id" type="number" required>
-  The numeric ID of the beneficiary payment method to update.
+<ParamField path="id" type="string" required>
+  The ID of the beneficiary payment method to update.
 </ParamField>
 
 ## Request body
 
-<ParamField body="account_details" type="object" required>
-  Updated key/value pairs of account details. Must match the required fields for the payment method.
+<ParamField body="gateway_id" type="integer" required>
+  The ID of the payout method (gateway).
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Currency code for this payment method (e.g. `CLP`, `MXN`, `BRL`).
+</ParamField>
+
+<ParamField body="payment_data" type="object" required>
+  Updated key/value pairs of account details. Must include all fields required by the selected gateway.
+</ParamField>
+
+<ParamField body="nickname" type="string" required>
+  A label to identify this payment method.
 </ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/update/101' \
+curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/update/pm-a1b2c3d4-e5f6-7890-abcd-ef1234567890' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: update-pm-101-001' \
+  -H 'Idempotency-Key: pm-update-001' \
   -d '{
-    "account_details": {
+    "gateway_id": 42,
+    "currency": "CLP",
+    "nickname": "Maria Savings Account",
+    "payment_data": {
       "account_number": "98765432",
       "bank_code": "014",
       "account_type": "savings",
@@ -46,21 +61,20 @@ curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/update/
 ```json Success
 {
   "status": "success",
-  "status_code": 200,
-  "message": "Payment method updated successfully",
   "data": {
-    "id": 101,
-    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-    "payment_method_id": 42,
-    "method_name": "Bank Transfer",
+    "id": "pm-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "user_id": "usr-001",
+    "gateway_id": 42,
     "currency": "CLP",
-    "country": "CHL",
-    "account_details": {
+    "nickname": "Maria Savings Account",
+    "payment_data": {
       "account_number": "98765432",
       "bank_code": "014",
       "account_type": "savings",
       "rut": "12.345.678-9"
     },
+    "beneficiary_id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "created_at": "2026-04-02T10:30:00.000000Z",
     "updated_at": "2026-04-02T15:00:00.000000Z"
   }
 }

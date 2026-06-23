@@ -6,18 +6,18 @@ description: "Permanently delete a virtual account"
 Permanently deletes a virtual account. This action is irreversible.
 
 ```
-DELETE /business/virtual-account/delete-virtual-account/{id}
+DELETE /v1/business/virtual-account/delete-virtual-account/{account_id}
 ```
 
 ## Path Parameters
 
-<ParamField path="id" type="string" required>
-  The virtual account ID to delete.
+<ParamField path="account_id" type="string" required>
+  The ID of the virtual account to delete.
 </ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X DELETE 'https://api.yativo.com/api/v1/business/virtual-account/delete-virtual-account/va_xxxxxx' \
+curl -X DELETE 'https://api.yativo.com/api/v1/business/virtual-account/delete-virtual-account/acct_xxxxxx' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

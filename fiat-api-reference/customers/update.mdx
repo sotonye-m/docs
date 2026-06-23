@@ -3,14 +3,14 @@ title: "Update Customer"
 description: "Update an existing customer's profile information"
 ---
 
-Update mutable fields on a customer record. Only include the fields you want to change.
+Update a customer record. This is a **full replacement** — all required fields must be provided, even if you are only changing one of them.
 
 ```
 PUT https://api.yativo.com/api/v1/customer/{customer_id}
 ```
 
 <Note>
-  Requires `Idempotency-Key` header.
+  Requires an `Idempotency-Key` header.
 </Note>
 
 ## Path parameters
@@ -21,20 +21,28 @@ PUT https://api.yativo.com/api/v1/customer/{customer_id}
 
 ## Request body
 
-<ParamField body="customer_name" type="string">
-  Updated customer name.
+<ParamField body="customer_name" type="string" required>
+  Full name of the customer (individual) or legal business name (business).
 </ParamField>
 
-<ParamField body="customer_email" type="string">
-  Updated email address.
+<ParamField body="customer_email" type="string" required>
+  Customer's email address.
 </ParamField>
 
-<ParamField body="customer_phone" type="string">
-  Updated phone number in E.164 format.
+<ParamField body="customer_phone" type="string" required>
+  Customer's phone number.
 </ParamField>
 
-<ParamField body="customer_country" type="string">
-  Updated country in ISO 3166-1 alpha-3 format.
+<ParamField body="customer_country" type="string" required>
+  Customer's country in ISO 3166-1 alpha-3 format (e.g. `USA`, `BRA`, `MEX`).
+</ParamField>
+
+<ParamField body="customer_address" type="object" required>
+  Customer's address details.
+</ParamField>
+
+<ParamField body="customer_id" type="string" required>
+  The customer ID. Must match an existing customer record.
 </ParamField>
 
 <RequestExample>
@@ -44,7 +52,17 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-1548
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: update-customer-alex-smith-002' \
   -d '{
-    "customer_phone": "+15559876543"
+    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_name": "Alex Smith",
+    "customer_email": "alex.smith@example.com",
+    "customer_phone": "+15559876543",
+    "customer_country": "USA",
+    "customer_address": {
+      "street": "123 Main St",
+      "city": "New York",
+      "state": "NY",
+      "postal_code": "10001"
+    }
   }'
 ```
 </RequestExample>
@@ -56,6 +74,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-1548
   "status_code": 200,
   "message": "Customer updated successfully",
   "data": {
+    "id": 1,
     "customer_id": "c586066b-0f29-468f-b775-15483871a202",
     "customer_name": "Alex Smith",
     "customer_email": "alex.smith@example.com",
@@ -63,6 +82,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-1548
     "customer_country": "USA",
     "customer_type": "individual",
     "customer_status": "active",
+    "created_at": "2026-04-02T10:00:00.000000Z",
     "updated_at": "2026-04-02T14:00:00.000000Z"
   }
 }

@@ -10,7 +10,7 @@ POST /customer
 ```
 
 <Note>
-  Requires `Idempotency-Key` header.
+  Requires an `Idempotency-Key` header.
 </Note>
 
 ## Request body
@@ -31,8 +31,8 @@ POST /customer
   Customer's country of residence in ISO 3166-1 alpha-3 format (e.g. `USA`, `BRA`, `MEX`).
 </ParamField>
 
-<ParamField body="customer_type" type="string">
-  Customer type: `"individual"` or `"business"`. Defaults to `"individual"`.
+<ParamField body="customer_type" type="string" required>
+  Customer type: `"individual"` or `"business"`.
 </ParamField>
 
 <RequestExample>
@@ -58,6 +58,7 @@ curl -X POST 'https://api.yativo.com/api/v1/customer' \
   "status_code": 201,
   "message": "Customer created successfully",
   "data": {
+    "id": 1,
     "customer_id": "c586066b-0f29-468f-b775-15483871a202",
     "customer_name": "Alex Smith",
     "customer_email": "alex.smith@example.com",
@@ -65,7 +66,8 @@ curl -X POST 'https://api.yativo.com/api/v1/customer' \
     "customer_country": "USA",
     "customer_type": "individual",
     "customer_status": "active",
-    "created_at": "2026-04-02T10:00:00.000000Z"
+    "created_at": "2026-04-02T10:00:00.000000Z",
+    "updated_at": "2026-04-02T10:00:00.000000Z"
   }
 }
 ```

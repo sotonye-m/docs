@@ -58,11 +58,13 @@ curl -X GET 'https://api.yativo.com/api/v1/business/logs/all?method=POST&status=
       "created_at": "2026-04-01T09:55:00.000000Z"
     }
   ],
-  "meta": {
+  "pagination": {
     "total": 142,
     "per_page": 20,
     "current_page": 1,
-    "last_page": 8
+    "last_page": 8,
+    "next_page_url": "https://api.yativo.com/api/v1/business/logs/all?page=2",
+    "prev_page_url": null
   }
 }
 ```

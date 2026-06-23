@@ -3,16 +3,61 @@ title: "Activate Customer for Virtual Cards"
 description: "Enroll a customer in the virtual card program"
 ---
 
-Activates a customer for the virtual card program. This enrollment step is required before issuing any virtual cards to the customer.
+Registers a customer for virtual card creation. This enrollment step is required before issuing any virtual cards to the customer. Fields that are already stored on the customer's profile may be omitted.
 
 ```
-POST /customer/virtual/cards/activate
+POST https://api.yativo.com/api/v1/customer/virtual/cards/activate
 ```
+
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
 
 ## Request Body
 
 <ParamField body="customer_id" type="string" required>
-  The ID of the customer to activate for virtual cards.
+  The ID of the customer to activate. Must exist in your customers table.
+</ParamField>
+
+<ParamField body="user_photo" type="string">
+  Customer photo (base64 or URL). Required if not already on the customer's profile.
+</ParamField>
+
+<ParamField body="idType" type="string">
+  Government ID type (e.g. `"passport"`, `"drivers_license"`, `"national_id"`). Required for Nigerian customers.
+</ParamField>
+
+<ParamField body="customer_idFront" type="string">
+  Front image of the customer's government-issued ID. Required if not already on the customer's profile.
+</ParamField>
+
+<ParamField body="customer_idNumber" type="string">
+  Government-issued ID number. Required if not already on the customer's profile.
+</ParamField>
+
+<ParamField body="customer_address" type="object">
+  Customer address. Each sub-field is required if not already on the customer's profile.
+
+  <Expandable title="customer_address fields">
+    <ParamField body="customer_address.country" type="string">
+      ISO 3166-1 alpha-2 country code (e.g. `"US"`).
+    </ParamField>
+    <ParamField body="customer_address.city" type="string">
+      City name.
+    </ParamField>
+    <ParamField body="customer_address.state" type="string">
+      State or region.
+    </ParamField>
+    <ParamField body="customer_address.zipcode" type="string">
+      Postal / ZIP code.
+    </ParamField>
+    <ParamField body="customer_address.street" type="string">
+      Street name.
+    </ParamField>
+    <ParamField body="customer_address.number" type="string">
+      Street number.
+    </ParamField>
+  </Expandable>
 </ParamField>
 
 <RequestExample>
@@ -20,9 +65,21 @@ POST /customer/virtual/cards/activate
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/activate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
+  -H 'Idempotency-Key: activate-da44a3e6-001' \
   -d '{
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "user_photo": "https://example.com/photo.jpg",
+    "idType": "passport",
+    "customer_idFront": "https://example.com/id-front.jpg",
+    "customer_idNumber": "A12345678",
+    "customer_address": {
+      "country": "US",
+      "city": "New York",
+      "state": "NY",
+      "zipcode": "10001",
+      "street": "Main St",
+      "number": "123"
+    }
   }'
 ```
 </RequestExample>
@@ -30,13 +87,7 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/activate' \
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
-  "status_code": 200,
-  "message": "Customer activated for virtual cards",
-  "data": {
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "card_program_active": true
-  }
+  "success": "User registered successfully."
 }
 ```
 </ResponseExample>

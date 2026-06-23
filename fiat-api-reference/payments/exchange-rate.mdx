@@ -10,7 +10,7 @@ POST https://api.yativo.com/api/v1/exchange-rate
 ```
 
 <Note>
-  Rate-limited to **30 requests per minute**. This endpoint both prices the transaction AND generates a binding `quote_id` — treat it as quote creation, not just a rate lookup.
+  Requires an `Idempotency-Key` header. Rate-limited to **30 requests per minute**. This endpoint both prices the transaction AND generates a binding `quote_id` — treat it as quote creation, not just a rate lookup.
 </Note>
 
 ## Request body
@@ -40,6 +40,7 @@ POST https://api.yativo.com/api/v1/exchange-rate
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: quote-001' \
   -d '{
     "from_currency": "USD",
     "to_currency": "USD",
@@ -53,6 +54,7 @@ curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: quote-001' \
   -d '{
     "from_currency": "USD",
     "to_currency": "CLP",
@@ -66,6 +68,7 @@ const response = await fetch('https://api.yativo.com/api/v1/exchange-rate', {
   headers: {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
+    'Idempotency-Key': `quote-${Date.now()}`,
   },
   body: JSON.stringify({
     from_currency: 'USD',

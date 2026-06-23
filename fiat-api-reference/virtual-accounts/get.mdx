@@ -3,16 +3,16 @@ title: "Get Virtual Account"
 description: "Retrieve details for a specific virtual account"
 ---
 
-Returns full details for a specific virtual account by its ID.
+Returns full details for a specific virtual account by its external ID.
 
 ```
-GET /business/virtual-account/show/{id}
+GET /v1/business/virtual-account/show/{externalId}
 ```
 
 ## Path Parameters
 
-<ParamField path="id" type="string" required>
-  The virtual account ID.
+<ParamField path="externalId" type="string" required>
+  The external ID of the virtual account.
 </ParamField>
 
 <RequestExample>

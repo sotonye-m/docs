@@ -191,14 +191,17 @@
               "fiat-api-reference/virtual-accounts/list",
               "fiat-api-reference/virtual-accounts/get",
               "fiat-api-reference/virtual-accounts/delete",
-              "fiat-api-reference/virtual-accounts/history"
+              "fiat-api-reference/virtual-accounts/history",
+              "fiat-api-reference/virtual-accounts/all-histories",
+              "fiat-api-reference/virtual-accounts/customer-accounts"
             ]
           },
           {
             "group": "Wallets",
             "pages": [
               "fiat-api-reference/wallets/balance",
-              "fiat-api-reference/wallets/create"
+              "fiat-api-reference/wallets/create",
+              "fiat-api-reference/wallets/payouts"
             ]
           },
           {
@@ -209,6 +212,8 @@
               "fiat-api-reference/beneficiaries/get",
               "fiat-api-reference/beneficiaries/update",
               "fiat-api-reference/beneficiaries/delete",
+              "fiat-api-reference/beneficiaries/archive",
+              "fiat-api-reference/beneficiaries/unarchive",
               "fiat-api-reference/beneficiaries/payment-methods-create",
               "fiat-api-reference/beneficiaries/payment-methods-list",
               "fiat-api-reference/beneficiaries/payment-methods-update",
@@ -221,6 +226,7 @@
               "fiat-api-reference/transactions/list",
               "fiat-api-reference/transactions/get",
               "fiat-api-reference/transactions/track",
+              "fiat-api-reference/transactions/track-by-id",
               "fiat-api-reference/transactions/receipt"
             ]
           },

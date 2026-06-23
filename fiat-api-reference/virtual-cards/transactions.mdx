@@ -6,12 +6,12 @@ description: "Retrieve transaction history for a virtual card"
 Returns all transactions made with a specific virtual card.
 
 ```
-GET /customer/virtual/cards/transactions/{cardId}
+GET https://api.yativo.com/api/v1/customer/virtual/cards/transactions/{card_id}
 ```
 
 ## Path Parameters
 
-<ParamField path="cardId" type="string" required>
+<ParamField path="card_id" type="string" required>
   The virtual card ID.
 </ParamField>
 

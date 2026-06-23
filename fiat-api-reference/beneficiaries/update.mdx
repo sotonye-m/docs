@@ -1,46 +1,66 @@
 ---
 title: "Update Beneficiary"
-description: "Update an existing beneficiary's profile information"
+description: "Replace all profile fields on an existing beneficiary"
 ---
 
-Update mutable fields on a beneficiary record. Only include the fields you want to change.
+Fully replace a beneficiary's profile information. This is a **full replacement** — all required fields must be included in every request. Omitting a required field will overwrite it with an empty or default value.
 
 ```
-PUT /beneficiaries/{beneficiary_id}
+PUT /v1/beneficiaries/{id}
 ```
 
 <Note>
-  Requires `Idempotency-Key` header.
+  Requires an `Idempotency-Key` header.
 </Note>
 
 ## Path parameters
 
-<ParamField path="beneficiary_id" type="string" required>
-  The UUID of the beneficiary to update.
+<ParamField path="id" type="string" required>
+  The ID of the beneficiary to update.
 </ParamField>
 
 ## Request body
 
-<ParamField body="name" type="string">
-  Updated beneficiary name.
+<ParamField body="recipient_type" type="string" required>
+  Beneficiary type: `"individual"` or `"business"`.
 </ParamField>
 
-<ParamField body="email" type="string">
-  Updated email address.
+<ParamField body="customer_name" type="string" required>
+  Full name of the beneficiary (individual) or legal business name.
 </ParamField>
 
-<ParamField body="country" type="string">
-  Updated country in ISO 3166-1 alpha-3 format.
+<ParamField body="customer_email" type="string" required>
+  Beneficiary's email address.
 </ParamField>
+
+<ParamField body="customer_address" type="string" required>
+  Beneficiary's physical address.
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Beneficiary's country code (e.g. `CHL`, `MEX`, `BRA`).
+</ParamField>
+
+<ParamField body="customer_nickname" type="string">
+  A short label for this beneficiary. Defaults to `customer_name` if omitted.
+</ParamField>
+
+<Warning>
+  This endpoint performs a **full replacement**. You must send all required fields on every call, not just the fields you want to change.
+</Warning>
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d' \
+curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: update-beneficiary-maria-001' \
   -d '{
-    "email": "maria.g@newemail.com"
+    "recipient_type": "individual",
+    "customer_name": "Maria Gonzalez",
+    "customer_email": "maria.g@newemail.com",
+    "customer_address": "456 New Street, Santiago",
+    "country": "CHL",
+    "customer_nickname": "Maria G"
   }'
 ```
 </RequestExample>
@@ -48,17 +68,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/ben-7a8b9c0d-1e2f-3a4b-
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
-  "status_code": 200,
-  "message": "Beneficiary updated successfully",
-  "data": {
-    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-    "name": "Maria Gonzalez",
-    "email": "maria.g@newemail.com",
-    "type": "individual",
-    "country": "CHL",
-    "updated_at": "2026-04-02T14:00:00.000000Z"
-  }
+  "message": "Beneficiary updated successfully"
 }
 ```
 </ResponseExample>

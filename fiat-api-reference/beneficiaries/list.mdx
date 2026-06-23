@@ -6,23 +6,23 @@ description: "Retrieve all saved beneficiaries in your account"
 Returns a paginated list of all beneficiaries associated with your account.
 
 ```
-GET https://api.yativo.com/api/v1/beneficiaries/list
+GET /v1/beneficiaries/list
 ```
 
 ## Query parameters
 
 <ParamField query="per_page" type="number">
-  Number of records per page (default: 15).
+  Number of records per page (default: 20).
 </ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/beneficiaries/list' \
+curl -X GET 'https://api.yativo.com/api/v1/beneficiaries/list?per_page=20' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
 ```javascript Node.js
-const response = await fetch('https://api.yativo.com/api/v1/beneficiaries/list', {
+const response = await fetch('https://api.yativo.com/api/v1/beneficiaries/list?per_page=20', {
   headers: { 'Authorization': `Bearer ${token}` },
 });
 const data = await response.json();
@@ -33,31 +33,41 @@ const data = await response.json();
 ```json Success
 {
   "status": "success",
-  "status_code": 200,
-  "message": "Request successful",
   "data": [
     {
-      "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-      "name": "Maria Gonzalez",
-      "email": "maria.gonzalez@example.com",
-      "type": "individual",
+      "id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+      "user_id": "usr-001",
+      "recipient_type": "individual",
+      "customer_name": "Maria Gonzalez",
+      "customer_email": "maria.gonzalez@example.com",
+      "customer_nickname": "Maria",
       "country": "CHL",
-      "created_at": "2026-04-02T10:00:00.000000Z"
+      "customer_address": "123 Main Street, Santiago",
+      "is_archived": false,
+      "created_at": "2026-04-02T10:00:00.000000Z",
+      "updated_at": "2026-04-02T10:00:00.000000Z"
     },
     {
-      "beneficiary_id": "ben-8b9c0d1e-2f3a-4b5c-6d7e-8f9a0b1c2d3e",
-      "name": "Tech Solutions SA",
-      "email": "payments@techsolutions.mx",
-      "type": "business",
+      "id": "8b9c0d1e-2f3a-4b5c-6d7e-8f9a0b1c2d3e",
+      "user_id": "usr-001",
+      "recipient_type": "business",
+      "customer_name": "Tech Solutions SA",
+      "customer_email": "payments@techsolutions.mx",
+      "customer_nickname": "Tech Solutions",
       "country": "MEX",
-      "created_at": "2026-03-20T09:00:00.000000Z"
+      "customer_address": "789 Reforma Ave, Mexico City",
+      "is_archived": false,
+      "created_at": "2026-03-20T09:00:00.000000Z",
+      "updated_at": "2026-03-20T09:00:00.000000Z"
     }
   ],
   "pagination": {
-    "total": 18,
-    "per_page": 15,
+    "total": 45,
+    "per_page": 20,
     "current_page": 1,
-    "last_page": 2
+    "last_page": 3,
+    "next_page_url": "https://api.yativo.com/api/v1/beneficiaries/list?page=2",
+    "prev_page_url": null
   }
 }
 ```

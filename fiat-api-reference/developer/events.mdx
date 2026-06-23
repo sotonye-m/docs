@@ -44,10 +44,13 @@ curl -X GET 'https://api.yativo.com/api/v1/business/events/all?per_page=20' \
       "created_at": "2026-04-01T09:30:00.000000Z"
     }
   ],
-  "meta": {
+  "pagination": {
     "total": 58,
     "per_page": 20,
-    "current_page": 1
+    "current_page": 1,
+    "last_page": 3,
+    "next_page_url": "https://api.yativo.com/api/v1/business/events/all?page=2",
+    "prev_page_url": null
   }
 }
 ```

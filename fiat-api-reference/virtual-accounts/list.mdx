@@ -6,7 +6,7 @@ description: "Retrieve all virtual accounts associated with your business"
 Returns all virtual accounts for your business with optional filtering.
 
 ```
-GET /business/virtual-account
+GET /v1/business/virtual-account
 ```
 
 ## Query Parameters
@@ -20,19 +20,19 @@ GET /business/virtual-account
 </ParamField>
 
 <ParamField query="start_date" type="string">
-  From date (ISO 8601).
+  From date (ISO 8601), e.g. `2026-04-01`.
 </ParamField>
 
-<ParamField query="q" type="string">
-  Search query — account number, customer name, etc.
+<ParamField query="end_date" type="string">
+  To date (ISO 8601), e.g. `2026-04-30`.
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search by account name or account number.
 </ParamField>
 
 <ParamField query="per_page" type="number">
   Results per page.
-</ParamField>
-
-<ParamField query="page" type="number">
-  Page number.
 </ParamField>
 
 <RequestExample>
@@ -59,11 +59,13 @@ curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account?currency=BRL
       "created_at": "2026-04-01T10:00:00Z"
     }
   ],
-  "meta": {
+  "pagination": {
     "total": 8,
     "per_page": 20,
     "current_page": 1,
-    "last_page": 1
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
   }
 }
 ```

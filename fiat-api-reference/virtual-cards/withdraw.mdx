@@ -3,20 +3,24 @@ title: "Withdraw from Card"
 description: "Move funds from a virtual card back to your wallet"
 ---
 
-Withdraws funds from a virtual card back to your wallet balance.
+Withdraws funds from a virtual card back to your USD wallet balance.
 
 ```
-POST /customer/virtual/cards/withdraw
+POST https://api.yativo.com/api/v1/customer/virtual/cards/withdraw
 ```
+
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
 
 ## Request Body
 
-<ParamField body="card_id" type="string" required>
+<ParamField body="cardId" type="string" required>
   The virtual card ID to withdraw from.
 </ParamField>
 
 <ParamField body="amount" type="number" required>
-  Amount to withdraw from the card.
+  Amount to withdraw from the card. Minimum 1.00.
 </ParamField>
 
 <RequestExample>
@@ -24,9 +28,9 @@ POST /customer/virtual/cards/withdraw
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/withdraw' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
+  -H 'Idempotency-Key: withdraw-card-001' \
   -d '{
-    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "cardId": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
     "amount": 50
   }'
 ```

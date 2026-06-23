@@ -1,24 +1,22 @@
 ---
-title: "Add IP Address"
-description: "Add an IP address to your API allowlist"
+title: "Add IP Addresses"
+description: "Add one or more IP addresses to your API allowlist"
 ---
 
-Add a trusted IP address. Once any IP is allowlisted, all requests from non-listed IPs are rejected with `403 Forbidden`.
+Add trusted IP addresses to your allowlist. Once any IP is allowlisted, all requests from non-listed IPs are rejected with `403 Forbidden`.
 
 ```
 POST https://api.yativo.com/api/v1/ip
 ```
 
 <Note>
-  Requires `Idempotency-Key` header. Confirm your server's outbound IP before adding — adding a wrong IP could lock you out.
+  Requires an `Idempotency-Key` header. Confirm your server's outbound IP before adding — adding a wrong IP could lock you out.
 </Note>
 
-<ParamField body="ip_address" type="string" required>
-  IPv4 address to allowlist (e.g. `"203.0.113.10"`).
-</ParamField>
+## Request body
 
-<ParamField body="label" type="string">
-  Descriptive label for this IP (e.g. `"Production server"`).
+<ParamField body="new_ip" type="array" required>
+  Array of IPv4 address strings to allowlist.
 </ParamField>
 
 <RequestExample>
@@ -26,10 +24,9 @@ POST https://api.yativo.com/api/v1/ip
 curl -X POST 'https://api.yativo.com/api/v1/ip' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: add-ip-001' \
+  -H 'Idempotency-Key: ip-add-001' \
   -d '{
-    "ip_address": "203.0.113.10",
-    "label": "Production server"
+    "new_ip": ["203.0.113.10", "198.51.100.5"]
   }'
 ```
 </RequestExample>
@@ -37,8 +34,6 @@ curl -X POST 'https://api.yativo.com/api/v1/ip' \
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
-  "status_code": 200,
   "message": "IP addresses whitelisted and added to firewall."
 }
 ```

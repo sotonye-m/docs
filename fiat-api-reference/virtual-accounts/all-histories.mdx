@@ -1,0 +1,51 @@
+---
+title: "All Virtual Account Histories"
+description: "Retrieve deposit histories across all virtual accounts for your business"
+---
+
+Returns deposit histories across all virtual accounts associated with the authenticated business. Use this to get a consolidated view of all incoming payments without querying each account individually.
+
+```
+GET /v1/business/virtual-account/histories
+```
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/histories' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "amount": 1000,
+      "currency": "BRL",
+      "status": "completed",
+      "credited_amount": 950,
+      "transaction_id": "TXNMP2HK81BHJ",
+      "sender_name": "John Smith",
+      "account_number": "9900123456",
+      "transaction_fees": 50,
+      "created_at": "2026-04-01T10:00:00Z"
+    },
+    {
+      "amount": 500,
+      "currency": "CLP",
+      "status": "completed",
+      "credited_amount": 480,
+      "transaction_id": "TXNQR3JL92CIK",
+      "sender_name": "Ana Rodriguez",
+      "account_number": "9900654321",
+      "transaction_fees": 20,
+      "created_at": "2026-04-02T14:30:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>

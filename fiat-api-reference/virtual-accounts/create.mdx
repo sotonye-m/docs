@@ -6,7 +6,7 @@ description: "Issue a virtual bank account to a customer to receive funds"
 Create a virtual bank account for a customer. The customer must have KYC approved (`is_va_approved: true`) before a virtual account can be issued.
 
 ```
-POST /business/virtual-account/create
+POST /v1/business/virtual-account/create
 ```
 
 <Note>
@@ -15,12 +15,12 @@ POST /business/virtual-account/create
 
 ## Request Body
 
-<ParamField body="customer_id" type="string" required>
-  The UUID of the KYC-approved customer.
+<ParamField body="currency" type="string" required>
+  Currency for the virtual account. Supported values: `MXN`, `BRL`, `USD`, `EUR`, `MXN_USD`, `MXN_BASE`, `MXNBASE`, `EURBASE`, `USDBASE`, `EUR_BASE`, `USD_BASE`, `EURDE`, `USDDE`, `GBP`, `USD_KIRA`, `USDKIRA`.
 </ParamField>
 
-<ParamField body="currency" type="string" required>
-  Currency for the virtual account. Supported values: `USDBASE`, `EURBASE`, `EURDE`, `MXN`, `MXNBASE`, `MXNUSD`, `BRL`.
+<ParamField body="customer_id" type="string">
+  The UUID of the KYC-approved customer. **Required when currency is `USD`**; optional for other currencies.
 </ParamField>
 
 <RequestExample>
@@ -30,7 +30,6 @@ curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
     "currency": "BRL"
   }'
 ```
@@ -42,7 +41,7 @@ curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
     "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "currency": "USDBASE"
+    "currency": "USD"
   }'
 ```
 </RequestExample>

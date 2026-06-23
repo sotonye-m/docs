@@ -6,22 +6,22 @@ description: "Permanently delete a beneficiary record"
 Delete a beneficiary and all their associated payment methods. This action is irreversible.
 
 ```
-DELETE /beneficiaries/{beneficiary_id}
+DELETE /v1/beneficiaries/{id}
 ```
 
 ## Path parameters
 
-<ParamField path="beneficiary_id" type="string" required>
-  The UUID of the beneficiary to delete.
+<ParamField path="id" type="string" required>
+  The ID of the beneficiary to delete.
 </ParamField>
 
 <Warning>
-  Deleting a beneficiary is permanent and cannot be undone. All associated payment methods will also be deleted.
+  Deleting a beneficiary is permanent and cannot be undone. All associated payment methods will also be deleted. Consider archiving instead if you may need to reference this beneficiary later.
 </Warning>
 
 <RequestExample>
 ```bash cURL
-curl -X DELETE 'https://api.yativo.com/api/v1/beneficiaries/ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d' \
+curl -X DELETE 'https://api.yativo.com/api/v1/beneficiaries/7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -29,19 +29,7 @@ curl -X DELETE 'https://api.yativo.com/api/v1/beneficiaries/ben-7a8b9c0d-1e2f-3a
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
-  "status_code": 200,
-  "message": "Beneficiary deleted successfully",
-  "data": null
-}
-```
-
-```json Not Found
-{
-  "status": "error",
-  "status_code": 404,
-  "message": "Beneficiary not found",
-  "data": null
+  "message": "Beneficiary deleted successfully"
 }
 ```
 </ResponseExample>

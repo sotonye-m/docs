@@ -1,0 +1,35 @@
+---
+title: "Archive Beneficiary"
+description: "Archive a beneficiary to hide them from active lists without deleting"
+---
+
+Archive a beneficiary. Archived beneficiaries are retained in the system and can be restored at any time using the unarchive endpoint. Use this instead of deleting when you may need to reference the beneficiary again in the future.
+
+```
+PUT /v1/beneficiaries/{id}/archive
+```
+
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the beneficiary to archive.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d/archive' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "message": "Beneficiary archived successfully"
+}
+```
+</ResponseExample>

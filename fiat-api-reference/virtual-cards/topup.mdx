@@ -1,26 +1,30 @@
 ---
 title: "Top Up Card"
-description: "Fund a virtual card from your wallet balance"
+description: "Fund a virtual card from your USD wallet balance"
 ---
 
-Adds funds to a virtual card by debiting from your wallet balance.
+Adds funds to a virtual card. The amount is always debited from your USD wallet.
 
 ```
-POST /customer/virtual/cards/topup
+POST https://api.yativo.com/api/v1/customer/virtual/cards/topup
 ```
+
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
 
 ## Request Body
 
-<ParamField body="card_id" type="string" required>
-  The virtual card ID to fund.
+<ParamField body="cardId" type="string">
+  The virtual card ID to fund. Either `cardId` or `card_id` must be provided.
+</ParamField>
+
+<ParamField body="card_id" type="string">
+  The virtual card ID to fund. Either `cardId` or `card_id` must be provided.
 </ParamField>
 
 <ParamField body="amount" type="number" required>
-  Amount to add to the card.
-</ParamField>
-
-<ParamField body="debit_wallet" type="string" required>
-  The wallet currency to debit from (e.g. `"USD"`).
+  Amount to add to the card. Minimum 1.00, maximum 100,000.00 (USD).
 </ParamField>
 
 <RequestExample>
@@ -28,11 +32,10 @@ POST /customer/virtual/cards/topup
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/topup' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
+  -H 'Idempotency-Key: topup-card-001' \
   -d '{
-    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "amount": 100,
-    "debit_wallet": "USD"
+    "cardId": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+    "amount": 100.00
   }'
 ```
 </RequestExample>

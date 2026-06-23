@@ -9,6 +9,10 @@ Create a new wallet to hold a specific currency. Once created, the wallet appear
 POST /wallet/create
 ```
 
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
+
 ## Request Body
 
 <ParamField body="currency" type="string" required>

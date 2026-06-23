@@ -1,0 +1,55 @@
+---
+title: "Track Transaction by ID"
+description: "Look up a transaction by its transaction ID and type"
+---
+
+Returns a single transaction record by providing the transaction ID and transaction type. This is distinct from the timeline tracking endpoint (`GET /transaction/tracking/{id}`) which tracks by quote ID — this endpoint performs a direct lookup by the transaction's own ID.
+
+```
+GET /v1/transaction/track
+```
+
+## Query Parameters
+
+<ParamField query="txn_id" type="string" required>
+  The transaction ID to look up.
+</ParamField>
+
+<ParamField query="txn_type" type="string" required>
+  The type of the transaction. Common values: `"payout"`, `"payin"`, `"swap"`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/transaction/track?txn_id=TXN123456789&txn_type=payout' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "id": "a0e9e50e-81be-4bd0-9941-0151e68b9e97",
+    "transaction_id": "TXN123456789",
+    "type": "payout",
+    "amount": "500.00",
+    "currency": "USD",
+    "status": "completed",
+    "created_at": "2026-04-01T10:00:00.000000Z",
+    "updated_at": "2026-04-01T10:03:22.000000Z"
+  }
+}
+```
+
+```json Not found
+{
+  "status": "error",
+  "status_code": 404,
+  "message": "Transaction not found"
+}
+```
+</ResponseExample>

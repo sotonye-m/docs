@@ -9,6 +9,10 @@ Generates a rate-locked quote for a cross-border payment. The quote guarantees t
 POST /sendmoney/quote
 ```
 
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
+
 ## Request Body
 
 <ParamField body="from_currency" type="string" required>

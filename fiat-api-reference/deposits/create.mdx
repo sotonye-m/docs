@@ -93,7 +93,7 @@ const depositRes = await fetch('https://api.yativo.com/api/v1/wallet/deposits/ne
   }),
 });
 const deposit = await depositRes.json();
-// Redirect customer to deposit.data.checkout_url
+// Redirect customer to deposit.data.deposit_url
 ```
 </RequestExample>
 
@@ -105,14 +105,14 @@ const deposit = await depositRes.json();
   "message": "Request successful",
   "data": {
     "id": "dep-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "gateway": "monnet",
+    "gateway": 15,
     "deposit_currency": "BRL",
-    "deposit_amount": "1000.00",
-    "receive_amount": "9.36",
-    "receive_currency": "USD",
+    "amount": 1000.00,
+    "receive_amount": 9.36,
+    "currency_to": "USD",
     "status": "pending",
-    "checkout_url": "https://checkout.gateway.com/pay/abc123",
-    "reference": "REF-2026060101",
+    "deposit_url": "https://checkout.yativo.com/pay/dep-a1b2c3d4",
+    "transaction_id": "txn-2026060101",
     "created_at": "2026-06-01T10:00:00.000000Z"
   }
 }
@@ -156,5 +156,5 @@ const deposit = await depositRes.json();
 </ResponseExample>
 
 <Note>
-  After a successful response, redirect the customer to `checkout_url` to complete payment on the gateway's hosted page. Once completed, the customer is returned to your `redirect_url` and a `deposit.completed` webhook fires.
+  After a successful response, redirect the customer to `deposit_url` to complete payment on the gateway's hosted page. Once completed, the customer is returned to your `redirect_url` and a `deposit.completed` webhook fires.
 </Note>

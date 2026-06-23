@@ -25,73 +25,61 @@ curl -X GET 'https://api.yativo.com/api/v1/beneficiary/form/show/42' \
 <ResponseExample>
 ```json Success — Chile Bank Transfer
 {
-  "status": "success",
-  "status_code": 200,
-  "message": "Request successful",
-  "data": {
-    "payment_method_id": 42,
-    "method_name": "Bank Transfer",
-    "country": "CHL",
-    "fields": [
-      {
-        "key": "account_number",
-        "label": "Account Number",
-        "type": "text",
-        "required": true,
-        "max_length": 20
-      },
-      {
-        "key": "bank_code",
-        "label": "Bank",
-        "type": "select",
-        "required": true,
-        "options": [
-          { "value": "001", "label": "Banco de Chile" },
-          { "value": "009", "label": "Banco Internacional" },
-          { "value": "014", "label": "Scotiabank Chile" }
-        ]
-      },
-      {
-        "key": "account_type",
-        "label": "Account Type",
-        "type": "select",
-        "required": true,
-        "options": [
-          { "value": "checking", "label": "Checking Account" },
-          { "value": "savings", "label": "Savings Account" }
-        ]
-      },
-      {
-        "key": "rut",
-        "label": "RUT (Chilean Tax ID)",
-        "type": "text",
-        "required": true
-      }
-    ]
-  }
+  "gateway_id": 42,
+  "currency": "CLP",
+  "form_data": [
+    {
+      "key": "account_number",
+      "label": "Account Number",
+      "type": "text",
+      "required": true
+    },
+    {
+      "key": "bank_code",
+      "label": "Bank",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "001", "label": "Banco de Chile" },
+        { "value": "009", "label": "Banco Internacional" }
+      ]
+    },
+    {
+      "key": "account_type",
+      "label": "Account Type",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "checking", "label": "Checking Account" },
+        { "value": "savings", "label": "Savings Account" }
+      ]
+    },
+    {
+      "key": "rut",
+      "label": "RUT (Chilean Tax ID)",
+      "type": "text",
+      "required": true
+    }
+  ],
+  "created_at": "2026-04-01T10:00:00.000000Z",
+  "updated_at": "2026-04-01T10:00:00.000000Z"
 }
 ```
 
 ```json Success — Mexico SPEI
 {
-  "status": "success",
-  "status_code": 200,
-  "message": "Request successful",
-  "data": {
-    "payment_method_id": 15,
-    "method_name": "SPEI",
-    "country": "MEX",
-    "fields": [
-      {
-        "key": "clabe",
-        "label": "CLABE",
-        "type": "text",
-        "required": true,
-        "length": 18,
-        "description": "18-digit CLABE interbank code"
-      }
-    ]
-  }
+  "gateway_id": 15,
+  "currency": "MXN",
+  "form_data": [
+    {
+      "key": "clabe",
+      "label": "CLABE",
+      "type": "text",
+      "required": true
+    }
+  ],
+  "created_at": "2026-04-01T10:00:00.000000Z",
+  "updated_at": "2026-04-01T10:00:00.000000Z"
 }
 ```
 </ResponseExample>

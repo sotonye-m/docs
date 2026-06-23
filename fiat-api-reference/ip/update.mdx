@@ -1,37 +1,45 @@
 ---
-title: "Update IP Address"
-description: "Replace an existing allowlisted IP address"
+title: "Update IP Allowlist"
+description: "Add more IP addresses to an existing allowlist record"
 ---
 
-Replace an existing allowlisted IP with a new one.
+Append additional IP addresses to your existing allowlist record. This operation **adds** to the existing list — it does not replace it.
 
 ```
 PUT https://api.yativo.com/api/v1/ip/{id}
 ```
 
-<ParamField path="id" type="string" required>
-  The IP record ID to update.
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
+
+## Path parameters
+
+<ParamField path="id" type="integer" required>
+  The ID of the allowlist record to update.
 </ParamField>
 
-<ParamField body="ip_address" type="string" required>
-  The new IP address to replace the existing one.
+## Request body
+
+<ParamField body="new_ip" type="array" required>
+  Array of IPv4 address strings to add to the existing allowlist.
 </ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/ip/ip-a1b2c3' \
+curl -X PUT 'https://api.yativo.com/api/v1/ip/1' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: update-ip-001' \
-  -d '{ "ip_address": "203.0.113.20" }'
+  -H 'Idempotency-Key: ip-update-001' \
+  -d '{
+    "new_ip": ["203.0.113.20", "198.51.100.10"]
+  }'
 ```
 </RequestExample>
 
 <ResponseExample>
 ```json Success
 {
-  "status": "success",
-  "status_code": 200,
   "message": "IP addresses updated and added to firewall."
 }
 ```

@@ -1,0 +1,35 @@
+---
+title: "Unarchive Beneficiary"
+description: "Restore an archived beneficiary to active status"
+---
+
+Restore an archived beneficiary, making them active again. After unarchiving, the beneficiary will appear in list responses and can be used for payouts.
+
+```
+PUT /v1/beneficiaries/{id}/unarchive
+```
+
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the beneficiary to unarchive.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d/unarchive' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "message": "Beneficiary unarchived successfully"
+}
+```
+</ResponseExample>

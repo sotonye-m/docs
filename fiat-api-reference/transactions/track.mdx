@@ -6,18 +6,18 @@ description: "Get a live status timeline for a transaction"
 Returns a step-by-step timeline of a transaction's progress from initiation through completion.
 
 ```
-GET /transaction/tracking/{transactionId}
+GET /v1/transaction/tracking/{quote_id}
 ```
 
 ## Path Parameters
 
-<ParamField path="transactionId" type="string" required>
-  The transaction UUID (`transaction_id` field from the transaction object).
+<ParamField path="quote_id" type="string" required>
+  The `quote_id` associated with the transaction. This is the quote ID returned when the transaction or quote was created — not a generic transaction ID.
 </ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/transaction/tracking/a0e9e50e-81be-4bd0-9941-0151e68b9e97' \
+curl -X GET 'https://api.yativo.com/api/v1/transaction/tracking/4a72ecf8-6c8a-4e38-9971-8aabe9f785ed' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>

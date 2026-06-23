@@ -3,20 +3,24 @@ title: "Create Virtual Card"
 description: "Issue a virtual prepaid card to an activated customer"
 ---
 
-Creates a virtual card for a customer who has been activated for the virtual card program.
+Creates a virtual card for a customer who has been activated for the virtual card program. The initial funding amount is debited from your USD wallet.
 
 ```
-POST /customer/virtual/cards/create
+POST https://api.yativo.com/api/v1/customer/virtual/cards/create
 ```
+
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
 
 ## Request Body
 
 <ParamField body="customer_id" type="string" required>
-  The ID of the activated customer.
+  The ID of the activated customer. Must exist in your customers table.
 </ParamField>
 
-<ParamField body="currency" type="string" required>
-  Card currency (e.g. `"USD"`).
+<ParamField body="amount" type="number" required>
+  Initial funding amount in USD. Minimum $3.00.
 </ParamField>
 
 <RequestExample>
@@ -24,10 +28,10 @@ POST /customer/virtual/cards/create
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/create' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
+  -H 'Idempotency-Key: card-create-da44a3e6-001' \
   -d '{
     "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "currency": "USD"
+    "amount": 10.00
   }'
 ```
 </RequestExample>
@@ -43,7 +47,7 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/create' \
     "card_number": "4111 **** **** 1234",
     "expiry": "04/29",
     "currency": "USD",
-    "balance": "0.00",
+    "balance": "10.00",
     "status": "active",
     "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
     "created_at": "2026-04-01T10:00:00Z"

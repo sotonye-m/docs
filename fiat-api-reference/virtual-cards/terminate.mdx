@@ -6,12 +6,16 @@ description: "Permanently cancel a virtual card"
 Permanently terminates a virtual card. This action is irreversible. Withdraw any remaining balance before terminating.
 
 ```
-POST /customer/virtual/cards/terminate
+POST https://api.yativo.com/api/v1/customer/virtual/cards/terminate
 ```
+
+<Note>
+  Requires an `Idempotency-Key` header.
+</Note>
 
 ## Request Body
 
-<ParamField body="card_id" type="string" required>
+<ParamField body="cardId" type="string" required>
   The virtual card ID to terminate.
 </ParamField>
 
@@ -20,9 +24,9 @@ POST /customer/virtual/cards/terminate
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/terminate' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
+  -H 'Idempotency-Key: terminate-card-001' \
   -d '{
-    "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5"
+    "cardId": "card_01HX9KZMB3F7VNQP8R2WDGT4E5"
   }'
 ```
 </RequestExample>

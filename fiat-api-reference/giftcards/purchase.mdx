@@ -13,20 +13,28 @@ POST https://api.yativo.com/api/v1/giftcards
   Requires `Idempotency-Key` header. Gift card purchases are **non-refundable**.
 </Note>
 
-<ParamField body="product_id" type="number" required>
-  The gift card product ID from `GET /giftcards`.
+<ParamField body="productId" type="integer" required>
+  The gift card product ID (from `GET /giftcards`).
 </ParamField>
 
-<ParamField body="amount" type="number" required>
-  Face value in the product's native currency. Must be within `min_amount`/`max_amount` or match a `fixed_amounts` value.
+<ParamField body="unitPrice" type="number" required>
+  Price per unit in the product's native currency (minimum 0.01).
 </ParamField>
 
-<ParamField body="quantity" type="number">
-  Number of cards to purchase (default: 1).
+<ParamField body="quantity" type="integer" required>
+  Number of cards to purchase (minimum 1).
 </ParamField>
 
-<ParamField body="recipient_email" type="string">
-  Email to deliver the gift card code to. If omitted, code is returned in the API response only.
+<ParamField body="senderName" type="string" required>
+  Name of the sender. Maximum 100 characters.
+</ParamField>
+
+<ParamField body="recipientEmail" type="string" required>
+  Email address of the gift card recipient.
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  Optional. Link this purchase to a customer in your account.
 </ParamField>
 
 <RequestExample>
@@ -36,10 +44,12 @@ curl -X POST 'https://api.yativo.com/api/v1/giftcards' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: gc-amazon-001' \
   -d '{
-    "product_id": 1,
-    "amount": 50,
+    "productId": 1234,
+    "unitPrice": 10.00,
     "quantity": 1,
-    "recipient_email": "customer@example.com"
+    "senderName": "John Doe",
+    "recipientEmail": "recipient@example.com",
+    "customer_id": "cust_abc123"
   }'
 ```
 </RequestExample>
@@ -53,7 +63,7 @@ curl -X POST 'https://api.yativo.com/api/v1/giftcards' \
   "data": {
     "transaction_id": "gc-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "product_name": "Amazon US",
-    "amount": 50,
+    "amount": 10.00,
     "currency": "USD",
     "status": "completed",
     "created_at": "2026-06-01T10:00:00.000000Z"

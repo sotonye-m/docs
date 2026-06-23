@@ -1,0 +1,71 @@
+---
+title: "Customer Virtual Accounts"
+description: "Retrieve all virtual accounts associated with a specific customer"
+---
+
+Returns all virtual accounts associated with a specific customer, identified by their customer ID.
+
+```
+GET /v1/business/virtual-account/customer/accounts/{customerId}
+```
+
+## Path Parameters
+
+<ParamField path="customerId" type="string" required>
+  The unique ID of the customer whose virtual accounts you want to retrieve.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/customer/accounts/c586066b-0f29-468f-b775-15483871a202' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": "va_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "account_number": "9900123456",
+      "account_name": "John Smith",
+      "currency": "BRL",
+      "bank_name": "Example Bank",
+      "status": "active",
+      "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+      "created_at": "2026-03-15T09:00:00.000000Z"
+    },
+    {
+      "id": "va_b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "account_number": "9900654321",
+      "account_name": "John Smith",
+      "currency": "CLP",
+      "bank_name": "Example Bank",
+      "status": "active",
+      "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+      "created_at": "2026-03-20T11:00:00.000000Z"
+    }
+  ],
+  "pagination": {
+    "total": 2,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+
+```json Customer not found
+{
+  "status": "error",
+  "status_code": 404,
+  "message": "Customer not found"
+}
+```
+</ResponseExample>

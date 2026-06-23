@@ -1,9 +1,9 @@
 ---
-title: "List Allowlisted IPs"
-description: "Retrieve all IP addresses currently allowlisted for API access"
+title: "Get Allowlisted IPs"
+description: "Retrieve your IP allowlist record"
 ---
 
-Returns all IP addresses registered on your account's allowlist.
+Returns your IP allowlist record. The `ip_address` field contains all currently allowlisted IP addresses as an array.
 
 ```
 GET https://api.yativo.com/api/v1/ip
@@ -20,16 +20,13 @@ curl -X GET 'https://api.yativo.com/api/v1/ip' \
 ```json Success
 {
   "status": "success",
-  "status_code": 200,
-  "message": "Request successful",
-  "data": [
-    {
-      "id": "ip-a1b2c3",
-      "ip_address": "203.0.113.10",
-      "label": "Production server",
-      "created_at": "2026-04-01T10:00:00.000000Z"
-    }
-  ]
+  "data": {
+    "id": 1,
+    "user_id": "usr_xxxxxxxxxxxxxxxx",
+    "ip_address": ["203.0.113.10", "198.51.100.5"],
+    "created_at": "2026-04-01T10:00:00.000000Z",
+    "updated_at": "2026-04-01T12:00:00.000000Z"
+  }
 }
 ```
 </ResponseExample>
