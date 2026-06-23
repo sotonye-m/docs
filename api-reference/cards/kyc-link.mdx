@@ -14,10 +14,11 @@ authMethod: "bearer"
 </ParamField>
 
 <Note>
-  Call this endpoint after OTP verification. The returned `kyc_url` should be opened by the
-  customer in their browser or embedded in your app. They will complete identity verification
-  (government ID upload + liveness check) through the hosted flow. After completion, poll
-  [Check KYC Status](/api-reference/cards/kyc-status) until `kyc_status` is `approved` — KYC completion is not delivered as a webhook.
+  Call this endpoint after OTP verification. Open `sumsub_link` in the customer's browser or embed it in your app. They will complete identity verification (government ID upload + liveness check) through the hosted Sumsub flow. After completion, poll [Check KYC Status](/api-reference/cards/kyc-status) until `kyc_status` is `approved` — KYC completion is not delivered as a webhook.
+</Note>
+
+<Note>
+  **Link expiry:** The Sumsub link is valid for **1 hour** from when it was generated. If the customer has not completed KYC within that window, call this endpoint again — a fresh link is returned automatically. You do not need to pass any extra parameters to force a refresh.
 </Note>
 
 <RequestExample>
@@ -31,12 +32,13 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
 ```json 200 OK
 {
   "success": true,
-  "message": "KYC link generated. Open the link to complete identity verification.",
+  "message": "KYC link retrieved",
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
-    "kyc_url": "https://kyc.yativo.com/verify?token=eyJhbGciOiJSUzI1NiJ9...",
-    "next_step": "kyc_status",
-    "instructions": "Direct the customer to open this URL to upload their government ID and complete liveness check"
+    "sumsub_link": "https://kyc.sumsub.com/msdk/v2?accessToken=_act-sbx-...",
+    "sumsub_sdk_token": "_act-sbx-...",
+    "applicant_id": "6627f3a2c5d4e100123abcde",
+    "next_step": "kyc_status"
   }
 }
 ```

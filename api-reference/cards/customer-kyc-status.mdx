@@ -37,7 +37,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
     "kyc_status": "approved",
     "verification_level": "STANDARD",
     "terms_accepted": true,
-    "next_step": "create_virtual_card"
+    "next_step": "source_of_funds"
   }
 }
 ```
@@ -63,7 +63,8 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
     "kyc_status": "rejected",
-    "rejection_reason": "Document not accepted"
+    "rejection_reason": "Document not accepted",
+    "next_step": "retry_kyc"
   }
 }
 ```
@@ -73,9 +74,8 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
 
 | Status | Meaning |
 |---|---|
-| `pending` | Not yet started, or documents have been requested |
-| `in_progress` | Documents submitted — processing under review |
-| `pending_review` | Resubmission requested — customer must supply additional info |
-| `approved` | Identity verified — card wallet auto-provisioned, proceed to source of funds |
+| `pending` | Not yet started, documents requested, or awaiting submission |
+| `in_progress` | Documents submitted — under active review |
+| `pending_review` | Resubmission requested — customer must supply additional or corrected documents |
+| `approved` | Identity verified — proceed to source of funds |
 | `rejected` | Verification failed — customer must restart onboarding |
-| `expired` | KYC session expired — re-initiate the KYC link |
