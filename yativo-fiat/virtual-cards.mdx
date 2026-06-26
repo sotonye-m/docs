@@ -6,38 +6,12 @@ description: "Issue virtual Visa/Mastercard cards to your customers"
 Issue prepaid virtual cards to your customers for online spending. Cards are funded from your wallet balance and can be frozen, unfrozen, topped up, or terminated via the API.
 
 <Note>
-  Before issuing cards, customers must be activated for virtual card usage. Activation is separate from KYC — it enrolls the customer in the card program.
+  Minimum card creation amount is $3.00. The maximum card creation amount and top-up amount is $10,000.00 USD.
 </Note>
 
 ---
 
-## Step 1: Activate Customer for Virtual Cards
-
-Enroll a customer in the virtual card program:
-
-```
-POST /customer/virtual/cards/activate
-```
-
-<ParamField body="customer_id" type="string" required>
-  The ID of the customer to activate.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/activate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
-  -d '{
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
-  }'
-```
-</RequestExample>
-
----
-
-## Step 2: Issue a Card
+## Step 1: Issue a Card
 
 Create a virtual card for an activated customer:
 
@@ -53,6 +27,10 @@ POST /customer/virtual/cards/create
   Card currency (e.g. `USD`).
 </ParamField>
 
+<ParamField body="amount" type="number" required>
+  Initial funding amount in USD. Minimum $3.00, maximum $10,000.00.
+</ParamField>
+
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/create' \
@@ -61,7 +39,8 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/create' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
     "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "currency": "USD"
+    "currency": "USD",
+    "amount": 10.00
   }'
 ```
 </RequestExample>
@@ -145,7 +124,7 @@ POST /customer/virtual/cards/topup
 </ParamField>
 
 <ParamField body="amount" type="number" required>
-  Amount to add to the card.
+  Amount to add to the card. Minimum $1.00, maximum $10,000.00.
 </ParamField>
 
 <ParamField body="debit_wallet" type="string" required>

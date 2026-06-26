@@ -31,23 +31,30 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/list?page=1&pe
 {
   "status": "success",
   "status_code": 200,
-  "message": "Request successful",
+  "message": "Records retrieved successfully",
   "data": [
     {
-      "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
-      "card_number": "4111 **** **** 1234",
-      "expiry": "04/29",
-      "currency": "USD",
-      "balance": "150.00",
-      "status": "active",
+      "id": "e6f2f9d0-2d4f-4b4f-9d9f-2f1f8f9e3a7e",
       "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-      "created_at": "2026-04-01T10:00:00Z"
+      "customer_card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+      "card_number": "4111111111111234",
+      "expiry_date": "04/29",
+      "cvv": "123",
+      "card_status": "active",
+      "raw_data": {
+        "cardName": "Main Expense Card",
+        "cardBrand": "visa"
+      }
     }
   ],
-  "meta": {
+  "pagination": {
     "total": 5,
     "per_page": 20,
-    "current_page": 1
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
   }
 }
 ```
