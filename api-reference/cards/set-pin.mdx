@@ -3,7 +3,7 @@ title: "Set Card PIN"
 description: "Let a cardholder set their PIN through Yativo's secure hosted page — no PIN ever touches your server."
 ---
 
-Card PINs are set — and changed — through Yativo's **hosted secure page**, powered by the Gnosis Pay Partner Secure Elements (PSE) service. The cardholder types their PIN directly inside a sandboxed iframe. Your backend never receives or processes the PIN value.
+Card PINs are set — and changed — through Yativo's **hosted secure page**, powered by the card network's Partner Secure Elements (PSE) service. The cardholder types their PIN directly inside a sandboxed iframe. Your backend never receives or processes the PIN value.
 
 <Note>
   **First-time PIN setup and PIN changes use different response shapes.**
@@ -13,7 +13,7 @@ Card PINs are set — and changed — through Yativo's **hosted secure page**, p
 </Note>
 
 <Note>
-  **`pin_set` is informational, not a hard gate.** Yativo tracks `pin_set` from the `physical.card.pin.changed` webhook — Gnosis Pay does not expose this value via their API. The flag may lag behind reality if the webhook was missed or the cardholder set their PIN through another path. Use it as a UI hint (e.g. show a "Set PIN" prompt) rather than blocking access server-side.
+  **`pin_set` is informational, not a hard gate.** Yativo tracks `pin_set` from the `physical.card.pin.changed` webhook — the card network does not expose this value via a direct lookup. The flag may lag behind reality if the webhook was missed or the cardholder set their PIN through another path. Use it as a UI hint (e.g. show a "Set PIN" prompt) rather than blocking access server-side.
 </Note>
 
 ---
@@ -32,8 +32,8 @@ Card PINs are set — and changed — through Yativo's **hosted secure page**, p
   <Step title="Open pin_setup_url in an iframe or WebView">
     Pass `data.pin_setup_url` to your frontend. The cardholder enters and confirms their 4-digit PIN directly in the hosted page. The PIN never leaves the iframe.
   </Step>
-  <Step title="Gnosis Pay fires a webhook">
-    Once saved, Gnosis Pay sends a `physical.card.pin.changed` event. Yativo updates `pin_set: true` on the card record automatically.
+  <Step title="Card network fires a webhook">
+    Once saved, the card network sends a `physical.card.pin.changed` event. Yativo updates `pin_set: true` on the card record automatically.
   </Step>
 </Steps>
 
@@ -175,7 +175,7 @@ Theme fields: `accent_color`, `background_color`, `panel_color`, `text_color`, `
 
 ## Checking `pin_set` status
 
-After the PIN is set, the Gnosis Pay `physical.card.pin.changed` webhook fires and Yativo updates `pin_set: true` on the card record. You can read this via:
+After the PIN is set, the card network's `physical.card.pin.changed` webhook fires and Yativo updates `pin_set: true` on the card record. You can read this via:
 
 - **Card issuers** — `GET /v1/card-issuer/customers/{customerId}` → `data.cards[n].pin_set`
 - **End users** — `GET /v1/yativo-card/my-account` → `data.account.cards[n].pin_set`
@@ -188,7 +188,7 @@ The `next_action` field on the issuer customer record will read:
 until `pin_set` becomes `true`.
 
 <Warning>
-  `pin_set` reflects the **last known state from the webhook**. Gnosis Pay does not expose this flag via their partner API, so if the webhook was missed or the PIN was set through another path, the value may be stale. Treat it as a UI hint — not an authoritative server-side gate.
+  `pin_set` reflects the **last known state from the webhook**. The card network does not expose this flag via a direct API lookup, so if the webhook was missed or the PIN was set through another path, the value may be stale. Treat it as a UI hint — not an authoritative server-side gate.
 </Warning>
 
 ---

@@ -1,0 +1,112 @@
+name: Sync AI Knowledge Base
+
+# Fires on any push to main that changes MDX documentation files.
+# Sends updated file contents to the Yativo backend's sync endpoint so the
+# MongoDB knowledge_docs collection is kept in sync with the live docs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'yativo-crypto/**/*.mdx'
+      - 'yativo-fiat/**/*.mdx'
+      - 'guides/**/*.mdx'
+      - 'sdks/**/*.mdx'
+      - 'sandbox/**/*.mdx'
+      - 'api-reference/**/*.mdx'
+      - 'fiat-api-reference/**/*.mdx'
+
+  # Allow manual trigger from the GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      full_sync:
+        description: 'Send ALL mdx files (not just changed ones)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  sync:
+    name: Sync changed MDX files
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout docs repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # need parent commit to detect changed files
+
+      - name: Collect changed MDX files
+        id: collect
+        shell: python3 {0}
+        run: |
+          import json, os, subprocess, sys
+
+          full_sync = os.environ.get('FULL_SYNC', 'false').lower() == 'true'
+
+          if full_sync:
+              # Find every .mdx file in the repo
+              result = subprocess.run(
+                  ['find', '.', '-name', '*.mdx', '-not', '-path', '*/.git/*'],
+                  capture_output=True, text=True, check=True
+              )
+              raw_paths = [p.lstrip('./') for p in result.stdout.strip().split('\n') if p]
+          else:
+              # Only files changed in this push
+              result = subprocess.run(
+                  ['git', 'diff', '--name-only', '--diff-filter=ACMR', 'HEAD~1', 'HEAD'],
+                  capture_output=True, text=True, check=True
+              )
+              raw_paths = [p for p in result.stdout.strip().split('\n') if p.endswith('.mdx')]
+
+          if not raw_paths:
+              print('No MDX files to sync')
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write('has_files=false\n')
+              sys.exit(0)
+
+          files = []
+          for rel_path in raw_paths:
+              if not os.path.exists(rel_path):
+                  continue   # file was deleted — the backend will handle orphan removal separately
+              with open(rel_path, encoding='utf-8') as f:
+                  files.append({'path': rel_path, 'content': f.read()})
+
+          payload = json.dumps({'files': files})
+          payload_path = '/tmp/sync-payload.json'
+          with open(payload_path, 'w') as f:
+              f.write(payload)
+
+          print(f'Collected {len(files)} file(s) to sync')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('has_files=true\n')
+              f.write(f'file_count={len(files)}\n')
+        env:
+          FULL_SYNC: ${{ inputs.full_sync || 'false' }}
+
+      - name: Push to Yativo AI knowledge base
+        if: steps.collect.outputs.has_files == 'true'
+        run: |
+          echo "Syncing ${{ steps.collect.outputs.file_count }} MDX file(s) to knowledge base..."
+
+          HTTP_STATUS=$(curl -s -o /tmp/sync-response.json -w "%{http_code}" \
+            -X POST "${{ secrets.YATIVO_CRYPTO_API_URL }}/api/v1/ai/admin/sync-knowledge" \
+            -H "Authorization: Bearer ${{ secrets.YATIVO_ADMIN_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data @/tmp/sync-payload.json \
+            --max-time 60)
+
+          echo "Response (HTTP $HTTP_STATUS):"
+          cat /tmp/sync-response.json | python3 -m json.tool 2>/dev/null || cat /tmp/sync-response.json
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "Sync failed with HTTP $HTTP_STATUS"
+            exit 1
+          fi
+
+          echo "Sync successful"
+
+      - name: No changes to sync
+        if: steps.collect.outputs.has_files != 'true'
+        run: echo "No MDX files changed — nothing to sync"

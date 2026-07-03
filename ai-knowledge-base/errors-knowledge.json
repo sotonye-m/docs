@@ -1,0 +1,573 @@
+[
+  {
+    "_id": "error-crypto-400-validation",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "400 Validation Error (Crypto)",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 400 is returned when the request body is malformed, missing required fields, or contains invalid values.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "validation_error",
+        "message": "The field 'chain' is required",
+        "fields": { "chain": ["The chain field is required"] }
+      }
+    },
+    "errors": [
+      { "status": 400, "code": "validation_error", "description": "Request body is malformed or missing required fields" }
+    ],
+    "related": ["crypto-transactions-send", "crypto-assets-add"],
+    "tags": ["error", "400", "validation", "required-fields"],
+    "verified": true,
+    "content": "HTTP 400 with code validation_error is returned by the Yativo Crypto API when the request body fails validation. Common causes: missing a required field (e.g. omitting chain when calling POST /transactions/send-funds), sending the wrong data type (e.g. a string instead of a number for amount), sending an unrecognized value for an enum field (e.g. an invalid priority value — must be 'low', 'medium', or 'high'). The error response includes an error.fields object that maps field names to arrays of validation messages. Read the fields object to identify exactly which field failed and why. Fix: check all required parameters for the endpoint in the documentation. For POST /transactions/send-funds required fields are: account, assets, receiving_address, amount, type, chain, category, priority. For POST /assets/add-asset required fields are: account_id, chain, ticker. For POST /swap/quote required fields are: from_chain, from_ticker, to_chain, to_ticker, amount, from_address, to_address.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-401-unauthorized",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "401 Unauthorized (Crypto)",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 401 is returned when the Bearer token is missing, expired, or invalid. Tokens expire after 60 minutes.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "unauthorized",
+        "message": "Access token is expired or invalid"
+      }
+    },
+    "errors": [
+      { "status": 401, "code": "unauthorized", "description": "Token missing, expired (60-min TTL), or invalid. Refresh via POST /apikey/token or GET /authentication/refresh-token." }
+    ],
+    "related": ["crypto-authentication", "crypto-api-keys"],
+    "tags": ["error", "401", "unauthorized", "token", "expired"],
+    "verified": true,
+    "content": "HTTP 401 with code unauthorized is returned when the request lacks a valid Bearer token. Causes: 1) No Authorization header — all authenticated endpoints require Authorization: Bearer {token}. 2) Token expired — crypto API tokens expire after 60 minutes (3600 seconds). 3) Token malformed — the token string is corrupted or truncated. 4) Using a sandbox token against production or vice versa. Resolution: call POST /apikey/token with api_key and api_secret to get a fresh token. Or call GET /authentication/refresh-token to extend the current session without resending credentials. Implement auto-refresh: track when the token was issued, and refresh it proactively before it expires (e.g. refresh at 55 minutes). In code: catch 401 responses, refresh the token, then retry the original request once. Note: a valid token that lacks permissions returns 403 Forbidden, not 401. If you receive 401 after recently getting a fresh token, verify you are using the correct base URL (production vs sandbox).",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-403-forbidden",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "403 Forbidden — Insufficient Scope",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 403 is returned when the Bearer token is valid but the API key lacks the required permission scope for the endpoint.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "forbidden",
+        "message": "API key does not have the required permission: transactions:write"
+      }
+    },
+    "errors": [
+      { "status": 403, "code": "forbidden", "description": "Token is valid but the API key lacks the required scope. Check scopes with GET /apikey/{id} and add with PUT /apikey/{id}/permissions." }
+    ],
+    "related": ["crypto-api-keys", "crypto-authentication"],
+    "tags": ["error", "403", "forbidden", "permissions", "scope"],
+    "verified": true,
+    "content": "HTTP 403 with code forbidden is returned when your valid token does not have the required permission scope for the operation. This is different from 401 (invalid token) — the token is accepted but the action is blocked. Common scenarios: calling POST /transactions/send-funds without transactions:write scope, calling POST /webhook/create-webhook without webhooks:write scope, calling POST /apikey/create without apikey:write scope. Resolution: check your API key's current scopes by calling GET /apikey/{id}. Add missing scopes with PUT /apikey/{id}/permissions by sending the updated permissions array (this replaces the existing permissions). Available scopes: wallets:read, wallets:write, transactions:read, transactions:write, cards:read, cards:write, swap:read, swap:write, webhooks:write, apikey:write. Creating or updating permissions requires 2FA (X-2FA-Token header) and the apikey:write scope. Principle of least privilege: only grant the scopes your integration actually needs.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-404-not-found",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "404 Not Found",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 404 is returned when the requested resource ID does not exist or does not belong to your account.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "not_found",
+        "message": "Asset not found"
+      }
+    },
+    "errors": [
+      { "status": 404, "code": "not_found", "description": "The resource ID does not exist or was deleted" }
+    ],
+    "related": [],
+    "tags": ["error", "404", "not-found"],
+    "verified": true,
+    "content": "HTTP 404 with code not_found is returned when the resource referenced by an ID does not exist or belongs to a different account. Common causes: using an asset_id or account_id that was deleted or never created, referencing a webhook_id from a different environment (sandbox vs production), specifying a transaction_id that does not exist in your account, using a swap quote_id that has already been executed and is no longer queryable. Resolution: verify the ID exists by listing resources first (GET /accounts/get-accounts, POST /assets/get-user-assets, etc.). Check that you are using IDs from the correct environment — sandbox and production have separate ID namespaces. IDs are never shared across accounts — another account's resource IDs will always return 404 for your authenticated requests.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-409-idempotency-conflict",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "409 Conflict — Idempotency Key Already Used",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 409 is returned when an Idempotency-Key was already used for a different transaction. The error body contains existing_transaction_id.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "conflict",
+        "message": "Idempotency key already used",
+        "existing_transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5"
+      }
+    },
+    "errors": [
+      { "status": 409, "code": "conflict", "description": "Idempotency key was already used. Use existing_transaction_id from the error to look up the original transaction." }
+    ],
+    "related": ["guide-idempotency-patterns", "crypto-transactions-send"],
+    "tags": ["error", "409", "conflict", "idempotency", "duplicate"],
+    "verified": true,
+    "content": "HTTP 409 with code conflict is returned when the Idempotency-Key header you provided was already submitted for a different transaction. This is NOT an error for retrying the same request — it is an error when you accidentally reuse a key for a new transaction. The error body contains existing_transaction_id — use GET /unified-transactions/{id} or POST /transactions/get-transactions to retrieve the original transaction and check its status. Correct behavior: use a unique idempotency key per distinct operation (UUID per transaction). Reuse the same key only when retrying the same failed request. When you retry with the same key and the original succeeded, you receive the original successful response — not a 409. When you retry with the same key and the original is still processing, you receive the current state. Generate keys with crypto.randomUUID() in Node.js or uuid.uuid4() in Python. Store the key alongside your internal transaction record so you can retry with the same key if needed within the key's lifetime (typically 24 hours).",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-422-insufficient-balance",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "422 Insufficient Balance",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 422 with code insufficient_balance is returned when the asset or wallet does not have enough funds for the requested transaction.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "insufficient_balance",
+        "message": "Asset balance is too low for this transaction",
+        "available_balance": "45.00",
+        "required_balance": "100.00"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "insufficient_balance", "description": "The asset has less than the requested send amount. Check balance with POST /balance/check before sending." }
+    ],
+    "related": ["crypto-balance-check", "crypto-transactions-send"],
+    "tags": ["error", "422", "insufficient-balance", "balance"],
+    "verified": true,
+    "content": "HTTP 422 with code insufficient_balance is returned when an asset or wallet does not have enough funds for the requested operation. In crypto transactions (POST /transactions/send-funds): the asset_id balance is less than the amount requested. The error response may include available_balance and required_balance to help diagnose the shortfall. In agentic wallet transactions (POST /agent/transact): the wallet balance is less than the amount. In swap execution (POST /swap/execute): the from_asset_id does not have enough balance for the fromAmount. In fiat payouts (POST /payout/simple, /payout/batch): the debit wallet currency balance is insufficient — fiat returns HTTP 402 not 422 for this case. Resolution: call POST /balance/check with account_id and asset_id to see the current confirmed balance before sending. Deposit funds to the asset's address or receive a transfer. Note: for the gas station, the relevant error is gas_station_empty (separate code) — insufficient_balance refers to the token being sent, not the gas.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-422-invalid-address",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "422 Invalid Address",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 422 with code invalid_address is returned when the receiving_address format does not match the specified chain.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "invalid_address",
+        "message": "The provided address is not valid for chain: ethereum"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "invalid_address", "description": "receiving_address format is invalid for the specified chain" }
+    ],
+    "related": ["crypto-transactions-send", "crypto-compliance-screener"],
+    "tags": ["error", "422", "invalid-address", "address-format", "chain"],
+    "verified": true,
+    "content": "HTTP 422 with code invalid_address is returned when the receiving_address in POST /transactions/send-funds does not match the expected format for the specified chain. Each blockchain has a distinct address format: Ethereum (and EVM chains: Polygon, BSC, Base, Arbitrum, Optimism, Avalanche, Gnosis, XDC) addresses start with 0x and are 42 characters long (EIP-55 checksum addresses are mixed-case). Solana addresses are base58-encoded strings typically 44 characters long. Bitcoin addresses start with 1 (P2PKH), 3 (P2SH), or bc1 (bech32 SegWit). TRON addresses start with T. Resolution: validate address format client-side before submitting. For EVM chains, use ethers.js isAddress() or web3.js utils.isAddress(). For Solana, use @solana/web3.js PublicKey validation. For Bitcoin, use a Bitcoin address validation library. Never allow users to paste and send to an address on the wrong chain (e.g. an Ethereum address as a Solana receiving address — it will fail here). Also use POST /screener/check on the address before sending to catch risky addresses early.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-422-unsupported-token",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "422 Unsupported Token",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 422 with code unsupported_token is returned when the requested ticker is not supported on the specified chain.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "unsupported_token",
+        "message": "Token 'USDC' is not supported on chain 'bitcoin'"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "unsupported_token", "description": "The ticker is not available on the specified chain. Use GET /assets/get-chains to see supported tokens per chain." }
+    ],
+    "related": ["crypto-assets-add", "crypto-supported-chains"],
+    "tags": ["error", "422", "unsupported-token", "chain", "ticker"],
+    "verified": true,
+    "content": "HTTP 422 with code unsupported_token is returned when trying to add an asset or send a token that is not supported on the specified chain. For example, USDC does not exist natively on Bitcoin — only BTC is supported on the bitcoin chain. Common mismatches: USDC is available on Ethereum, Solana, Polygon, BSC, Base, Arbitrum, Optimism, Avalanche but NOT on Bitcoin or XDC. USDT-TRC20 is available on TRON but USDT may not be available on all EVM chains. ETH as a gas token exists on Ethereum mainnet, Base, Arbitrum, Optimism — but on Polygon the gas token is POL (not ETH). Resolution: call GET /assets/get-chains to retrieve the authoritative list of supported tokens per chain. Or call GET /assets/get-all-assets to see all available (chain, ticker) combinations. Filter by chain before presenting token options to users in your UI.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-422-quote-expired",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "422 Quote Expired",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 422 with code quote_expired is returned when a swap or payment quote's expiry window has passed before execution.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "quote_expired",
+        "message": "The quote has expired. Please request a new quote.",
+        "expired_at": "2025-01-01T00:05:00Z"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "quote_expired", "description": "The quote_id passed to execute has expired. Request a new quote." }
+    ],
+    "related": ["crypto-swap-quote", "crypto-swap-execute", "fiat-exchange-rates"],
+    "tags": ["error", "422", "quote-expired", "swap", "rate"],
+    "verified": true,
+    "content": "HTTP 422 with code quote_expired is returned when a quote_id passed to an execution endpoint has passed its expiry time. Swap quotes (POST /swap/quote) expire in approximately 3 minutes. Fiat exchange rate quotes (POST /exchange-rate and POST /sendmoney/quote) expire in 5 minutes. Resolution: request a fresh quote immediately before execution — do not cache quote_ids for more than a few minutes. Best practice: check the expires_at timestamp in the quote response. If the time from now to expires_at is less than 30 seconds, request a new quote before proceeding. Implement a helper function: async function getValidQuote(params) — request a quote, check expiresIn, refresh if under 30 seconds, return the valid quote. Never store quote_ids in a database for later use — they expire quickly and must be used within the session. If a user takes longer than expected to confirm (e.g. they step away), treat it as a timeout and re-quote when they return.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-422-gas-station-empty",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "422 Gas Station Empty",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 422 with code gas_station_empty is returned when the gas station does not have enough native tokens to cover the transaction's network fee.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "gas_station_empty",
+        "message": "Gas station for ethereum has insufficient ETH to cover the network fee"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "gas_station_empty", "description": "The gas station lacks native tokens for this chain. Top up the station address or use use_self_funding: true." }
+    ],
+    "related": ["crypto-gas-station", "crypto-transactions-send"],
+    "tags": ["error", "422", "gas-station-empty", "gas", "network-fee"],
+    "verified": true,
+    "content": "HTTP 422 with code gas_station_empty is returned when the gas station for the specified chain does not have enough native token to pay the network fee for a transaction. This is different from insufficient_balance (which is about the token being sent) — gas_station_empty is about the network fee reserve. Resolution options: 1) Top up the gas station — call POST /assets/get-station-assets to find the station address for the affected chain, then send native tokens to that address from an external wallet. For Ethereum send ETH, for Solana send SOL, for Polygon send POL, etc. 2) Use self-funding — for native token sends (sending ETH, SOL, BNB), set use_self_funding: true in POST /transactions/send-funds. This deducts the gas fee from the native token being sent rather than the gas station. Only works for native tokens. Prevention: subscribe to the gas.low webhook event which fires when gas station reserves fall below a threshold. Implement automated top-up logic triggered by this event. Recommended minimum reserves: 0.1 ETH, 1 SOL, 10 POL, 0.1 BNB per station.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-429-rate-limit",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "429 Rate Limit Exceeded",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 429 is returned when too many requests are made in a short window. Response includes retry_after seconds to wait before retrying.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "rate_limit_exceeded",
+        "message": "Too many requests. Please wait before retrying.",
+        "retry_after": 15
+      }
+    },
+    "errors": [
+      { "status": 429, "code": "rate_limit_exceeded", "description": "Rate limit hit. Wait retry_after seconds before next request." }
+    ],
+    "related": [],
+    "tags": ["error", "429", "rate-limit", "throttling"],
+    "verified": true,
+    "content": "HTTP 429 with code rate_limit_exceeded is returned when your API key has exceeded the allowed request rate. The response includes retry_after (integer) — the number of seconds to wait before retrying. The fiat exchange rate endpoint specifically limits to 30 requests per minute per API key. For other endpoints, rate limits depend on your subscription tier — higher tiers (Pro, Enterprise) have higher limits. Best practices: implement exponential backoff with jitter when receiving 429. Read the retry_after value and wait exactly that long before retrying. Cache responses where possible (e.g. cache GET /assets/get-chains results, cache GET /swap/assets results) to reduce redundant calls. For exchange rates shown in UI, call the API once and use the quote for the display period rather than calling on every keystroke. For high-throughput use cases, upgrade to Pro or Enterprise subscription. Avoid polling-heavy patterns — use webhooks for status updates instead of polling every second.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-500-internal",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "500 Internal Server Error",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 500 is returned for unexpected server-side failures. The response includes a request_id for support escalation.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "internal_error",
+        "message": "An unexpected error occurred",
+        "request_id": "req_01HX9KZMB3F7VNQP8R2WDGT4E5"
+      }
+    },
+    "errors": [
+      { "status": 500, "code": "internal_error", "description": "Server-side error. Record the request_id and contact Yativo support." }
+    ],
+    "related": [],
+    "tags": ["error", "500", "internal-error", "server-error"],
+    "verified": true,
+    "content": "HTTP 500 with code internal_error is returned for unexpected server-side failures that are not caused by the request itself. The error response includes request_id — always record this ID when a 500 occurs. Include it when contacting Yativo support so the team can trace the exact server-side failure. 500 errors are transient in most cases — implement retry logic with exponential backoff (wait 1s, then 2s, then 4s before retrying). If a 500 occurs on a write operation (send funds, create payment), do NOT immediately retry without checking first — use the idempotency key to retry safely and avoid duplicates. If 500 errors persist on multiple retries, check the Yativo status page or contact support with the request_id. 500 errors do not indicate an issue with your integration — they are platform-side failures.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-fiat-402-insufficient-balance",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "402 Insufficient Wallet Balance (Fiat)",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "HTTP 402 is returned by the Yativo Fiat API when a wallet does not have enough balance for a payout or send.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "status": "error",
+      "status_code": 402,
+      "message": "Insufficient wallet balance"
+    },
+    "errors": [
+      { "status": 402, "code": "insufficient_balance", "description": "Fiat wallet balance is lower than the transaction amount plus fees" }
+    ],
+    "related": ["fiat-wallets", "fiat-payouts-simple"],
+    "tags": ["error", "402", "insufficient-balance", "fiat", "wallet"],
+    "verified": true,
+    "content": "HTTP 402 is returned by the Yativo Fiat API (different from the crypto API's 422) when the wallet does not have enough balance for a payout. This occurs for POST /payout/simple, POST /payout/batch (entire batch rejected if total exceeds balance), POST /sendmoney, and POST /wallet/payout. The response body has status: 'error', status_code: 402, and message: 'Insufficient wallet balance'. Resolution: check your wallet balance with GET /wallet/balance?currency={currency}. Top up your wallet through your normal funding process. For batch payouts: the entire batch is checked against your wallet balance before any payment is processed — if any combination of amounts exceeds your balance the entire batch fails. You must ensure total amount of all batch items plus fees fits within your wallet balance. Include expected fees in your balance check — use POST /exchange-rate with method_id to see the exact fee for the rail before submitting.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-422-card-not-active",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "422 Card Not Active",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "HTTP 422 with code card_not_active is returned when a card operation is attempted on a frozen, voided, or otherwise inactive card.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "card_not_active",
+        "message": "Card is not active. The card may be frozen or voided."
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "card_not_active", "description": "Card is frozen or voided. Unfreeze to resume, or void is permanent." }
+    ],
+    "related": ["crypto-cards-virtual"],
+    "tags": ["error", "422", "card-not-active", "frozen", "voided"],
+    "verified": true,
+    "content": "HTTP 422 with code card_not_active is returned when a transaction or operation is attempted on a card that is not in an active state. Cards can be frozen (temporarily suspended) or voided (permanently cancelled). A frozen card declines all new authorizations but existing holds are maintained. A voided card is permanently disabled and cannot be reactivated. Resolution for frozen cards: unfreeze with POST /yativo-card/cards/{id}/unfreeze — the card immediately resumes accepting transactions. Resolution for voided cards: a voided card cannot be reactivated. Issue a new card with POST /yativo-card/create-card. Before voiding a card, withdraw remaining funds with POST /yativo-card/cards/{id}/... card wallet balance endpoint. Card status transitions: active → frozen (freezable) → active (unfreezable). active → voided (permanent, irreversible). Webhook events: card.frozen when frozen, card.unfrozen when unfrozen, card.voided when voided.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-webhook-signature-failed",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "Webhook Signature Verification Failure",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "How to diagnose and fix webhook signature verification failures when the computed HMAC-SHA256 does not match the X-Yativo-Signature header.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["crypto-webhooks", "crypto-webhooks-verify", "fiat-webhooks"],
+    "tags": ["error", "webhook", "signature", "hmac", "verification"],
+    "verified": true,
+    "content": "Webhook signature verification failures occur when the HMAC-SHA256 computed from the incoming webhook payload does not match the X-Yativo-Signature header value. Common causes and fixes: 1) Wrong secret — ensure you are using the correct webhook secret. Rotate secrets with POST /yativo-card/webhooks/{id}/rotate-secret if you suspect the secret is stale. 2) Wrong signed string format for crypto API — the signed string must be: `${X-Yativo-Timestamp}.${JSON.stringify(payload)}`. The timestamp is the raw string from the header. The payload must be JSON.stringify of the parsed body (not the raw bytes). 3) Wrong signed string format for fiat API — the signed string is the raw request body bytes (not JSON.stringify — use the raw body buffer). 4) Middleware parsing the body before your handler — frameworks like Express can parse the body into an object before you can access raw bytes. Buffer the raw body before any JSON parsing middleware for webhook routes. In Express: use `express.raw({ type: 'application/json' })` on the webhook route to get raw bytes. 5) Timing attack — comparing strings with === is not timing-safe. Use crypto.timingSafeEqual() with Buffer.from() for both sides. 6) Replay attack — the X-Yativo-Timestamp should be within 5 minutes of current time. Reject older timestamps.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-fiat-kyc-required",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "KYC Not Approved — Virtual Account Creation Blocked",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Virtual account creation fails if the customer's KYC is not approved (is_va_approved: false). Must complete KYC at kyc.yativo.com first.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "status": "error",
+      "message": "Customer KYC is not approved for virtual account creation"
+    },
+    "errors": [
+      { "status": 422, "code": "kyc_not_approved", "description": "is_va_approved is false on the customer. Submit KYC to kyc.yativo.com before issuing virtual accounts." }
+    ],
+    "related": ["fiat-kyc", "fiat-virtual-accounts", "fiat-customers"],
+    "tags": ["error", "kyc", "not-approved", "virtual-account", "fiat"],
+    "verified": true,
+    "content": "Virtual account creation (POST /business/virtual-account/create) requires the customer to have completed KYC with is_va_approved: true. If the customer has not completed KYC or was rejected, the call fails. Check the current KYC status: GET /customer/kyc/{customer_id} — look at is_va_approved (boolean) and kyc_status. If is_va_approved is false: guide the customer through KYC submission to https://kyc.yativo.com/api/individual-kyc/submit (for individuals) or https://kyc.yativo.com/api/business-kyc/submit (for businesses). The KYC payload requires personal information, address, identity documents, and risk/purpose fields. For Nigerian customers also include bvn and nin (11 digits each). After submission, check status with GET /customer/kyc/{id}. KYC review typically completes within minutes to hours. The customer.kyc.approved webhook fires on approval. Some rails require additional endorsements beyond basic KYC: PIX Brazil needs 'brazil' endorsement, SEPA needs 'sepa', Germany SEPA needs 'eurde'. Generate a re-verification link with GET https://kyc.yativo.com/api/kyc/regenerate/{customer_id}/{service} when a specific endorsement is missing.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-fiat-idempotency-missing",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "Missing Idempotency-Key Header (Fiat)",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "The Yativo Fiat API requires an Idempotency-Key header on all POST, PUT, and PATCH requests. Omitting it returns an error.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "status": "error",
+      "message": "Idempotency-Key header is required"
+    },
+    "errors": [
+      { "status": 422, "code": "validation_error", "description": "Idempotency-Key header is missing from a POST/PUT/PATCH request" }
+    ],
+    "related": ["fiat-authentication", "guide-idempotency-patterns"],
+    "tags": ["error", "idempotency", "fiat", "header-required"],
+    "verified": true,
+    "content": "The Yativo Fiat API requires the Idempotency-Key header on all POST, PUT, and PATCH requests. Unlike the crypto API where idempotency keys are recommended but optional, the fiat API enforces them. Omitting the header returns an error. The Idempotency-Key must be a unique string per request. Best practice: generate a UUID for each operation. Libraries: Node.js crypto.randomUUID(), Python uuid.uuid4().hex, Go uuid.New().String(). Store the key with the operation in your database before making the API call. If the request times out, retry with the same key to safely re-send without creating a duplicate transaction. Example header: Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000. All fiat endpoints requiring this header: POST /sendmoney/quote, POST /sendmoney, POST /payout/simple, POST /payout/batch, POST /beneficiaries, POST /beneficiaries/payment-methods, POST /customer, PUT /customer/{id}, POST /exchange-rate, POST /wallet/create, POST /wallet/payout, POST /business/virtual-account/create, POST /business/virtual-account/bulk-account-creation, PUT /business/virtual-account/enable_disable_virtual_account, POST /business/virtual-account/refundPayin/{id}, POST /customer/virtual/cards/create, POST /customer/virtual/cards/topup, PUT /customer/virtual/cards/update/{id}, POST /customer/virtual/cards/withdraw, POST /customer/virtual/cards/terminate.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "error-crypto-kyc-not-approved-cards",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "error",
+    "category": "errors",
+    "title": "KYC Not Approved — Card Operations Blocked",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Card operations (create-card, fund, transact) fail if the user's KYC status is not 'approved'. The four-step onboarding must be completed including KYC approval.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "kyc_not_approved",
+        "message": "KYC verification required before card operations"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "kyc_not_approved", "description": "KYC status is not 'approved'. Poll GET /yativo-card/kyc-status until approved." }
+    ],
+    "related": ["crypto-cards-onboarding", "crypto-cards-virtual"],
+    "tags": ["error", "kyc", "cards", "crypto", "not-approved"],
+    "verified": true,
+    "content": "Yativo Crypto card operations require KYC approval before any card can be created or used. After calling POST /yativo-card/onboard, the kyc_status starts as 'pending'. You must poll GET /yativo-card/kyc-status until the status is 'approved' before proceeding to POST /yativo-card/accept-terms and POST /yativo-card/deploy-safe. KYC statuses: pending (not yet started, or documents requested — poll again shortly), in_progress (documents submitted, under review — poll every few minutes), pending_review (resubmission requested — the user must supply additional info via a provided KYC link), approved (identity verified — proceed with onboarding), rejected (verification failed — check rejection_reason and contact support), expired (KYC session expired — restart with the KYC link endpoint). Attempting to create a card or process card transactions when kyc_status is not 'approved' returns this error. The kyc.approved webhook fires when approval is granted (register webhooks with POST /webhook/create-webhook with event 'kyc.approved').",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  }
+]

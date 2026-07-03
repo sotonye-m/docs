@@ -847,9 +847,13 @@ All `transaction.*` events share the same `data` shape. Fields are populated fro
 | `transaction_id` | string \| null | Network transaction ID. Use this as the key for deduplication. Falls back to the webhook event `id` when not provided by the card network. |
 | `blockchain_tx_hash` | string \| null | On-chain transaction hash when the card network includes one. `null` for most card-network transactions where settlement is off-chain. |
 | `type` | string \| null | Transaction type as reported by the card network (e.g. `"Payment"`, `"Refund"`) |
-| `amount` | float \| null | Transaction amount as a decimal number |
+| `amount` | float \| null | Transaction amount as a decimal number, in the merchant's local currency |
 | `amount_minor` | integer \| null | `amount` in minor units (cents) |
-| `currency` | string \| null | ISO 4217 alpha-3 currency code (e.g. `"EUR"`, `"USD"`, `"BRL"`) |
+| `currency` | string \| null | ISO 4217 alpha-3 currency code of `amount` — the merchant's local currency (e.g. `"EUR"`, `"USD"`, `"BRL"`) |
+| `billing_amount` | float \| null | The amount actually debited from the card's own settlement currency. **Present on every transaction**, not only foreign-currency ones — on a same-currency purchase it simply equals `amount`. |
+| `billing_amount_minor` | integer \| null | `billing_amount` in minor units (cents) |
+| `billing_currency` | string \| null | ISO 4217 alpha-3 currency code of `billing_amount` — the card's own currency. Equals `currency` when the purchase was made in the card's native currency. |
+| `fx_rate` | float \| null | Local-currency units per 1 unit of billing currency: `fx_rate = amount / billing_amount`. Reads as "1 {billing_currency} = {fx_rate} {currency}" — e.g. `924.3827` means `1 USD = 924.3827 CLP`. Equals `1` on a same-currency purchase. Provided so you don't have to compute it, but if you ever need to derive `billing_amount` yourself: `billing_amount = amount / fx_rate`. |
 | `merchant` | string \| null | Merchant name — `null` for contactless/tap or when not provided by the network |
 | `merchant_category` | string \| null | Merchant category code (MCC) |
 | `merchant_city` | string \| null | Merchant city — `null` when not provided |
@@ -883,6 +887,10 @@ Fired when a card purchase is authorized. A `customer.balance.updated` event fol
     "amount": 12.50,
     "amount_minor": 1250,
     "currency": "EUR",
+    "billing_amount": 12.50,
+    "billing_amount_minor": 1250,
+    "billing_currency": "EUR",
+    "fx_rate": 1,
     "merchant": "Starbucks",
     "merchant_category": "5812",
     "merchant_city": "Paris",
@@ -892,6 +900,10 @@ Fired when a card purchase is authorized. A `customer.balance.updated` event fol
   }
 }
 ```
+
+<Note>
+  This card settles in EUR and the purchase was also in EUR, so `billing_amount`/`billing_currency` simply match `amount`/`currency` and `fx_rate` is `1` — no conversion took place. See the `transaction.settled` example below for a foreign-currency purchase, where they differ.
+</Note>
 
 ### `transaction.settled`
 
@@ -908,10 +920,14 @@ Fired when the merchant batch clears and the authorization is finalized.
     "transaction_id": "tx_9d8e7f6a5b4c3d2e1f",
     "blockchain_tx_hash": null,
     "type": "Payment",
-    "amount": 12.50,
-    "amount_minor": 1250,
-    "currency": "EUR",
-    "merchant": null,
+    "amount": 101,
+    "amount_minor": 10100,
+    "currency": "BRL",
+    "billing_amount": 20.15,
+    "billing_amount_minor": 2015,
+    "billing_currency": "USD",
+    "fx_rate": 5.0124,
+    "merchant": "MERCADOPAGO*STORE",
     "merchant_category": "7298",
     "merchant_city": null,
     "merchant_country": "BR",
@@ -920,6 +936,12 @@ Fired when the merchant batch clears and the authorization is finalized.
   }
 }
 ```
+
+<Note>
+  This example shows a foreign-currency purchase: a USD-denominated card used at a Brazilian merchant. `amount`/`currency` are the merchant's local currency (BRL, what was charged at the point of sale); `billing_amount`/`billing_currency` are what was actually debited from the card (USD). `fx_rate` (`5.0124`) reads as "1 USD = 5.0124 BRL" — check: `101 / 5.0124 ≈ 20.15`, which matches `billing_amount`.
+
+  `merchant` and `merchant_city` may come back `null` on some networks/transaction stages even when populated on the corresponding `transaction.authorized` event for the same `transaction_id` — treat them as best-effort, not guaranteed on every event.
+</Note>
 
 ### `transaction.declined`
 

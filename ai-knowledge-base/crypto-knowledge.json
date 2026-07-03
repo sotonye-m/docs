@@ -1,0 +1,1330 @@
+[
+  {
+    "_id": "crypto-introduction",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "overview",
+    "category": "introduction",
+    "title": "Yativo Crypto API Overview",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "The Yativo Crypto API is a multi-chain crypto infrastructure platform for building wallets, payment gateways, agent-based payment systems, and B2B card programs on top of blockchain rails.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["crypto-authentication", "crypto-quickstart"],
+    "tags": ["overview", "introduction", "multi-chain", "crypto"],
+    "verified": true,
+    "content": "Yativo Crypto API is a multi-chain crypto infrastructure platform. It supports wallets, payment gateways, agentic wallets for AI agents, token swaps, virtual cards, auto-forwarding rules, compliance screening, and webhook event delivery. The production base URL is https://crypto-api.yativo.com/api/v1 and the sandbox URL is https://crypto-sandbox.yativo.com/api/v1. Supported blockchain networks include Ethereum, Solana, Bitcoin, Polygon (POL), Binance Smart Chain (BNB), Base, Arbitrum, Optimism, XDC, TRON, Avalanche, and Gnosis. The API uses Bearer token authentication where tokens are obtained by exchanging API credentials and expire after 60 minutes. Idempotency keys are optional but strongly recommended on write operations to prevent duplicate transactions. All responses follow a consistent envelope: { success: true, data: { ... } } for success and { error: { code, message } } for failures. Key features include: multi-chain wallet management with gas station support so you can cover network fees on behalf of users, payment gateway for accepting crypto with a hosted checkout page, agentic wallets for AI agents using the x402 protocol and MCP server integration, cross-chain and same-chain token swaps, B2B virtual card issuer program, auto-forwarding rules that automatically move funds when balances exceed thresholds, customer management for wallet-as-a-service (WaaS) use cases, compliance screening for blockchain addresses, unified transaction view across all product lines, and subscription tier management.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-authentication",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "authentication",
+    "title": "Authenticate — Get Bearer Token",
+    "method": "POST",
+    "path": "/auth/token",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Exchange your API key and secret for a Bearer token. Tokens expire after 60 minutes. Alternatively authenticate using X-API-Key and X-API-Secret headers on every request.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": {
+      "api_key": { "type": "string", "required": true, "description": "Your API key from POST /apikey/create" },
+      "api_secret": { "type": "string", "required": true, "description": "Your API secret from POST /apikey/create" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "access_token": "eyJhbGciOiJSUzI1NiJ9...",
+        "expires_in": 3600,
+        "token_type": "Bearer"
+      }
+    },
+    "errors": [
+      { "status": 401, "code": "unauthorized", "description": "Invalid api_key or api_secret. Refresh via POST /apikey/token or GET /authentication/refresh-token" }
+    ],
+    "related": ["crypto-api-keys", "crypto-quickstart"],
+    "tags": ["auth", "token", "bearer", "api-key"],
+    "verified": true,
+    "content": "To authenticate with the Yativo Crypto API, exchange your API key and secret for a Bearer token by calling POST /auth/token. Send a JSON body with api_key (string, required) and api_secret (string, required). The response returns an access_token string, expires_in integer (3600 seconds = 60 minutes), and token_type Bearer. Include the token in all subsequent requests as Authorization: Bearer {access_token}. Tokens expire after 60 minutes. When a token expires, call POST /apikey/token with your api_key and api_secret again, or use GET /authentication/refresh-token to get a new token without resending credentials. Alternative method: instead of obtaining a token, you can include X-API-Key and X-API-Secret headers directly on every request — this avoids managing token expiry at the cost of sending credentials on each call. API keys are created via POST /apikey/create (requires 2FA token in X-2FA-Token header). Available permission scopes are: wallets:read, wallets:write, transactions:read, transactions:write, cards:read, cards:write, swap:read, swap:write, webhooks:write, apikey:write. If you receive a 403 Forbidden error, check the scopes granted to your API key via GET /apikey/{id}. For sandbox testing use the base URL https://crypto-sandbox.yativo.com/api/v1 with sandbox credentials.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-api-keys",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "authentication",
+    "title": "API Keys — Create, List, Rotate, Revoke",
+    "method": "POST",
+    "path": "/apikey/create",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Create and manage API keys with scoped permissions. Creation requires a 2FA token. Keys can be rotated, revoked, and have permissions updated.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "name": { "type": "string", "required": true, "description": "Human-readable name for the key" },
+      "permissions": { "type": "array", "required": true, "description": "Array of scope strings. Options: wallets:read, wallets:write, transactions:read, transactions:write, cards:read, cards:write, swap:read, swap:write, webhooks:write, apikey:write" },
+      "expires_in_days": { "type": "integer", "required": false, "description": "Number of days until key expires. Omit for no expiry." }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "api_key": "ak_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "api_secret": "sk_...",
+        "name": "Production Key",
+        "permissions": ["wallets:read", "transactions:write"],
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 401, "code": "unauthorized", "description": "Missing or invalid 2FA token in X-2FA-Token header" },
+      { "status": 403, "code": "forbidden", "description": "Insufficient permissions to create API keys (requires apikey:write scope)" }
+    ],
+    "related": ["crypto-authentication"],
+    "tags": ["api-keys", "permissions", "2fa", "rotate", "revoke"],
+    "verified": true,
+    "content": "API keys on Yativo Crypto are used to authenticate without managing session tokens. Create a key with POST /apikey/create — this requires a 2FA OTP token in the X-2FA-Token header, a name string, a permissions array (choose from wallets:read, wallets:write, transactions:read, transactions:write, cards:read, cards:write, swap:read, swap:write, webhooks:write, apikey:write), and an optional expires_in_days integer. The response includes the api_key and api_secret — store the secret securely as it is shown only once. Use POST /apikey/token with api_key and api_secret to get a Bearer token for subsequent API calls. List all keys with GET /apikey/list. Inspect a key's scopes with GET /apikey/{id}. Rotate a key's secret with POST /apikey/{id}/rotate — this invalidates the old secret. Revoke a key permanently with POST /apikey/{id}/revoke. Update permissions on an existing key with PUT /apikey/{id}/permissions by sending a new permissions array. Alternative to token-based auth: send X-API-Key and X-API-Secret headers on every request instead of exchanging for a token. Grant only the minimum permissions needed — for read-only analytics use wallets:read and transactions:read; for payment processing add transactions:write.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-quickstart",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "guide",
+    "category": "introduction",
+    "title": "Quickstart — First Transaction in 5 Steps",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Step-by-step guide to go from zero to your first on-chain transaction: authenticate, create account, add wallet, check balance, send funds.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["crypto-authentication", "crypto-accounts", "crypto-assets", "crypto-transactions-send"],
+    "tags": ["quickstart", "getting-started", "tutorial"],
+    "verified": true,
+    "content": "The Yativo Crypto API quickstart covers five steps. Step 1: Authenticate — POST /auth/token with api_key and api_secret to get a Bearer token. Step 2: Create an account — POST /accounts/create-account with account_name (string) and account_type (string, e.g. 'personal' or 'business') to create a logical container for wallets. Step 3: Add a wallet — POST /assets/add-asset with account_id, chain (e.g. 'ethereum', 'solana'), and ticker (e.g. 'USDC', 'ETH') to add a crypto wallet address to your account. Step 4: Check balance — POST /balance/check with account_id and asset_id to see the current on-chain balance for that asset. Step 5: Send funds — POST /transactions/send-funds with account (account_id), assets (asset_id), receiving_address, amount, type ('crypto'), chain, category ('transfer'), and priority ('low', 'medium', 'high'). Include an Idempotency-Key header to prevent duplicate sends. The gas station automatically covers network fees with a 20% markup unless you use use_self_funding: true for native token transactions where you pay fees from the same token. For sandbox testing use https://crypto-sandbox.yativo.com/api/v1. Webhook events like deposit.detected and transaction.submitted are emitted throughout the lifecycle.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-accounts-create",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "accounts",
+    "title": "Create Account",
+    "method": "POST",
+    "path": "/accounts/create-account",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Create a logical account container for grouping wallets and assets. An account is required before adding any wallets.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "account_name": { "type": "string", "required": true, "description": "Human-readable name for the account" },
+      "account_type": { "type": "string", "required": true, "description": "Account type, e.g. 'personal' or 'business'" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "account_name": "My Business Wallet",
+        "account_type": "business",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "validation_error", "description": "Missing required fields account_name or account_type" }
+    ],
+    "related": ["crypto-accounts-list", "crypto-accounts-connections", "crypto-assets-add"],
+    "tags": ["accounts", "create", "wallet-container"],
+    "verified": true,
+    "content": "In Yativo Crypto, accounts are logical containers that group wallets and assets together. You must create an account before adding any wallets. Call POST /accounts/create-account with account_name (string, required — a human-readable label like 'Alice's Treasury') and account_type (string, required — typically 'personal' or 'business'). The response returns an account_id which you will use in all subsequent asset and transaction calls. Retrieve all your accounts with GET /accounts/get-accounts which returns a paginated list of accounts with their IDs, names, types, and creation timestamps. To look up accounts belonging to a specific user pass user data to POST /accounts/get-user-accounts. Accounts can also have connections to specific chains configured via POST /accounts/create-connections (pass a chains array like ['ethereum', 'solana', 'polygon']). List existing connections with GET /accounts/get-connections. The account_id is used in POST /assets/add-asset to assign a wallet address under that account, and in POST /transactions/send-funds as the account field. There is no limit specified on the number of accounts you can create.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-accounts-list",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "accounts",
+    "title": "List Accounts & Connections",
+    "method": "GET",
+    "path": "/accounts/get-accounts",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Retrieve all accounts, user accounts, and chain connections. Manage which blockchain networks are connected to an account.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": [
+        { "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5", "account_name": "My Business Wallet", "account_type": "business", "created_at": "2025-01-01T00:00:00Z" }
+      ]
+    },
+    "errors": [],
+    "related": ["crypto-accounts-create", "crypto-assets-add"],
+    "tags": ["accounts", "list", "connections", "chains"],
+    "verified": true,
+    "content": "List all your crypto accounts with GET /accounts/get-accounts. Each account in the response has account_id, account_name, account_type, and created_at fields. To retrieve accounts for a specific user in a WaaS setup, POST /accounts/get-user-accounts with user identification fields. To connect specific chains to an account call POST /accounts/create-connections with a chains array (e.g. ['ethereum', 'solana', 'polygon', 'bsc', 'base', 'arbitrum', 'optimism', 'tron', 'avalanche', 'gnosis', 'xdc', 'bitcoin']). Check existing chain connections with GET /accounts/get-connections which returns the list of connected chains for each account. Chain connections determine which blockchain networks are enabled for wallet addresses under that account.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-assets-add",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "assets",
+    "title": "Add Asset (Wallet Address)",
+    "method": "POST",
+    "path": "/assets/add-asset",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Add a specific crypto asset (token on a chain) to an account, generating a wallet address for receiving deposits.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "account_id": { "type": "string", "required": true, "description": "The account to add this asset to" },
+      "chain": { "type": "string", "required": true, "description": "Blockchain network identifier e.g. 'ethereum', 'solana', 'polygon', 'bsc', 'base', 'arbitrum', 'optimism', 'tron', 'xdc', 'bitcoin', 'avalanche', 'gnosis'" },
+      "ticker": { "type": "string", "required": true, "description": "Token ticker symbol e.g. 'USDC', 'ETH', 'SOL', 'BNB', 'BTC', 'USDT'" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "account_id": "acc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "chain": "ethereum",
+        "ticker": "USDC",
+        "address": "0x9F8b2E...a4C7",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "unsupported_token", "description": "The ticker is not supported on the specified chain" }
+    ],
+    "related": ["crypto-assets-batch-add", "crypto-assets-list", "crypto-balance-check", "crypto-transactions-send"],
+    "tags": ["assets", "wallets", "add", "chain", "ticker", "address"],
+    "verified": true,
+    "content": "Add a crypto asset to an account by calling POST /assets/add-asset. Required fields: account_id (the target account), chain (blockchain name such as ethereum, solana, polygon, bsc, base, arbitrum, optimism, tron, xdc, bitcoin, avalanche, or gnosis), and ticker (token symbol such as USDC, ETH, SOL, BNB, BTC, USDT, POL). The response returns asset_id which you use for balance checks and transactions, and an address which is the on-chain receive address for that token. Batch-add multiple assets at once with POST /assets/batch-add-asset — send an array of {account_id, chain, ticker} objects. List all assets across your accounts with GET /assets/get-all-assets. Get assets for a specific account with POST /assets/get-user-assets passing account_id. Get all supported chains with GET /assets/get-chains. Archive an asset (stop monitoring it) with POST /assets/archive-asset. For WaaS customer assets, add to a customer's account with POST /assets/add-customer-asset and retrieve with POST /assets/get-customer-assets. Each (account, chain, ticker) combination maps to exactly one on-chain address. The same address is used for all tokens on that chain in some networks.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-balance-check",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "assets",
+    "title": "Check Balance",
+    "method": "POST",
+    "path": "/balance/check",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Check the on-chain balance of a specific asset in an account.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "account_id": { "type": "string", "required": true, "description": "Account ID" },
+      "asset_id": { "type": "string", "required": true, "description": "Asset ID from POST /assets/add-asset" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "balance": "1250.50",
+        "currency": "USDC",
+        "chain": "ethereum",
+        "updated_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 404, "code": "not_found", "description": "asset_id not found or does not belong to account_id" }
+    ],
+    "related": ["crypto-assets-add", "crypto-transactions-send"],
+    "tags": ["balance", "check", "assets"],
+    "verified": true,
+    "content": "Check the current on-chain balance for a specific asset by calling POST /balance/check. Send account_id and asset_id in the request body. The response includes balance (string, decimal amount), currency (ticker), chain (blockchain name), and updated_at timestamp. This balance reflects confirmed on-chain funds — pending deposits will not appear until confirmed. Before sending funds, always check balance to avoid insufficient_balance errors on the transaction endpoint. The balance is denominated in the token's native units (e.g. USDC balance shows 1250.50 not 1250500000 in raw units). For gas station-funded transactions the gas fee is automatically deducted from the gas station balance not the asset balance — you only need to maintain the transfer amount plus your platform's gas station reserves.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-transactions-send",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "transactions",
+    "title": "Send Funds",
+    "method": "POST",
+    "path": "/transactions/send-funds",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Send crypto from a Yativo wallet to an external address. Supports all chains. Gas is covered by the gas station (20% markup) or by the user for native tokens with use_self_funding.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "account": { "type": "string", "required": true, "description": "Account ID containing the asset" },
+      "assets": { "type": "string", "required": true, "description": "Asset ID to send from" },
+      "receiving_address": { "type": "string", "required": true, "description": "Destination on-chain address" },
+      "amount": { "type": "number", "required": true, "description": "Amount to send in token units" },
+      "type": { "type": "string", "required": true, "description": "Always 'crypto'" },
+      "chain": { "type": "string", "required": true, "description": "Blockchain network identifier" },
+      "category": { "type": "string", "required": true, "description": "Transaction category e.g. 'transfer', 'payment'" },
+      "priority": { "type": "string", "required": true, "description": "Gas priority: 'low', 'medium', or 'high'" },
+      "description": { "type": "string", "required": false, "description": "Optional memo/note" },
+      "use_self_funding": { "type": "boolean", "required": false, "description": "Set true to pay gas from the native token balance instead of the gas station. Only valid for native token transactions (ETH, SOL, BNB, etc.)" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "status": "submitted",
+        "tx_hash": "0xabc123...",
+        "amount": "100",
+        "chain": "ethereum",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "insufficient_balance", "description": "Asset balance is lower than the send amount" },
+      { "status": 422, "code": "invalid_address", "description": "receiving_address is not a valid address for the specified chain" },
+      { "status": 422, "code": "gas_station_empty", "description": "Gas station has insufficient native token to cover the network fee — top up the gas station" },
+      { "status": 409, "code": "conflict", "description": "Idempotency key already used. Use existing_transaction_id from the error response" }
+    ],
+    "related": ["crypto-balance-check", "crypto-gas-estimate", "crypto-gas-station", "crypto-unified-transactions"],
+    "tags": ["send", "transfer", "transactions", "withdraw", "on-chain"],
+    "verified": true,
+    "content": "Send crypto funds with POST /transactions/send-funds. Required fields: account (account_id string), assets (asset_id string from POST /assets/add-asset), receiving_address (destination blockchain address), amount (numeric amount in token units, e.g. 100 for 100 USDC), type (must be 'crypto'), chain (blockchain name: ethereum, solana, polygon, bsc, base, arbitrum, optimism, tron, xdc, bitcoin, avalanche, gnosis), category (use 'transfer' for simple sends), priority ('low', 'medium', or 'high' — higher priority means faster inclusion and higher gas cost). Optional: description for a memo, and use_self_funding (boolean, only for native token sends like ETH or SOL — if true, the gas fee comes from the same native token balance rather than from the gas station; if false or omitted, the gas station covers the fee with a 20% markup). Always include an Idempotency-Key header (e.g. a UUID) to prevent duplicate sends if your request times out. If a 409 conflict is returned because the idempotency key was already used, the error body includes existing_transaction_id — use that ID to look up the original transaction. The response status progresses from 'submitted' → 'confirmed' → completed webhook event. Use GET /transactions/get-transactions to poll status or listen for transaction.{type}.completed webhook events. Estimate gas before sending with POST /transactions/get-gas-price.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-gas-estimate",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "transactions",
+    "title": "Get Gas Price Estimate",
+    "method": "POST",
+    "path": "/transactions/get-gas-price",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Get an estimated gas fee for a transaction on a specific chain before submitting it.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "chainType": { "type": "string", "required": true, "description": "Blockchain network identifier e.g. 'ethereum', 'solana'" },
+      "priority": { "type": "string", "required": true, "description": "'low', 'medium', or 'high'" },
+      "amount_usd": { "type": "number", "required": true, "description": "Transaction value in USD for context" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "estimated_gas_fee_usd": "0.45",
+        "priority": "medium",
+        "chain": "ethereum"
+      }
+    },
+    "errors": [],
+    "related": ["crypto-transactions-send", "crypto-gas-station"],
+    "tags": ["gas", "fee", "estimate", "network-fee"],
+    "verified": true,
+    "content": "Estimate the gas fee for a transaction before submitting it by calling POST /transactions/get-gas-price. Send chainType (blockchain name), priority ('low', 'medium', or 'high'), and amount_usd (transaction value in USD). The response returns estimated_gas_fee_usd — the approximate cost to include the transaction on-chain at the requested priority level. The gas station applies a 20% markup over the actual network cost when covering fees on your behalf. Use this endpoint to show users the expected fee before they confirm a send. High priority means faster block inclusion but higher cost. For Solana transactions gas fees are very low (fractions of a cent). For Ethereum mainnet at peak times fees can be several dollars. Chains like Polygon, BSC, Avalanche, and Arbitrum have much lower fees. If you use use_self_funding: true on send-funds, the user's native token balance must exceed the transfer amount plus this estimated gas.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-transactions-list",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "transactions",
+    "title": "Get Transactions",
+    "method": "POST",
+    "path": "/transactions/get-transactions",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Retrieve and filter transaction history across your accounts with search, status, asset, method, and chain filters.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "search": { "type": "string", "required": false, "description": "Search by tx_hash, address, or transaction_id" },
+      "status_filter": { "type": "string", "required": false, "description": "Filter by status: submitted, confirmed, completed, failed" },
+      "assets_filter": { "type": "string", "required": false, "description": "Filter by asset ticker e.g. 'USDC'" },
+      "method_filter": { "type": "string", "required": false, "description": "Filter by transaction method" },
+      "chain_filter": { "type": "string", "required": false, "description": "Filter by chain e.g. 'ethereum'" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": [
+        { "transaction_id": "txn_01HX9KZMB3F7VNQP8R2WDGT4E5", "status": "completed", "amount": "100", "chain": "ethereum", "ticker": "USDC", "tx_hash": "0xabc123..." }
+      ]
+    },
+    "errors": [],
+    "related": ["crypto-transactions-send", "crypto-unified-transactions"],
+    "tags": ["transactions", "history", "list", "filter"],
+    "verified": true,
+    "content": "Retrieve transaction history by calling POST /transactions/get-transactions. All fields are optional filters: search (string to match against tx_hash, receiving_address, or transaction_id), status_filter (submitted, confirmed, completed, or failed), assets_filter (token ticker like USDC or ETH), method_filter (transaction method type), chain_filter (blockchain name). Response is an array of transaction objects each with transaction_id, status, amount, chain, ticker, tx_hash, created_at, and direction (in/out). For a unified view across all product lines including swaps, card transactions, and gateway payments use GET /unified-transactions/list instead. To look up a specific transaction by ID use GET /unified-transactions/{id}.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-gas-station",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "gas-station",
+    "title": "Gas Station — Add and List Station Assets",
+    "method": "POST",
+    "path": "/assets/add-station-asset",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "The gas station holds native tokens (ETH, SOL, BNB, etc.) to automatically cover network fees on behalf of your users. Add native assets to the station and check station balances.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "chain": { "type": "string", "required": true, "description": "Blockchain to add to the gas station e.g. 'ethereum', 'solana'" },
+      "ticker": { "type": "string", "required": true, "description": "Native token ticker. Must be the chain's native gas token: ETH, SOL, POL, BNB, ETH_BASE, ETH_ARBITRUM, ETH_OPTIMISM, XDC" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "station_asset_id": "sta_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "chain": "ethereum",
+        "ticker": "ETH",
+        "balance": "0.5",
+        "address": "0x..."
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "gas_station_empty", "description": "Gas station has insufficient native token to cover a transaction fee. Top up the station address with the native token." }
+    ],
+    "related": ["crypto-transactions-send", "crypto-gas-estimate"],
+    "tags": ["gas", "station", "network-fees", "native-token"],
+    "verified": true,
+    "content": "The Yativo Crypto gas station automatically covers on-chain network fees on behalf of your users so they do not need to hold native tokens. Add a chain to the gas station with POST /assets/add-station-asset by specifying chain and ticker (must be the chain's native gas token). Supported native tickers are: ETH (Ethereum mainnet), SOL (Solana), POL (Polygon), BNB (BSC), ETH_BASE (Base), ETH_ARBITRUM (Arbitrum), ETH_OPTIMISM (Optimism), XDC (XDC Network). For TRON use TRX, for AVAX use AVAX, and for GNO use xDAI. The station generates a deposit address — fund it by sending native tokens to that address from any external wallet. List all station assets with POST /assets/get-station-assets. When a user calls POST /transactions/send-funds without use_self_funding: true, the gas fee is deducted from the gas station with a 20% markup over actual cost. If the station runs out (gas_station_empty error, HTTP 422), top up the station address or use use_self_funding: true for native token sends. Monitor the gas.low webhook event to get notified when gas station reserves fall below threshold.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-swap-assets",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "swap",
+    "title": "Swap — Get Assets and Routes",
+    "method": "GET",
+    "path": "/swap/assets",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Browse assets available for swapping and discover valid swap routes between asset pairs.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": [
+        { "assetId": "eth-usdc", "symbol": "USDC", "chain": "ethereum", "canSwapFrom": true, "canSwapTo": true },
+        { "assetId": "pol-usdc", "symbol": "USDC", "chain": "polygon", "canSwapFrom": true, "canSwapTo": true }
+      ]
+    },
+    "errors": [],
+    "related": ["crypto-swap-quote", "crypto-swap-execute"],
+    "tags": ["swap", "assets", "routes", "cross-chain"],
+    "verified": true,
+    "content": "To swap tokens using the Yativo Crypto API, start by browsing available swap assets with GET /swap/assets. Each asset in the response has assetId (identifier used in quote requests), symbol (ticker), name, chain (blockchain), contractAddress (null for native tokens), decimals, canSwapFrom (bool), canSwapTo (bool), and logoUrl. Filter to canSwapFrom: true for source assets and canSwapTo: true for destination assets. Then find valid routes between a pair with GET /swap/routes?fromAsset={assetId}&toAsset={assetId}. Each route has routeId, fromAsset, toAsset, protocol (e.g. bridge-standard, bridge-fast), estimatedTimeSeconds, estimatedFeeUsd, and tags (cross-chain, bridge, fast). Multiple routes may exist for the same pair — choose based on speed vs. cost tradeoffs. Cross-chain swaps (e.g. USDC on Ethereum to USDC on Polygon) are supported as well as same-chain swaps (e.g. ETH to USDC on Ethereum). Routes tell you what DEXes or bridges are involved in the swap path.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-swap-quote",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "swap",
+    "title": "Swap — Get Quote",
+    "method": "POST",
+    "path": "/swap/quote",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Request a precise swap quote for a given amount and asset pair. Returns a quote_id that must be used to execute the swap before it expires.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "from_chain": { "type": "string", "required": true, "description": "Source blockchain network" },
+      "from_ticker": { "type": "string", "required": true, "description": "Source token ticker" },
+      "to_chain": { "type": "string", "required": true, "description": "Destination blockchain network" },
+      "to_ticker": { "type": "string", "required": true, "description": "Destination token ticker" },
+      "amount": { "type": "number", "required": true, "description": "Amount in source token units to swap" },
+      "from_address": { "type": "string", "required": true, "description": "Sending wallet address" },
+      "to_address": { "type": "string", "required": true, "description": "Receiving wallet address on destination chain" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "quote_id": "qte_01J2KW3MNPQ7R4S5T6U7VQTE55",
+        "from_amount": "500.00",
+        "to_amount": "497.52",
+        "exchange_rate": "0.99504",
+        "fees": { "protocol_fee": "1.25", "network_fee": "1.23", "yativo_fee": "0.00", "total_fee_usd": "2.48" },
+        "expires_at": "2026-01-01T00:05:00Z"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "quote_expired", "description": "The quote_id passed to /swap/execute has expired. Request a new quote." }
+    ],
+    "related": ["crypto-swap-assets", "crypto-swap-execute", "crypto-swap-history"],
+    "tags": ["swap", "quote", "cross-chain", "exchange-rate"],
+    "verified": true,
+    "content": "Get a precise swap quote by calling POST /swap/quote. Required fields: from_chain (source blockchain), from_ticker (source token symbol), to_chain (destination blockchain), to_ticker (destination token symbol), amount (amount of source token to swap), from_address (sending wallet address), to_address (destination wallet address). The response returns quote_id (use this to execute the swap), from_amount, to_amount (after fees), exchange_rate, fees object (protocolFee, networkFee, yativoFee, totalFeeUsd), and expires_at timestamp. Quotes expire after approximately 3 minutes by default — execute the swap before the quote expires. If expires_at is within 30 seconds when you check, request a fresh quote. The to_amount in the completed swap may differ slightly from the quote due to slippage and real-time gas fluctuations. The fees.yativo_fee is 0% on most routes. Use the quote to show customers the exact amount they will receive and total fees before they confirm.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-swap-execute",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "swap",
+    "title": "Swap — Execute",
+    "method": "POST",
+    "path": "/swap/execute",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Execute a token swap using a valid quote_id. Must be called before the quote expires.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "quote_id": { "type": "string", "required": true, "description": "Quote ID from POST /swap/quote" },
+      "from_asset_id": { "type": "string", "required": true, "description": "Asset ID of the source token in your account" },
+      "to_address": { "type": "string", "required": true, "description": "Destination address to receive swapped tokens" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "swap_id": "swp_01J2KX3MNPQ7R4S5T6U7VSWP33",
+        "status": "pending",
+        "from_amount": "500.00",
+        "expected_to_amount": "497.52",
+        "initiated_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "quote_expired", "description": "Quote expired before execution. Request a new quote with POST /swap/quote." },
+      { "status": 422, "code": "insufficient_balance", "description": "from_asset_id does not have enough balance for the swap amount" }
+    ],
+    "related": ["crypto-swap-quote", "crypto-swap-history"],
+    "tags": ["swap", "execute", "cross-chain"],
+    "verified": true,
+    "content": "Execute a token swap with POST /swap/execute. Required fields: quote_id (from POST /swap/quote, must not be expired), from_asset_id (asset ID of the source token in your Yativo account — obtained when you added the asset), to_address (destination address to receive the swapped tokens). Include an Idempotency-Key header to prevent duplicate swaps. The response includes swap_id, status (initially 'pending'), from_amount, expected_to_amount, and initiated_at. Status progression: pending → in_progress (on-chain, awaiting destination confirmation) → completed (funds arrived). If the swap fails, status becomes 'failed' with a failureReason field. If funds were sent but the swap failed, status is 'refunded' and the original asset is returned. Monitor swap status with GET /swap/history. The master_wallet.swap webhook event fires when a master wallet swap completes. The actual to_amount on completion may differ slightly from expected_to_amount due to slippage.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-swap-history",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "swap",
+    "title": "Swap History",
+    "method": "GET",
+    "path": "/swap/history",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Retrieve swap history for an account. Filter by swapId to check status of a specific swap.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": {
+      "accountId": { "type": "string", "required": false, "description": "Filter by account ID" },
+      "swapId": { "type": "string", "required": false, "description": "Get a specific swap by ID" },
+      "limit": { "type": "integer", "required": false, "description": "Number of results to return" }
+    },
+    "response_example": {
+      "success": true,
+      "data": [
+        { "swap_id": "swp_01J2KX3MNPQ7R4S5T6U7VSWP33", "status": "completed", "from_amount": "500.00", "actual_to_amount": "497.38", "completed_at": "2025-01-01T00:05:00Z" }
+      ]
+    },
+    "errors": [],
+    "related": ["crypto-swap-execute", "crypto-swap-quote"],
+    "tags": ["swap", "history", "status"],
+    "verified": true,
+    "content": "Monitor swap status and history with GET /swap/history. Pass optional query params: accountId to filter by account, swapId to retrieve a specific swap, and limit for pagination. A completed swap response includes swap_id, fromAsset, toAsset, fromAmount, expectedToAmount, actualToAmount (may differ from expected due to slippage), exchangeRate, fees object (protocolFee, networkFee, yativoFee, totalFeeUsd), txHashSource (source chain transaction hash), txHashDestination (destination chain transaction hash), initiatedAt, and completedAt. Swap statuses: pending (initiated, not yet broadcast), in_progress (on-chain, awaiting destination confirmation), completed (funds arrived), failed (swap failed — check failureReason field), refunded (swap failed after funds were sent, original asset returned). Cross-chain swaps like USDC on Ethereum to USDC on Polygon use bridges and typically take 1-3 minutes. Same-chain swaps through DEXes are faster.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-payment-gateway-apply",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "payment-gateway",
+    "title": "Payment Gateway — Apply",
+    "method": "POST",
+    "path": "/crypto-gateway/apply",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Submit a gateway application to enable accepting crypto payments via a hosted checkout. Requires business details and a webhook URL.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "logo_url": { "type": "string", "required": true, "description": "URL of your business logo for the checkout page" },
+      "support_email": { "type": "string", "required": true, "description": "Customer support email address" },
+      "social_media_url": { "type": "string", "required": true, "description": "Your business social media or website link" },
+      "business_type": { "type": "string", "required": true, "description": "Type of business e.g. 'ecommerce', 'marketplace'" },
+      "expected_volume": { "type": "string", "required": true, "description": "Expected monthly transaction volume in USD" },
+      "website_url": { "type": "string", "required": true, "description": "Business website URL" },
+      "webhook_url": { "type": "string", "required": true, "description": "URL to receive gateway payment webhooks" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": { "application_id": "gw_app_01HX9KZMB3F7VNQP8R2WDGT4E5", "status": "pending_review" }
+    },
+    "errors": [],
+    "related": ["crypto-payment-gateway-create", "crypto-payment-gateway-webhooks"],
+    "tags": ["gateway", "payment", "checkout", "apply", "onboarding"],
+    "verified": true,
+    "content": "To accept crypto payments through a hosted checkout page, first apply for gateway access by calling POST /crypto-gateway/apply. Required fields: logo_url (your logo for the checkout page), support_email (shown to customers), social_media_url (business social link), business_type (e.g. ecommerce, marketplace, saas), expected_volume (monthly USD volume estimate), website_url (your main website), and webhook_url (the endpoint that will receive payment events). The application goes through a review (status: pending_review). Once approved, you can create payment links. The gateway supports multiple cryptocurrencies (Bitcoin, Ethereum, USDC, USDT, and more) and lets customers choose which token to pay with. The hosted checkout page shows your logo, the payment amount, accepted tokens, and a QR code or copy address button. Gateway events delivered to your webhook_url include: gateway.payment.settled, gateway.payment.expired, gateway.underpayment.reported, and reconciliation events.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-payment-gateway-create",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "payment-gateway",
+    "title": "Create Payment Link",
+    "method": "POST",
+    "path": "/crypto-gateway/payments",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Create a payment request with a hosted checkout link. Specify the amount, accepted tokens, and customer details. Share the link with your customer.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "title": { "type": "string", "required": true, "description": "Payment title or description shown on the checkout page" },
+      "requested_amount": { "type": "number", "required": true, "description": "Amount to request in USD" },
+      "accepted_assets": { "type": "array", "required": true, "description": "Array of token objects the customer can pay with: [{ chain, ticker }]" },
+      "customer_email": { "type": "string", "required": false, "description": "Customer email for notification" },
+      "external_reference": { "type": "string", "required": false, "description": "Your internal order/reference ID" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "payment_id": "pay_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "checkout_url": "https://pay.yativo.com/pay_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "status": "pending",
+        "requested_amount": 100,
+        "expires_at": "2025-01-01T01:00:00Z"
+      }
+    },
+    "errors": [],
+    "related": ["crypto-payment-gateway-apply", "crypto-payment-gateway-status"],
+    "tags": ["gateway", "payment", "checkout", "link", "invoice"],
+    "verified": true,
+    "content": "Create a crypto payment request with POST /crypto-gateway/payments. Required fields: title (label for the payment shown on checkout), requested_amount (USD value), accepted_assets (array of objects specifying which tokens the customer can pay with, each with chain and ticker fields e.g. [{chain: 'ethereum', ticker: 'USDC'}, {chain: 'solana', ticker: 'SOL'}]). Optional: customer_email (for notification emails), external_reference (your order ID for reconciliation). The response returns payment_id, checkout_url (share this link with your customer), status (pending initially), requested_amount, and expires_at. The customer opens the checkout_url, selects a token, sends the exact amount to the provided address or scans the QR code. Payments are matched automatically. List all payments with GET /crypto-gateway/payments. Get analytics with GET /crypto-gateway/overview and GET /crypto-gateway/analytics/me. The payment status endpoint GET /crypto-gateway/pay/{id}/status is public (no auth) — embed it in your frontend to poll for payment confirmation.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-payment-gateway-status",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "payment-gateway",
+    "title": "Get Payment Status (Public)",
+    "method": "GET",
+    "path": "/crypto-gateway/pay/{id}/status",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Public endpoint to check the status of a payment. No authentication required — safe to call from a browser.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": {
+      "id": { "type": "string", "required": true, "description": "Payment ID from POST /crypto-gateway/payments" }
+    },
+    "response_example": {
+      "success": true,
+      "data": { "payment_id": "pay_01HX9KZMB3F7VNQP8R2WDGT4E5", "status": "settled", "received_amount": "100.00", "token": "USDC", "chain": "ethereum" }
+    },
+    "errors": [],
+    "related": ["crypto-payment-gateway-create", "crypto-payment-gateway-reconciliation"],
+    "tags": ["gateway", "payment", "status", "public"],
+    "verified": true,
+    "content": "Check the status of a payment via the public endpoint GET /crypto-gateway/pay/{id}/status where id is the payment_id from POST /crypto-gateway/payments. This endpoint requires no authentication — you can safely poll it from a browser or mobile app without exposing credentials. Statuses: pending (waiting for customer payment), detecting (deposit detected on-chain), confirmed (deposit confirmed), settled (payment complete and funds credited), underpayment (customer sent less than requested amount), expired (payment window closed without payment), and failed. When status is settled, the response includes received_amount, token, chain, and tx_hash. For underpayments, use the reconciliation endpoints to verify, reverse, reconcile, or settle as paid. Reconciliation endpoints: POST /crypto-gateway/reconciliation/{id}/verify, /reverse, /reconcile, /settle-as-paid. Webhook events: gateway.payment.settled fires when settled, gateway.payment.expired fires when the window closes.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-agentic-wallets",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "agentic-wallets",
+    "title": "Agentic Wallets — Create",
+    "method": "POST",
+    "path": "/agentic-wallets/create",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Create a programmable wallet for an AI agent. Wallets use connector API keys (yac_ prefix) for authentication and support x402 protocol payments.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "name": { "type": "string", "required": true, "description": "Human-readable name for the agentic wallet" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "wallet_id": "aw_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "name": "My AI Agent Wallet",
+        "status": "pending_activation",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [],
+    "related": ["crypto-agentic-transact", "crypto-agentic-balance", "crypto-agentic-x402"],
+    "tags": ["agentic", "ai-agent", "wallet", "x402", "mcp"],
+    "verified": true,
+    "content": "Agentic wallets are programmable wallets designed for AI agents to autonomously pay for services. Create one with POST /agentic-wallets/create passing a name string. The response returns wallet_id (prefix aw_) and status pending_activation. Activation requires requesting an OTP via POST /agentic-wallets/{wallet_id}/activation/send-email-otp, then confirming with POST /agentic-wallets/{wallet_id}/activation/activate sending the email_otp. Once active, create connector API keys for the agent with POST /agentic-wallets/{wallet_id}/connectors — send name, per_transaction_limit (USD), daily_limit, and monthly_limit. The connector responds with a yac_ prefixed api_key shown only once. Fund the wallet via on-chain deposit to the wallet address or POST /agentic-wallets/{wallet_id}/fund with amount. The agent uses its yac_ key as a Bearer token to call POST /agent/transact (wallet_id, amount, recipient_address, service_name, payment_reason, payment_category), GET /agent/balance, and GET /agent/transactions. For x402 protocol payments (HTTP 402 payment-required), use POST /agent/x402-fetch (wallet_id, url, method) — the agent automatically fulfills the payment challenge. For MCP-based agents, install @yativo/mcp-server and configure YATIVO_API_KEY and YATIVO_WALLET_ID. Check pricing tiers with GET /agentic-wallets/pricing.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-agentic-transact",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "agentic-wallets",
+    "title": "Agent Transact",
+    "method": "POST",
+    "path": "/agent/transact",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Send a payment from an agentic wallet. Uses the connector yac_ API key for authentication. Records service metadata for audit trails.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "wallet_id": { "type": "string", "required": true, "description": "Agentic wallet ID (aw_ prefix)" },
+      "amount": { "type": "number", "required": true, "description": "Amount to send in USD" },
+      "asset": { "type": "string", "required": false, "description": "Token to use for payment (default USDC)" },
+      "recipient_address": { "type": "string", "required": true, "description": "Destination wallet address" },
+      "service_name": { "type": "string", "required": true, "description": "Name of the service being paid (for audit trail)" },
+      "service_url": { "type": "string", "required": false, "description": "URL of the service being paid" },
+      "payment_reason": { "type": "string", "required": true, "description": "Reason for the payment e.g. 'GPT-4 inference'" },
+      "payment_category": { "type": "string", "required": false, "description": "Category tag for the transaction" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "transaction_id": "atx_01HX9KZMB3F7VNQP8R2WDGT",
+        "wallet_id": "aw_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "amount": 5.00,
+        "status": "confirmed",
+        "tx_hash": "0xabc123...",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "insufficient_balance", "description": "Wallet balance is less than the requested amount" }
+    ],
+    "related": ["crypto-agentic-wallets", "crypto-agentic-balance"],
+    "tags": ["agentic", "transact", "payment", "ai-agent"],
+    "verified": true,
+    "content": "AI agents send payments by calling POST /agent/transact using their connector API key (yac_ prefixed) as the Bearer token. Required fields: wallet_id (the aw_ prefixed wallet), amount (USD value to send), recipient_address (destination address), service_name (what service is being paid — used for audit logs), payment_reason (description of why the payment is made e.g. 'GPT-4 inference', 'vector database query', 'API call'). Optional: asset (defaults to USDC), service_url (the URL of the service), payment_category (categorization tag). The response includes transaction_id (atx_ prefix), status, tx_hash, and amounts. Limits are enforced: per_transaction_limit, daily_limit, and monthly_limit set when the connector was created cannot be exceeded. Check wallet balance with GET /agent/balance. List agent transactions with GET /agent/transactions. For x402 protocol flows where an HTTP API returns 402 Payment Required, use POST /agent/x402-fetch instead which handles the payment challenge automatically.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-auto-forwarding",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "auto-forwarding",
+    "title": "Auto-Forwarding Rules",
+    "method": "POST",
+    "path": "/auto-forwarding",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Create rules to automatically forward funds to a destination address when a wallet balance exceeds a minimum threshold. Supports per-wallet and cross-wallet batching.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "asset_id": { "type": "string", "required": true, "description": "Asset ID to monitor for auto-forwarding" },
+      "destination_address": { "type": "string", "required": true, "description": "Address to forward funds to when threshold is met" },
+      "destination_chain": { "type": "string", "required": true, "description": "Destination chain for the forwarded funds" },
+      "min_amount": { "type": "number", "required": true, "description": "Minimum balance threshold to trigger forwarding. $1 minimum for same-wallet, $10 minimum for cross-wallet batching." },
+      "enabled": { "type": "boolean", "required": true, "description": "Whether the rule is active" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "rule_id": "afr_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "asset_id": "ast_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "destination_address": "0x...",
+        "min_amount": 10,
+        "enabled": true
+      }
+    },
+    "errors": [],
+    "related": ["crypto-assets-add", "crypto-transactions-send"],
+    "tags": ["auto-forwarding", "sweep", "rules", "threshold"],
+    "verified": true,
+    "content": "Auto-forwarding rules automatically move funds from a wallet to a destination address whenever the balance exceeds a threshold. Create a rule with POST /auto-forwarding. Required fields: asset_id (the asset to monitor), destination_address (where to forward funds), destination_chain (blockchain network for destination), min_amount (balance threshold — minimum $1 for same-wallet forwarding, minimum $10 for cross-wallet batch forwarding), enabled (boolean — false to create a disabled rule). Retrieve a rule with GET /auto-forwarding/{id}. Update a rule with PUT /auto-forwarding/{id} (e.g. change min_amount or enabled status). Delete a rule with DELETE /auto-forwarding/{id}. Manually trigger forwarding without waiting for threshold with POST /auto-forwarding/forward. Auto-forwarding is useful for sweeping collection wallets to a treasury address, automatically batching small deposits into a single wallet, or maintaining low balances on hot wallets for security. The $1 per-wallet threshold means each wallet's balance must be at least $1 before forwarding triggers. The $10 cross-wallet threshold applies when batching across multiple wallets into one destination.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-compliance-screener",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "compliance",
+    "title": "Compliance Screener — Address Check",
+    "method": "POST",
+    "path": "/screener/check",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Screen a blockchain address for sanctions, fraud, darknet activity, and mixer usage. Returns a risk level and flags. Public API — no authentication required.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": {
+      "address": { "type": "string", "required": true, "description": "Blockchain address to screen" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "address": "0x...",
+        "risk_level": "low",
+        "flagged": false,
+        "checks": {
+          "sanctions": false,
+          "fraud": false,
+          "darknet": false,
+          "mixer": false
+        }
+      }
+    },
+    "errors": [],
+    "related": ["crypto-transactions-send"],
+    "tags": ["compliance", "screening", "sanctions", "aml", "address"],
+    "verified": true,
+    "content": "The Yativo compliance screener checks blockchain addresses for risk signals before transacting. Call POST /screener/check with an address string. This is a public API — no authentication required. The response includes risk_level (low, medium, high, or critical), flagged (boolean — true if any risk check failed), and a checks object with individual results for sanctions (OFAC and global sanctions lists), fraud (known fraud addresses), darknet (addresses linked to darknet markets), and mixer (addresses associated with coin mixing services). For batch screening of multiple addresses at once use POST /screener/batch-check. Get screener metadata with GET /screener/info. Check screener availability with GET /screener/health. Use this screener before accepting deposits or processing withdrawals to comply with AML/KYC regulations. A critical or high risk_level should block the transaction. A medium risk_level may require additional review. Low risk_level is generally safe to proceed.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-webhooks",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "webhooks",
+    "title": "Create and Manage Webhooks",
+    "method": "POST",
+    "path": "/webhook/create-webhook",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Register a webhook URL to receive real-time event notifications for deposits, transactions, card events, KYC updates, and more.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "url": { "type": "string", "required": true, "description": "HTTPS endpoint to receive webhook POST requests" },
+      "events": { "type": "array", "required": true, "description": "List of event types to subscribe to" },
+      "description": { "type": "string", "required": false, "description": "Human-readable label for this webhook" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "webhook_id": "wh_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "url": "https://your-app.com/webhooks/yativo",
+        "events": ["deposit.confirmed", "transaction.transfer.completed"],
+        "secret": "whsec_..."
+      }
+    },
+    "errors": [],
+    "related": ["crypto-webhooks-verify", "crypto-webhooks-events"],
+    "tags": ["webhooks", "events", "notifications", "realtime"],
+    "verified": true,
+    "content": "Register a webhook to receive real-time event notifications with POST /webhook/create-webhook. Required: url (your HTTPS endpoint), events (array of event type strings). Optional: description. The response includes webhook_id and a secret for signature verification. Manage webhooks with GET /yativo-card/webhooks/{id} to retrieve, PUT /yativo-card/webhooks/{id} to update, DELETE /yativo-card/webhooks/{id} to remove, POST /yativo-card/webhooks/{id}/rotate-secret to generate a new signing secret, GET /yativo-card/webhooks/{id}/deliveries to see delivery history, and POST /yativo-card/webhooks/deliveries/{id}/retry to retry a failed delivery. Webhook signatures: each POST to your endpoint includes X-Yativo-Signature (sha256=HMAC-SHA256 hex) and X-Yativo-Timestamp headers. Compute the HMAC over the string template-literal '${timestamp}.${JSON.stringify(payload)}' using your webhook secret. Available events: deposit.detected, deposit.confirmed, transaction.initiated, transaction.submitted, transaction.failed, transaction.{type}.completed (type = transfer/swap/etc), card.created, card.activated, card.frozen, card.unfrozen, card.voided, card.lost, card.stolen, card.cancelled, card.deactivated, transaction.authorized, transaction.declined, transaction.settled, transaction.reversed, customer.funded, customer.funding.failed, customer.balance.updated, master_wallet.deposit, master_wallet.swap, master_wallet.customer_funded, iban.activated, iban.transfer.received, kyc.submitted, kyc.approved, kyc.rejected, kyc.pending_review, gas.low.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-webhooks-verify",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "guide",
+    "category": "webhooks",
+    "title": "Webhook Signature Verification",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "How to verify the HMAC-SHA256 signature on incoming webhook requests to prevent spoofing.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["crypto-webhooks"],
+    "tags": ["webhooks", "signature", "hmac", "security", "verification"],
+    "verified": true,
+    "content": "Every webhook POST from Yativo includes two headers: X-Yativo-Signature (in the format sha256=<hex_digest>) and X-Yativo-Timestamp (Unix timestamp as a string). To verify the webhook is authentic and was not tampered with: 1) Extract the timestamp from X-Yativo-Timestamp. 2) Build the signed string by concatenating timestamp + '.' + JSON.stringify(payload) where payload is the raw request body parsed as JSON. 3) Compute HMAC-SHA256 of that string using your webhook secret (from POST /webhook/create-webhook response or after rotation). 4) Compare your computed hex digest with the value in X-Yativo-Signature after stripping the 'sha256=' prefix. If they match, the webhook is authentic. Also check the timestamp is within 5 minutes of current time to prevent replay attacks. Rotate the webhook secret with POST /yativo-card/webhooks/{id}/rotate-secret. Example in Node.js: const signature = crypto.createHmac('sha256', secret).update(`${timestamp}.${JSON.stringify(body)}`).digest('hex'). Compare using a timing-safe comparison like crypto.timingSafeEqual.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-customers",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "customers",
+    "title": "WaaS Customers — Create and List",
+    "method": "POST",
+    "path": "/customers/create-customer",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Create and manage end-user customers for wallet-as-a-service (WaaS) use cases. Note: WaaS customers are separate from card customers — do not use this for card onboarding.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "email": { "type": "string", "required": true, "description": "Customer email address" },
+      "name": { "type": "string", "required": true, "description": "Customer full name" },
+      "phone": { "type": "string", "required": false, "description": "Customer phone number in E.164 format" },
+      "metadata": { "type": "object", "required": false, "description": "Arbitrary key-value metadata for your own tracking" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "customer_id": "cus_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "email": "customer@example.com",
+        "name": "Jane Doe",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [],
+    "related": ["crypto-assets-add"],
+    "tags": ["customers", "waas", "wallet-as-a-service"],
+    "verified": true,
+    "content": "For wallet-as-a-service (WaaS) deployments where your platform manages wallets on behalf of end users, create customer records with POST /customers/create-customer. Required: email, name. Optional: phone (E.164 format), metadata (arbitrary key-value object for your own records). The response returns customer_id which you can use to associate assets and transactions with individual customers. List all customers with POST /customers/get-customers. Retrieve transaction history for a specific customer with POST /customers/get-customer-transactions passing customer_id. Important: WaaS customers are not the same as card customers. For card-related customer operations (card issuance, KYC for cards, card funding), use the card-specific onboarding endpoints starting with POST /yativo-card/onboard. WaaS customers are used for crypto wallet management — associating wallet addresses with specific users via POST /assets/add-customer-asset and retrieving their assets via POST /assets/get-customer-assets.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-unified-transactions",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "transactions",
+    "title": "Unified Transactions — List, Get, Export",
+    "method": "GET",
+    "path": "/unified-transactions/list",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "A unified view of all transactions across all product lines: deposits, withdrawals, swaps, fees, auto-forwarding, card transactions, IBAN transfers, gateway payments, and agentic transactions.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": {
+      "page": { "type": "integer", "required": false, "description": "Page number, default 1" },
+      "limit": { "type": "integer", "required": false, "description": "Results per page, default 20" }
+    },
+    "response_example": {
+      "success": true,
+      "data": [
+        { "id": "utx_01HX9KZMB3F7VNQP8R2WDGT4E5", "type": "deposit", "amount": "100", "currency": "USDC", "chain": "ethereum", "status": "completed", "created_at": "2025-01-01T00:00:00Z" }
+      ]
+    },
+    "errors": [],
+    "related": ["crypto-transactions-list", "crypto-transactions-send"],
+    "tags": ["unified", "transactions", "history", "export", "analytics"],
+    "verified": true,
+    "content": "The unified transactions API provides a single view across all Yativo Crypto product lines. GET /unified-transactions/list?page=1&limit=20 returns paginated transactions of all types. GET /unified-transactions/{id} retrieves a specific transaction by its unified ID. POST /unified-transactions/calculate-fees computes fees for a planned transaction. GET /unified-transactions/analytics-with-fees provides analytics data with fee breakdowns. Transaction types covered: deposit (incoming on-chain transfers), withdrawal (outgoing sends), swap (token swaps), fee (platform fees), auto_forwarding (auto-forwarded funds), card_transaction (virtual card charges), iban_transfer (IBAN wire transfers), gateway_payment (payment gateway settlements), agentic_transaction (AI agent payments). Export transactions with POST /unified-transactions/export sending format ('csv' or 'json'), date_from (ISO 8601), date_to (ISO 8601), and types (array of transaction type strings to include). Check export job status with GET /unified-transactions/export/list and GET /unified-transactions/export/{id}/download once complete.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-subscriptions",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "subscriptions",
+    "title": "Subscription Plans",
+    "method": "GET",
+    "path": "/subscription/plans",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Manage your Yativo Crypto subscription plan. Available tiers: Free ($0), Pro ($49/month), Enterprise ($299/month).",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": [
+        { "tier_id": "free", "name": "Free", "price_monthly": 0 },
+        { "tier_id": "pro", "name": "Pro", "price_monthly": 49 },
+        { "tier_id": "enterprise", "name": "Enterprise", "price_monthly": 299 }
+      ]
+    },
+    "errors": [],
+    "related": [],
+    "tags": ["subscription", "plans", "pricing", "tiers"],
+    "verified": true,
+    "content": "Manage your Yativo Crypto subscription with the subscription endpoints. GET /subscription/plans returns all available tiers: Free ($0/month), Pro ($49/month), and Enterprise ($299/month). GET /subscription/current returns your active plan. Subscribe to a plan with POST /subscription/subscribe passing tier_id (string). Enable or disable auto-renewal with PUT /subscription/auto-renew. Cancel subscription with POST /subscription/cancel. View subscription history with GET /subscription/history. Higher tiers unlock higher transaction limits, more API calls per minute, advanced analytics, and priority support. The Enterprise tier includes custom SLAs and dedicated support.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-analytics",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "analytics",
+    "title": "Transaction and Dashboard Analytics",
+    "method": "GET",
+    "path": "/analytics/transaction-analytics",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Retrieve transaction analytics and dashboard metrics for your account.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "total_volume_usd": "50000.00",
+        "total_transactions": 245,
+        "chains": { "ethereum": 100, "solana": 80, "polygon": 65 }
+      }
+    },
+    "errors": [],
+    "related": ["crypto-unified-transactions"],
+    "tags": ["analytics", "dashboard", "metrics", "volume"],
+    "verified": true,
+    "content": "Access platform analytics with two endpoints. GET /analytics/transaction-analytics returns transaction-level metrics: total transaction volume in USD, number of transactions, breakdown by chain, breakdown by token, successful vs failed rate, and trends over time. GET /analytics/dashboard-analytics returns account-level dashboard data: wallet balances summary, recent activity, top assets by value, and gas station balance status. These endpoints are useful for building internal dashboards and monitoring your platform health. For gateway-specific analytics use GET /crypto-gateway/overview (payment gateway summary) and GET /crypto-gateway/analytics/me (detailed gateway metrics). For unified transaction analytics including fees use GET /unified-transactions/analytics-with-fees.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-supported-chains",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "reference",
+    "category": "chains",
+    "title": "Supported Chains and Tokens",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Complete reference of supported blockchain networks and their tokens with chain identifiers and native gas tokens.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["crypto-assets-add", "crypto-gas-station"],
+    "tags": ["chains", "tokens", "networks", "supported", "reference"],
+    "verified": true,
+    "content": "Yativo Crypto supports the following blockchain networks. Ethereum (chain: 'ethereum', chain ID 1, native gas token: ETH): supports USDC, USDT, DAI, WETH, and other ERC-20 tokens. Solana (chain: 'solana', native gas token: SOL): supports USDC, USDT, and SPL tokens. Bitcoin (chain: 'bitcoin', native: BTC): BTC only. Polygon (chain: 'polygon', chain ID 137, native: POL): USDC, USDT, and MATIC/POL tokens. Binance Smart Chain (chain: 'bsc', chain ID 56, native: BNB): USDC, USDT, BUSD, and BEP-20 tokens. Base (chain: 'base', chain ID 8453, gas ticker: ETH_BASE): USDC and ERC-20 tokens. Arbitrum (chain: 'arbitrum', chain ID 42161, gas ticker: ETH_ARBITRUM): USDC, USDT, and ARB tokens. Optimism (chain: 'optimism', chain ID 10, gas ticker: ETH_OPTIMISM): USDC, USDT, OP tokens. XDC Network (chain: 'xdc', native: XDC). TRON (chain: 'tron', native: TRX): USDT-TRC20. Avalanche (chain: 'avalanche', chain ID 43114, native: AVAX). Gnosis (chain: 'gnosis', chain ID 100, native: xDAI/GNO). Use GET /assets/get-chains for the authoritative list. When specifying chains in the API use lowercase strings as above.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-cards-overview",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "overview",
+    "category": "cards",
+    "title": "Yativo Virtual Cards Overview",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Overview of the Yativo card program: virtual Visa/Mastercard cards funded from crypto balances, with B2B issuer program for building your own card product.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["crypto-cards-onboarding", "crypto-cards-virtual", "crypto-cards-issuer"],
+    "tags": ["cards", "virtual-cards", "visa", "mastercard", "b2b", "issuer"],
+    "verified": true,
+    "content": "Yativo offers virtual Visa and Mastercard prepaid cards funded from cryptocurrency balances. There are two card program modes. The direct card program: individual users or businesses onboard through a four-step process (register account, complete KYC, accept terms, initialize wallet), then create virtual cards funded with USDC deposited on Solana. The B2B card issuer program: for platforms that want to issue cards to their own customers — apply with POST /card-issuer/apply, manage a master wallet, and fund customer cards programmatically. Virtual cards support online spending anywhere Visa or Mastercard is accepted. Cards can be frozen, unfrozen, and voided. Card funding address accepts USDC on Solana only with a minimum deposit of $5. Card creation requires a minimum of $3. KYC is mandatory before card issuance. The card program covers purchase authorization, settlement, refunds, ATM withdrawals, and fee transactions. Webhook events track all card lifecycle events.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-cards-onboarding",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "cards",
+    "title": "Card Onboarding — Register, KYC, Terms, Deploy",
+    "method": "POST",
+    "path": "/yativo-card/onboard",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Four-step card account onboarding: register with email/name, complete KYC, accept terms, and initialize the card wallet.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "email": { "type": "string", "required": true, "description": "User's email address" },
+      "first_name": { "type": "string", "required": true, "description": "User's legal first name" },
+      "last_name": { "type": "string", "required": true, "description": "User's legal last name" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "yativo_card_id": "yc_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "email": "user@example.com",
+        "kyc_status": "pending",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [],
+    "related": ["crypto-cards-virtual", "crypto-cards-funding"],
+    "tags": ["cards", "onboarding", "kyc", "terms", "deploy"],
+    "verified": true,
+    "content": "Card account onboarding requires four steps in sequence. Step 1: Register — POST /yativo-card/onboard with email, first_name, last_name. Returns yativo_card_id (save this — required for all card operations) and kyc_status: pending. Step 2: Check KYC status — GET /yativo-card/kyc-status. KYC statuses: pending (not started), in_progress (under review), pending_review (resubmission requested), approved (proceed), rejected (check rejection_reason), expired (restart via KYC link). Poll until approved. Cannot proceed until status is approved. Step 3: Accept terms — POST /yativo-card/accept-terms with empty JSON body {}. Returns terms_accepted: true and accepted_at timestamp. Step 4: Initialize card wallet — POST /yativo-card/deploy-safe with empty JSON body {}. Returns status: deployed. This one-time operation enables funding and card creation. After all four steps the account is ready to receive USDC deposits on Solana and issue virtual cards.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-cards-virtual",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "cards",
+    "title": "Virtual Cards — Create, List, View, Freeze, Void",
+    "method": "POST",
+    "path": "/yativo-card/create-card",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Create virtual Visa/Mastercard cards, list cards, view sensitive card data, freeze/unfreeze, and void cards.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "card_type": { "type": "string", "required": true, "description": "Card network type e.g. 'visa' or 'mastercard'" },
+      "display_name": { "type": "string", "required": true, "description": "Label for the card" },
+      "spending_limit_amount": { "type": "number", "required": false, "description": "Optional spending limit amount" },
+      "spending_limit_frequency": { "type": "string", "required": false, "description": "Limit frequency: 'daily', 'weekly', or 'monthly'" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": {
+        "card_id": "crd_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "card_type": "visa",
+        "display_name": "Travel Card",
+        "status": "active",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "card_not_active", "description": "Card is frozen or voided — cannot process transaction" }
+    ],
+    "related": ["crypto-cards-funding", "crypto-cards-transactions"],
+    "tags": ["cards", "create", "virtual", "freeze", "void", "spending-limit"],
+    "verified": true,
+    "content": "Create a virtual card with POST /yativo-card/create-card. Required: card_type (visa or mastercard) and display_name. Optional: spending_limit_amount (USD) and spending_limit_frequency (daily, weekly, or monthly) to cap spending. The response returns card_id (crd_ prefix) and status active. List all cards with GET /yativo-card/list-cards. View sensitive card data (card number, expiry, CVV) securely with POST /yativo-card/{yativo_card_id}/cards/{cardId}/view-token passing enabled_views (array: ['data'] for card number/expiry/cvv, ['pin'] for PIN). This returns a secure_view_url to open in a browser — do not expose raw card data in your app directly. Get a card's profile with GET /yativo-card/{id}/profile. Freeze a card with POST /yativo-card/cards/{id}/freeze — the card immediately stops authorizing new purchases. Unfreeze with POST /yativo-card/cards/{id}/unfreeze. Permanently void a card with POST /yativo-card/cards/{id}/void — irreversible, use when card is compromised. Cards expire based on network rules. KYC must be approved before card creation.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-cards-funding",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "cards",
+    "title": "Card Wallet Funding",
+    "method": "GET",
+    "path": "/yativo-card/{id}/wallet/funding-address",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Get the card wallet funding address to deposit USDC on Solana. Minimum deposit $5. Check wallet balance.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": {
+      "id": { "type": "string", "required": true, "description": "yativo_card_id from POST /yativo-card/onboard" }
+    },
+    "response_example": {
+      "success": true,
+      "data": {
+        "address": "Gh9e7PGKqfD4XJczH5...",
+        "chain": "solana",
+        "ticker": "USDC",
+        "minimum_deposit": "5.00"
+      }
+    },
+    "errors": [],
+    "related": ["crypto-cards-virtual", "crypto-cards-onboarding"],
+    "tags": ["cards", "funding", "wallet", "usdc", "solana"],
+    "verified": true,
+    "content": "To fund a Yativo card wallet, retrieve the deposit address by calling GET /yativo-card/{id}/wallet/funding-address where id is the yativo_card_id. The response includes the Solana wallet address, chain (always solana), ticker (always USDC), and minimum_deposit ($5.00). Send USDC on the Solana network to this address. There is no other funding method for card wallets — only USDC on Solana is accepted. The minimum deposit is $5.00. Once funds arrive the wallet balance updates and cards can be used for spending. Check wallet balance with GET /yativo-card/{id}/wallet which returns balance, available_balance, and pending_balance. For the B2B issuer program, the card issuer can fund customer cards programmatically without the customer needing to know the Solana address — use POST /card-issuer/fund-customer instead.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-cards-transactions",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "cards",
+    "title": "Card Transactions",
+    "method": "GET",
+    "path": "/yativo-card/{id}/cards/{cardId}/transactions",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Retrieve transaction history for a specific card or all cards under a user account, with filters for status and date range.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": {
+      "limit": { "type": "integer", "required": false, "description": "Results per page" },
+      "offset": { "type": "integer", "required": false, "description": "Pagination offset" },
+      "status": { "type": "string", "required": false, "description": "Filter by status: authorized, settled, declined, reversed" },
+      "from_date": { "type": "string", "required": false, "description": "Start date (ISO 8601)" },
+      "to_date": { "type": "string", "required": false, "description": "End date (ISO 8601)" }
+    },
+    "response_example": {
+      "success": true,
+      "data": [
+        { "transaction_id": "ctx_01HX9KZMB3F7VNQP8R2WDGT4E5", "type": "purchase", "amount": "25.00", "merchant": "Amazon", "status": "settled", "created_at": "2025-01-01T00:00:00Z" }
+      ]
+    },
+    "errors": [],
+    "related": ["crypto-cards-virtual", "crypto-cards-funding"],
+    "tags": ["cards", "transactions", "history", "purchase", "refund"],
+    "verified": true,
+    "content": "Retrieve card transaction history with GET /yativo-card/{yativo_card_id}/cards/{cardId}/transactions. Path params: id (yativo_card_id) and cardId (specific card). Query params: limit, offset, status (authorized, settled, declined, reversed), from_date, to_date (ISO 8601 strings). To get transactions across all cards for a user account use GET /yativo-card/{id}/transactions with the same query params. Transaction types: purchase (card payment to a merchant), refund (merchant credit back), atm_withdrawal (cash out), fee (card platform fee), authorization (pre-authorization hold). Each transaction includes transaction_id, type, amount, currency, merchant name, status, created_at. Webhook events for real-time notification: transaction.authorized (auth hold placed), transaction.declined (auth rejected), transaction.settled (transaction finalized), transaction.reversed (refund or void).",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-cards-issuer",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "cards",
+    "title": "B2B Card Issuer Program",
+    "method": "POST",
+    "path": "/card-issuer/apply",
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Apply for the B2B card issuer program to issue virtual cards to your own customers. Manage a master wallet, fund customers, and run a branded card product.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "funding_structure": { "type": "string", "required": true, "description": "'master_wallet' to use a shared master balance or 'non_master' for individual wallet per customer" },
+      "iban_enabled": { "type": "boolean", "required": false, "description": "Whether to enable IBAN funding for the master wallet" }
+    },
+    "request_params": null,
+    "response_example": {
+      "success": true,
+      "data": { "application_id": "iss_app_01HX9KZMB3F7VNQP8R2WDGT4E5", "status": "pending_review" }
+    },
+    "errors": [],
+    "related": ["crypto-cards-overview", "crypto-cards-virtual"],
+    "tags": ["issuer", "b2b", "program", "master-wallet", "cards"],
+    "verified": true,
+    "content": "The B2B card issuer program lets platforms issue virtual Visa/Mastercard cards to their own end-customers without each customer going through Yativo's card onboarding directly. Apply with POST /card-issuer/apply — required field: funding_structure ('master_wallet' for a shared pool or 'non_master' for isolated customer wallets); optional: iban_enabled (boolean). Check application status with GET /card-issuer/status. Once approved, manage master wallets with GET /card-issuer/master-wallets, get funding addresses with GET /card-issuer/funding-addresses. Swap master wallet tokens with POST /card-issuer/master-wallets/swap (from_token, to_token, amount). Fund a specific customer's card with POST /card-issuer/fund-customer — identify the customer by customer_id, card_id, external_id, or email; provide amount, source_chain, and pricing_mode ('send_x' to send a specific amount or 'receive_x' so the customer receives a specific amount). Look up a customer with GET /card-issuer/lookup-customer. List all customers with GET /card-issuer/customers. See funding history with GET /card-issuer/deposits. Card issuers receive webhook events for all their customers' card transactions.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "crypto-errors-reference",
+    "source": "docs",
+    "product": "crypto",
+    "version": "v1",
+    "type": "reference",
+    "category": "errors",
+    "title": "Error Codes Reference",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://crypto-api.yativo.com/api/v1",
+    "description": "Complete reference for all HTTP status codes and error codes returned by the Yativo Crypto API.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": {
+      "error": {
+        "code": "insufficient_balance",
+        "message": "Wallet balance is too low for this transaction",
+        "request_id": "req_01HX9KZMB3F7VNQP8R2WDGT4E5"
+      }
+    },
+    "errors": [
+      { "status": 400, "code": "validation_error", "description": "Request body is malformed or missing required fields" },
+      { "status": 401, "code": "unauthorized", "description": "Token missing, expired, or invalid. Refresh via POST /apikey/token or GET /authentication/refresh-token" },
+      { "status": 403, "code": "forbidden", "description": "Token is valid but lacks the required permission scope. Check key scopes via GET /apikey/{id}" },
+      { "status": 404, "code": "not_found", "description": "The requested resource does not exist" },
+      { "status": 409, "code": "conflict", "description": "Idempotency key already used. The error body includes existing_transaction_id — use it to look up the original transaction" },
+      { "status": 422, "code": "insufficient_balance", "description": "Asset balance is too low for the requested send amount" },
+      { "status": 422, "code": "invalid_address", "description": "The receiving_address is not valid for the specified chain" },
+      { "status": 422, "code": "unsupported_token", "description": "The requested ticker is not supported on the specified chain" },
+      { "status": 422, "code": "quote_expired", "description": "The swap or payment quote has expired. Request a new quote." },
+      { "status": 422, "code": "gas_station_empty", "description": "Gas station lacks sufficient native tokens to cover the network fee. Top up the station." },
+      { "status": 422, "code": "card_not_active", "description": "Card is frozen or voided" },
+      { "status": 422, "code": "iban_not_activated", "description": "IBAN is not yet activated for this account" },
+      { "status": 429, "code": "rate_limit_exceeded", "description": "Too many requests. Response includes retry_after seconds." },
+      { "status": 500, "code": "internal_error", "description": "Server error. Response includes request_id for support escalation." }
+    ],
+    "related": [],
+    "tags": ["errors", "status-codes", "reference"],
+    "verified": true,
+    "content": "The Yativo Crypto API uses standard HTTP status codes. 400 validation_error: the request body is malformed or missing required fields — check all required parameters. 401 unauthorized: the Bearer token is missing, expired (tokens last 60 minutes), or invalid — refresh via POST /apikey/token with your api_key and api_secret, or call GET /authentication/refresh-token. 403 forbidden: token is valid but lacks required permission scope — check which scopes your key has via GET /apikey/{id} and ensure it includes the needed scope (e.g. transactions:write for sends). 404 not_found: the requested resource ID does not exist or does not belong to your account. 409 conflict: the Idempotency-Key header value was already used for a different transaction — the error body contains existing_transaction_id which you can use to look up the original request. 422 insufficient_balance: the asset has less than the requested send amount — check balance first. 422 invalid_address: the receiving_address format does not match the chain (e.g. an Ethereum address on the Solana chain). 422 unsupported_token: the chain does not support that ticker. 422 quote_expired: the swap quote's expires_at has passed — get a fresh quote. 422 gas_station_empty: no native tokens in the gas station — top up the station address. 429 rate_limit_exceeded: too many requests — check retry_after in the response to know when to retry. 500 internal_error: server-side failure — record the request_id and contact support.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  }
+]

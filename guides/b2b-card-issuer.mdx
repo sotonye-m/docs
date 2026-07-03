@@ -408,7 +408,7 @@ Poll every 10 seconds for up to 10 minutes. When `next_step` is `retry_kyc`, fet
   ```bash
   POST /v1/yativo-card/customers/{yativoCardId}/safe/deploy
   ```
-  Even when the platform auto-deploys the Safe in the background, card creation checks the **local DB state**, not Gnosis Pay directly. Calling this endpoint syncs the deployment status to the DB. You will typically receive `"already_deployed": true` (meaning Gnosis Pay already has it — this call just ensures the DB record is updated). Skipping it causes `SAFE_NOT_DEPLOYED` at card creation.
+  Even when the platform auto-deploys the Safe in the background, card creation checks the **local DB state**, not the card network directly. Calling this endpoint syncs the deployment status to the DB. You will typically receive `"already_deployed": true` (meaning the card network already has it — this call just ensures the DB record is updated). Skipping it causes `SAFE_NOT_DEPLOYED` at card creation.
 
   Both calls are idempotent. Call them in order after KYC approval, then proceed to Source of Funds.
 </Warning>
@@ -1029,7 +1029,7 @@ Content-Type: application/json
 }
 ```
 
-Open the returned `secure_view_url` for your customer in an iframe or WebView. The cardholder enters their 4-digit PIN directly in the hosted page — it never passes through your backend. Once saved, Gnosis Pay fires a `physical.card.pin.changed` webhook and Yativo updates `pin_set: true` on the card record.
+Open the returned `secure_view_url` for your customer in an iframe or WebView. The cardholder enters their 4-digit PIN directly in the hosted page — it never passes through your backend. Once saved, the card network fires a `physical.card.pin.changed` webhook and Yativo updates `pin_set: true` on the card record.
 
 <Note>
   `pin_set` is sourced from the webhook, not from the Gnosis API. Use it as a UI hint to prompt customers who haven't yet set a PIN — not as a hard access gate.

@@ -1,0 +1,4639 @@
+openapi: 3.0.3
+info:
+  title: Yativo Fiat API
+  description: |
+    The Yativo Fiat API enables businesses to manage customers, run KYC/KYB, send and receive
+    cross-border payments, issue virtual accounts and virtual cards, manage beneficiaries, and more.
+
+    **Base URLs**
+    | Environment | URL |
+    |---|---|
+    | Production | `https://api.yativo.com/api/v1` |
+    | Sandbox | `https://smtp.yativo.com/api/v1` |
+
+    **Authentication**
+    All requests (except `POST /auth/login`) require a Bearer token obtained from `POST /auth/login`.
+    Tokens expire after 600 seconds. Refresh with `GET /auth/refresh-token`.
+
+    **Idempotency**
+    All `POST` and `PUT` requests require an `Idempotency-Key` header — a unique string per request.
+    On retry Yativo returns the original response without re-processing.
+
+    **KYC endpoints** are hosted on a separate platform at `https://kyc.yativo.com`. They are
+    documented here for completeness but use that base URL, not the main API base.
+  version: 1.0.0
+  contact:
+    name: Yativo Support
+    url: https://yativo.com
+
+servers:
+  - url: https://api.yativo.com/api/v1
+    description: Production
+  - url: https://smtp.yativo.com/api/v1
+    description: Sandbox
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token obtained from POST /auth/login
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+      description: A unique string per request to ensure idempotent processing.
+
+  schemas:
+    # ── Generic wrappers ──────────────────────────────────────────────────────
+    SuccessEnvelope:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        status_code:
+          type: integer
+        message:
+          type: string
+        data:
+          nullable: true
+
+    ValidationError:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        status_code:
+          type: integer
+          example: 422
+        message:
+          type: string
+          example: Validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        per_page:
+          type: integer
+        current_page:
+          type: integer
+        last_page:
+          type: integer
+        next_page_url:
+          type: string
+          nullable: true
+        prev_page_url:
+          type: string
+          nullable: true
+
+    # ── Auth ──────────────────────────────────────────────────────────────────
+    TokenResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Authentication successful
+        data:
+          type: object
+          properties:
+            access_token:
+              type: string
+            token_type:
+              type: string
+              example: bearer
+            expires_in:
+              type: integer
+              example: 600
+
+    # ── Customer ──────────────────────────────────────────────────────────────
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        customer_id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+          format: email
+        customer_phone:
+          type: string
+        customer_country:
+          type: string
+          description: ISO 3166-1 alpha-3 (e.g. USA, BRA, MEX)
+        customer_type:
+          type: string
+          enum: [individual, business]
+        customer_status:
+          type: string
+          example: active
+        customer_kyc_status:
+          type: string
+          example: approved
+        kyc_verified_date:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CustomerAddress:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postal_code:
+          type: string
+
+    # ── KYC ───────────────────────────────────────────────────────────────────
+    ResidentialAddress:
+      type: object
+      required: [street_line_1, city, state, postal_code, country, proof_of_address_file]
+      properties:
+        street_line_1:
+          type: string
+          maxLength: 256
+        street_line_2:
+          type: string
+        city:
+          type: string
+          maxLength: 256
+        state:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2
+        proof_of_address_file:
+          type: string
+          description: Hosted URL or base64. PDF/JPG/JPEG/PNG/HEIC/TIF, max 5 MB.
+
+    IdentifyingInformationItem:
+      type: object
+      required: [type, issuing_country, number, date_issued, expiration_date, image_front_file]
+      properties:
+        type:
+          type: string
+          example: passport
+        issuing_country:
+          type: string
+          description: ISO 3166-1 alpha-2
+        number:
+          type: string
+        date_issued:
+          type: string
+          format: date
+        expiration_date:
+          type: string
+          format: date
+        image_front_file:
+          type: string
+        image_back_file:
+          type: string
+
+    UploadedDocumentItem:
+      type: object
+      required: [type, file]
+      properties:
+        type:
+          type: string
+          example: bank_statement
+        file:
+          type: string
+
+    # ── Beneficiary ───────────────────────────────────────────────────────────
+    Beneficiary:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        recipient_type:
+          type: string
+          enum: [individual, business]
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+          format: email
+        customer_nickname:
+          type: string
+        country:
+          type: string
+        customer_address:
+          type: string
+        is_archived:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    BeneficiaryPaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        gateway_id:
+          type: integer
+        currency:
+          type: string
+        nickname:
+          type: string
+        payment_data:
+          type: object
+          additionalProperties: true
+        beneficiary_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # ── Virtual Account ───────────────────────────────────────────────────────
+    VirtualAccount:
+      type: object
+      properties:
+        account_id:
+          type: string
+        account_number:
+          type: string
+        account_type:
+          type: string
+        currency:
+          type: string
+        customer_id:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    VirtualAccountHistory:
+      type: object
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+        credited_amount:
+          type: number
+        transaction_id:
+          type: string
+        sender_name:
+          type: string
+        account_number:
+          type: string
+        transaction_fees:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    # ── Wallet ────────────────────────────────────────────────────────────────
+    WalletBalance:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        balance:
+          type: string
+        currency:
+          type: string
+        decimal_places:
+          type: integer
+        meta:
+          type: object
+          properties:
+            logo:
+              type: string
+            symbol:
+              type: string
+            fullname:
+              type: string
+            precision:
+              type: integer
+
+    # ── Transaction ───────────────────────────────────────────────────────────
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        transaction_id:
+          type: string
+        transaction_amount:
+          type: string
+        transaction_status:
+          type: string
+        transaction_type:
+          type: string
+        transaction_memo:
+          type: string
+        transaction_purpose:
+          type: string
+        transaction_currency:
+          type: string
+        customer_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    # ── Virtual Card ─────────────────────────────────────────────────────────
+    VirtualCard:
+      type: object
+      properties:
+        card_id:
+          type: string
+        card_number:
+          type: string
+        expiry:
+          type: string
+        cvv:
+          type: string
+        currency:
+          type: string
+        balance:
+          type: string
+        status:
+          type: string
+        customer_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    # ── Payout ────────────────────────────────────────────────────────────────
+    PayoutRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        status:
+          type: string
+        beneficiary_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    # ── Webhook ───────────────────────────────────────────────────────────────
+    WebhookRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        events:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+paths:
+
+  # ============================================================
+  # AUTHENTICATION
+  # ============================================================
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Generate Bearer Token
+      description: |
+        Authenticate with your Account ID and App Secret to receive a Bearer token.
+        Tokens expire after **600 seconds**. Use `GET /auth/refresh-token` to renew.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_id, app_secret]
+              properties:
+                account_id:
+                  type: string
+                  description: Your Yativo Account ID from Settings → Account.
+                  example: acct_01HXAB3F7VNQP8R2WDGT4E5
+                app_secret:
+                  type: string
+                  description: Your App Secret from Developer → API Key. Keep confidential.
+                  example: yat_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh-token:
+    get:
+      tags: [Authentication]
+      summary: Refresh Token
+      description: Refresh an expiring token without re-authenticating with credentials.
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                      expires_in:
+                        type: integer
+                        example: 600
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/occupation-codes:
+    get:
+      tags: [KYC / KYB]
+      summary: Get Occupation Codes
+      description: |
+        Returns all valid occupation codes for use in the `most_recent_occupation_code`
+        field of individual KYC submissions.
+      responses:
+        '200':
+          description: List of occupation codes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        display_name:
+                          type: string
+                          example: Software developer
+                        code:
+                          type: string
+                          example: '151252'
+
+  /auth/verification-locations:
+    get:
+      tags: [KYC / KYB]
+      summary: Get Verification Locations
+      description: |
+        Returns all countries where Yativo supports customer registration and KYC/KYB verification.
+        Use this to validate customer country selections in onboarding flows.
+      responses:
+        '200':
+          description: List of supported countries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        country:
+                          type: string
+                          example: United States
+                        code:
+                          type: string
+                          example: US
+
+  # ============================================================
+  # CUSTOMERS
+  # ============================================================
+
+  /customer:
+    get:
+      tags: [Customers]
+      summary: List Customers
+      description: Returns all customers associated with your account, paginated and filterable.
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: email
+          in: query
+          schema:
+            type: string
+          description: Filter by email (partial match).
+        - name: country
+          in: query
+          schema:
+            type: string
+          description: Filter by ISO 3166-1 alpha-3 country code (e.g. USA, BRA).
+        - name: kyc_status
+          in: query
+          schema:
+            type: string
+          description: Filter by KYC status.
+        - name: is_kyc_approved
+          in: query
+          schema:
+            type: boolean
+          description: Filter by KYC approval status.
+      responses:
+        '200':
+          description: Paginated customer list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Customer'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Customers]
+      summary: Create Customer
+      description: |
+        Create a customer record before initiating KYC verification or payments for that customer.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_name, customer_email, customer_phone, customer_country, customer_type]
+              properties:
+                customer_name:
+                  type: string
+                  description: Full name (individual) or legal business name.
+                  example: Alex Smith
+                customer_email:
+                  type: string
+                  format: email
+                  description: Must be unique per account.
+                  example: alex.smith@example.com
+                customer_phone:
+                  type: string
+                  description: Phone in E.164 format (e.g. +15551234567).
+                  example: '+15551234567'
+                customer_country:
+                  type: string
+                  description: ISO 3166-1 alpha-3 (e.g. USA, BRA, MEX).
+                  example: USA
+                customer_type:
+                  type: string
+                  enum: [individual, business]
+      responses:
+        '201':
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Customer'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /customer/{customer_id}:
+    get:
+      tags: [Customers]
+      summary: Get Customer
+      description: |
+        Returns a customer's profile. Use the `include` query parameter to embed related data:
+        deposits, payouts, virtual accounts, virtual cards, and/or crypto wallets.
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The UUID of the customer to retrieve.
+        - name: include
+          in: query
+          schema:
+            type: string
+          description: |
+            Comma-separated list of relations to embed. Values: `deposits`, `payouts`,
+            `virtualaccounts`, `virtual_cards`, `crypto_wallets`, `all`.
+          example: deposits,virtualaccounts
+      responses:
+        '200':
+          description: Customer profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Customer'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Customers]
+      summary: Update Customer
+      description: |
+        Full replacement of a customer's profile. All required fields must be provided on every call.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, customer_name, customer_email, customer_phone, customer_country, customer_address]
+              properties:
+                customer_id:
+                  type: string
+                  format: uuid
+                  description: Must match the path parameter.
+                customer_name:
+                  type: string
+                customer_email:
+                  type: string
+                  format: email
+                customer_phone:
+                  type: string
+                customer_country:
+                  type: string
+                  description: ISO 3166-1 alpha-3.
+                customer_address:
+                  type: object
+                  properties:
+                    street:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    postal_code:
+                      type: string
+      responses:
+        '200':
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Customer'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  # ============================================================
+  # KYC / KYB
+  # ============================================================
+
+  /customer/kyc/{customer_id}:
+    get:
+      tags: [KYC / KYB]
+      summary: Check KYC Status
+      description: |
+        Poll this endpoint after a KYC/KYB submission to check verification status.
+        When `status` is `approved` and `is_va_approved` is `true`, the customer can use payment services.
+
+        **Status values:**
+        - `not_started` — no submission yet
+        - `submitted` — awaiting review
+        - `manual_review` — under manual review
+        - `approved` — fully verified
+        - `rejected` — rejected (see `kyc_rejection_reasons`)
+        - `under_review` — additional review in progress
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The UUID of the customer.
+      responses:
+        '200':
+          description: KYC status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      first_name:
+                        type: string
+                      last_name:
+                        type: string
+                      status:
+                        type: string
+                        enum: [not_started, submitted, manual_review, approved, rejected, under_review]
+                      kyc_rejection_reasons:
+                        type: array
+                        items:
+                          type: string
+                      kyc_requirements_due:
+                        type: array
+                        items:
+                          type: string
+                      bio_data:
+                        type: object
+                      kyc_link:
+                        type: string
+                      is_va_approved:
+                        type: boolean
+
+  /customer/kyc/update:
+    put:
+      tags: [KYC / KYB]
+      summary: Update KYC Submission
+      description: |
+        Update a previously submitted KYC or KYB record. Supply `customer_id` and `type`,
+        then any fields to change. Fields not included are left unchanged.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, type]
+              properties:
+                customer_id:
+                  type: string
+                  format: uuid
+                type:
+                  type: string
+                  enum: [individual, business]
+                  description: Must match the original submission type.
+      responses:
+        '200':
+          description: KYC submission updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      customer_id:
+                        type: string
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      updated_at:
+                        type: string
+                        format: date-time
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  # NOTE: KYC submission endpoints are on https://kyc.yativo.com, not the main API base.
+  # They are included here for completeness with their full server override noted.
+
+  /individual-kyc/submit:
+    post:
+      tags: [KYC / KYB]
+      summary: Submit Individual KYC
+      description: |
+        **Base URL for this endpoint: `https://kyc.yativo.com/api`**
+
+        Submit KYC data for an individual customer. The customer must already exist (via `POST /customer`).
+        Status will be `submitted` then move to `approved` once review is complete.
+        Requires an `Idempotency-Key` header.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customer_id
+                - first_name
+                - last_name
+                - email
+                - calling_code
+                - phone
+                - birth_date
+                - nationality
+                - gender
+                - taxId
+                - selfie_image
+                - residential_address
+                - identifying_information
+                - employment_status
+                - most_recent_occupation_code
+                - expected_monthly_payments_usd
+                - source_of_funds
+                - account_purpose
+                - uploaded_documents
+              properties:
+                customer_id:
+                  type: string
+                  format: uuid
+                first_name:
+                  type: string
+                  maxLength: 1024
+                last_name:
+                  type: string
+                  maxLength: 1024
+                middle_name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                calling_code:
+                  type: string
+                  pattern: '^\+\d{1,4}$'
+                  example: '+1'
+                phone:
+                  type: string
+                  description: Digits only, 8–15 characters. Do not include country code.
+                  minLength: 8
+                  maxLength: 15
+                birth_date:
+                  type: string
+                  format: date
+                  description: Must be before today.
+                nationality:
+                  type: string
+                  description: ISO 3166-1 alpha-2 (e.g. US, NG, BR).
+                  minLength: 2
+                  maxLength: 2
+                gender:
+                  type: string
+                  enum: [male, female]
+                taxId:
+                  type: string
+                  maxLength: 100
+                selfie_image:
+                  type: string
+                  description: Hosted URL or base64. PDF/JPG/JPEG/PNG/HEIC/TIF, max 5 MB.
+                bvn:
+                  type: string
+                  description: Required when nationality is NG. Exactly 11 digits.
+                  minLength: 11
+                  maxLength: 11
+                nin:
+                  type: string
+                  description: Required when nationality is NG. Exactly 11 digits.
+                  minLength: 11
+                  maxLength: 11
+                residential_address:
+                  $ref: '#/components/schemas/ResidentialAddress'
+                identifying_information:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/IdentifyingInformationItem'
+                employment_status:
+                  type: string
+                  enum: [employed, exempt, homemaker, retired, self_employed, student, unemployed]
+                most_recent_occupation_code:
+                  type: string
+                  description: 6-digit code from GET /auth/occupation-codes.
+                  example: '151252'
+                expected_monthly_payments_usd:
+                  type: string
+                  enum: ['0_4999', '5000_9999', '10000_49999', '50000_plus']
+                source_of_funds:
+                  type: string
+                  enum:
+                    - salary
+                    - business_income
+                    - company_funds
+                    - savings
+                    - investments_loans
+                    - inheritance
+                    - gifts
+                    - government_benefits
+                    - pension_retirement
+                    - sale_of_assets_real_estate
+                    - ecommerce_reseller
+                    - gambling_proceeds
+                    - someone_elses_funds
+                account_purpose:
+                  type: string
+                  enum:
+                    - receive_salary
+                    - business_transactions
+                    - purchase_goods_and_services
+                    - personal_or_living_expenses
+                    - payments_to_friends_or_family_abroad
+                    - receive_payment_for_freelancing
+                    - investment_purposes
+                    - protect_wealth
+                    - ecommerce_retail_payments
+                    - operating_a_company
+                    - charitable_donations
+                    - other
+                account_purpose_other:
+                  type: string
+                  description: Required when account_purpose is "other".
+                acting_as_intermediary:
+                  type: boolean
+                  default: false
+                uploaded_documents:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/UploadedDocumentItem'
+      responses:
+        '200':
+          description: KYC submission received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      submission:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          type:
+                            type: string
+                          status:
+                            type: string
+                          customer_id:
+                            type: string
+                          first_name:
+                            type: string
+                          last_name:
+                            type: string
+                          email:
+                            type: string
+                          endorsements:
+                            type: array
+                            items:
+                              type: object
+                          created_at:
+                            type: string
+                            format: date-time
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /business-kyc/submit:
+    post:
+      tags: [KYC / KYB]
+      summary: Submit Business KYB
+      description: |
+        **Base URL for this endpoint: `https://kyc.yativo.com/api`**
+
+        Submit KYB data for a business customer. The customer must already exist with
+        `customer_type: "business"`. Requires an `Idempotency-Key` header.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customer_id
+                - business_legal_name
+                - business_trade_name
+                - business_description
+                - email
+                - business_type
+                - registration_number
+                - incorporation_date
+                - registered_address
+                - physical_address
+                - associated_persons
+                - account_purpose
+                - source_of_funds
+                - high_risk_activities
+                - documents
+              properties:
+                customer_id:
+                  type: string
+                  format: uuid
+                business_legal_name:
+                  type: string
+                  maxLength: 255
+                business_trade_name:
+                  type: string
+                  maxLength: 255
+                business_description:
+                  type: string
+                  maxLength: 1000
+                email:
+                  type: string
+                  format: email
+                business_type:
+                  type: string
+                  enum: [cooperative, corporation, llc, partnership, sole_prop, trust, other]
+                registration_number:
+                  type: string
+                  maxLength: 100
+                incorporation_date:
+                  type: string
+                  format: date
+                tax_id:
+                  type: string
+                  maxLength: 100
+                phone_calling_code:
+                  type: string
+                  pattern: '^\+[1-9]\d{0,3}$'
+                phone_number:
+                  type: string
+                  minLength: 7
+                  maxLength: 15
+                business_industry:
+                  type: string
+                primary_website:
+                  type: string
+                  format: uri
+                is_dao:
+                  type: boolean
+                statement_descriptor:
+                  type: string
+                  maxLength: 22
+                has_material_intermediary_ownership:
+                  type: boolean
+                registered_address:
+                  type: object
+                  required: [street_line_1, city, state, postal_code, country]
+                  properties:
+                    street_line_1:
+                      type: string
+                    street_line_2:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    postal_code:
+                      type: string
+                    country:
+                      type: string
+                    proof_of_address_file:
+                      type: string
+                physical_address:
+                  type: object
+                  required: [street_line_1, city, state, postal_code, country]
+                  properties:
+                    street_line_1:
+                      type: string
+                    street_line_2:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    postal_code:
+                      type: string
+                    country:
+                      type: string
+                    proof_of_address_file:
+                      type: string
+                associated_persons:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [first_name, last_name, birth_date, nationality, email, ownership_percentage, residential_address, identifying_information]
+                    properties:
+                      first_name:
+                        type: string
+                      last_name:
+                        type: string
+                      birth_date:
+                        type: string
+                        format: date
+                      nationality:
+                        type: string
+                      email:
+                        type: string
+                        format: email
+                      phone:
+                        type: string
+                      title:
+                        type: string
+                      ownership_percentage:
+                        type: number
+                        minimum: 0
+                        maximum: 100
+                      relationship_established_at:
+                        type: string
+                        format: date
+                      residential_address:
+                        type: object
+                      identifying_information:
+                        type: array
+                        minItems: 1
+                        items:
+                          $ref: '#/components/schemas/IdentifyingInformationItem'
+                      has_ownership:
+                        type: boolean
+                      has_control:
+                        type: boolean
+                      is_signer:
+                        type: boolean
+                      is_director:
+                        type: boolean
+                account_purpose:
+                  type: string
+                  enum:
+                    - business_transactions
+                    - ecommerce_retail_payments
+                    - operating_a_company
+                    - investment_purposes
+                    - charitable_donations
+                    - receive_salary
+                    - receive_payment_for_freelancing
+                    - purchase_goods_and_services
+                    - personal_or_living_expenses
+                    - payments_to_friends_or_family_abroad
+                    - protect_wealth
+                    - other
+                account_purpose_other:
+                  type: string
+                source_of_funds:
+                  type: string
+                  enum:
+                    - business_income
+                    - company_funds
+                    - salary
+                    - savings
+                    - investments_loans
+                    - inheritance
+                    - gifts
+                    - government_benefits
+                    - pension_retirement
+                    - sale_of_assets_real_estate
+                    - ecommerce_reseller
+                    - gambling_proceeds
+                    - someone_elses_funds
+                high_risk_activities:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - adult_entertainment
+                      - gambling
+                      - hold_client_funds
+                      - investment_services
+                      - lending_banking
+                      - marijuana_or_related_services
+                      - money_services
+                      - operate_foreign_exchange_virtual_currencies_brokerage_otc
+                      - pharmaceuticals
+                      - precious_metals_precious_stones_jewelry
+                      - safe_deposit_box_rentals
+                      - weapons_firearms_and_explosives
+                      - none_of_the_above
+                high_risk_activities_explanation:
+                  type: string
+                conducts_money_services:
+                  type: boolean
+                conducts_money_services_description:
+                  type: string
+                compliance_screening_explanation:
+                  type: string
+                estimated_annual_revenue_usd:
+                  type: string
+                expected_monthly_payments_usd:
+                  type: number
+                operates_in_prohibited_countries:
+                  type: string
+                  enum: ['yes', 'no']
+                ownership_threshold:
+                  type: integer
+                  minimum: 5
+                  maximum: 25
+                regulated_activity:
+                  type: object
+                  properties:
+                    regulated_activities_description:
+                      type: string
+                    primary_regulatory_authority_country:
+                      type: string
+                    primary_regulatory_authority_name:
+                      type: string
+                    license_number:
+                      type: string
+                documents:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [purpose, description]
+                    properties:
+                      purpose:
+                        type: string
+                        enum: [business_registration, tax_documents, compliance_documents, financial_statements]
+                      description:
+                        type: string
+                      file:
+                        type: string
+                identifying_information:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: KYB submission received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  business_data:
+                    type: object
+                    properties:
+                      customer_id:
+                        type: string
+                      type:
+                        type: string
+                      business_legal_name:
+                        type: string
+                      status:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /kyc/regenerate/{customerId}/{service}:
+    get:
+      tags: [KYC / KYB]
+      summary: Regenerate Endorsement Link
+      description: |
+        **Base URL for this endpoint: `https://kyc.yativo.com/api`**
+
+        Generate a fresh verification link for an expired service endorsement.
+        Share the new link with the customer to complete verification for the specific payment service.
+
+        **Services:** `base`, `sepa`, `spei`, `brazil`, `eurde`, `usd_latam`, `eur_latam`,
+        `virtual_card`, `asian`, `native`, `cobo_pobo`
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: service
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [base, sepa, spei, brazil, eurde, usd_latam, eur_latam, virtual_card, asian, native, cobo_pobo]
+      responses:
+        '200':
+          description: Endorsement link regenerated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      customer_id:
+                        type: string
+                      service:
+                        type: string
+                      link:
+                        type: string
+                      expires_at:
+                        type: string
+                        format: date-time
+
+  # ============================================================
+  # PAYMENTS & TRANSFERS
+  # ============================================================
+
+  /exchange-rate:
+    post:
+      tags: [Payments & Transfers]
+      summary: Get Exchange Rate / Create Quote
+      description: |
+        Returns a real-time exchange rate, fee breakdown, and a `quote_id` valid for **5 minutes**.
+        Pass the `quote_id` to `POST /wallet/payout` or `POST /wallet/deposits/new` to execute the
+        transaction at the quoted rate. Rate-limited to **30 requests per minute**.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from_currency, to_currency, amount]
+              properties:
+                from_currency:
+                  type: string
+                  description: Source currency code (ISO 4217).
+                  example: USD
+                to_currency:
+                  type: string
+                  description: Target currency code (ISO 4217).
+                  example: CLP
+                amount:
+                  type: number
+                  description: Amount in the source currency to convert.
+                  example: 500
+                method_id:
+                  type: integer
+                  description: Payment method ID. When provided, scopes the quote to that rail and applies its exact fee structure.
+                method_type:
+                  type: string
+                  enum: [payout, payin]
+                  description: Required when method_id is provided.
+      responses:
+        '200':
+          description: Quote created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      quote_id:
+                        type: string
+                        format: uuid
+                        description: Valid for 5 minutes. Use in payout or deposit execution.
+                      from_currency:
+                        type: string
+                      to_currency:
+                        type: string
+                      rate:
+                        type: string
+                      amount:
+                        type: string
+                      payout_data:
+                        type: object
+                        properties:
+                          total_transaction_fee_in_from_currency:
+                            type: string
+                          total_transaction_fee_in_to_currency:
+                            type: string
+                          customer_sent_amount:
+                            type: string
+                          customer_receive_amount:
+                            type: string
+                          customer_total_amount_due:
+                            type: string
+                      calculator:
+                        type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded (30 requests/min)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sendmoney/quote:
+    post:
+      tags: [Payments & Transfers]
+      summary: Get Send Money Quote
+      description: |
+        Generates a rate-locked quote for a cross-border payment. The quote guarantees the
+        displayed rate and fee for **5 minutes**. Use the returned `quote_id` when executing
+        with `POST /sendmoney`. Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from_currency, to_currency, amount]
+              properties:
+                from_currency:
+                  type: string
+                  example: USD
+                to_currency:
+                  type: string
+                  example: MXN
+                amount:
+                  type: number
+                  example: 200
+      responses:
+        '200':
+          description: Quote created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      quote_id:
+                        type: string
+                        format: uuid
+                      from_currency:
+                        type: string
+                      to_currency:
+                        type: string
+                      rate:
+                        type: string
+                      amount:
+                        type: string
+                      payout_data:
+                        type: object
+
+  /sendmoney:
+    post:
+      tags: [Payments & Transfers]
+      summary: Send Money
+      description: |
+        Execute a cross-border payment using a quote ID obtained from `POST /sendmoney/quote`.
+        The quote locks the exchange rate for 5 minutes.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quote_id]
+              properties:
+                quote_id:
+                  type: string
+                  format: uuid
+                  description: Quote ID from POST /sendmoney/quote. Valid for 5 minutes.
+      responses:
+        '200':
+          description: Payment initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: string
+                      status:
+                        type: string
+                        example: pending
+                      from_currency:
+                        type: string
+                      to_currency:
+                        type: string
+                      amount:
+                        type: string
+                      rate:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+        '400':
+          description: Quote expired or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payment-methods/payout:
+    get:
+      tags: [Payments & Transfers]
+      summary: Get Payout Methods
+      description: |
+        Returns payout methods (banks, mobile wallets, etc.) available for a given destination country.
+        Use the returned `id` as `payment_method_id` when creating payouts or adding beneficiary payment methods.
+      parameters:
+        - name: country
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Destination country in ISO 3166-1 alpha-3 (e.g. CHL, MEX, PER).
+          example: CHL
+      responses:
+        '200':
+          description: List of payout methods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        method_name:
+                          type: string
+                        country:
+                          type: string
+                        currency:
+                          type: string
+                        base_currency:
+                          type: string
+
+  /payment-methods/payout/countries:
+    get:
+      tags: [Payments & Transfers]
+      summary: Get Supported Payout Countries
+      description: Returns all countries where Yativo supports outgoing payments.
+      responses:
+        '200':
+          description: List of supported countries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        iso3:
+                          type: string
+                          example: CHL
+                        iso2:
+                          type: string
+                          example: CL
+                        name:
+                          type: string
+                          example: Chile
+
+  /payment-methods/payin:
+    get:
+      tags: [Payments & Transfers]
+      summary: Get Payin Methods
+      description: Returns available payin (deposit) methods for a given country.
+      parameters:
+        - name: country
+          in: query
+          schema:
+            type: string
+          description: Country in ISO 3166-1 alpha-2 or alpha-3.
+      responses:
+        '200':
+          description: List of payin methods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  /beneficiary/form/show/{payment_method_id}:
+    get:
+      tags: [Payments & Transfers]
+      summary: Get Payout Form Fields
+      description: |
+        Returns the dynamic form fields required to add a beneficiary payment method or execute a payout.
+        Fields vary by country and payment method. Use the `id` from `GET /payment-methods/payout`.
+      parameters:
+        - name: payment_method_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Payment method ID from GET /payment-methods/payout.
+          example: 42
+      responses:
+        '200':
+          description: Form field definitions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gateway_id:
+                    type: integer
+                  currency:
+                    type: string
+                  form_data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        label:
+                          type: string
+                        type:
+                          type: string
+                        required:
+                          type: boolean
+                        options:
+                          type: array
+                          items:
+                            type: object
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+
+  /wallet/payout:
+    post:
+      tags: [Payments & Transfers]
+      summary: Initiate Payout (Wallet)
+      description: |
+        Initiate an outgoing payment to a beneficiary from your wallet.
+        Use a `quote_id` to lock the exchange rate for 5 minutes.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [debit_wallet, payment_method_id]
+              properties:
+                debit_wallet:
+                  type: string
+                  description: Source wallet currency to debit (e.g. USD, EUR).
+                  example: USD
+                payment_method_id:
+                  type: integer
+                  description: Beneficiary payment method ID from GET /payment-methods/payout.
+                quote_id:
+                  type: string
+                  format: uuid
+                  description: Recommended. Locks rate from POST /exchange-rate or POST /sendmoney/quote.
+                amount:
+                  type: number
+                  description: Required if quote_id is not provided.
+                beneficiary_id:
+                  type: string
+                  description: UUID of a saved beneficiary.
+      responses:
+        '201':
+          description: Payout initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: string
+                      status:
+                        type: string
+                      debit_wallet:
+                        type: string
+                      debit_amount:
+                        type: number
+                      credit_currency:
+                        type: string
+                      credit_amount:
+                        type: number
+                      exchange_rate:
+                        type: number
+                      fee:
+                        type: number
+                      payment_method_id:
+                        type: integer
+                      beneficiary_id:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+        '400':
+          description: Insufficient funds or expired quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # DEPOSITS
+  # ============================================================
+
+  /wallet/deposits/new:
+    post:
+      tags: [Deposits]
+      summary: Create Deposit (Payin)
+      description: |
+        Initiate a customer deposit via a supported payin gateway. Optionally pass a `quote_id`
+        from `POST /exchange-rate` (with `method_type: "payin"`) to lock the rate.
+        After a successful response, redirect the customer to `deposit_url`.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gateway, currency]
+              properties:
+                gateway:
+                  type: integer
+                  description: Payin gateway ID from GET /payment-methods/payin.
+                currency:
+                  type: string
+                  description: Wallet currency to credit (e.g. USD, BRL).
+                  example: USD
+                amount:
+                  type: number
+                  description: Amount in local payin currency. Required if quote_id is not provided.
+                quote_id:
+                  type: string
+                  format: uuid
+                  description: From POST /exchange-rate with method_type payin. Overrides amount.
+                redirect_url:
+                  type: string
+                  format: uri
+                  description: URL to redirect customer after payment completes.
+      responses:
+        '200':
+          description: Deposit initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      gateway:
+                        type: integer
+                      deposit_currency:
+                        type: string
+                      amount:
+                        type: number
+                      receive_amount:
+                        type: number
+                      currency_to:
+                        type: string
+                      status:
+                        type: string
+                      deposit_url:
+                        type: string
+                        description: Redirect customer here to complete payment.
+                      transaction_id:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+        '400':
+          description: Expired quote / below minimum
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Gateway not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /wallet/deposits:
+    get:
+      tags: [Deposits]
+      summary: List Deposits
+      description: Returns a list of all payin deposits for your account, with filtering and pagination.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: gateway
+          in: query
+          schema:
+            type: string
+        - name: currency
+          in: query
+          schema:
+            type: string
+          example: BRL
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Paginated deposit list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        gateway:
+                          type: integer
+                        deposit_currency:
+                          type: string
+                        amount:
+                          type: number
+                        receive_amount:
+                          type: number
+                        currency_to:
+                          type: string
+                        status:
+                          type: string
+                        transaction_id:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                        updated_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  # ============================================================
+  # VIRTUAL ACCOUNTS
+  # ============================================================
+
+  /business/virtual-account/create:
+    post:
+      tags: [Virtual Accounts]
+      summary: Create Virtual Account
+      description: |
+        Create a virtual bank account for a customer. The customer must have KYC approved
+        (`is_va_approved: true`). Each customer can hold one virtual account per currency.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currency]
+              properties:
+                currency:
+                  type: string
+                  description: |
+                    Currency for the virtual account. Supported: MXN, BRL, USD, EUR, MXN_USD,
+                    MXN_BASE, MXNBASE, EURBASE, USDBASE, EUR_BASE, USD_BASE, EURDE, USDDE, GBP,
+                    USD_KIRA, USDKIRA.
+                  example: BRL
+                customer_id:
+                  type: string
+                  format: uuid
+                  description: Required when currency is USD.
+      responses:
+        '201':
+          description: Virtual account creation in progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/VirtualAccount'
+
+  /business/virtual-account:
+    get:
+      tags: [Virtual Accounts]
+      summary: List Virtual Accounts
+      description: Returns all virtual accounts for your business with optional filtering.
+      parameters:
+        - name: currency
+          in: query
+          schema:
+            type: string
+          example: BRL
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of virtual accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VirtualAccount'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /business/virtual-account/show/{externalId}:
+    get:
+      tags: [Virtual Accounts]
+      summary: Get Virtual Account
+      description: Returns full details for a specific virtual account by its external ID.
+      parameters:
+        - name: externalId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The external ID of the virtual account.
+      responses:
+        '200':
+          description: Virtual account details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/VirtualAccount'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /business/virtual-account/delete-virtual-account/{account_id}:
+    delete:
+      tags: [Virtual Accounts]
+      summary: Delete Virtual Account
+      description: Permanently deletes a virtual account. This action is irreversible.
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+
+  /business/virtual-account/history/{accountNumber}:
+    get:
+      tags: [Virtual Accounts]
+      summary: Virtual Account Transaction History
+      description: Returns all payments received into a specific virtual account.
+      parameters:
+        - name: accountNumber
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The account number (not account ID).
+      responses:
+        '200':
+          description: Payment history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VirtualAccountHistory'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /business/virtual-account/histories:
+    get:
+      tags: [Virtual Accounts]
+      summary: All Virtual Account Histories
+      description: |
+        Returns deposit histories across all virtual accounts for your business.
+        Consolidated view of all incoming payments.
+      responses:
+        '200':
+          description: All histories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VirtualAccountHistory'
+
+  /business/virtual-account/customer/accounts/{customerId}:
+    get:
+      tags: [Virtual Accounts]
+      summary: Customer Virtual Accounts
+      description: Returns all virtual accounts associated with a specific customer.
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Customer virtual accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VirtualAccount'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # WALLETS
+  # ============================================================
+
+  /wallet/balance:
+    get:
+      tags: [Wallets]
+      summary: Get Wallet Balance
+      description: Returns current balance for all wallets on your account.
+      responses:
+        '200':
+          description: All wallet balances
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WalletBalance'
+
+  /wallet/balance/total:
+    get:
+      tags: [Wallets]
+      summary: Get Total Balance (USD)
+      description: Returns the sum of all wallet balances converted to USD.
+      responses:
+        '200':
+          description: Total balance in USD
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      total_balance:
+                        type: number
+                        example: 37629.18
+
+  /wallet/create:
+    post:
+      tags: [Wallets]
+      summary: Create Wallet
+      description: |
+        Create a new wallet to hold a specific currency. Once created, it appears in your
+        balance list with a zero balance. Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currency]
+              properties:
+                currency:
+                  type: string
+                  description: Currency code for the new wallet (e.g. COP, PEN, ARS, CLP).
+                  example: COP
+      responses:
+        '201':
+          description: Wallet created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      currency:
+                        type: string
+                      balance:
+                        type: string
+                        example: '0.00'
+                      created_at:
+                        type: string
+                        format: date-time
+
+  /wallet/payouts:
+    get:
+      tags: [Wallets]
+      summary: List Wallet Payouts
+      description: Returns a list of payout (withdrawal) transactions made from your wallets.
+      responses:
+        '200':
+          description: List of wallet payouts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        amount:
+                          type: string
+                        currency:
+                          type: string
+                        status:
+                          type: string
+                        recipient:
+                          type: string
+                        reference:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+
+  # ============================================================
+  # BENEFICIARIES
+  # ============================================================
+
+  /beneficiaries/list:
+    get:
+      tags: [Beneficiaries]
+      summary: List Beneficiaries
+      description: Returns a paginated list of all beneficiaries in your account.
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated beneficiary list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Beneficiary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /beneficiaries:
+    post:
+      tags: [Beneficiaries]
+      summary: Create Beneficiary
+      description: |
+        Create a beneficiary record to store recipient information for future payouts.
+        After creating, add payment method details via `POST /beneficiaries/payment-methods`.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipient_type, customer_name, customer_email, customer_address, country]
+              properties:
+                recipient_type:
+                  type: string
+                  enum: [individual, business]
+                customer_name:
+                  type: string
+                customer_email:
+                  type: string
+                  format: email
+                customer_address:
+                  type: string
+                country:
+                  type: string
+                  description: ISO 3166-1 alpha-3 (e.g. CHL, MEX, BRA).
+                customer_nickname:
+                  type: string
+      responses:
+        '200':
+          description: Beneficiary created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Beneficiary'
+
+  /beneficiaries/{id}:
+    get:
+      tags: [Beneficiaries]
+      summary: Get Beneficiary
+      description: Returns full details for a specific beneficiary.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Beneficiary details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Beneficiary'
+
+    put:
+      tags: [Beneficiaries]
+      summary: Update Beneficiary
+      description: |
+        Full replacement of a beneficiary's profile. All required fields must be provided.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipient_type, customer_name, customer_email, customer_address, country]
+              properties:
+                recipient_type:
+                  type: string
+                  enum: [individual, business]
+                customer_name:
+                  type: string
+                customer_email:
+                  type: string
+                  format: email
+                customer_address:
+                  type: string
+                country:
+                  type: string
+                customer_nickname:
+                  type: string
+      responses:
+        '200':
+          description: Beneficiary updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+    delete:
+      tags: [Beneficiaries]
+      summary: Delete Beneficiary
+      description: Permanently delete a beneficiary.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /beneficiaries/{id}/archive:
+    put:
+      tags: [Beneficiaries]
+      summary: Archive Beneficiary
+      description: Archive a beneficiary to hide them without permanent deletion.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Archived
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /beneficiaries/{id}/unarchive:
+    put:
+      tags: [Beneficiaries]
+      summary: Unarchive Beneficiary
+      description: Restore a previously archived beneficiary.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unarchived
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /beneficiaries/payment-methods/all:
+    get:
+      tags: [Beneficiaries]
+      summary: List Payment Methods
+      description: Returns all saved payment methods across all beneficiaries in your account.
+      responses:
+        '200':
+          description: All payment methods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BeneficiaryPaymentMethod'
+
+  /beneficiaries/payment-methods:
+    post:
+      tags: [Beneficiaries]
+      summary: Add Payment Method
+      description: |
+        Add a payment method (bank account, wallet) to a beneficiary.
+        The structure of `payment_data` varies by payment method — retrieve required fields
+        from `GET /beneficiary/form/show/{payment_method_id}`.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gateway_id, payment_data, currency, nickname]
+              properties:
+                gateway_id:
+                  type: integer
+                  description: Payout method ID from GET /payment-methods/payout.
+                payment_data:
+                  type: object
+                  description: Account details. Fields vary by gateway_id.
+                  additionalProperties: true
+                currency:
+                  type: string
+                  example: CLP
+                nickname:
+                  type: string
+                beneficiary_id:
+                  type: string
+      responses:
+        '200':
+          description: Payment method added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/BeneficiaryPaymentMethod'
+
+  /beneficiaries/payment-methods/{id}:
+    post:
+      tags: [Beneficiaries]
+      summary: Get Payment Method
+      description: Retrieve a specific beneficiary payment method by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Payment method details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/BeneficiaryPaymentMethod'
+
+  /beneficiaries/payment-methods/update/{id}:
+    put:
+      tags: [Beneficiaries]
+      summary: Update Payment Method
+      description: |
+        Full replacement of a beneficiary payment method. All required fields must be provided.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gateway_id, currency, payment_data, nickname]
+              properties:
+                gateway_id:
+                  type: integer
+                currency:
+                  type: string
+                payment_data:
+                  type: object
+                  additionalProperties: true
+                nickname:
+                  type: string
+      responses:
+        '200':
+          description: Payment method updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/BeneficiaryPaymentMethod'
+
+  /beneficiaries/payment-methods/delete/{id}:
+    delete:
+      tags: [Beneficiaries]
+      summary: Delete Payment Method
+      description: Permanently delete a saved beneficiary payment method.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  # ============================================================
+  # TRANSACTIONS
+  # ============================================================
+
+  /business/transactions/index:
+    get:
+      tags: [Transactions]
+      summary: List Transactions
+      description: |
+        Returns all transactions (deposits, payouts, virtual account receipts, card transactions)
+        for your account with filtering and pagination.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [success, complete, detected, pending, 'In Progress', failed]
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: amount
+          in: query
+          schema:
+            type: number
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+        - name: transaction_type
+          in: query
+          schema:
+            type: string
+            enum: [deposit, payout, virtual_account, transfer, card_transaction, crypto_deposit]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Paginated transaction list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  meta:
+                    $ref: '#/components/schemas/Pagination'
+
+  /business/transaction/show/{id}:
+    get:
+      tags: [Transactions]
+      summary: Get Transaction
+      description: Returns complete details for a single transaction by its internal numeric ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Internal numeric transaction ID (the `id` field, not the UUID).
+      responses:
+        '200':
+          description: Transaction details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /transaction/tracking/{quote_id}:
+    get:
+      tags: [Transactions]
+      summary: Track Transaction
+      description: Returns a step-by-step timeline of a transaction's progress.
+      parameters:
+        - name: quote_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The quote_id associated with the transaction.
+      responses:
+        '200':
+          description: Transaction timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tracking_status:
+                          type: string
+                        transaction_type:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+
+  /transaction/track:
+    get:
+      tags: [Transactions]
+      summary: Track Transaction by ID
+      description: |
+        Look up a transaction by its transaction ID and type. Returns a direct lookup by the
+        transaction's own ID (distinct from the timeline tracking endpoint).
+      parameters:
+        - name: txn_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The transaction ID to look up.
+        - name: txn_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [payout, payin, swap]
+      responses:
+        '200':
+          description: Transaction record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      transaction_id:
+                        type: string
+                      type:
+                        type: string
+                      amount:
+                        type: string
+                      currency:
+                        type: string
+                      status:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /business/transaction/{transactionId}/{type}/receipt:
+    get:
+      tags: [Transactions]
+      summary: Download Receipt
+      description: |
+        Returns a receipt for a completed transaction. Pass `pdf` as `type` to receive a
+        base64-encoded PDF, or use `json` for structured data.
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [pdf, json]
+      responses:
+        '200':
+          description: Receipt (base64 PDF when type=pdf)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: string
+                    description: Base64-encoded PDF when type is pdf.
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # VIRTUAL CARDS
+  # ============================================================
+
+  /customer/virtual/cards/activate:
+    post:
+      tags: [Virtual Cards]
+      summary: Activate Customer for Virtual Cards
+      description: |
+        Registers a customer for virtual card creation. Required before issuing any virtual cards.
+        Fields already stored on the customer's profile may be omitted.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id]
+              properties:
+                customer_id:
+                  type: string
+                  format: uuid
+                user_photo:
+                  type: string
+                  description: Base64 or URL. Required if not on customer profile.
+                idType:
+                  type: string
+                  enum: [passport, drivers_license, national_id]
+                  description: Required for Nigerian customers.
+                customer_idFront:
+                  type: string
+                customer_idNumber:
+                  type: string
+                customer_address:
+                  type: object
+                  properties:
+                    country:
+                      type: string
+                      description: ISO 3166-1 alpha-2.
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    zipcode:
+                      type: string
+                    street:
+                      type: string
+                    number:
+                      type: string
+      responses:
+        '200':
+          description: Customer registered for virtual cards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+                    example: User registered successfully.
+
+  /customer/virtual/cards/create:
+    post:
+      tags: [Virtual Cards]
+      summary: Create Virtual Card
+      description: |
+        Issues a virtual card for an activated customer. The initial funding amount is debited
+        from your USD wallet. Minimum $3.00, maximum $10,000.00.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, amount]
+              properties:
+                customer_id:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  minimum: 3
+                  maximum: 10000
+                  description: Initial funding amount in USD.
+      responses:
+        '201':
+          description: Virtual card created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/VirtualCard'
+
+  /customer/virtual/cards/list:
+    get:
+      tags: [Virtual Cards]
+      summary: List Virtual Cards
+      description: Returns all virtual cards issued under your business account.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of virtual cards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VirtualCard'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /customer/virtual/cards/get/{card_id}:
+    get:
+      tags: [Virtual Cards]
+      summary: Get Virtual Card
+      description: Returns full details for a specific virtual card.
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Virtual card details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/VirtualCard'
+
+  /customer/virtual/cards/topup:
+    post:
+      tags: [Virtual Cards]
+      summary: Top Up Card
+      description: |
+        Adds funds to a virtual card. Amount is always debited from your USD wallet.
+        Minimum $1.00, maximum $10,000.00.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                cardId:
+                  type: string
+                  description: Virtual card ID. Either cardId or card_id required.
+                card_id:
+                  type: string
+                  description: Virtual card ID. Either cardId or card_id required.
+                amount:
+                  type: number
+                  minimum: 1
+                  maximum: 10000
+      responses:
+        '200':
+          description: Card topped up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      card_id:
+                        type: string
+                      amount_added:
+                        type: string
+                      new_balance:
+                        type: string
+                      currency:
+                        type: string
+
+  /customer/virtual/cards/update/{card_id}:
+    put:
+      tags: [Virtual Cards]
+      summary: Freeze / Unfreeze Card
+      description: |
+        Freeze or unfreeze a virtual card. A frozen card declines all transactions until unfrozen.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [freeze, unfreeze]
+      responses:
+        '200':
+          description: Card status updated
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /customer/virtual/cards/transactions/{card_id}:
+    get:
+      tags: [Virtual Cards]
+      summary: Card Transactions
+      description: Returns all transactions made with a specific virtual card.
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card transaction history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        transaction_id:
+                          type: string
+                        amount:
+                          type: string
+                        currency:
+                          type: string
+                        merchant_name:
+                          type: string
+                        merchant_category:
+                          type: string
+                        status:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+
+  /customer/virtual/cards/withdraw:
+    post:
+      tags: [Virtual Cards]
+      summary: Withdraw from Card
+      description: |
+        Moves funds from a virtual card back to your USD wallet balance.
+        Minimum $1.00.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId, amount]
+              properties:
+                cardId:
+                  type: string
+                amount:
+                  type: number
+                  minimum: 1
+      responses:
+        '200':
+          description: Withdrawal successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      card_id:
+                        type: string
+                      amount_withdrawn:
+                        type: string
+                      new_card_balance:
+                        type: string
+                      currency:
+                        type: string
+
+  /customer/virtual/cards/terminate:
+    post:
+      tags: [Virtual Cards]
+      summary: Terminate Card
+      description: |
+        Permanently terminates a virtual card. This action is irreversible.
+        Withdraw any remaining balance before terminating.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId:
+                  type: string
+      responses:
+        '200':
+          description: Card terminated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      card_id:
+                        type: string
+                      status:
+                        type: string
+                        example: terminated
+
+  # ============================================================
+  # PAYOUTS
+  # ============================================================
+
+  /payout/simple:
+    post:
+      tags: [Payouts]
+      summary: Single Payout
+      description: |
+        Send a single payment to a saved beneficiary. Debits your wallet immediately on submission.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [debit_wallet, amount, beneficiary_details_id]
+              properties:
+                debit_wallet:
+                  type: string
+                  description: Source wallet currency (e.g. USD, EUR).
+                  example: USD
+                amount:
+                  type: number
+                  description: Amount to send in debit wallet currency.
+                  example: 250
+                beneficiary_details_id:
+                  type: integer
+                  description: Saved beneficiary payment method ID.
+                beneficiary_id:
+                  type: string
+                  description: Optional beneficiary UUID for tracking.
+      responses:
+        '200':
+          description: Payout initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: string
+                      status:
+                        type: string
+                      amount:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+        '402':
+          description: Insufficient wallet balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payout/batch:
+    post:
+      tags: [Payouts]
+      summary: Batch Payout
+      description: |
+        Submit an array of payouts in one request. Each item is processed independently —
+        partial failures appear in an `errors` object without rolling back successful items.
+        If wallet balance is insufficient for the total, the entire batch is rejected before
+        any item is processed. Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payouts]
+              properties:
+                payouts:
+                  type: array
+                  items:
+                    type: object
+                    required: [amount, beneficiary_details_id]
+                    properties:
+                      amount:
+                        type: number
+                      beneficiary_details_id:
+                        type: integer
+                      beneficiary_id:
+                        type: integer
+      responses:
+        '200':
+          description: Batch submitted (may include partial failures)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    description: Object keyed by index with payout results.
+        '400':
+          description: Insufficient balance or partial failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payout/get:
+    get:
+      tags: [Payouts]
+      summary: List Payouts
+      description: Returns a paginated list of all payouts.
+      responses:
+        '200':
+          description: Paginated payout list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayoutRecord'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /payout/fetch/{payout_id}:
+    get:
+      tags: [Payouts]
+      summary: Get Payout
+      description: Returns details for a specific payout by ID.
+      parameters:
+        - name: payout_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payout details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/PayoutRecord'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # CURRENCY SWAP
+  # ============================================================
+
+  /swap/init:
+    post:
+      tags: [Currency Swap]
+      summary: Initiate Swap (Preview)
+      description: |
+        Preview a currency swap. Returns the live rate and resulting amount without committing funds.
+        Use this to show a confirmation screen before calling `/swap/process`.
+        Note: the rate shown is indicative — execute promptly after previewing.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from_currency, to_currency, amount]
+              properties:
+                from_currency:
+                  type: string
+                  example: USD
+                to_currency:
+                  type: string
+                  example: BRL
+                amount:
+                  type: number
+                  example: 500
+      responses:
+        '200':
+          description: Swap preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      from_currency:
+                        type: string
+                      to_currency:
+                        type: string
+                      from_amount:
+                        type: string
+                      to_amount:
+                        type: string
+                      exchange_rate:
+                        type: string
+                      fee:
+                        type: string
+                      fee_currency:
+                        type: string
+        '422':
+          description: Invalid currencies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /swap/process:
+    post:
+      tags: [Currency Swap]
+      summary: Process Swap
+      description: |
+        Execute the currency conversion. Debits the `from_currency` wallet and credits the
+        `to_currency` wallet at the live rate. Use a **new, unique** `Idempotency-Key`
+        (different from any used in `/swap/init`).
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from_currency, to_currency, amount]
+              properties:
+                from_currency:
+                  type: string
+                  example: USD
+                to_currency:
+                  type: string
+                  example: BRL
+                amount:
+                  type: number
+                  example: 500
+                transaction_purpose:
+                  type: string
+                  description: Optional description recorded on the transaction.
+      responses:
+        '200':
+          description: Swap executed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      from_currency:
+                        type: string
+                      to_currency:
+                        type: string
+                      from_amount:
+                        type: string
+                      to_amount:
+                        type: string
+                      exchange_rate:
+                        type: string
+                      transaction_type:
+                        type: string
+                        example: currency_swap
+                      created_at:
+                        type: string
+                        format: date-time
+        '400':
+          description: Insufficient wallet balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # GIFT CARDS
+  # ============================================================
+
+  /giftcards/categories:
+    get:
+      tags: [Gift Cards]
+      summary: List Gift Card Categories
+      description: Returns all gift card categories. Use category IDs to filter the catalog.
+      responses:
+        '200':
+          description: Gift card categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+
+  /giftcards:
+    get:
+      tags: [Gift Cards]
+      summary: List Gift Cards
+      description: Returns all purchasable gift card products, with optional filtering.
+      parameters:
+        - name: country
+          in: query
+          schema:
+            type: string
+          description: ISO 3166-1 alpha-2 country code (e.g. US, BR, NG).
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+          description: Category ID from GET /giftcards/categories.
+      responses:
+        '200':
+          description: Gift card products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        brand:
+                          type: string
+                        country:
+                          type: string
+                        currency:
+                          type: string
+                        min_amount:
+                          type: number
+                        max_amount:
+                          type: number
+                        fixed_amounts:
+                          type: array
+                          items:
+                            type: number
+                        category:
+                          type: string
+
+    post:
+      tags: [Gift Cards]
+      summary: Purchase Gift Card
+      description: |
+        Purchase a gift card product. The face value is debited from your USD wallet.
+        Gift card purchases are **non-refundable**.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, unitPrice, quantity, senderName, recipientEmail]
+              properties:
+                productId:
+                  type: integer
+                  description: Gift card product ID from GET /giftcards.
+                unitPrice:
+                  type: number
+                  minimum: 0.01
+                quantity:
+                  type: integer
+                  minimum: 1
+                senderName:
+                  type: string
+                  maxLength: 100
+                recipientEmail:
+                  type: string
+                  format: email
+                customer_id:
+                  type: string
+                  description: Optional. Link this purchase to a customer.
+      responses:
+        '200':
+          description: Gift card purchased
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: string
+                      product_name:
+                        type: string
+                      amount:
+                        type: number
+                      currency:
+                        type: string
+                      status:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+        '402':
+          description: Insufficient wallet balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /giftcards/redeem/{transactionId}:
+    get:
+      tags: [Gift Cards]
+      summary: Get Redeem Instructions
+      description: |
+        Retrieve the gift card code and redemption instructions for a completed purchase.
+        Gift card codes are sensitive — display only to the intended recipient.
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The transaction_id from the purchase response.
+      responses:
+        '200':
+          description: Redemption code and instructions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: string
+                      product_name:
+                        type: string
+                      redemption_code:
+                        type: string
+                      pin:
+                        type: string
+                      instructions:
+                        type: string
+                      expiry_date:
+                        type: string
+                        format: date
+
+  # ============================================================
+  # IP ALLOWLIST
+  # ============================================================
+
+  /ip:
+    get:
+      tags: [IP Allowlist]
+      summary: Get Allowlisted IPs
+      description: |
+        Returns your IP allowlist record. The `ip_address` field contains all currently
+        allowlisted IP addresses as an array.
+      responses:
+        '200':
+          description: IP allowlist record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      user_id:
+                        type: string
+                      ip_address:
+                        type: array
+                        items:
+                          type: string
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
+
+    post:
+      tags: [IP Allowlist]
+      summary: Add IP Addresses
+      description: |
+        Add trusted IP addresses to your allowlist. Once any IP is allowlisted, all requests
+        from non-listed IPs are rejected with 403 Forbidden.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [new_ip]
+              properties:
+                new_ip:
+                  type: array
+                  items:
+                    type: string
+                  description: Array of IPv4 addresses to allowlist.
+                  example: ['203.0.113.10', '198.51.100.5']
+      responses:
+        '200':
+          description: IPs added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /ip/{id}:
+    put:
+      tags: [IP Allowlist]
+      summary: Update IP Allowlist
+      description: |
+        Append additional IP addresses to your existing allowlist record.
+        This **adds** to the existing list — it does not replace it.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The ID of the allowlist record.
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [new_ip]
+              properties:
+                new_ip:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: IPs updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /ip/{ipAddress}:
+    delete:
+      tags: [IP Allowlist]
+      summary: Remove IP Address
+      description: Remove a single IP address from the allowlist.
+      parameters:
+        - name: ipAddress
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The IPv4 address to remove (e.g. 203.0.113.10).
+      responses:
+        '200':
+          description: IP removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  # ============================================================
+  # WEBHOOKS
+  # ============================================================
+
+  /business/webhook:
+    get:
+      tags: [Webhooks]
+      summary: List Webhooks
+      description: Returns all configured webhook endpoints for your business account.
+      responses:
+        '200':
+          description: Webhook list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookRecord'
+
+    post:
+      tags: [Webhooks]
+      summary: Create Webhook
+      description: |
+        Register a URL to receive webhook notifications. Yativo signs every request with an
+        `X-Yativo-Signature` header (HMAC-SHA256 of raw body using your webhook secret).
+
+        **Supported events:** `deposit.created`, `deposit.updated`, `deposit.completed`,
+        `payout.updated`, `payout.completed`, `customer.created`, `customer.kyc.approved`,
+        `customer.kyc.rejected`, `virtual_account.deposit`, `virtual_account.funded`.
+
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: HTTPS URL of your webhook endpoint. Must be publicly accessible.
+      responses:
+        '201':
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                      secret:
+                        type: string
+                        description: Store securely. Used to verify X-Yativo-Signature header.
+                      created_at:
+                        type: string
+                        format: date-time
+
+  /business/webhook/{webhook_id}:
+    put:
+      tags: [Webhooks]
+      summary: Update Webhook
+      description: Update an existing webhook endpoint URL.
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Webhook updated
+          content:
+            application/json:
+              schema:
+                type: object
+
+    delete:
+      tags: [Webhooks]
+      summary: Delete Webhook
+      description: |
+        Delete a webhook endpoint. Yativo stops delivering events to this URL immediately.
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /business/webhook/{webhook_id}/regenerate-secret:
+    post:
+      tags: [Webhooks]
+      summary: Regenerate Webhook Secret
+      description: |
+        Issue a new HMAC signing secret for an existing webhook. The old secret is invalidated
+        immediately — update `YATIVO_WEBHOOK_SECRET` in your environment right away.
+        The new secret is shown only once.
+        Requires an `Idempotency-Key` header.
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: New secret issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      webhook_id:
+                        type: string
+                      secret:
+                        type: string
+                        description: New HMAC secret. Shown once only.
+                      updated_at:
+                        type: string
+                        format: date-time
+
+  # ============================================================
+  # DEVELOPER
+  # ============================================================
+
+  /generate-secret:
+    get:
+      tags: [Developer]
+      summary: Generate API Secret
+      description: |
+        Generate a new App Secret for API authentication. Requires PIN verification first
+        via `POST /pin/verify`. Generating a new secret **immediately invalidates** the previous one.
+        The secret is returned only once — store it securely.
+      responses:
+        '200':
+          description: New App Secret generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      app_secret:
+                        type: string
+                        description: Shown once only.
+
+  /business/logs/all:
+    get:
+      tags: [Developer]
+      summary: API Request Logs
+      description: |
+        Returns an audit log of all API calls made against your business account.
+        Useful for debugging, monitoring, and compliance.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by HTTP status code (e.g. 200, 400, 422, 500).
+        - name: method
+          in: query
+          schema:
+            type: string
+            enum: [GET, POST, PUT, DELETE]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated request log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        method:
+                          type: string
+                        endpoint:
+                          type: string
+                        status_code:
+                          type: integer
+                        ip_address:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /business/events/all:
+    get:
+      tags: [Developer]
+      summary: List Webhook Events
+      description: Returns a log of all events sent to your configured webhook endpoint.
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Webhook event log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        event_type:
+                          type: string
+                        status:
+                          type: string
+                        webhook_url:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /business/events/show/{id}:
+    get:
+      tags: [Developer]
+      summary: Get Webhook Event
+      description: Returns complete details and payload for a specific webhook event.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The event ID.
+      responses:
+        '200':
+          description: Event details with payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  status_code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      event_type:
+                        type: string
+                      status:
+                        type: string
+                      webhook_url:
+                        type: string
+                      payload:
+                        type: object
+                        description: The full event payload delivered to your endpoint.
+                      delivered_at:
+                        type: string
+                        format: date-time
+                      created_at:
+                        type: string
+                        format: date-time
+
+tags:
+  - name: Authentication
+    description: Obtain and refresh Bearer tokens.
+  - name: Customers
+    description: Create and manage customer profiles.
+  - name: KYC / KYB
+    description: |
+      Identity verification for individual customers (KYC) and business customers (KYB).
+      Submission endpoints are on `https://kyc.yativo.com/api`.
+  - name: Payments & Transfers
+    description: Exchange rates, quotes, send money, payout methods, and wallet payouts.
+  - name: Deposits
+    description: Initiate and retrieve payin deposits.
+  - name: Virtual Accounts
+    description: Issue and manage virtual bank accounts for customers.
+  - name: Wallets
+    description: View balances, create wallets, and list wallet payouts.
+  - name: Beneficiaries
+    description: Manage saved recipients and their payment methods.
+  - name: Transactions
+    description: List, retrieve, track, and download receipts for all transaction types.
+  - name: Virtual Cards
+    description: Activate, issue, manage, and terminate prepaid virtual cards.
+  - name: Payouts
+    description: Single and batch payouts to beneficiaries.
+  - name: Currency Swap
+    description: Preview and execute wallet-to-wallet currency conversions.
+  - name: Gift Cards
+    description: Browse, purchase, and redeem digital gift cards.
+  - name: IP Allowlist
+    description: Manage IP allowlisting to restrict API access by source IP.
+  - name: Webhooks
+    description: Register and manage webhook endpoints for real-time event notifications.
+  - name: Developer
+    description: API secret management, request logs, and webhook event inspection.

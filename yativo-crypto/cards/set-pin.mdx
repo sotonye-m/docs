@@ -11,7 +11,7 @@ To let a cardholder set their PIN, call the view-token endpoint with `enabled_vi
   The `422 PIN_NOT_SET` error only occurs when you request **card data or PIN reveal** (`enabled_views: ["data"]`, `["pin-view"]`) while `pin_set` is still `false`. It does **not** occur when requesting `["pin-set"]` to set the PIN.
 </Note>
 
-Card PINs are set and changed through Yativo's **hosted secure page**, powered by Gnosis Pay's Partner Secure Elements (PSE). The cardholder types their PIN directly inside a sandboxed iframe hosted by Yativo. The PIN never passes through your backend.
+Card PINs are set and changed through Yativo's **hosted secure page**, powered by the card network's Partner Secure Elements (PSE) service. The cardholder types their PIN directly inside a sandboxed iframe hosted by Yativo. The PIN never passes through your backend.
 
 ---
 
@@ -27,8 +27,8 @@ Card PINs are set and changed through Yativo's **hosted secure page**, powered b
   <Step title="Show the hosted page to the cardholder">
     Open the URL in an `<iframe>`, mobile WebView, or a new browser tab in your app. The cardholder enters and confirms their 4-digit PIN inside the hosted page.
   </Step>
-  <Step title="Gnosis Pay confirms via webhook">
-    Once saved, Gnosis Pay fires `physical.card.pin.changed`. Yativo receives it and flips `pin_set` to `true` on the card record.
+  <Step title="Card network confirms via webhook">
+    Once saved, the card network fires `physical.card.pin.changed`. Yativo receives it and flips `pin_set` to `true` on the card record.
   </Step>
 </Steps>
 
@@ -178,7 +178,7 @@ Pass `secure_view_url` directly as the `src` of an iframe. No SDK or client-side
 
 ## Checking PIN status
 
-`pin_set` is updated when Yativo receives the `physical.card.pin.changed` webhook from Gnosis Pay. It is **not** sourced from the Gnosis API — treat it as the last known state.
+`pin_set` is updated when Yativo receives the `physical.card.pin.changed` webhook from the card network. It is **not** sourced from a direct API lookup — treat it as the last known state.
 
 You can read it from:
 

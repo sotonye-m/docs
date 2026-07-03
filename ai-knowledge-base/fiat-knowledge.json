@@ -1,0 +1,788 @@
+[
+  {
+    "_id": "fiat-introduction",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "overview",
+    "category": "introduction",
+    "title": "Yativo Fiat API Overview",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "The Yativo Fiat API enables cross-border payments via local rails including PIX (Brazil), SPEI (Mexico), SEPA (Europe), ACH (USA), and more. Supports virtual accounts, virtual cards, beneficiary management, and KYC.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["fiat-authentication", "fiat-send-money-overview"],
+    "tags": ["fiat", "overview", "cross-border", "payments", "pix", "spei", "sepa", "ach"],
+    "verified": true,
+    "content": "The Yativo Fiat API enables cross-border fiat payments through local payment rails in multiple countries. The production base URL is https://api.yativo.com/api/v1 and the sandbox URL is https://smtp.yativo.com/api/v1. Key features include: sending money internationally to beneficiaries via local rails (PIX for Brazil, SPEI for Mexico, SEPA for Europe, ACH for the USA, NUBAN for Nigeria, local transfers for Chile/Colombia/Peru/Argentina), virtual accounts that give customers local bank numbers to receive payments, virtual Visa/Mastercard prepaid cards, exchange rate quotes with 5-minute expiry for rate-lock transactions, beneficiary management with saved bank account details, customer management with KYC verification, and webhook notifications for payment events. All POST/PUT/PATCH requests require an Idempotency-Key header to prevent duplicate processing. Authentication uses Bearer tokens obtained by exchanging account_id and app_secret — tokens expire after 600 seconds (10 minutes). Supported currencies include ARS, BRL, CLP, COP, EUR, MXN, PEN, USD.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-authentication",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "authentication",
+    "title": "Authenticate — Get Bearer Token",
+    "method": "POST",
+    "path": "/auth/login",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Exchange your account_id and app_secret for a Bearer token. Tokens expire in 600 seconds (10 minutes). All POST/PUT/PATCH requests require an Idempotency-Key header.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": {
+      "account_id": { "type": "string", "required": true, "description": "Your Yativo Fiat account identifier" },
+      "app_secret": { "type": "string", "required": true, "description": "Your application secret key" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "access_token": "eyJhbGciOiJIUzI1NiJ9...",
+        "expires_in": 600,
+        "token_type": "Bearer"
+      }
+    },
+    "errors": [
+      { "status": 401, "code": "unauthorized", "description": "Invalid account_id or app_secret" }
+    ],
+    "related": ["fiat-introduction", "fiat-send-money-overview"],
+    "tags": ["auth", "login", "token", "bearer"],
+    "verified": true,
+    "content": "Authenticate with the Yativo Fiat API by calling POST /auth/login. Send a JSON body with account_id (your Yativo Fiat account ID) and app_secret (your application secret). The response returns access_token (Bearer token string), expires_in (600 seconds = 10 minutes), and token_type Bearer. Include the token in all subsequent requests as Authorization: Bearer {access_token}. Tokens expire after 10 minutes — much shorter than the crypto API's 60-minute tokens. When expired, refresh without resending credentials using GET /auth/refresh-token. All mutating requests (POST, PUT, PATCH) require an Idempotency-Key header — a unique string per request to prevent duplicate processing. Use a UUID or timestamp-based key. The sandbox environment is at https://smtp.yativo.com/api/v1 with separate sandbox credentials. Response envelope: { status: 'success', status_code: 200, message: 'Request successful', data: { ... } }.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-send-money-overview",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "guide",
+    "category": "send-money",
+    "title": "Send Money — Full 8-Step Flow",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Complete step-by-step flow for sending money cross-border: discover payment methods, build beneficiary forms, save details, lock a quote, and execute the transfer.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["fiat-beneficiaries", "fiat-exchange-rates", "fiat-payouts"],
+    "tags": ["send-money", "flow", "beneficiary", "quote", "execute"],
+    "verified": true,
+    "content": "The complete flow for sending money with the Yativo Fiat API involves 8 steps. Step 1: GET /payment-methods/payout/countries — list supported destination countries. Step 2: GET /payment-methods/payout?country={iso3} — get available payment rails for that country (returns method objects with id, method_name, currency). Step 3: GET /beneficiary/form/show/{id} — get required account_details fields for the chosen payment method (the authoritative source for required fields per rail). Step 4: POST /beneficiaries — create a beneficiary record with customer_name, customer_email, and optional details. Step 5: POST /beneficiaries/payment-methods — attach bank details to the beneficiary: send beneficiary_id, payment_method_id, and account_details (varies by method: clabe for SPEI Mexico, pix_key+pix_key_type for PIX Brazil, account_number+routing_number for ACH US, iban+bic for SEPA Europe). Step 6: POST /sendmoney/quote — lock a rate by sending from_currency, to_currency, amount, beneficiary_payment_method_id — returns quote_id valid for 5 minutes. Step 7: POST /sendmoney — execute transfer with quote_id. Step 8: GET /transaction/tracking/{id} — monitor status. An Idempotency-Key header is required on all POST steps.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-beneficiaries-create",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "beneficiaries",
+    "title": "Create Beneficiary",
+    "method": "POST",
+    "path": "/beneficiaries",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Create a beneficiary record to save recipient information. Then attach payment method details (bank account, CLABE, PIX key, etc.) with a separate call.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "customer_name": { "type": "string", "required": true, "description": "Beneficiary full name" },
+      "customer_email": { "type": "string", "required": true, "description": "Beneficiary email address" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "beneficiary_id": "bnf_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "customer_name": "Jane Doe",
+        "customer_email": "jane@example.com",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [],
+    "related": ["fiat-beneficiaries-payment-methods", "fiat-send-money-overview"],
+    "tags": ["beneficiaries", "create", "recipient"],
+    "verified": true,
+    "content": "Create a beneficiary (payment recipient) with POST /beneficiaries. Required fields: customer_name (full name of the recipient) and customer_email. The response returns beneficiary_id — save this for attaching payment details. List all beneficiaries with GET /beneficiaries/list. After creating the beneficiary, attach their specific bank account details with POST /beneficiaries/payment-methods. The beneficiary_id is reused for multiple payment methods (e.g. the same person can have a CLABE and a bank account attached). Beneficiaries persist across transactions — create once and reuse for repeated payments to the same recipient.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-beneficiaries-payment-methods",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "beneficiaries",
+    "title": "Beneficiary Payment Methods — Attach, List, Update, Delete",
+    "method": "POST",
+    "path": "/beneficiaries/payment-methods",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Attach bank account details to a beneficiary for a specific payment rail. Fields vary by country and method: CLABE for Mexico SPEI, pix_key+type for Brazil PIX, account_number+bank_code for Chile/Colombia/Nigeria, IBAN+BIC for SEPA.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "beneficiary_id": { "type": "string", "required": true, "description": "Beneficiary ID from POST /beneficiaries" },
+      "payment_method_id": { "type": "integer", "required": true, "description": "Payment method ID from GET /payment-methods/payout?country={iso3}" },
+      "account_details": { "type": "object", "required": true, "description": "Bank account fields — varies by method. Mexico SPEI: {clabe}. Brazil PIX: {pix_key, pix_key_type}. US ACH: {account_number, routing_number, account_type, account_name}. SEPA: {iban, bic, account_name}. Chile: {account_number, bank_code, account_type, rut}. Nigeria: {account_number, bank_code, account_name}" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "id": 42,
+        "beneficiary_id": "bnf_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "payment_method_id": 30,
+        "account_details": { "clabe": "012345678901234567" }
+      }
+    },
+    "errors": [],
+    "related": ["fiat-beneficiaries-create", "fiat-send-money-overview"],
+    "tags": ["beneficiaries", "payment-methods", "bank-account", "clabe", "pix", "sepa", "ach"],
+    "verified": true,
+    "content": "Attach bank account details to a beneficiary with POST /beneficiaries/payment-methods. Required: beneficiary_id (from POST /beneficiaries), payment_method_id (integer from GET /payment-methods/payout?country=ISO3), and account_details object (fields depend on the rail). Mexico SPEI: account_details requires clabe (18-digit CLABE). Brazil PIX: pix_key (the PIX key value) and pix_key_type (one of: cpf, cnpj, phone, email, evp). US ACH: account_number, routing_number (9-digit ABA), account_type (checking or savings), account_name. SEPA Europe: iban (up to 34 chars), bic (SWIFT code), account_name. Chile: account_number, bank_code, account_type (checking/savings), rut. Colombia: account_number, bank_code, account_type, document_type (CC/NIT/CE), document_number. Peru CCI: account_number (20-digit CCI), bank_code. Nigeria NUBAN: account_number (10-digit), bank_code (3-digit CBN code), account_name. Argentina: cbu_cvu (22-digit). Use GET /beneficiary/form/show/{payment_method_id} to get the exact required fields dynamically. List all payment methods across beneficiaries with GET /beneficiaries/payment-methods/all. Update with PUT /beneficiaries/payment-methods/update/{id}. Delete with DELETE /beneficiaries/payment-methods/delete/{id}.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-exchange-rates",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "exchange-rates",
+    "title": "Generate Exchange Rate Quote",
+    "method": "POST",
+    "path": "/exchange-rate",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Generate a locked exchange rate quote for a specific amount and currency pair. Quote is valid for 5 minutes. Returns the quote_id, exact fee breakdown, and customer-facing amounts.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "from_currency": { "type": "string", "required": true, "description": "Source currency ISO 4217 code e.g. USD, EUR" },
+      "to_currency": { "type": "string", "required": true, "description": "Destination currency ISO 4217 code e.g. MXN, BRL" },
+      "amount": { "type": "number", "required": true, "description": "Amount in source currency" },
+      "method_id": { "type": "integer", "required": false, "description": "Payment method ID from GET /payment-methods/payout. Required for exact fee calculation." },
+      "method_type": { "type": "string", "required": false, "description": "'payout' for sends or 'payin' for deposits. Required when method_id is provided." }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+        "from_currency": "USD",
+        "to_currency": "MXN",
+        "rate": "17.50000000",
+        "amount": "200.00000000",
+        "payout_data": {
+          "total_transaction_fee_in_from_currency": "5.00",
+          "customer_sent_amount": "200.00",
+          "customer_receive_amount": "3412.50",
+          "customer_total_amount_due": "205.00"
+        },
+        "calculator": {
+          "fee_breakdown": {
+            "float": { "wallet_currency": 4, "payout_currency": 70 },
+            "fixed": { "wallet_currency": 1, "payout_currency": 17.5 },
+            "total": 5
+          }
+        }
+      }
+    },
+    "errors": [],
+    "related": ["fiat-send-money-overview", "fiat-wallets-payout"],
+    "tags": ["exchange-rate", "quote", "fx", "fee", "rate-lock"],
+    "verified": true,
+    "content": "Generate a locked exchange rate quote by calling POST /exchange-rate. Required: from_currency (source currency ISO code), to_currency (destination currency ISO code), amount (numeric value in source currency). Optional but recommended for exact fees: method_id (integer payment method ID) and method_type ('payout' or 'payin'). Without method_id the quote is for display only. With method_id it is a binding quote you can execute. Quote expires in 5 minutes — the quote_id becomes invalid after expiry and a new quote must be requested. The response includes quote_id, rate, amount, and payout_data object: total_transaction_fee_in_from_currency (total fees in source currency), total_transaction_fee_in_to_currency, customer_sent_amount, customer_receive_amount, customer_total_amount_due (always display this to the customer — exact debit amount). The calculator.fee_breakdown shows float (percentage-based fee) and fixed (flat fee) components in both currencies. Execute a payout quote with POST /wallet/payout using quote_id. Execute a deposit/payin quote with POST /wallet/deposits/new using quote_id. Rate is limited to 30 requests per minute per API key — cache quotes for display rather than calling on every keystroke.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-send-money-quote",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "send-money",
+    "title": "Send Money Quote",
+    "method": "POST",
+    "path": "/sendmoney/quote",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Lock an exchange rate for sending money to a specific beneficiary payment method. Returns a quote_id used to execute the transfer.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "from_currency": { "type": "string", "required": true, "description": "Source currency e.g. 'USD'" },
+      "to_currency": { "type": "string", "required": true, "description": "Destination currency e.g. 'MXN'" },
+      "amount": { "type": "number", "required": true, "description": "Amount in source currency" },
+      "beneficiary_payment_method_id": { "type": "string", "required": true, "description": "The payment method ID from POST /beneficiaries/payment-methods" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "quote_id": "q_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "from_currency": "USD",
+        "to_currency": "MXN",
+        "rate": "17.50",
+        "expires_at": "2025-01-01T00:05:00Z"
+      }
+    },
+    "errors": [],
+    "related": ["fiat-send-money-execute", "fiat-exchange-rates"],
+    "tags": ["send-money", "quote", "rate-lock", "beneficiary"],
+    "verified": true,
+    "content": "Lock an exchange rate for a send-money transaction by calling POST /sendmoney/quote. Required: from_currency (source currency), to_currency (destination currency), amount (amount in source currency), beneficiary_payment_method_id (the ID returned when you saved bank details with POST /beneficiaries/payment-methods). The quote is specific to that beneficiary's payment method, so the fee calculation includes the exact fees for that rail and destination. Returns quote_id (valid for 5 minutes), rate, from_currency, to_currency, and expires_at. Pass the quote_id to POST /sendmoney to execute the transfer. The rate is locked at the quoted value — if execution happens within 5 minutes the customer pays exactly the amount shown in customer_total_amount_due. After expiry a new quote must be requested.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-send-money-execute",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "send-money",
+    "title": "Execute Send Money",
+    "method": "POST",
+    "path": "/sendmoney",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Execute a cross-border money transfer using a locked quote_id. Funds are deducted from your wallet immediately.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "quote_id": { "type": "string", "required": true, "description": "Quote ID from POST /sendmoney/quote" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "transaction_id": "txn-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "status": "processing",
+        "amount": "200.00",
+        "currency": "USD",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 402, "code": "insufficient_balance", "description": "Wallet balance is too low for this transfer amount plus fees" }
+    ],
+    "related": ["fiat-send-money-quote", "fiat-transaction-tracking"],
+    "tags": ["send-money", "execute", "transfer", "cross-border"],
+    "verified": true,
+    "content": "Execute a cross-border money transfer with POST /sendmoney. The only required field is quote_id from POST /sendmoney/quote. Include an Idempotency-Key header. Funds are deducted from your wallet immediately upon submission. The response returns transaction_id and status: processing. Track the transfer with GET /transaction/tracking/{transaction_id}. Transaction statuses: processing, pending, completed, failed. On completion the recipient receives funds via their local rail (PIX, SPEI, ACH, SEPA, etc.) within the rail's settlement window: PIX settles in under 10 seconds, SPEI is same-day typically within minutes, SEPA SCT next business day or SEPA Instant within 10 seconds, ACH 1-3 business days. If the quote has expired (more than 5 minutes since POST /sendmoney/quote), you will receive an error — request a fresh quote. The payout.completed webhook event fires when the transfer settles.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-payouts-simple",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "payouts",
+    "title": "Simple Payout",
+    "method": "POST",
+    "path": "/payout/simple",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Send a single payment to one saved beneficiary payment method. Simpler than send-money — no quote step required, but no rate locking.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "amount": { "type": "number", "required": true, "description": "Amount to send in the debit wallet currency" },
+      "beneficiary_details_id": { "type": "integer", "required": true, "description": "The saved beneficiary payment method ID (numeric ID from POST /beneficiaries/payment-methods)" },
+      "beneficiary_id": { "type": "string", "required": false, "description": "Optional beneficiary UUID for tracking" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "transaction_id": "txn-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "status": "processing",
+        "amount": "250.00",
+        "currency": "CLP",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 402, "code": "insufficient_balance", "description": "Insufficient wallet balance" }
+    ],
+    "related": ["fiat-payouts-batch", "fiat-wallets-payout"],
+    "tags": ["payout", "simple", "disbursement", "single"],
+    "verified": true,
+    "content": "Send a single payment to a saved beneficiary using POST /payout/simple. Required: amount (in your wallet's debit currency) and beneficiary_details_id (the numeric integer ID from when you saved bank details with POST /beneficiaries/payment-methods). Optional: beneficiary_id (UUID for tracking). Include Idempotency-Key header. Funds are charged from your wallet at submission time. Returns transaction_id and status: processing. Unlike the send-money flow, there is no quote step — the rate is determined at execution time. For rate-locked disbursements use the quote → sendmoney flow instead. If the wallet has insufficient balance a 402 error is returned with 'Insufficient wallet balance' message. List all payouts with GET /payout/get. Retrieve a specific payout with GET /payout/fetch/{payout_id}. The payout.completed webhook fires on settlement. The payout.updated webhook fires on status changes.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-payouts-batch",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "payouts",
+    "title": "Batch Payout",
+    "method": "POST",
+    "path": "/payout/batch",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Send multiple payments to different beneficiaries in a single request. Processes independently — partial failures returned without rolling back successful items.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "payouts": { "type": "array", "required": true, "description": "Array of {amount, beneficiary_details_id, beneficiary_id} objects. Each item processed independently." }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "0": { "transaction_id": "txn-aaa", "status": "processing", "amount": "500.00" },
+        "1": { "transaction_id": "txn-bbb", "status": "processing", "amount": "750.00" }
+      }
+    },
+    "errors": [
+      { "status": 400, "code": "batch_error", "description": "One or more items failed. Errors returned per-index in errors object." },
+      { "status": 402, "code": "insufficient_balance", "description": "Total wallet balance insufficient for the entire batch — entire batch rejected before processing" }
+    ],
+    "related": ["fiat-payouts-simple"],
+    "tags": ["payout", "batch", "bulk", "payroll", "disbursement"],
+    "verified": true,
+    "content": "Send multiple payments at once with POST /payout/batch. The payouts array contains objects with amount and beneficiary_details_id (required) plus optional beneficiary_id. Include an Idempotency-Key header. Important behavior: the entire batch is checked against your wallet balance first — if the total amount across all payouts exceeds your balance, the entire batch is rejected with a 402 error before any payment is processed. Individual line-item errors (e.g. invalid beneficiary ID) are returned in an errors object keyed by array index — these do not affect other successful items. This is the ideal endpoint for payroll disbursements, bulk partner payouts, or any scenario where you need to send to many recipients at once. The response is an object keyed by array index (\"0\", \"1\", \"2\") each containing the transaction result for that index. Maximum batch size is not explicitly documented — keep batches under 100 items for reliability.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-virtual-accounts",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "virtual-accounts",
+    "title": "Create Virtual Account",
+    "method": "POST",
+    "path": "/business/virtual-account/create",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Issue a local virtual bank account number to a KYC-approved customer. When a payment arrives at that number it is automatically matched and credited. Supported rails: PIX, SPEI, ACH, SEPA, CVU/CBU.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "customer_id": { "type": "string", "required": true, "description": "UUID of the KYC-approved customer (is_va_approved: true required)" },
+      "currency": { "type": "string", "required": true, "description": "Currency for the virtual account. BRL (PIX), MXNBASE or MXN (SPEI), USDBASE (ACH), EURBASE (SEPA), EURDE (SEPA Germany), MXNUSD (SPEI USD-settled), ARS (CVU/CBU Argentina)" },
+      "document_id": { "type": "string", "required": false, "description": "Required for ARS (Argentina) only — customer's official ID number" },
+      "document_type": { "type": "string", "required": false, "description": "Required for ARS only — CUIT, CUIL, or CDI" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "account_id": "va_xxxxxx",
+        "account_number": "9900123456",
+        "account_type": "savings",
+        "currency": "BRL",
+        "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [
+      { "status": 422, "code": "kyc_not_approved", "description": "Customer's is_va_approved is false — submit KYC first" }
+    ],
+    "related": ["fiat-customers", "fiat-kyc"],
+    "tags": ["virtual-accounts", "pix", "spei", "ach", "sepa", "receive", "local-bank"],
+    "verified": true,
+    "content": "Issue a virtual account to receive local bank payments by calling POST /business/virtual-account/create. Required: customer_id (UUID of a KYC-approved customer — check is_va_approved: true in GET /customer/{id}) and currency (one of: BRL for Brazil PIX, MXNBASE or MXN for Mexico SPEI, USDBASE for USA ACH/Wire, EURBASE for Europe SEPA, EURDE for Germany SEPA, MXNUSD for Mexico SPEI USD-settled, ARS for Argentina CVU/CBU). For ARS accounts also send document_id and document_type (CUIT for companies/self-employed, CUIL for employees, CDI for foreign residents). Each customer can hold one virtual account per currency. The response returns account_number — the local bank account number or PIX key your customer shares with senders. Payments to this number are automatically matched and credited. List all virtual accounts with GET /business/virtual-account. Get a specific account with GET /business/virtual-account/show/{id}. Get transaction history for an account with POST /business/virtual-account/history/{account_number}. Delete an account with DELETE /business/virtual-account/delete-virtual-account/{id}. Bulk creation with POST /business/virtual-account/bulk-account-creation (array of {customer_id, currency} objects). Suspend/reactivate with PUT /business/virtual-account/enable_disable_virtual_account (account_id, action: enable or disable). Refund an incoming payment with POST /business/virtual-account/refundPayin/{externalId}.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-customers",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "customers",
+    "title": "Customer Management",
+    "method": "POST",
+    "path": "/customer",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Create and manage end-user customers. Customers must be created before issuing virtual accounts or virtual cards. KYC approval (is_va_approved flag) gates virtual account issuance.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "customer_name": { "type": "string", "required": true, "description": "Customer full name" },
+      "customer_email": { "type": "string", "required": true, "description": "Customer email address (unique)" },
+      "customer_phone": { "type": "string", "required": true, "description": "Customer phone number in E.164 format e.g. +5511999999999" },
+      "customer_country": { "type": "string", "required": true, "description": "Customer country in ISO 3-letter code e.g. BRA, MEX, USA, GBR" },
+      "customer_type": { "type": "string", "required": true, "description": "Customer type: 'individual' or 'business'" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+        "customer_name": "Jane Doe",
+        "customer_email": "jane@example.com",
+        "customer_country": "BRA",
+        "is_va_approved": false,
+        "created_at": "2025-01-01T00:00:00Z"
+      }
+    },
+    "errors": [],
+    "related": ["fiat-virtual-accounts", "fiat-kyc"],
+    "tags": ["customers", "create", "individual", "business", "kyc"],
+    "verified": true,
+    "content": "Create a customer with POST /customer. Required fields: customer_name (full name), customer_email (unique email), customer_phone (E.164 format like +5511999999999), customer_country (ISO 3-letter country code: BRA, MEX, USA, GBR, etc.), customer_type (individual or business). The response returns customer id (UUID) and is_va_approved (boolean — initially false until KYC is completed). Retrieve a customer with GET /customer/{id}?include=all — the include query param accepts all or comma-separated values: deposits, payouts, virtualaccounts, virtual_cards, crypto_wallets. List all customers with GET /customer?page=1&per_page=20. Update customer details with PUT /customer/{id}. Delete a customer with DELETE /customer/{id}. Check KYC approval status with GET /customer/kyc/{id} — look for is_va_approved: true before issuing virtual accounts. The customer.created webhook fires after creation. customer.kyc.approved and customer.kyc.rejected webhooks fire after KYC review completes.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-wallets",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "wallets",
+    "title": "Wallet Balance and Payout",
+    "method": "GET",
+    "path": "/wallet/balance",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Check wallet balances and execute wallet-to-beneficiary payouts. Multi-currency wallet supporting ARS, BRL, CLP, COP, EUR, MXN, PEN, USD.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": {
+      "currency": { "type": "string", "required": false, "description": "Filter balance by currency code e.g. USD" }
+    },
+    "response_example": {
+      "status": "success",
+      "data": {
+        "currency": "USD",
+        "balance": "5000.00",
+        "available_balance": "4800.00"
+      }
+    },
+    "errors": [],
+    "related": ["fiat-exchange-rates", "fiat-payouts-simple"],
+    "tags": ["wallets", "balance", "payout", "multi-currency"],
+    "verified": true,
+    "content": "The Yativo Fiat wallet is a multi-currency wallet that holds funds across ARS, BRL, CLP, COP, EUR, MXN, PEN, and USD. Check balance for a specific currency with GET /wallet/balance?currency=USD. Get total balance across all currencies with GET /wallet/balance/total. Create a new currency wallet with POST /wallet/create sending currency (string). Execute a payout from your wallet to a beneficiary with POST /wallet/payout — required fields: debit_wallet (currency to debit from, e.g. 'USD'), payment_method_id (beneficiary payment method ID), and either quote_id (for rate-locked transactions from POST /exchange-rate) or amount (for non-locked sends). Using quote_id guarantees the rate shown to the customer matches what is debited. This is equivalent to send-money but initiated from the wallet perspective. Wallet balances are reduced immediately on payout submission.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-kyc",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "kyc",
+    "title": "KYC — Submit Individual and Business Verification",
+    "method": "POST",
+    "path": "/individual-kyc/submit",
+    "baseUrl": "https://kyc.yativo.com/api",
+    "description": "Submit KYC for individual or business customers. Requires personal info, address, ID documents, and risk/purpose fields. Separate endpoint at kyc.yativo.com.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "personal": { "type": "object", "required": true, "description": "Name, date of birth, nationality, gender" },
+      "address": { "type": "object", "required": true, "description": "Street address, city, state, postal code, country" },
+      "identification": { "type": "object", "required": true, "description": "ID document type and number, front and back images" },
+      "risk_and_purpose": { "type": "object", "required": true, "description": "Purpose of account, expected transaction volume, source of funds" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": { "submission_id": "kyc_sub_01HX9KZMB3F7VNQP8R2WDGT4E5", "status": "submitted" }
+    },
+    "errors": [],
+    "related": ["fiat-customers"],
+    "tags": ["kyc", "identity", "verification", "compliance", "individual", "business"],
+    "verified": true,
+    "content": "KYC verification for fiat customers is submitted to a separate endpoint at https://kyc.yativo.com/api. Submit individual KYC with POST https://kyc.yativo.com/api/individual-kyc/submit. The payload requires several sections: personal (full name, date of birth, nationality, gender), address (street, city, state, postal code, country), identification (document type like passport/national_id/drivers_license, document number, front and back image URLs), and risk_and_purpose (purpose of account, expected monthly volume, source of funds). For Nigerian customers (nationality NG), also include bvn (Bank Verification Number, exactly 11 digits) and nin (National Identification Number, exactly 11 digits) — without these KYC submission fails for Nigerian nationals. Submit business KYC with POST https://kyc.yativo.com/api/business-kyc/submit. Check KYC status with GET /customer/kyc/{customer_id} on the main API. The is_va_approved flag must be true before issuing virtual accounts. KYC endorsements determine which services a customer can use: base (standard), sepa, spei, brazil, eurde, usd_latam, eur_latam, virtual_card, asian, native, cobo_pobo. Regenerate a KYC link for resubmission with GET https://kyc.yativo.com/api/kyc/regenerate/{customer_id}/{service}.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-virtual-cards",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "virtual-cards",
+    "title": "Virtual Cards — Create, Fund, Freeze, Transactions",
+    "method": "POST",
+    "path": "/customer/virtual/cards/create",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Issue virtual Visa/Mastercard prepaid cards to customers. Minimum creation amount $3, maximum $10,000. Fund from wallet, freeze, unfreeze, withdraw, terminate.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "customer_id": { "type": "string", "required": true, "description": "UUID of the activated customer" },
+      "currency": { "type": "string", "required": true, "description": "Card currency e.g. USD" },
+      "amount": { "type": "number", "required": true, "description": "Initial funding amount in USD. Minimum $3.00, maximum $10,000.00" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "card_id": "card_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "card_number": "4111 **** **** 1234",
+        "expiry": "04/29",
+        "currency": "USD",
+        "balance": "0.00",
+        "status": "active"
+      }
+    },
+    "errors": [],
+    "related": ["fiat-customers", "fiat-wallets"],
+    "tags": ["virtual-cards", "visa", "mastercard", "prepaid", "fund", "freeze"],
+    "verified": true,
+    "content": "Issue a virtual Visa or Mastercard prepaid card to a customer with POST /customer/virtual/cards/create. Required: customer_id (UUID of an activated customer), currency (e.g. USD), amount (initial funding in USD — minimum $3.00, maximum $10,000.00). Returns card_id, masked card_number, expiry, cvv (masked), currency, balance, and status active. List all cards with GET /customer/virtual/cards/list?page=1&per_page=20. Get a specific card with GET /customer/virtual/cards/get/{cardId}. Top up a card with POST /customer/virtual/cards/topup — required: card_id, amount (minimum $1.00, maximum $10,000.00), debit_wallet (currency to charge from). Freeze a card with PUT /customer/virtual/cards/update/{cardId} with action: 'freeze'. Unfreeze with action: 'unfreeze'. Get card transactions with GET /customer/virtual/cards/transactions/{cardId}. Withdraw remaining balance from a card back to wallet with POST /customer/virtual/cards/withdraw (card_id, amount). Permanently terminate a card (irreversible) with POST /customer/virtual/cards/terminate (card_id). Always withdraw remaining funds before terminating. Cards can be used anywhere Visa or Mastercard is accepted online.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-webhooks",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "webhooks",
+    "title": "Webhooks — Create and Manage",
+    "method": "POST",
+    "path": "/business/webhook",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Register a webhook URL to receive real-time payment event notifications. Signatures verified via HMAC-SHA256 of the raw body.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": {
+      "url": { "type": "string", "required": true, "description": "HTTPS endpoint to receive webhook POST requests" }
+    },
+    "request_params": null,
+    "response_example": {
+      "status": "success",
+      "data": {
+        "webhook_id": "wh_01HX9KZMB3F7VNQP8R2WDGT4E5",
+        "url": "https://your-app.com/webhooks/yativo",
+        "secret": "whsec_..."
+      }
+    },
+    "errors": [],
+    "related": [],
+    "tags": ["webhooks", "events", "notifications", "signature"],
+    "verified": true,
+    "content": "Register a webhook for fiat payment events with POST /business/webhook sending url (required) — the HTTPS endpoint where events will be POSTed. Retrieve your webhook config with GET /business/webhook. Update the URL with PUT /business/webhook/{id}. Webhook events: deposit.created (deposit initiated), deposit.updated (status change), deposit.completed (deposit finalized), payout.updated (payout status changed), payout.completed (payout settled to recipient), customer.created (new customer registered), customer.kyc.approved (KYC approved), customer.kyc.rejected (KYC rejected), virtual_account.deposit (incoming payment to a virtual account number), virtual_account.funded (virtual account balance updated). Signature verification: each webhook POST includes X-Yativo-Signature header containing HMAC-SHA256 of the raw request body using your webhook secret. Compute the HMAC over the raw bytes of the body and compare with the header value. Use timing-safe comparison to prevent timing attacks. Respond with HTTP 200 within 30 seconds to acknowledge receipt — if your endpoint does not respond in time Yativo will retry.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-payment-methods",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "send-money",
+    "title": "Payment Methods — List Countries and Rails",
+    "method": "GET",
+    "path": "/payment-methods/payout/countries",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Discover supported payout countries and the available payment rails (SPEI, PIX, SEPA, ACH, etc.) for each country.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": {
+      "country": { "type": "string", "required": false, "description": "ISO 3-letter country code to filter methods e.g. MEX, BRA, USA, GBR" }
+    },
+    "response_example": {
+      "status": "success",
+      "data": [
+        { "id": 30, "method_name": "SPEI", "country": "MEX", "currency": "MXN", "base_currency": "USD" },
+        { "id": 40, "method_name": "PIX", "country": "BRA", "currency": "BRL", "base_currency": "USD" }
+      ]
+    },
+    "errors": [],
+    "related": ["fiat-beneficiaries-payment-methods", "fiat-send-money-overview"],
+    "tags": ["payment-methods", "countries", "rails", "payout"],
+    "verified": true,
+    "content": "Discover payout capabilities with two endpoints. GET /payment-methods/payout/countries lists all countries where Yativo can send money. GET /payment-methods/payout?country={iso3} returns the specific payment rails available for a country, each with id (integer — use this as payment_method_id), method_name (human-readable rail name like SPEI, PIX, SEPA, ACH, NUBAN), country (ISO 3-letter code), currency (destination currency), and base_currency (source currency for quoting). The payment_method_id from this response is used in POST /beneficiaries/payment-methods, POST /exchange-rate, and POST /sendmoney/quote. Use GET /beneficiary/form/show/{payment_method_id} to get the precise required account_details fields for any method — this is the authoritative source and should be queried dynamically to handle rail-specific field requirements without hardcoding them.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-transaction-tracking",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "transactions",
+    "title": "Transaction Tracking",
+    "method": "GET",
+    "path": "/transaction/tracking/{id}",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Track the status and details of a specific fiat transaction by its ID.",
+    "auth_required": true,
+    "auth_type": "bearer",
+    "request_body": null,
+    "request_params": {
+      "id": { "type": "string", "required": true, "description": "Transaction ID from POST /sendmoney or POST /payout/simple" }
+    },
+    "response_example": {
+      "status": "success",
+      "data": {
+        "transaction_id": "txn-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "status": "completed",
+        "amount": "200.00",
+        "currency": "USD",
+        "destination_currency": "MXN",
+        "destination_amount": "3500.00",
+        "created_at": "2025-01-01T00:00:00Z",
+        "completed_at": "2025-01-01T00:01:30Z"
+      }
+    },
+    "errors": [],
+    "related": ["fiat-send-money-execute", "fiat-payouts-simple"],
+    "tags": ["tracking", "status", "transaction"],
+    "verified": true,
+    "content": "Track a fiat transaction with GET /transaction/tracking/{id} where id is the transaction_id from POST /sendmoney or POST /payout/simple. The response includes transaction_id, status, amount, currency (source), destination_currency, destination_amount, created_at, and completed_at. Transaction statuses: processing (submitted, being routed), pending (queued for settlement), completed (funds delivered to recipient), failed (transaction could not be completed). Settlement times vary by rail: PIX completes in seconds, SPEI within minutes same-day, SEPA SCT next business day, SEPA Instant within 10 seconds, ACH 1-3 business days, Nigerian NUBAN same-day to next business day. The payout.completed webhook is the recommended way to detect completion rather than polling.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-regional-mexico",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "guide",
+    "category": "regional",
+    "title": "Mexico — SPEI via CLABE",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Mexico-specific guide: CLABE account format, validation, SPEI settlement, and virtual accounts for receiving MXN.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["fiat-beneficiaries-payment-methods", "fiat-virtual-accounts"],
+    "tags": ["mexico", "spei", "clabe", "mxn", "regional"],
+    "verified": true,
+    "content": "For Mexico payouts, use the SPEI payment rail with CLABE account numbers. CLABE is an 18-digit standardized bank code unique to each Mexican bank account. The first 3 digits identify the bank, the next 3 the city, and the last digit is a check digit. Set account_details.clabe to the 18-digit string when calling POST /beneficiaries/payment-methods with Mexico's payment_method_id (typically 30 for SPEI). Validate the check digit before submission: apply weights [3,7,1,3,7,1,3,7,1,3,7,1,3,7,1,3,7] to the first 17 digits, sum each (digit * weight) mod 10, compute (10 - sum mod 10) mod 10, and compare with the 18th digit. Settlement time is same-day, typically within minutes. To receive MXN payments from Mexican banks for a customer, create a virtual account with currency MXNBASE — the returned account_number is a CLABE that any Mexican bank can send SPEI transfers to. Yativo also offers GET /clabe/generate to generate valid CLABE numbers programmatically if your platform issues SPEI receive addresses.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-regional-brazil",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "guide",
+    "category": "regional",
+    "title": "Brazil — PIX",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Brazil-specific guide: PIX key types (CPF, CNPJ, phone, email, EVP), virtual accounts for receiving BRL, and KYC endorsement requirements.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["fiat-beneficiaries-payment-methods", "fiat-virtual-accounts", "fiat-kyc"],
+    "tags": ["brazil", "pix", "brl", "regional", "cpf", "cnpj"],
+    "verified": true,
+    "content": "For Brazil payouts, use the PIX payment rail. PIX is an instant payment system by Banco Central do Brasil operating 24/7 with settlement in under 10 seconds. A PIX key is a unique alias for a bank account. Set account_details when calling POST /beneficiaries/payment-methods with Brazil's payment_method_id (typically 40): pix_key (the key value) and pix_key_type (one of: cpf for 11-digit individual tax ID, cnpj for 14-digit company tax ID, phone for E.164 format phone number, email for email address, evp for random UUID-style key). To receive BRL payments from Brazilian banks for a customer, create a virtual account with currency BRL — the returned account_number is an EVP-type PIX key that any Brazilian bank account can pay to. For virtual accounts, the customer must have the 'brazil' KYC endorsement — check the endorsements array in GET /customer/kyc/{id}. If the endorsement is missing, submit KYC for the brazil service with GET https://kyc.yativo.com/api/kyc/regenerate/{customer_id}/brazil. Webhook event virtual_account.deposit fires when PIX payment arrives.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-regional-nigeria",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "guide",
+    "category": "regional",
+    "title": "Nigeria — NUBAN Bank Transfer",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Nigeria-specific guide: NUBAN account number format, common bank codes, and mandatory KYC fields (BVN and NIN) for Nigerian customers.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["fiat-beneficiaries-payment-methods", "fiat-kyc"],
+    "tags": ["nigeria", "nuban", "ngn", "bvn", "nin", "regional"],
+    "verified": true,
+    "content": "For Nigeria payouts, use the NUBAN (Nigeria Uniform Bank Account Number) rail. Nigerian bank accounts use a 10-digit NUBAN number. Required account_details fields: account_number (10-digit NUBAN), bank_code (3-digit CBN bank code), account_name (account holder name). Common Nigerian bank codes: Access Bank 044, GTBank 058, Zenith Bank 057, First Bank 011, UBA 033, Fidelity Bank 070, Sterling Bank 232, Kuda Bank 090267. Settlement time is same-day to next business day. Important KYC requirement for Nigerian customers: when the customer has nationality NG, the KYC submission to POST https://kyc.yativo.com/api/individual-kyc/submit must include bvn (Bank Verification Number, exactly 11 digits) and nin (National Identification Number, exactly 11 digits). Without both fields, KYC submission will fail validation. These fields are unique to Nigerian nationals and not required for other countries.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-regional-europe",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "guide",
+    "category": "regional",
+    "title": "Europe — SEPA",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Europe-specific guide: SEPA Credit Transfer fields (IBAN, BIC), virtual accounts for EUR/EURDE, settlement times for SCT vs SCT Instant.",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["fiat-beneficiaries-payment-methods", "fiat-virtual-accounts"],
+    "tags": ["europe", "sepa", "iban", "bic", "eur", "regional"],
+    "verified": true,
+    "content": "For European payouts, use the SEPA payment rail. SEPA Credit Transfer (SCT) settles next business day. SEPA Instant (SCT Inst) settles within 10 seconds. Required account_details fields: iban (International Bank Account Number, up to 34 characters, e.g. DE89370400440532013000), bic (Bank Identifier Code / SWIFT code, e.g. COBADEFFXXX), account_name (account holder name). To receive EUR payments via SEPA for a customer, create a virtual account with currency EURBASE. For Germany-specific SEPA accounts use EURDE as the currency — this issues accounts through a German banking partner with different account characteristics. Customers need the 'sepa' or 'eurde' KYC endorsement to use SEPA virtual accounts. Check endorsements in GET /customer/kyc/{id}.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  },
+  {
+    "_id": "fiat-regional-argentina",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "guide",
+    "category": "regional",
+    "title": "Argentina — CVU/CBU",
+    "method": null,
+    "path": null,
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Argentina-specific guide: CBU/CVU account format, virtual account extra required fields (document_id, document_type: CUIT/CUIL/CDI).",
+    "auth_required": false,
+    "auth_type": null,
+    "request_body": null,
+    "request_params": null,
+    "response_example": null,
+    "errors": [],
+    "related": ["fiat-virtual-accounts"],
+    "tags": ["argentina", "cbu", "cvu", "ars", "regional", "cuit", "cuil"],
+    "verified": true,
+    "content": "For Argentina, Yativo uses the CVU/CBU payment rail. CBU (Clave Bancaria Uniforme) is a 22-digit bank account code for traditional banks. CVU is used by digital wallets like Mercado Pago. CBU settles in 1-2 business days; CVU settles same-day. Required account_details for payouts: cbu_cvu (22-digit CBU or CVU number), optional alias (CBU alias string like ALIAS.PAGO.CUENTA). Argentina virtual accounts (currency ARS) have additional required fields not needed for other countries: document_id (customer's official ID number) and document_type (CUIT for companies and self-employed, CUIL for employees, CDI for foreign residents without CUIL). When in doubt for individual customers use CUIL. The customer must be an Argentine resident. These fields are sent in the body of POST /business/virtual-account/create alongside customer_id and currency: ARS.",
+    "created_at": { "$date": "2025-01-01T00:00:00Z" },
+    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+  }
+]

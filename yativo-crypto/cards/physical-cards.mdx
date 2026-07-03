@@ -313,14 +313,14 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yc_01HX9KZMB3F7VN
   The `pin_set` field in the view-token response tells you whether Yativo has received a `physical.card.pin.changed` webhook for this card. Use it to prompt the cardholder to set a PIN before their first chip-and-PIN or ATM transaction. The same view also handles PIN **changes**.
 </Note>
 
-Physical card PINs are set and changed through Yativo's **hosted secure page**, powered by Gnosis Pay's Partner Secure Elements (PSE). The cardholder types their PIN directly inside a sandboxed iframe — your backend never receives or processes the PIN value.
+Physical card PINs are set and changed through Yativo's **hosted secure page**, powered by the card network's Partner Secure Elements (PSE) service. The cardholder types their PIN directly inside a sandboxed iframe — your backend never receives or processes the PIN value.
 
 **Flow:**
 
 1. Your backend calls `POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/view-token` with `enabled_views: ["pin"]`
 2. You receive a `secure_view_url`
 3. Open it in an `<iframe>` or WebView — the cardholder enters and confirms their 4-digit PIN
-4. Gnosis Pay fires a `physical.card.pin.changed` webhook → `pin_set` becomes `true` on the card record
+4. The card network fires a `physical.card.pin.changed` webhook → `pin_set` becomes `true` on the card record
 5. Card details can now be displayed
 
 ```bash

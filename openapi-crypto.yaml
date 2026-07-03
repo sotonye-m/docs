@@ -1,0 +1,2576 @@
+openapi: 3.0.3
+info:
+  title: Yativo Crypto API
+  description: |
+    Multi-chain crypto infrastructure: wallets, cards, swaps, payment gateway, agentic wallets, IBAN, and more.
+
+    **Authentication**
+    Exchange your API key + secret for a Bearer token via `POST /auth/token`. Tokens expire after 60 minutes.
+    Every authenticated endpoint requires `Authorization: Bearer <token>`.
+
+    **Environments**
+    | | Production | Sandbox |
+    |---|---|---|
+    | Base URL | `https://crypto-api.yativo.com/api/v1` | `https://crypto-sandbox.yativo.com/api/v1` |
+    | Dashboard | [crypto.yativo.com](https://crypto.yativo.com) | [sandbox-crypto.yativo.com](https://sandbox-crypto.yativo.com) |
+
+    **Idempotency**
+    `POST /transactions/send-funds` auto-generates an idempotency key. Supply your own via `"idempotency_key"` in the request body. Keys expire after 24 hours.
+
+    **Rate limits** vary by subscription plan. A `429` response includes a `retry_after` value in seconds.
+  version: 1.0.0
+  contact:
+    name: Yativo Support
+    url: https://yativo.com/support
+
+servers:
+  - url: https://crypto-api.yativo.com/api/v1
+    description: Production
+  - url: https://crypto-sandbox.yativo.com/api/v1
+    description: Sandbox
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token obtained from POST /auth/token. Expires after 60 minutes.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: validation_error
+        message:
+          type: string
+          example: Request validation failed
+        details:
+          type: object
+          nullable: true
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          example: acc_01abc123
+        account_name:
+          type: string
+          example: Main Treasury
+        account_type:
+          type: string
+          enum: [business, personal, customer]
+        status:
+          type: string
+          enum: [active, archived]
+        asset_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    Asset:
+      type: object
+      properties:
+        id:
+          type: string
+          example: asset_01xyz789
+        account_id:
+          type: string
+        chain:
+          type: string
+          example: ethereum
+        ticker:
+          type: string
+          example: USDC
+        address:
+          type: string
+          example: "0x742d35Cc6634C0532925a3b8D4C9C2A5Ef8C2B1"
+        balance:
+          type: string
+          example: "1500.000000"
+        status:
+          type: string
+          enum: [active, archived]
+        created_at:
+          type: string
+          format: date-time
+
+    Transaction:
+      type: object
+      properties:
+        _id:
+          type: string
+        transaction_id:
+          type: string
+          example: txn_01HX9KZMB3F7VNQP8R2WDGT4E5
+        transaction_hash:
+          type: string
+          example: "0x9f3e2d1c4b7a5e8f2c9b3d6a1e4c7f2b5d8e1c4a"
+        receiving_address:
+          type: string
+        amount:
+          type: string
+          example: "100"
+        type:
+          type: string
+          example: USDC
+        chain:
+          type: string
+          example: ethereum
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        blockchain_status:
+          type: string
+          enum: [pending, confirmed]
+        fee_paid:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+        customer_id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          type: string
+          enum: [active, suspended]
+        created_at:
+          type: string
+          format: date-time
+
+    Webhook:
+      type: object
+      properties:
+        webhook_id:
+          type: string
+        url:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+        secret:
+          type: string
+          description: Only returned at creation time
+        enabled:
+          type: boolean
+        consecutive_failures:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    SwapQuote:
+      type: object
+      properties:
+        quote_id:
+          type: string
+        from_chain:
+          type: string
+        from_ticker:
+          type: string
+        to_chain:
+          type: string
+        to_ticker:
+          type: string
+        from_amount:
+          type: string
+        to_amount:
+          type: string
+        exchange_rate:
+          type: string
+        fee:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    AgenticWallet:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [created, activating, active, suspended, deactivated]
+        address:
+          type: string
+        balance_usdc:
+          type: string
+        per_transaction_limit:
+          type: number
+        daily_limit:
+          type: number
+        monthly_limit:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    IbanStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [not_started, initializing, kyc_pending, kyc_approved, iban_requested, iban_active, rejected]
+        iban:
+          type: string
+          nullable: true
+          example: DE89370400440532013000
+        profile_kind:
+          type: string
+          enum: [personal, corporate]
+        created_at:
+          type: string
+          format: date-time
+
+    CardIssuerStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [not_applied, pending, approved, rejected, suspended]
+        program_id:
+          type: string
+        funding_structure:
+          type: string
+          enum: [master_wallet, non_master]
+        enabled_chains:
+          type: array
+          items:
+            type: string
+        max_cards:
+          type: integer
+
+    PaymentGatewayIntent:
+      type: object
+      properties:
+        id:
+          type: string
+        checkout_url:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, paid, underpaid, expired, cancelled]
+        accepted_assets:
+          type: array
+          items:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    Subscription:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum: [starter, growth, scale, enterprise]
+        status:
+          type: string
+          enum: [active, expired, cancelled]
+        features:
+          type: object
+        expires_at:
+          type: string
+          format: date-time
+
+tags:
+  - name: Authentication
+    description: Exchange API credentials for a Bearer token
+  - name: Accounts
+    description: Create and manage wallet accounts
+  - name: Assets
+    description: Add and manage wallets for specific chains and tokens
+  - name: Transactions
+    description: Send crypto and track transaction status
+  - name: Swap
+    description: Cross-chain and same-chain token swaps
+  - name: Customers (WaaS)
+    description: Manage B2B sub-accounts for your end customers
+  - name: Auto-Forwarding
+    description: Automatically sweep incoming deposits to a destination
+  - name: Webhooks
+    description: Create and manage webhook endpoints
+  - name: Payment Gateway
+    description: Hosted crypto payment checkout
+  - name: Agentic Wallets
+    description: Programmable wallets for AI agents
+  - name: IBAN
+    description: European IBAN accounts linked to crypto wallets
+  - name: Card Issuer Program
+    description: B2B card issuance program management
+  - name: Yativo Card (Own Account)
+    description: Issue and manage cards for the authenticated user
+  - name: Unified Transactions
+    description: Unified view of all transaction types with export
+  - name: Compliance Screener
+    description: Screen blockchain addresses against sanctions lists
+  - name: Subscriptions
+    description: Manage your plan tier
+  - name: Analytics
+    description: Transaction and dashboard analytics
+  - name: API Keys
+    description: Generate and manage API keys
+
+paths:
+
+  # ─── Authentication ─────────────────────────────────────────────────────────
+
+  /auth/token:
+    post:
+      tags: [Authentication]
+      summary: Generate Bearer Token
+      description: |
+        Exchange an API key + secret for a JWT Bearer token. Tokens expire after 60 minutes.
+        Implement the auto-refresh pattern in your SDK — see the Authentication guide.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [api_key, api_secret]
+              properties:
+                api_key:
+                  type: string
+                  example: yativo_abc123...
+                api_secret:
+                  type: string
+                  example: secret_xyz...
+      responses:
+        "200":
+          description: Token generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+                    example: 3600
+                  expires_at:
+                    type: string
+                    format: date-time
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /authentication/refresh-token:
+    get:
+      tags: [Authentication]
+      summary: Refresh Bearer Token
+      description: Extend the current session before the token expires. Returns a new token with a fresh 60-minute window.
+      responses:
+        "200":
+          description: New token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  expires_in:
+                    type: integer
+        "401":
+          description: Token expired or invalid
+
+  # ─── Accounts ───────────────────────────────────────────────────────────────
+
+  /accounts/create-account:
+    post:
+      tags: [Accounts]
+      summary: Create Account
+      description: |
+        Create a top-level account — the organizational container for wallets and assets.
+        Requires 2FA. Pricing plan may limit the number of accounts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_name, account_type]
+              properties:
+                account_name:
+                  type: string
+                  example: Main Treasury
+                account_type:
+                  type: string
+                  enum: [business, personal, customer]
+      responses:
+        "200":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          description: Validation error
+        "422":
+          description: Plan limit reached
+
+  /accounts/get-accounts:
+    get:
+      tags: [Accounts]
+      summary: List Accounts
+      description: Returns all accounts belonging to the authenticated user.
+      responses:
+        "200":
+          description: Accounts list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accounts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Account"
+
+  /accounts/get-user-accounts:
+    post:
+      tags: [Accounts]
+      summary: Get Customer Accounts
+      description: Returns accounts for a specific B2B customer or sub-user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id:
+                  type: string
+                  example: usr_cust_01xyz
+      responses:
+        "200":
+          description: Customer accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  accounts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Account"
+
+  /accounts/create-connections:
+    post:
+      tags: [Accounts]
+      summary: Connect Chains
+      description: Connect an account to one or more blockchains to enable address generation on those networks.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_id, chains]
+              properties:
+                account_id:
+                  type: string
+                chains:
+                  type: array
+                  items:
+                    type: string
+                  example: [ethereum, solana, polygon]
+      responses:
+        "200":
+          description: Connections created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account_id:
+                    type: string
+                  connections:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        chain:
+                          type: string
+                        status:
+                          type: string
+                        connected_at:
+                          type: string
+                          format: date-time
+
+  /accounts/get-connections:
+    get:
+      tags: [Accounts]
+      summary: List Chain Connections
+      description: Returns blockchain connections. Filter by account_id or omit to get all.
+      parameters:
+        - name: account_id
+          in: query
+          schema:
+            type: string
+          description: Filter by account ID
+      responses:
+        "200":
+          description: Connections list
+
+  # ─── Assets ─────────────────────────────────────────────────────────────────
+
+  /assets/get-all-assets:
+    get:
+      tags: [Assets]
+      summary: List Supported Assets
+      description: Returns the full catalogue of chains and tokens available on the platform.
+      responses:
+        "200":
+          description: Supported assets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        asset_name:
+                          type: string
+                        asset_short_name:
+                          type: string
+                        chain:
+                          type: string
+                        chain_id:
+                          type: integer
+                        network_type:
+                          type: string
+                          enum: [mainnet, testnet]
+                        asset_type:
+                          type: string
+                          enum: [native, token]
+                        token_standard:
+                          type: string
+                          nullable: true
+                        contract_address:
+                          type: string
+                          nullable: true
+                        decimals:
+                          type: integer
+                        active:
+                          type: boolean
+
+  /assets/get-chains:
+    get:
+      tags: [Assets]
+      summary: List Supported Chains
+      description: Returns all blockchain networks supported by the platform.
+      responses:
+        "200":
+          description: Supported chains
+
+  /assets/add-asset:
+    post:
+      tags: [Assets]
+      summary: Add Asset (Wallet)
+      description: |
+        Creates a new wallet with a unique deposit address for a specific chain and token within an account.
+        The platform generates and manages the private key; you interact via the deposit address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_id, chain, ticker]
+              properties:
+                account_id:
+                  type: string
+                  example: acc_01abc123
+                chain:
+                  type: string
+                  example: ethereum
+                  description: Chain identifier — see /assets/get-chains for valid values
+                ticker:
+                  type: string
+                  example: USDC
+                  description: Token ticker — must be available on the specified chain
+      responses:
+        "200":
+          description: Asset created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+        "400":
+          description: Unsupported chain/ticker combination
+        "422":
+          description: Plan limit reached (multi_wallet)
+
+  /assets/batch-add:
+    post:
+      tags: [Assets]
+      summary: Batch Add Assets
+      description: Create multiple wallets in a single call.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_id, assets]
+              properties:
+                account_id:
+                  type: string
+                assets:
+                  type: array
+                  items:
+                    type: object
+                    required: [chain, ticker]
+                    properties:
+                      chain:
+                        type: string
+                      ticker:
+                        type: string
+      responses:
+        "200":
+          description: Assets created
+
+  /assets/archive:
+    put:
+      tags: [Assets]
+      summary: Archive Asset
+      description: Archive a wallet so it no longer appears in active listings. Deposits to the address are still tracked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id]
+              properties:
+                asset_id:
+                  type: string
+      responses:
+        "200":
+          description: Asset archived
+
+  # ─── Transactions ────────────────────────────────────────────────────────────
+
+  /transactions/get-gas-price:
+    post:
+      tags: [Transactions]
+      summary: Get Gas Price Estimate
+      description: Estimate the network fee for a transaction before committing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chainType]
+              properties:
+                chainType:
+                  type: string
+                  example: ethereum
+                  description: Blockchain to estimate fees for
+                priority:
+                  type: string
+                  enum: [low, medium, high]
+                  default: low
+                amount_usd:
+                  type: string
+                  example: "500"
+                  description: Estimated transaction value in USD
+                asset_id:
+                  type: string
+                  description: Asset ObjectId for context-aware estimation
+                token_symbol:
+                  type: string
+                  example: USDC
+      responses:
+        "200":
+          description: Gas estimate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      estimatedFee:
+                        type: number
+                      estimatedFeeUSD:
+                        type: number
+                      nativeToken:
+                        type: string
+                      chain:
+                        type: string
+                      priority:
+                        type: string
+                      breakdown:
+                        type: object
+                        properties:
+                          gas_cost_usd:
+                            type: string
+                          platform_fees_usd:
+                            type: string
+                          total_cost_usd:
+                            type: string
+
+  /transactions/send-funds:
+    post:
+      tags: [Transactions]
+      summary: Send Funds
+      description: |
+        Initiate an outbound crypto transfer.
+
+        **Gas funding**: Token assets (USDC, USDT, etc.) need native gas. Yativo uses your gas station if configured, otherwise falls back to the platform gas station with a 20% markup.
+
+        **Idempotency**: An idempotency key is auto-generated. Pass your own via `"idempotency_key"` in the body. A 409 response means the transaction was already created — use the returned `existing_transaction_id`.
+
+        ⚠️ Blockchain transactions are irreversible — double-check `receiving_address` before sending.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, assets, receiving_address, amount, type, chain, category]
+              properties:
+                account:
+                  type: string
+                  description: MongoDB ObjectId of the account owning the source asset
+                assets:
+                  type: string
+                  description: MongoDB ObjectId of the asset (wallet) to send from
+                receiving_address:
+                  type: string
+                  description: Recipient blockchain address
+                amount:
+                  type: number
+                  description: Amount in the token's native units (e.g. 100 for 100 USDC)
+                type:
+                  type: string
+                  description: Token ticker (e.g. USDC, ETH, SOL)
+                chain:
+                  type: string
+                  description: Blockchain network (e.g. ethereum, solana)
+                category:
+                  type: string
+                  example: payment
+                  description: "Transaction category: personal, business, payment, auto-forward, other"
+                priority:
+                  type: string
+                  enum: [low, medium, high]
+                  default: medium
+                description:
+                  type: string
+                use_self_funding:
+                  type: boolean
+                  default: false
+                  description: Pay gas from the wallet's own native balance (only for native token assets)
+                idempotency_key:
+                  type: string
+                  description: Custom idempotency key; auto-generated if omitted
+      responses:
+        "200":
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: string
+                      transaction_hash:
+                        type: string
+                      gas_amount:
+                        type: string
+                      platform_fee:
+                        type: string
+                      gas_funding_markup:
+                        type: string
+                      total_fee:
+                        type: string
+        "400":
+          description: Validation error
+        "409":
+          description: Idempotency conflict — transaction already created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  existing_transaction_id:
+                    type: string
+        "422":
+          description: Insufficient balance or invalid address
+
+  /transactions/get-transactions:
+    post:
+      tags: [Transactions]
+      summary: List Transactions
+      description: Returns up to 100 transactions, sorted most recent first. Filter by status, chain, or asset.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                search:
+                  type: string
+                  description: Search by transaction_id or transaction_hash
+                status_filter:
+                  type: string
+                  enum: [pending, completed, failed]
+                assets_filter:
+                  type: string
+                chain_filter:
+                  type: string
+                  example: ethereum
+                method_filter:
+                  type: string
+                  example: USDC
+      responses:
+        "200":
+          description: Transactions list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Transaction"
+
+  # ─── Swap ────────────────────────────────────────────────────────────────────
+
+  /swap/assets:
+    get:
+      tags: [Swap]
+      summary: List Swappable Assets
+      description: Returns all tokens that can be used as swap sources or destinations.
+      responses:
+        "200":
+          description: Swappable assets
+
+  /swap/routes:
+    get:
+      tags: [Swap]
+      summary: List Swap Routes
+      description: Returns all valid swap routes — which chain/token pairs can be swapped.
+      responses:
+        "200":
+          description: Swap routes
+
+  /swap/quote:
+    post:
+      tags: [Swap]
+      summary: Get Swap Quote
+      description: |
+        Request a swap quote. Returns the expected output amount, exchange rate, slippage, and fees.
+        Quotes are time-limited — execute promptly after receiving one (see `expires_at`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from_chain, from_ticker, to_chain, to_ticker, amount, from_address, to_address]
+              properties:
+                from_chain:
+                  type: string
+                  example: ethereum
+                from_ticker:
+                  type: string
+                  example: USDC
+                to_chain:
+                  type: string
+                  example: solana
+                to_ticker:
+                  type: string
+                  example: USDC_SOL
+                amount:
+                  type: string
+                  example: "500"
+                from_address:
+                  type: string
+                to_address:
+                  type: string
+      responses:
+        "200":
+          description: Swap quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapQuote"
+        "422":
+          description: Unsupported route or invalid amounts
+
+  /swap/execute:
+    post:
+      tags: [Swap]
+      summary: Execute Swap
+      description: Execute a swap using a quote ID. The quote must not be expired.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quote_id]
+              properties:
+                quote_id:
+                  type: string
+      responses:
+        "200":
+          description: Swap initiated
+        "422":
+          description: Quote expired — request a new one
+
+  /swap/history:
+    get:
+      tags: [Swap]
+      summary: List Swap History
+      description: Returns the history of swaps for the authenticated user.
+      responses:
+        "200":
+          description: Swap history
+
+  # ─── Customers (WaaS) ────────────────────────────────────────────────────────
+
+  /customers/create-customer:
+    post:
+      tags: [Customers (WaaS)]
+      summary: Create Customer
+      description: |
+        Create a managed B2B sub-account for one of your end customers. The customer gets their own
+        wallets and transaction history under your platform. This is for WaaS (wallet) customers —
+        card customers are managed separately via the Card Issuer API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+                phone:
+                  type: string
+                metadata:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Arbitrary key-value pairs for your own reference data
+      responses:
+        "200":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers:
+    get:
+      tags: [Customers (WaaS)]
+      summary: List Customers
+      description: Returns all WaaS customers for the authenticated user.
+      responses:
+        "200":
+          description: Customers list
+
+  /customers/{customer_id}:
+    get:
+      tags: [Customers (WaaS)]
+      summary: Get Customer
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer details
+    put:
+      tags: [Customers (WaaS)]
+      summary: Update Customer
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        "200":
+          description: Customer updated
+
+  # ─── Auto-Forwarding ─────────────────────────────────────────────────────────
+
+  /auto-forwarding:
+    post:
+      tags: [Auto-Forwarding]
+      summary: Create Forwarding Rule
+      description: Create a rule to automatically sweep incoming deposits to a destination address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source_asset_id, destination_address, chain, ticker]
+              properties:
+                source_asset_id:
+                  type: string
+                  description: The asset (wallet) to monitor for incoming deposits
+                destination_address:
+                  type: string
+                  description: The address to sweep funds to
+                chain:
+                  type: string
+                ticker:
+                  type: string
+                min_amount:
+                  type: number
+                  description: Minimum deposit amount to trigger forwarding
+                active:
+                  type: boolean
+                  default: true
+      responses:
+        "200":
+          description: Forwarding rule created
+        "422":
+          description: Plan limit reached (autoforwarding)
+    get:
+      tags: [Auto-Forwarding]
+      summary: List Forwarding Rules
+      responses:
+        "200":
+          description: Forwarding rules
+
+  /auto-forwarding/{rule_id}:
+    get:
+      tags: [Auto-Forwarding]
+      summary: Get Forwarding Rule
+      parameters:
+        - name: rule_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rule details
+    put:
+      tags: [Auto-Forwarding]
+      summary: Update Forwarding Rule
+      parameters:
+        - name: rule_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                destination_address:
+                  type: string
+                min_amount:
+                  type: number
+                active:
+                  type: boolean
+      responses:
+        "200":
+          description: Rule updated
+    delete:
+      tags: [Auto-Forwarding]
+      summary: Delete Forwarding Rule
+      parameters:
+        - name: rule_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rule deleted
+
+  # ─── Webhooks ────────────────────────────────────────────────────────────────
+
+  /webhooks/create:
+    post:
+      tags: [Webhooks]
+      summary: Create Webhook
+      description: |
+        Register a webhook endpoint to receive real-time event notifications.
+        Supply `events: ["*"]` to subscribe to all events, or list specific event types.
+        The `secret` is returned only once — store it securely for signature verification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: Must be HTTPS
+                events:
+                  type: array
+                  items:
+                    type: string
+                  default: ["*"]
+                  example: [deposit.confirmed, transaction.initiated]
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+
+  /webhooks:
+    get:
+      tags: [Webhooks]
+      summary: List Webhooks
+      responses:
+        "200":
+          description: Webhooks list
+
+  /webhooks/edit:
+    post:
+      tags: [Webhooks]
+      summary: Update Webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [webhook_id]
+              properties:
+                webhook_id:
+                  type: string
+                url:
+                  type: string
+                events:
+                  type: array
+                  items:
+                    type: string
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Webhook updated
+
+  /webhooks/delete:
+    post:
+      tags: [Webhooks]
+      summary: Delete Webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [webhook_id]
+              properties:
+                webhook_id:
+                  type: string
+      responses:
+        "200":
+          description: Webhook deleted
+
+  # ─── Payment Gateway ──────────────────────────────────────────────────────────
+
+  /payment-gateway/create:
+    post:
+      tags: [Payment Gateway]
+      summary: Create Payment Intent
+      description: |
+        Create a hosted checkout session. Returns a `checkout_url` to share with the payer.
+        No frontend integration needed — the payer visits the URL and selects their preferred crypto asset.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, currency]
+              properties:
+                amount:
+                  type: string
+                  example: "100.00"
+                  description: Amount to collect
+                currency:
+                  type: string
+                  example: USD
+                  description: Display currency for the amount
+                accepted_assets:
+                  type: array
+                  items:
+                    type: string
+                  description: List of accepted crypto tickers; omit to accept all supported
+                  example: [USDC, ETH, SOL]
+                description:
+                  type: string
+                  description: Order or payment description shown on the checkout page
+                metadata:
+                  type: object
+                  additionalProperties:
+                    type: string
+                expires_in:
+                  type: integer
+                  description: Seconds until the intent expires (default 3600)
+                redirect_url:
+                  type: string
+                  format: uri
+                  description: URL to redirect the payer to after payment
+      responses:
+        "200":
+          description: Payment intent created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentGatewayIntent"
+
+  /payment-gateway/list:
+    get:
+      tags: [Payment Gateway]
+      summary: List Payment Intents
+      description: Returns all payment intents for the authenticated user.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, paid, underpaid, expired, cancelled]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment intents list
+
+  /payment-gateway/{intent_id}/status:
+    get:
+      tags: [Payment Gateway]
+      summary: Get Payment Intent Status
+      parameters:
+        - name: intent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Payment intent status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentGatewayIntent"
+
+  # ─── Agentic Wallets ─────────────────────────────────────────────────────────
+
+  /agentic-wallets/create:
+    post:
+      tags: [Agentic Wallets]
+      summary: Create Agentic Wallet
+      description: Create a programmable wallet for an AI agent. The wallet must be activated with OTP before it can transact.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  description: Human-readable name for the wallet (e.g. "Production Agent")
+                per_transaction_limit:
+                  type: number
+                  description: Max USD amount per single transaction
+                daily_limit:
+                  type: number
+                  description: Max USD amount per 24-hour period
+                monthly_limit:
+                  type: number
+                  description: Max USD amount per calendar month
+      responses:
+        "200":
+          description: Wallet created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgenticWallet"
+
+  /agentic-wallets:
+    get:
+      tags: [Agentic Wallets]
+      summary: List Agentic Wallets
+      responses:
+        "200":
+          description: Agentic wallets list
+
+  /agentic-wallets/{wallet_id}:
+    get:
+      tags: [Agentic Wallets]
+      summary: Get Agentic Wallet
+      parameters:
+        - name: wallet_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Wallet details
+
+  /agentic-wallets/{wallet_id}/activate:
+    post:
+      tags: [Agentic Wallets]
+      summary: Activate Agentic Wallet
+      description: Verify OTP and activate the wallet for agent use.
+      parameters:
+        - name: wallet_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otp]
+              properties:
+                otp:
+                  type: string
+      responses:
+        "200":
+          description: Wallet activated
+
+  /agentic-wallets/{wallet_id}/add-connector:
+    post:
+      tags: [Agentic Wallets]
+      summary: Add Connector (Agent API Key)
+      description: |
+        Generate a connector API key (`yac_...`) for an AI agent to use. Each connector can have its
+        own spending limits. Revoke a connector without affecting the wallet or other connectors.
+      parameters:
+        - name: wallet_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Production Agent
+                per_transaction_limit:
+                  type: number
+                daily_limit:
+                  type: number
+                monthly_limit:
+                  type: number
+      responses:
+        "200":
+          description: Connector created with API key
+
+  /agent/transact:
+    post:
+      tags: [Agentic Wallets]
+      summary: Agent Send Payment
+      description: |
+        Called by the AI agent using its connector API key (`yac_...`). Sends a crypto payment
+        and records the service name, URL, and reason for compliance.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [wallet_id, amount, asset, recipient_address]
+              properties:
+                wallet_id:
+                  type: string
+                amount:
+                  type: number
+                  example: 5.00
+                asset:
+                  type: string
+                  example: USDC
+                recipient_address:
+                  type: string
+                service_name:
+                  type: string
+                  example: OpenAI API
+                service_url:
+                  type: string
+                payment_reason:
+                  type: string
+                payment_category:
+                  type: string
+                  example: ai_service
+      responses:
+        "200":
+          description: Payment sent
+        "422":
+          description: Spending limit exceeded or insufficient balance
+
+  /agent/balance:
+    get:
+      tags: [Agentic Wallets]
+      summary: Agent Get Balance
+      description: Called by the AI agent to check the wallet balance.
+      responses:
+        "200":
+          description: Wallet balance
+
+  /agent/x402-fetch:
+    post:
+      tags: [Agentic Wallets]
+      summary: x402 Protocol Fetch
+      description: |
+        Fetch a URL that may return HTTP 402 (Payment Required). The wallet auto-pays the requested
+        amount and retries, enabling the agent to access paywalled APIs automatically.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, wallet_id]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                wallet_id:
+                  type: string
+                method:
+                  type: string
+                  default: GET
+                headers:
+                  type: object
+                body:
+                  type: string
+      responses:
+        "200":
+          description: Response from the target URL after payment
+
+  # ─── IBAN ────────────────────────────────────────────────────────────────────
+
+  /standalone-iban/options:
+    get:
+      tags: [IBAN]
+      summary: Get IBAN Options
+      description: Returns supported chains, profile kinds, KYC requirements, and code lists for IBAN onboarding.
+      responses:
+        "200":
+          description: IBAN configuration options
+
+  /standalone-iban/onboarding/init:
+    post:
+      tags: [IBAN]
+      summary: Initialize IBAN Onboarding
+      description: Start the IBAN onboarding process for a user or customer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                customer_id:
+                  type: string
+                  description: Optional — associate with a WaaS customer
+                profile_kind:
+                  type: string
+                  enum: [personal, corporate]
+      responses:
+        "200":
+          description: Onboarding initialized
+        "409":
+          description: Already initialized
+
+  /standalone-iban/onboarding/kyc:
+    post:
+      tags: [IBAN]
+      summary: Submit KYC for IBAN
+      description: Submit KYC data to proceed with IBAN issuance. Must call init first.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kyc]
+              properties:
+                email:
+                  type: string
+                customer_id:
+                  type: string
+                profile_kind:
+                  type: string
+                  enum: [personal, corporate]
+                kyc:
+                  type: object
+                  description: KYC payload — see /standalone-iban/options for required fields per profile_kind
+      responses:
+        "200":
+          description: KYC submitted
+
+  /standalone-iban/iban/request:
+    post:
+      tags: [IBAN]
+      summary: Request IBAN Assignment
+      description: Request an IBAN after KYC is approved.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: string
+      responses:
+        "200":
+          description: IBAN assignment requested
+        "409":
+          description: KYC not yet approved or IBAN already assigned
+
+  /standalone-iban/status:
+    get:
+      tags: [IBAN]
+      summary: Get IBAN Status
+      description: Check the current IBAN onboarding and activation status.
+      parameters:
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: IBAN status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/IbanStatus"
+
+  /standalone-iban/transfer:
+    post:
+      tags: [IBAN]
+      summary: Send IBAN Transfer (Redeem EURe → Fiat)
+      description: |
+        Redeem EURe from the IBAN wallet to a fiat bank account via SEPA/SWIFT. The IBAN must be active.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, currency, counterpart_iban, counterpart_name]
+              properties:
+                amount:
+                  type: string
+                  example: "500"
+                currency:
+                  type: string
+                  enum: [eur, gbp]
+                counterpart_iban:
+                  type: string
+                  description: Destination IBAN — validated server-side
+                counterpart_name:
+                  type: string
+                  description: Recipient full name
+                customer_id:
+                  type: string
+      responses:
+        "200":
+          description: Transfer submitted
+        "409":
+          description: IBAN not active
+
+  /standalone-iban/validate-iban:
+    get:
+      tags: [IBAN]
+      summary: Validate IBAN Format
+      description: Validate an IBAN number and extract country and BIC information.
+      parameters:
+        - name: iban
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      valid:
+                        type: boolean
+                      iban:
+                        type: string
+                      country_code:
+                        type: string
+                      bic:
+                        type: string
+                      errors:
+                        type: array
+                        items:
+                          type: string
+
+  # ─── Card Issuer Program ──────────────────────────────────────────────────────
+
+  /card-issuer/eligibility:
+    get:
+      tags: [Card Issuer Program]
+      summary: Check Eligibility
+      description: Check if the authenticated user is eligible to apply for the Card Issuer Program.
+      responses:
+        "200":
+          description: Eligibility status
+
+  /card-issuer/apply:
+    post:
+      tags: [Card Issuer Program]
+      summary: Apply for Issuer Program
+      description: Submit an application for the Card Issuer Program. Requires eligibility check to pass first.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [funding_structure]
+              properties:
+                funding_structure:
+                  type: string
+                  enum: [master_wallet, non_master]
+                  description: Master wallet pools funds centrally; non_master settles per-customer
+                preferred_chain:
+                  type: string
+                  enum: [SOL, XDC]
+                iban_enabled:
+                  type: boolean
+                  description: Enable IBAN support for card customers
+      responses:
+        "200":
+          description: Application submitted
+
+  /card-issuer/status:
+    get:
+      tags: [Card Issuer Program]
+      summary: Get Program Status
+      responses:
+        "200":
+          description: Program status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardIssuerStatus"
+
+  /card-issuer/customers:
+    get:
+      tags: [Card Issuer Program]
+      summary: List Card Customers
+      description: List all customers enrolled under your issuer program.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: include_balances
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: Card customers list
+
+  /card-issuer/customers/aggregate-balances:
+    get:
+      tags: [Card Issuer Program]
+      summary: Get Aggregate Balances
+      description: On-chain balances summed across all customers, grouped by currency.
+      responses:
+        "200":
+          description: Aggregate balances
+
+  /card-issuer/customers/{customerId}:
+    get:
+      tags: [Card Issuer Program]
+      summary: Get Card Customer
+      description: Full customer detail — balance, KYC status, and all cards.
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer detail
+
+  /card-issuer/fund-customer:
+    post:
+      tags: [Card Issuer Program]
+      summary: Fund Customer Card
+      description: Transfer from the issuer's master wallet to a customer's card account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, source_chain]
+              properties:
+                customer_id:
+                  type: string
+                card_id:
+                  type: string
+                email:
+                  type: string
+                external_id:
+                  type: string
+                amount:
+                  type: number
+                source_chain:
+                  type: string
+                  enum: [SOL, XDC]
+                pricing_mode:
+                  type: string
+                  enum: [send_x, receive_x]
+                  description: send_x — customer receives amount minus fees; receive_x — customer receives exact amount
+                destination_token:
+                  type: string
+      responses:
+        "200":
+          description: Customer funded
+
+  /card-issuer/withdraw-from-card:
+    post:
+      tags: [Card Issuer Program]
+      summary: Withdraw from Customer Card
+      description: Pull funds from a customer's card account back to the issuer's master wallet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, amount]
+              properties:
+                id:
+                  type: string
+                  description: yativo_card_id, external_id, customer_id, or email
+                amount:
+                  type: number
+      responses:
+        "200":
+          description: Withdrawal initiated
+
+  /card-issuer/master-wallets:
+    get:
+      tags: [Card Issuer Program]
+      summary: Get Master Wallet Balances
+      description: Returns on-chain balances for the issuer's master wallet (SOL + GNO).
+      responses:
+        "200":
+          description: Master wallet balances
+
+  /card-issuer/master-wallets/swap:
+    post:
+      tags: [Card Issuer Program]
+      summary: Swap Master Wallet Tokens
+      description: Swap between currencies in the master wallet (e.g. USDC ↔ EURe).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from_token, to_token, amount]
+              properties:
+                from_token:
+                  type: string
+                  enum: [USDC, EUR, GBP, EURe, GBPe]
+                to_token:
+                  type: string
+                  enum: [USDC, EUR, GBP, EURe, GBPe]
+                amount:
+                  type: number
+      responses:
+        "200":
+          description: Swap initiated
+
+  /card-issuer/transfers:
+    get:
+      tags: [Card Issuer Program]
+      summary: List Transfers
+      description: All master-wallet → customer-card transfers.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transfers list
+
+  /card-issuer/transfers/{transferId}:
+    get:
+      tags: [Card Issuer Program]
+      summary: Get Transfer Status
+      parameters:
+        - name: transferId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transfer status
+
+  /card-issuer/card-transactions:
+    get:
+      tags: [Card Issuer Program]
+      summary: List All Card Spending Transactions
+      description: Card spending transactions across all customers in the program.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [authorized, settled, declined, reversed, partially_reversed, failed, expired]
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Card transactions
+
+  /card-issuer/customers/{customerId}/transfers:
+    get:
+      tags: [Card Issuer Program]
+      summary: List Customer Transfers
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer transfers
+
+  /card-issuer/customers/{customerId}/card-transactions:
+    get:
+      tags: [Card Issuer Program]
+      summary: List Customer Card Transactions
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [authorized, settled, declined, reversed, partially_reversed, failed, expired]
+      responses:
+        "200":
+          description: Customer card transactions
+
+  /card-issuer/deposits:
+    get:
+      tags: [Card Issuer Program]
+      summary: List Master Wallet Deposits
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, auto_funding, awaiting_manual, funding, funded, failed]
+        - name: chain
+          in: query
+          schema:
+            type: string
+            enum: [SOL, XDC]
+      responses:
+        "200":
+          description: Deposits list
+
+  /card-issuer/lookup-customer:
+    get:
+      tags: [Card Issuer Program]
+      summary: Lookup Customer
+      description: Look up a card customer by any identifier.
+      parameters:
+        - name: id
+          in: query
+          schema:
+            type: string
+        - name: email
+          in: query
+          schema:
+            type: string
+        - name: external_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer found
+        "404":
+          description: Customer not found
+
+  /card-issuer/pse-customization:
+    get:
+      tags: [Card Issuer Program]
+      summary: Get Secure Card View CSS
+      description: Retrieve custom CSS for the secure card display iframe.
+      responses:
+        "200":
+          description: PSE customization CSS
+    put:
+      tags: [Card Issuer Program]
+      summary: Set Secure Card View CSS
+      description: |
+        Store custom CSS for the secure card number display iframe. Dangerous patterns
+        (url(), @import) are stripped server-side. Pass `custom_css: ""` to clear.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [custom_css]
+              properties:
+                custom_css:
+                  type: string
+                  maxLength: 51200
+      responses:
+        "200":
+          description: CSS stored
+
+  # ─── Yativo Card (Own Account) ───────────────────────────────────────────────
+
+  /yativo-card/onboard:
+    post:
+      tags: [Yativo Card (Own Account)]
+      summary: Initiate Card Onboarding
+      description: Start the card onboarding flow for the authenticated user. Sends an OTP to the provided email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: OTP sent — proceed to verify-otp
+
+  /yativo-card/{yativoCardId}/verify-otp:
+    post:
+      tags: [Yativo Card (Own Account)]
+      summary: Verify OTP (Card Onboarding)
+      parameters:
+        - name: yativoCardId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otp]
+              properties:
+                otp:
+                  type: string
+                  minLength: 4
+                  maxLength: 10
+      responses:
+        "200":
+          description: OTP verified
+
+  /yativo-card/{yativoCardId}/kyc-link:
+    get:
+      tags: [Yativo Card (Own Account)]
+      summary: Get KYC Link
+      description: Get a KYC verification link for the card onboarding flow.
+      parameters:
+        - name: yativoCardId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: KYC link
+
+  /yativo-card/{yativoCardId}/kyc-status:
+    get:
+      tags: [Yativo Card (Own Account)]
+      summary: Get Card KYC Status
+      parameters:
+        - name: yativoCardId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: KYC status
+
+  /yativo-card/customers/onboard:
+    post:
+      tags: [Yativo Card (Own Account)]
+      summary: Onboard Card Customer (B2B)
+      description: Initialize card onboarding for a customer in a B2B flow.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                external_customer_id:
+                  type: string
+      responses:
+        "200":
+          description: Customer onboarding initiated
+
+  /yativo-card/customers/cards:
+    get:
+      tags: [Yativo Card (Own Account)]
+      summary: List Customer Cards (B2B)
+      description: List all cards issued to customers under the B2B user's account.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: external_customer_id
+          in: query
+          schema:
+            type: string
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer cards list
+
+  # ─── Unified Transactions ─────────────────────────────────────────────────────
+
+  /unified-transactions/list:
+    get:
+      tags: [Unified Transactions]
+      summary: List All Transactions
+      description: A unified view of all transaction types (deposits, withdrawals, swaps, card spend) with filtering.
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [deposit, withdrawal, swap, fee, auto_forwarding, card_spend]
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: from_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unified transactions list
+
+  /unified-transactions/{transaction_id}:
+    get:
+      tags: [Unified Transactions]
+      summary: Get Transaction
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transaction details
+
+  /unified-transactions/export:
+    post:
+      tags: [Unified Transactions]
+      summary: Request Export
+      description: Queue a CSV/PDF export of transactions. Use the returned exportId to download when ready.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum: [csv, pdf]
+                  default: csv
+                from_date:
+                  type: string
+                  format: date
+                to_date:
+                  type: string
+                  format: date
+                type:
+                  type: string
+      responses:
+        "200":
+          description: Export queued with exportId
+
+  /unified-transactions/export/list:
+    get:
+      tags: [Unified Transactions]
+      summary: List Exports
+      responses:
+        "200":
+          description: Export list
+
+  /unified-transactions/export/{exportId}/download:
+    get:
+      tags: [Unified Transactions]
+      summary: Download Export
+      parameters:
+        - name: exportId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Export file
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  # ─── Compliance Screener ──────────────────────────────────────────────────────
+
+  /screener/check:
+    post:
+      tags: [Compliance Screener]
+      summary: Screen an Address
+      description: Screen a single blockchain address against sanctions lists and risk databases.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address, chain]
+              properties:
+                address:
+                  type: string
+                chain:
+                  type: string
+      responses:
+        "200":
+          description: Screening result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: string
+                  risk_score:
+                    type: number
+                  risk_level:
+                    type: string
+                    enum: [low, medium, high, critical]
+                  sanctions_hit:
+                    type: boolean
+                  details:
+                    type: object
+
+  /screener/batch-check:
+    post:
+      tags: [Compliance Screener]
+      summary: Batch Screen Addresses
+      description: Screen multiple addresses in a single call.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [addresses]
+              properties:
+                addresses:
+                  type: array
+                  items:
+                    type: object
+                    required: [address, chain]
+                    properties:
+                      address:
+                        type: string
+                      chain:
+                        type: string
+      responses:
+        "200":
+          description: Batch screening results
+
+  # ─── Subscriptions ────────────────────────────────────────────────────────────
+
+  /subscription/plans:
+    get:
+      tags: [Subscriptions]
+      summary: List Plans
+      description: Returns all available subscription tiers and their included features.
+      responses:
+        "200":
+          description: Available plans
+
+  /subscription/current:
+    get:
+      tags: [Subscriptions]
+      summary: Get Current Subscription
+      description: Returns the authenticated user's active subscription.
+      responses:
+        "200":
+          description: Current subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscription/subscribe:
+    post:
+      tags: [Subscriptions]
+      summary: Subscribe to Plan
+      description: Subscribe to a plan tier. The subscription fee is debited from your USDC fee wallet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan]
+              properties:
+                plan:
+                  type: string
+                  enum: [starter, growth, scale, enterprise]
+      responses:
+        "200":
+          description: Subscription updated
+        "422":
+          description: Insufficient USDC balance for subscription fee
+
+  # ─── Analytics ───────────────────────────────────────────────────────────────
+
+  /analytics/transaction-analytics:
+    get:
+      tags: [Analytics]
+      summary: Transaction Analytics
+      description: Aggregated transaction metrics — volume, count, fees by chain and token.
+      parameters:
+        - name: from_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Transaction analytics data
+
+  /analytics/dashboard-analytics:
+    get:
+      tags: [Analytics]
+      summary: Dashboard Analytics
+      description: High-level metrics for the authenticated user's dashboard — total volume, active wallets, transaction counts.
+      responses:
+        "200":
+          description: Dashboard metrics
+
+  # ─── API Keys ────────────────────────────────────────────────────────────────
+
+  /apikey/generate:
+    post:
+      tags: [API Keys]
+      summary: Create API Key
+      description: |
+        Generate a new API key + secret pair. The secret is returned **only once** — store it securely.
+        Assign scopes to limit what this key can do.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Production Integration
+                scopes:
+                  type: array
+                  items:
+                    type: string
+                  example: [wallets:read, transactions:write]
+                expires_at:
+                  type: string
+                  format: date-time
+                  description: Optional expiry date; omit for no expiry
+                ip_allowlist:
+                  type: array
+                  items:
+                    type: string
+                  description: Restrict key usage to specific IPs
+      responses:
+        "200":
+          description: API key created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_key:
+                    type: string
+                    example: yativo_abc123...
+                  api_secret:
+                    type: string
+                    description: Shown only once — store immediately
+                  name:
+                    type: string
+                  scopes:
+                    type: array
+                    items:
+                      type: string
+                  created_at:
+                    type: string
+                    format: date-time
+
+  /apikey:
+    get:
+      tags: [API Keys]
+      summary: List API Keys
+      description: Returns all API keys for the authenticated user (secrets are not returned).
+      responses:
+        "200":
+          description: API keys list
+
+  /apikey/{key_id}/revoke:
+    post:
+      tags: [API Keys]
+      summary: Revoke API Key
+      description: Permanently revoke an API key. The key immediately stops accepting new requests.
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Key revoked

@@ -272,6 +272,9 @@ Fired when a card transaction is authorized at the point of sale. A `customer.ba
     "type": "purchase",
     "amount": 12.50,
     "currency": "EUR",
+    "billing_amount": 12.50,
+    "billing_currency": "EUR",
+    "fx_rate": 1,
     "merchant": "Starbucks",
     "merchant_category": "5812",
     "merchant_city": "Paris",
@@ -281,6 +284,10 @@ Fired when a card transaction is authorized at the point of sale. A `customer.ba
   }
 }
 ```
+
+<Note>
+  `billing_amount`/`billing_currency` reflect the card's own settlement currency and are present on every transaction event, not just foreign-currency ones — on a same-currency purchase like this one they simply equal `amount`/`currency`. See the [full transaction event reference](/guides/card-issuer-webhooks#transaction-event-field-reference) for the foreign-currency case and the `fx_rate` calculation.
+</Note>
 
 ### `card.lost`
 

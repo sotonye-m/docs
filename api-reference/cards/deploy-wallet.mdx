@@ -12,7 +12,7 @@ authMethod: "bearer"
 <Note>
   The card wallet must be initialized before you can fund it or create cards. This is a one-time setup step that activates the on-chain wallet infrastructure for the card account.
 
-  **For B2B Card Issuer customers** use the customer-scoped path: `/v1/yativo-card/customers/{yativoCardId}/safe/deploy`. Call this explicitly after KYC approval before proceeding to card creation. Even when the platform deploys the Safe automatically in the background, card creation checks the local DB state — not Gnosis Pay directly — so this call is needed to sync the record. It is idempotent: if already deployed you will receive `"already_deployed": true`.
+  **For B2B Card Issuer customers** use the customer-scoped path: `/v1/yativo-card/customers/{yativoCardId}/safe/deploy`. Call this explicitly after KYC approval before proceeding to card creation. Even when the platform deploys the Safe automatically in the background, card creation checks the local DB state — not the card network directly — so this call is needed to sync the record. It is idempotent: if already deployed you will receive `"already_deployed": true`.
 </Note>
 
 <RequestExample>
@@ -71,7 +71,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
 | `safe_address` | string | On-chain Gnosis Safe address (present when already deployed) |
 | `token_symbol` | string | Card token symbol (e.g. `USDCe`, `EURe`, `GBPe`) |
 | `fiat_symbol` | string | Fiat currency code (e.g. `USD`, `EUR`, `GBP`) |
-| `account_status` | number | Gnosis Pay account status code. `0` = Ok, `7` = DelayQueueNotEmpty (both mean ready) |
+| `account_status` | number | Card network account status code. `0` = Ok, `7` = DelayQueueNotEmpty (both mean ready) |
 | `account_status_meaning` | string | Human-readable status — `"Ok"` or `"DelayQueueNotEmpty"` |
 | `is_ready` | boolean | `true` when the Safe is fully deployed and ready for card creation |
 | `deployment_accepted` | boolean | `true` when a new deployment was initiated (202 response) |
