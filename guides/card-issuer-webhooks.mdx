@@ -845,7 +845,7 @@ All `transaction.*` events share the same `data` shape. Fields are populated fro
 | `yativo_card_id` | string | Stable card identifier — use this as the cross-reference key |
 | `card_id` | string \| null | Card token from the card network |
 | `transaction_id` | string \| null | Network transaction ID. Use this as the key for deduplication. Falls back to the webhook event `id` when not provided by the card network. |
-| `blockchain_tx_hash` | string \| null | On-chain transaction hash when the card network includes one. `null` for most card-network transactions where settlement is off-chain. |
+| `blockchain_tx_hash` | string \| null | Hash of the on-chain settlement transaction that debited the card's wallet. Populated on `transaction.authorized` (we wait for this to be available before dispatching — see note below). May be `null` on other event types where no on-chain leg exists yet (e.g. `transaction.declined`, or a reversal that never settled on-chain). |
 | `type` | string \| null | Transaction type as reported by the card network (e.g. `"Payment"`, `"Refund"`) |
 | `amount` | float \| null | Transaction amount as a decimal number, in the merchant's local currency |
 | `amount_minor` | integer \| null | `amount` in minor units (cents) |
@@ -867,10 +867,10 @@ All `transaction.*` events share the same `data` shape. Fields are populated fro
 
 ### `transaction.authorized`
 
-Fired when a card purchase is authorized. A `customer.balance.updated` event follows immediately.
+Fired once per card purchase, when the authorization clears (not at the earlier point-of-sale authorization moment — we intentionally wait for clearing so this event always carries both `transaction_id` and `blockchain_tx_hash` together, rather than firing an incomplete notification first). A `customer.balance.updated` event follows immediately.
 
 <Note>
-  `transaction.authorized` can fire twice for the same card transaction — once when the authorization is created and again when it is cleared. Both events carry the same `transaction_id`. Use `data.transaction_id` (not `event.id`) as the key for transaction-level deduplication in your handler. If `transaction_id` is `null`, fall back to `event.id`.
+  Use `data.transaction_id` (not `event.id`) as your reconciliation key. If `transaction_id` is `null`, fall back to `event.id`.
 </Note>
 
 ```json
@@ -882,7 +882,7 @@ Fired when a card purchase is authorized. A `customer.balance.updated` event fol
     "yativo_card_id": "yativo_card_customer_8f9a...",
     "card_id": "544599049",
     "transaction_id": "tx_9d8e7f6a5b4c3d2e1f",
-    "blockchain_tx_hash": null,
+    "blockchain_tx_hash": "0xedbca669196b14ddc4b5a8b6fd6c313a1400795cdabe686b3d4b908d8e8279bb",
     "type": "Payment",
     "amount": 12.50,
     "amount_minor": 1250,
@@ -939,6 +939,8 @@ Fired when the merchant batch clears and the authorization is finalized.
 
 <Note>
   This example shows a foreign-currency purchase: a USD-denominated card used at a Brazilian merchant. `amount`/`currency` are the merchant's local currency (BRL, what was charged at the point of sale); `billing_amount`/`billing_currency` are what was actually debited from the card (USD). `fx_rate` (`5.0124`) reads as "1 USD = 5.0124 BRL" — check: `101 / 5.0124 ≈ 20.15`, which matches `billing_amount`.
+
+  `blockchain_tx_hash` on `transaction.settled` is not guaranteed the way it is on `transaction.authorized` — treat it as best-effort here.
 
   `merchant` and `merchant_city` may come back `null` on some networks/transaction stages even when populated on the corresponding `transaction.authorized` event for the same `transaction_id` — treat them as best-effort, not guaranteed on every event.
 </Note>
