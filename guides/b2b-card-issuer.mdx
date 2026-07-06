@@ -1088,14 +1088,14 @@ Authorization: Bearer YOUR_TOKEN
 
 Supports `status`, `customer_id`, and `chain` query filters. See [List Transfers](/api-reference/issuer/transfers).
 
-### Single transfer status
+### Single transfer or withdrawal status
 
 ```bash
 GET /v1/card-issuer/transfers/{transferId}
 Authorization: Bearer YOUR_TOKEN
 ```
 
-See [Get Transfer Status](/api-reference/issuer/transfer-status) for the full response shape and status enum.
+Accepts either a funding `transfer_id` or a withdrawal's `withdrawal_id` — checks funding transfers first, falls back to withdrawals. The response's `type` field (`"funding"` or `"withdrawal"`) tells you which one matched. See [Get Transfer Status](/api-reference/issuer/transfer-status) for the full response shape and status enum.
 
 ### Transfers for a specific customer
 

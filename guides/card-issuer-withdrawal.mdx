@@ -362,6 +362,19 @@ Plan your UX so that you communicate the pending state clearly — `card.withdra
 
 ---
 
+## Checking Status Directly
+
+Webhooks are the primary way to track a withdrawal, but if you need to poll instead (or reconcile after a missed webhook), [Get Transfer Status](/api-reference/issuer/transfer-status) accepts a `withdrawal_id` the same way it accepts a funding `transfer_id`:
+
+```bash
+GET /v1/card-issuer/transfers/{withdrawal_id}
+Authorization: Bearer YOUR_TOKEN
+```
+
+The response includes `type: "withdrawal"`, `status` (`initiated` | `processing` | `settled` | `failed`), and `tx_hash` once settled.
+
+---
+
 ## Tips
 
 - **Always use `yativo_card_id`** when customers have multiple cards. Email lookup is a convenience shortcut for single-card customers only.

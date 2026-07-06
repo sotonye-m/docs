@@ -1,16 +1,18 @@
 ---
-title: "Get Transfer Status"
+title: "Get Transfer or Withdrawal Status"
 api: "GET /v1/card-issuer/transfers/:transferId"
-description: "Retrieve the current status and details of a single master-wallet → customer-card transfer"
+description: "Retrieve the current status and details of a single master-wallet → customer-card transfer, or a customer-card → master-wallet withdrawal"
 authMethod: "bearer"
 ---
+
+This single endpoint looks up **both** directions of fund movement — it checks funding transfers first, then falls back to withdrawals if the ID doesn't match one. The response's `type` field tells you which one you got back.
 
 <ParamField header="Authorization" type="string" required>
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
 <ParamField path="transferId" type="string" required>
-  The `transfer_id` returned by [Fund Customer Card](/api-reference/issuer/fund-customer).
+  Either the `transfer_id` returned by [Fund Customer Card](/api-reference/issuer/fund-customer) (or the `transfer_id` on `customer.funded`/`customer.balance.updated` webhooks with `trigger: "funding"`), **or** the `withdrawal_id` returned by the withdraw-from-card endpoint (or `transfer_id` on `customer.balance.updated` with `trigger: "withdraw"`).
 </ParamField>
 
 <RequestExample>
@@ -21,10 +23,11 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/tx_17451
 </RequestExample>
 
 <ResponseExample>
-```json 200 In progress
+```json 200 Funding — in progress
 {
   "success": true,
   "data": {
+    "type": "funding",
     "transfer_id": "tx_1745123456_2ea87af00de1",
     "status": "hop1_processing",
     "source": {
@@ -35,6 +38,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/tx_17451
       "currency": "EUR",
       "amount": null
     },
+    "tx_hash": null,
     "fees": {
       "platform_fee": 0.50,
       "total_fee": 0.90,
@@ -47,10 +51,11 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/tx_17451
 }
 ```
 
-```json 200 Completed
+```json 200 Funding — completed
 {
   "success": true,
   "data": {
+    "type": "funding",
     "transfer_id": "tx_1745123456_2ea87af00de1",
     "status": "completed",
     "source": {
@@ -61,6 +66,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/tx_17451
       "currency": "EUR",
       "amount": 200.00
     },
+    "tx_hash": "0x3fbd8b6c6a1e2e6f0a1b8f6a5b4c3d2e1f0a1b8f6a5b4c3d2e1f0a1b8f6a5b4c",
     "fees": {
       "platform_fee": 0.50,
       "total_fee": 0.90,
@@ -72,9 +78,37 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/tx_17451
   }
 }
 ```
+
+```json 200 Withdrawal — settled
+{
+  "success": true,
+  "data": {
+    "type": "withdrawal",
+    "transfer_id": "cwd_1781020459781_7plaq8",
+    "status": "settled",
+    "source": {
+      "yativo_card_id": "yativo_card_customer_8f9a...",
+      "amount": 50.00,
+      "currency": "USD"
+    },
+    "destination": {
+      "address": "0x920abe21a7eb39DF5f5A42AE97F4Cd061d5AdD9b",
+      "amount": 50.00,
+      "currency": "USD"
+    },
+    "tx_hash": "0xedbca669196b14ddc4b5a8b6fd6c313a1400795cdabe686b3d4b908d8e8279bb",
+    "failure_reason": null,
+    "customer_id": "6627f3a2c5d4e100123def",
+    "initiated_at": "2026-05-06T14:30:00Z",
+    "completed_at": "2026-05-06T14:33:22Z"
+  }
+}
+```
 </ResponseExample>
 
 ## Status reference
+
+**Funding (`type: "funding"`)**
 
 | Status | Meaning |
 |---|---|
@@ -86,4 +120,13 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/transfers/tx_17451
 | `failed` | Transfer failed |
 | `refunded` | Funds returned to your master wallet |
 
-Poll this endpoint every 10–15 seconds until `status` is `completed` or `failed`. Transfers typically complete in **2–5 minutes** under normal network conditions.
+**Withdrawal (`type: "withdrawal"`)**
+
+| Status | Meaning |
+|---|---|
+| `initiated` | Withdrawal submitted, in the card network's delay-relay queue |
+| `processing` | Delay relay executing |
+| `settled` | Funds arrived in your master wallet — `tx_hash` is populated |
+| `failed` | Withdrawal failed — see `failure_reason` |
+
+Poll this endpoint every 10–15 seconds until `status` reaches a terminal value (`completed`/`failed`/`refunded` for funding, `settled`/`failed` for withdrawals). Funding transfers typically complete in **2–5 minutes**; withdrawals go through a **~3 minute** delay-relay before settling.
