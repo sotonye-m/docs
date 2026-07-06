@@ -201,7 +201,7 @@ until `pin_set` becomes `true`.
 | PIN format | 4 digits (`0000`–`9999`) |
 | Initial set & change | Same `enabled_views: ["pin"]` view handles both |
 | Confirmation | `physical.card.pin.changed` webhook → `pin_set: true` in DB |
-| `pin_set` reliability | Informational — sourced from webhook only, not Gnosis API |
+| `pin_set` reliability | Informational — sourced from webhook only, not a direct card network API lookup |
 | Issuer theme | Pass `theme` in the view-token request — applies to the hosted PIN page |
 | Online vs chip PIN | PSE updates the **online PIN**. The chip PIN syncs automatically on first ATM use |
 | Works for | Virtual and physical cards |

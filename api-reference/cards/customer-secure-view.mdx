@@ -8,7 +8,7 @@ authMethod: "bearer"
 Yativo hosts the card data page and handles all cryptography internally. Your backend requests a URL, then passes it to your customer via your app, an email, or an iframe. The cardholder opens it in any browser or WebView.
 
 <Note>
-  The response includes `pin_set` — the last known state from the `physical.card.pin.changed` webhook (not from the Gnosis API). Use it to decide whether to prompt the cardholder to set their PIN. To show the PIN setup or change form, request `enabled_views: ["pin"]`. Your `theme` customization applies to the PIN page as well.
+  The response includes `pin_set` — the last known state from the `physical.card.pin.changed` webhook (not from a direct card network API lookup). Use it to decide whether to prompt the cardholder to set their PIN. To show the PIN setup or change form, request `enabled_views: ["pin"]`. Your `theme` customization applies to the PIN page as well.
 </Note>
 
 <ParamField header="Authorization" type="string" required>

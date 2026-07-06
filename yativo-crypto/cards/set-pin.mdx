@@ -245,5 +245,5 @@ Subscribe to `physical.card.pin.changed` on your webhook endpoint. Yativo update
 | PIN never touches your server | Entered directly in the Yativo-hosted iframe |
 | Brand customisation | Pass `theme` in the token request — applies to the hosted PIN page |
 | Confirmation | `physical.card.pin.changed` webhook → `pin_set: true` |
-| `pin_set` source | Webhook only — not from Gnosis API |
+| `pin_set` source | Webhook only — not from a direct card network API lookup |
 | Online vs chip PIN | PSE updates the online PIN. The chip syncs on first ATM use (physical cards) |

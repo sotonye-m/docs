@@ -68,7 +68,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
 | Field | Type | Description |
 |---|---|---|
 | `already_deployed` | boolean | `true` when the Safe was already deployed before this call |
-| `safe_address` | string | On-chain Gnosis Safe address (present when already deployed) |
+| `safe_address` | string | On-chain Safe address (present when already deployed) |
 | `token_symbol` | string | Card token symbol (e.g. `USDCe`, `EURe`, `GBPe`) |
 | `fiat_symbol` | string | Fiat currency code (e.g. `USD`, `EUR`, `GBP`) |
 | `account_status` | number | Card network account status code. `0` = Ok, `7` = DelayQueueNotEmpty (both mean ready) |

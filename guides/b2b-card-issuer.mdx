@@ -1032,7 +1032,7 @@ Content-Type: application/json
 Open the returned `secure_view_url` for your customer in an iframe or WebView. The cardholder enters their 4-digit PIN directly in the hosted page — it never passes through your backend. Once saved, the card network fires a `physical.card.pin.changed` webhook and Yativo updates `pin_set: true` on the card record.
 
 <Note>
-  `pin_set` is sourced from the webhook, not from the Gnosis API. Use it as a UI hint to prompt customers who haven't yet set a PIN — not as a hard access gate.
+  `pin_set` is sourced from the webhook, not from a direct card network API lookup. Use it as a UI hint to prompt customers who haven't yet set a PIN — not as a hard access gate.
 </Note>
 
 ---

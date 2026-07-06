@@ -726,6 +726,9 @@ Fired after any card balance change — top-up, purchase authorization, settleme
     "pending_balance_minor": 673,
     "currency": "EUR",
     "balance_source": "live",
+    "trigger": "funding",
+    "transfer_id": "bridge_1779218694580_c22259aa6951",
+    "tx_hash": "0x3fbd8b6c6a1e2e6f0a1b8f6a5b4c3d2e1f0a1b8f6a5b4c3d2e1f0a1b8f6a5b4c",
     "timestamp": "2026-05-12T14:30:00.000Z"
   }
 }
@@ -741,9 +744,18 @@ Fired after any card balance change — top-up, purchase authorization, settleme
 | `pending_balance_minor` | integer \| null | `pending_balance` in minor units (cents) |
 | `currency` | string \| null | `USD`, `EUR`, or `GBP` |
 | `balance_source` | string \| null | `"reconciliation"` when fired by the background reconciliation job; absent or `null` for live card events |
+| `trigger` | string \| null | What we determined caused this balance change: `"funding"`, `"withdrawal"`, or `"transaction"` (a card purchase). `null` if we couldn't match it to a known operation within a 10-minute window. |
+| `transfer_id` | string \| null | Our own reference for the underlying operation — matches the `transfer_id` you already received on `customer.funded`/`master_wallet.customer_funded` (funding), the `withdrawal_id` from the withdrawal endpoints (withdrawal), or the transaction reference (card purchase). Use this to reconcile a `customer.balance.updated` event back to the operation that caused it. |
+| `tx_hash` | string \| null | On-chain hash for the underlying operation, when one exists (funding/withdrawal). `null` for card purchases, which don't have a dedicated on-chain leg at this stage. |
 
 <Note>
   `pending_balance` / `pending_balance_minor` are always `null` when `balance_source` is `"reconciliation"` — the reconciliation job reads the on-chain settled balance and cannot determine pending authorizations. Use `available_balance` for spendable funds.
+</Note>
+
+<Note>
+  A single top-up typically produces **two** `customer.balance.updated` events a couple of minutes apart — the first when the ledger reflects the incoming funds, the second when they become spendable (`available_balance` catches up). Both carry the same `trigger`/`transfer_id`, since both stem from the same underlying operation — use `transfer_id` to recognize them as the same event rather than treating the second as a new, unrelated top-up.
+
+  `trigger`/`transfer_id`/`tx_hash` are inferred by matching this balance change against our own records of your recent funding/withdrawal/transaction activity for this card, not supplied directly by the card network (which doesn't include a correlator on this event type). If nothing matched within the 10-minute window, all three come back `null`.
 </Note>
 
 ### `card.created`
