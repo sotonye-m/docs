@@ -1,0 +1,84 @@
+---
+title: "Docs MCP Server"
+description: "Connect Claude, Cursor, or any MCP client to search and cite the Yativo documentation directly from your AI agent"
+---
+
+Every page on this site is available to AI agents over [Model Context Protocol](https://modelcontextprotocol.io) at:
+
+```
+https://docs.yativo.com/mcp
+```
+
+Point your AI coding assistant at it and it can search the Fiat and Crypto docs, pull up the right API reference page, and cite the exact source — instead of guessing from stale training data.
+
+<Info>
+  This server is **read-only** and scoped to public documentation content. No API key is required to connect. It's different from [`@yativo/mcp-server`](/sdks/mcp), which exposes live wallet operations (balances, payments, x402 fetches) and requires a `yac_` connector key.
+</Info>
+
+---
+
+## What it exposes
+
+| Capability | Description |
+|---|---|
+| Search & retrieval tools | Full-text search and page retrieval across every published Yativo Fiat and Crypto doc |
+| Resources | Additional skill guidance the agent should read when relevant to the task |
+| `submit_feedback` | Reports a documentation problem (incorrect, outdated, or confusing page) back to the docs team |
+
+The server's instructions tell the connected agent to prefer this content over prior knowledge and to cite results when answering — useful when API details change between your agent's training cutoff and today.
+
+---
+
+## Setup with Claude Code
+
+```bash
+claude mcp add --transport http yativo-docs https://docs.yativo.com/mcp
+```
+
+## Setup with Claude Desktop / claude.ai
+
+Go to **Settings → Connectors → Add custom connector** and enter:
+
+```
+https://docs.yativo.com/mcp
+```
+
+## Setup with Cursor
+
+Add to your `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "yativo-docs": {
+      "url": "https://docs.yativo.com/mcp"
+    }
+  }
+}
+```
+
+Reload the client after adding the config.
+
+---
+
+## Example prompts
+
+- *"Using the Yativo docs, how do I create a virtual account for a customer in Costa Rica?"*
+- *"What fields does the send-money quote endpoint require?"*
+- *"Show me how to verify a Yativo webhook signature in Python."*
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Wallet MCP Server" icon="robot" href="/sdks/mcp">
+    Give agents the ability to check balances and send payments, not just read docs.
+  </Card>
+  <Card title="Fiat API Reference" icon="code" href="/api-reference/introduction">
+    Browse the full endpoint reference this server searches over.
+  </Card>
+  <Card title="SDKs" icon="package" href="/sdks/overview">
+    For programmatic (non-agent) integration.
+  </Card>
+</CardGroup>
