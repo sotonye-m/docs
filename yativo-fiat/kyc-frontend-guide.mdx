@@ -20,7 +20,7 @@ The simplest integration. You create a customer, then redirect them to Yativo's 
 
 ### Step 1: Keep your API key on your backend
 
-Every call to Yativo is made with your team API key (`X-Api-Key` and `X-Api-Secret`). Make those calls from your backend only. Your web or mobile app talks to your backend, and your backend talks to Yativo.
+Every call to Yativo is made with your API key (`X-Api-Key` and `X-Api-Secret`). Make those calls from your backend only. Your web or mobile app talks to your backend, and your backend talks to Yativo.
 
 <Warning>
   Never put your API key or secret in browser or mobile code. Anyone could read it and act on your account. The code samples below that read `process.env` run on your server.

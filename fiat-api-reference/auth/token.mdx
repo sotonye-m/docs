@@ -1,14 +1,14 @@
 ---
 title: "Generate Token (deprecated)"
-description: "Deprecated Account ID and App Secret login"
+description: "Deprecated login with legacy API keys (Account ID and App Secret)"
 deprecated: true
 ---
 
 <Warning>
-  **Deprecated.** Use a [team API key](/yativo-fiat/authentication) instead. From **15 October 2026**, tokens from this endpoint only work inside the Yativo dashboard, and requests from your servers must use `X-Api-Key` and `X-Api-Secret`. This endpoint will be removed in a later release.
+  **Deprecated.** Use a [API key](/yativo-fiat/authentication) instead. From **15 October 2026**, tokens from this endpoint only work inside the Yativo dashboard, and requests from your servers must use `X-Api-Key` and `X-Api-Secret`. This endpoint will be removed in a later release.
 </Warning>
 
-Generate an access token by providing your Account ID and App Secret. The token is required for all subsequent API requests.
+Generate an access token with your legacy API keys (Account ID and App Secret). The token is required for all subsequent API requests.
 
 ```
 POST /auth/login

@@ -432,7 +432,7 @@
     "type": "ui-guide",
     "category": "developer",
     "title": "API Keys on the Fiat Dashboard",
-    "description": "How to create and manage team API keys for server-to-server API access",
+    "description": "How to create and manage API keys for server-to-server API access",
     "auth_required": true,
     "auth_type": "bearer",
     "errors": [],
@@ -448,7 +448,7 @@
       "ui"
     ],
     "verified": true,
-    "content": "Go to Developers → API Keys. Under Team API keys, click Generate key, enter a Label and the Allowed IPs of your servers (required), then copy the API secret — it is shown once only and can't be recovered. Send the key and secret as X-Api-Key and X-Api-Secret headers on every request. To change a key's servers, click Edit IPs on the key (the key and secret stay the same). To rotate, create a new key, deploy it, then click Revoke on the old key; revoking takes effect immediately. The Account ID and App Secret shown on the same page are deprecated and stop working for server integrations on 15 October 2026. Sandbox and production have separate keys."
+    "content": "Go to Developers → API Keys. Click Generate key, enter a Label and the Allowed IPs of your servers (required), then copy the API secret — it is shown once only and can't be recovered. Send the key and secret as X-Api-Key and X-Api-Secret headers on every request. To change a key's servers, click Edit IPs on the key (the key and secret stay the same). To rotate, create a new key, deploy it, then click Revoke on the old key; revoking takes effect immediately. The Account ID and App Secret shown under Legacy API keys on the same page are deprecated and stop working for server integrations on 15 October 2026. Sandbox and production have separate keys."
   },
   {
     "_id": "ui-fiat-webhooks",

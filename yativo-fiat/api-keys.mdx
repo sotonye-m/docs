@@ -1,9 +1,9 @@
 ---
-title: "Team API Keys"
+title: "API Keys"
 description: "Create, manage and revoke the API keys your servers use to call Yativo"
 ---
 
-A team API key lets your servers call the Yativo API without signing in. It's a pair of values sent as headers on every request:
+An API key lets your servers call the Yativo API without signing in. It's a pair of values sent as headers on every request:
 
 | Value | Header | Format | Visible later |
 |---|---|---|---|
@@ -40,7 +40,7 @@ The account owner can change which roles have these permissions on the **Team** 
     Sign in to [app.yativo.com](https://app.yativo.com) and go to **Developers → API Keys**.
   </Step>
   <Step title="Generate a key">
-    Under **Team API keys**, click **Generate key**.
+    Click **Generate key**.
   </Step>
   <Step title="Add a label and allowed IPs">
     Enter a **Label** so your team can tell keys apart, and the public IPs of the servers that will use the key. At least one IP is required. See [IP whitelisting](/yativo-fiat/ip-allowlist).
@@ -90,6 +90,12 @@ In **Developers → API Keys**, click **Revoke** on the key. It stops working im
 <Warning>
   If a secret may have leaked, revoke the key straight away, then create a new one.
 </Warning>
+
+---
+
+## Legacy API keys
+
+The Account ID and App Secret shown under **Legacy API keys** on the same page are deprecated. From **15 October 2026** they stop working for requests from your servers. Move to the API keys above: see [Migrate from legacy API keys](/yativo-fiat/authentication#migrate-from-legacy-api-keys).
 
 ---
 

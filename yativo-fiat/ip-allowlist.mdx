@@ -3,7 +3,7 @@ title: "IP Whitelisting"
 description: "Limit each API key to the servers allowed to use it"
 ---
 
-Every team API key has an **IP whitelist**: the public IP addresses of the servers allowed to use it. Requests made with the key must come from one of those IPs, or they're rejected with `403`.
+Every API key has an **IP whitelist**: the public IP addresses of the servers allowed to use it. Requests made with the key must come from one of those IPs, or they're rejected with `403`.
 
 <Warning>
   IP whitelists are enforced from **midnight on 14 October 2026**. Before then, run the [check](#check-your-ip) from every server that uses a key.
@@ -43,7 +43,7 @@ curl https://checkip.amazonaws.com
 
 ## Add or change IPs
 
-**On a new key:** enter the IPs in **Allowed IPs** when you generate the key. See [Team API keys](/yativo-fiat/api-keys#create-a-key).
+**On a new key:** enter the IPs in **Allowed IPs** when you generate the key. See [API Keys](/yativo-fiat/api-keys#create-a-key).
 
 **On an existing key:** go to **Developers → API Keys** and click **Edit IPs** on the key. The list you save replaces the current one, and the key and secret stay the same.
 

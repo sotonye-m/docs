@@ -31,7 +31,7 @@
     "version": "v1",
     "type": "endpoint",
     "category": "authentication",
-    "title": "Authenticate — Team API Keys",
+    "title": "Authenticate — API Keys",
     "method": null,
     "path": null,
     "baseUrl": "https://api.yativo.com/api/v1",
@@ -43,12 +43,12 @@
       "X-Api-Key": {
         "type": "header",
         "required": true,
-        "description": "Team API key (yativo_pk_...) from Developers → API Keys"
+        "description": "API key (yativo_pk_...) from Developers → API Keys"
       },
       "X-Api-Secret": {
         "type": "header",
         "required": true,
-        "description": "Team API secret (yativo_sk_...), shown once at creation"
+        "description": "API secret (yativo_sk_...), shown once at creation"
       }
     },
     "response_example": null,
@@ -77,7 +77,7 @@
       "deprecation"
     ],
     "verified": true,
-    "content": "Authenticate with the Yativo Fiat API using a team API key. Create one in the dashboard under Developers → API Keys → Team API keys → Generate key, entering a label and the public IPs of the servers that will call the API (at least one IP; single IPs or CIDR ranges no broader than /16 IPv4 or /32 IPv6). The API secret is shown once. Send both headers on every request: X-Api-Key: yativo_pk_... and X-Api-Secret: yativo_sk_... — do not send an Authorization header with them. Keys do not expire and work until revoked; they belong to the business, not a person. Requests must come from an IP on the key's whitelist. Use GET /ip-whitelist/check from each server to confirm key_usage.allowed_server is true. Sandbox (https://smtp.yativo.com/api/v1) and production keys are separate. The old Account ID + App Secret login (POST /auth/login returning a Bearer token) is deprecated: from 15 October 2026 its tokens only work inside the Yativo dashboard, so server integrations must migrate to API keys. All POST/PUT/PATCH requests require an Idempotency-Key header.",
+    "content": "Authenticate with the Yativo Fiat API using an API key. Create one in the dashboard under Developers → API Keys → Generate key, entering a label and the public IPs of the servers that will call the API (at least one IP; single IPs or CIDR ranges no broader than /16 IPv4 or /32 IPv6). The API secret is shown once. Send both headers on every request: X-Api-Key: yativo_pk_... and X-Api-Secret: yativo_sk_... — do not send an Authorization header with them. Keys do not expire and work until revoked; they belong to the business, not a person. Requests must come from an IP on the key's whitelist. Use GET /ip-whitelist/check from each server to confirm key_usage.allowed_server is true. Sandbox (https://smtp.yativo.com/api/v1) and production keys are separate. The old Account ID + App Secret login (POST /auth/login returning a Bearer token) is deprecated: from 15 October 2026 its tokens only work inside the Yativo dashboard, so server integrations must migrate to API keys. All POST/PUT/PATCH requests require an Idempotency-Key header.",
     "created_at": {
       "$date": "2025-01-01T00:00:00Z"
     },

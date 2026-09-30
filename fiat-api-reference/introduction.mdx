@@ -16,7 +16,7 @@ Use the sandbox environment for development and testing. Sandbox transactions do
 
 ## Authentication
 
-Send your team API key and secret on every request. Create them in the dashboard under **Developers → API Keys**.
+Send your API key and secret on every request. Create them in the dashboard under **Developers → API Keys**.
 
 ```bash
 X-Api-Key: YOUR_API_KEY
@@ -26,7 +26,7 @@ X-Api-Secret: YOUR_API_SECRET
 Requests must come from an IP on the key's whitelist. See [Authentication](/yativo-fiat/authentication) and [IP whitelisting](/yativo-fiat/ip-allowlist).
 
 <Warning>
-  The Account ID and App Secret login ([Generate Token](/fiat-api-reference/auth/token)) is deprecated. From 15 October 2026 its tokens don't work from servers.
+  Legacy API keys (Account ID and App Secret, used with [Generate Token](/fiat-api-reference/auth/token)) are deprecated. From 15 October 2026 its tokens don't work from servers.
 </Warning>
 
 ## Idempotency

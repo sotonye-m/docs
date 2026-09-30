@@ -3,10 +3,10 @@ title: "Changelog"
 description: "Latest updates, improvements, and fixes across all Yativo platforms"
 ---
 
-<Update label="September 2026" description="Team API keys, IP whitelisting, passkeys, and crypto API updates">
+<Update label="September 2026" description="API Keys, IP whitelisting, passkeys, and crypto API updates">
   ### Yativo Fiat
-  - **Team API keys:** servers now authenticate with `X-Api-Key` and `X-Api-Secret`. See [Authentication](/yativo-fiat/authentication)
-  - **Deprecated:** Account ID + App Secret login (`POST /auth/login`). From 15 October 2026, its tokens only work inside the dashboard
+  - **API Keys:** servers now authenticate with `X-Api-Key` and `X-Api-Secret`. See [Authentication](/yativo-fiat/authentication)
+  - **Deprecated:** legacy API keys (Account ID + App Secret, `POST /auth/login`). From 15 October 2026, its tokens only work inside the dashboard
   - **IP whitelisting:** every API key lists the server IPs allowed to use it, enforced from midnight on 14 October 2026. See [IP whitelisting](/yativo-fiat/ip-allowlist)
   - New `GET /ip-whitelist/check` to confirm each server is allowed
   - **Passkeys:** everyone on a team can sign in to the dashboard with a passkey. See [Passkeys](/yativo-fiat/passkeys)

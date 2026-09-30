@@ -1,17 +1,17 @@
 ---
 title: "Authentication"
-description: "Authenticate server-to-server requests with a team API key"
+description: "Authenticate server-to-server requests with an API key"
 ---
 
 <Warning>
-  **Account ID and App Secret login is deprecated.** From **15 October 2026**, tokens from `POST /auth/login` only work inside the Yativo dashboard, and requests from your servers must use a team API key. See [Migrate from Account ID and App Secret](#migrate-from-account-id-and-app-secret).
+  **Legacy API keys (Account ID and App Secret) are deprecated.** From **15 October 2026**, tokens from `POST /auth/login` only work inside the Yativo dashboard, and requests from your servers must use an API key. See [Migrate from legacy API keys](#migrate-from-legacy-api-keys).
 </Warning>
 
-Your servers authenticate with a **team API key**: a key and secret pair sent as headers on every request. There's no login call, no token to refresh, and keys don't expire.
+Your servers authenticate with a **API key**: a key and secret pair sent as headers on every request. There's no login call, no token to refresh, and keys don't expire.
 
 | You are building | Use |
 |---|---|
-| A backend, job or script that calls Yativo | Team API key (`X-Api-Key` + `X-Api-Secret`) |
+| A backend, job or script that calls Yativo | API key (`X-Api-Key` + `X-Api-Secret`) |
 | People signing in to the dashboard | Email code or [passkey](/yativo-fiat/passkeys) at [app.yativo.com](https://app.yativo.com) |
 
 ---
@@ -36,7 +36,7 @@ API access is available once your business KYC is approved.
     Sign in to [app.yativo.com](https://app.yativo.com) and go to **Developers → API Keys**.
   </Step>
   <Step title="Generate a key">
-    Under **Team API keys**, click **Generate key**. Enter a **Label** (for example "Production backend") and the **Allowed IPs** of the servers that will use the key. See [IP whitelisting](/yativo-fiat/ip-allowlist).
+    Click **Generate key**. Enter a **Label** (for example "Production backend") and the **Allowed IPs** of the servers that will use the key. See [IP whitelisting](/yativo-fiat/ip-allowlist).
   </Step>
   <Step title="Save the secret">
     Copy the **API secret** and store it in a secrets manager. It's shown only once and can't be recovered.
@@ -116,11 +116,11 @@ curl 'https://api.yativo.com/api/v1/ip-whitelist/check' \
 
 ---
 
-## Migrate from Account ID and App Secret
+## Migrate from legacy API keys
 
 Request and response bodies don't change. Only the authentication headers do.
 
-| | Account ID + App Secret (deprecated) | Team API key |
+| | Legacy API keys (deprecated) | API keys |
 |---|---|---|
 | Authenticate | `POST /auth/login`, then `Authorization: Bearer <token>` | `X-Api-Key` + `X-Api-Secret` on every request |
 | Token refresh | Required | Not needed |
@@ -134,7 +134,7 @@ Request and response bodies don't change. Only the authentication headers do.
     Run `curl https://checkip.amazonaws.com` on every server that calls Yativo.
   </Step>
   <Step title="Create a key per system">
-    Create one team API key per system with its allowed IPs, so you can revoke one without affecting the others.
+    Create one API key per system with its allowed IPs, so you can revoke one without affecting the others.
   </Step>
   <Step title="Update your client">
     Remove the `/auth/login` call, token caching and refresh, and the `Authorization` header. Add `X-Api-Key` and `X-Api-Secret` to every request.
@@ -143,7 +143,7 @@ Request and response bodies don't change. Only the authentication headers do.
     Test in sandbox, run `GET /ip-whitelist/check` from each production server, then deploy before 14 October 2026. IP whitelists are enforced from midnight that day.
   </Step>
   <Step title="Remove the old secret">
-    Delete the Account ID and App Secret from your configuration.
+    Delete the legacy Account ID and App Secret from your configuration.
   </Step>
 </Steps>
 

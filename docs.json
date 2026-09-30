@@ -69,8 +69,8 @@
             "pages": [
               "yativo-fiat/introduction",
               "yativo-fiat/quickstart",
-              "yativo-fiat/authentication",
               "yativo-fiat/api-keys",
+              "yativo-fiat/authentication",
               "yativo-fiat/passkeys"
             ]
           },

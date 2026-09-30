@@ -42,12 +42,12 @@ components:
       type: apiKey
       in: header
       name: X-Api-Key
-      description: Your team API key (`yativo_pk_...`) from Developers → API Keys. Send together with X-Api-Secret.
+      description: Your API key (`yativo_pk_...`) from Developers → API Keys. Send together with X-Api-Secret.
     apiSecret:
       type: apiKey
       in: header
       name: X-Api-Secret
-      description: Your team API secret (`yativo_sk_...`), shown once when the key is created.
+      description: Your API secret (`yativo_sk_...`), shown once when the key is created.
     bearerAuth:
       type: http
       scheme: bearer
@@ -479,7 +479,7 @@ paths:
       summary: Generate Bearer Token (deprecated)
       deprecated: true
       description: |
-        **Deprecated.** Use a team API key (`X-Api-Key` + `X-Api-Secret`) instead.
+        **Deprecated.** Use an API key (`X-Api-Key` + `X-Api-Secret`) instead.
         From 15 October 2026, tokens from this endpoint only work inside the Yativo dashboard.
       security: []
       requestBody:
@@ -517,7 +517,7 @@ paths:
       tags: [Authentication]
       summary: Refresh Token (deprecated)
       deprecated: true
-      description: "**Deprecated.** Not needed with team API keys, which don't expire."
+      description: "**Deprecated.** Not needed with API keys, which don't expire."
       security:
         - bearerAuth: []
       responses:
@@ -4539,7 +4539,7 @@ paths:
 
 tags:
   - name: Authentication
-    description: Deprecated Account ID and App Secret login. Use team API keys instead.
+    description: Deprecated login with legacy API keys (Account ID and App Secret). Use API keys instead.
   - name: Customers
     description: Create and manage customer profiles.
   - name: KYC / KYB
