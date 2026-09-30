@@ -93,7 +93,6 @@ For private integration testing with dedicated credentials:
 | Wallets | Testnet only — no real value | Mainnet, real funds |
 | Blockchains | Testnets (Solana Devnet, Sepolia, etc.) | Mainnets |
 | Swap rates | Simulated | Live market rates |
-| IBAN | Testnet IBAN (no real banking) | Live EUR IBAN |
 | Card program | Test-mode card provider with simulated transactions | Live card issuer |
 | Payment Gateway | Simulated payments via sandbox endpoint | Live on-chain payments |
 | Agentic Wallets | Testnet wallets with simulated transactions | Real wallets, real funds |
@@ -120,7 +119,6 @@ For private integration testing with dedicated credentials:
 ## Sandbox Limitations
 
 - **Yativo Card KYC**: Uses a test-mode KYC and card provider. Transactions are simulated.
-- **IBAN bank transfers**: Cannot receive transfers from real banks — testnet only.
 - **Swap rates**: Simulated, not live market prices.
 - **Email OTPs**: Delivered to real email addresses, same as production.
 - **Payment Gateway**: Use the sandbox simulation endpoint to trigger payment confirmation.

@@ -3,7 +3,7 @@ title: "Unified Transactions"
 description: "A single view of all transaction types with PDF/CSV export support"
 ---
 
-The Unified Transaction system aggregates all transaction types — deposits, withdrawals, swaps, card transactions, IBAN transfers, gateway payments, auto-forwarding, and agentic wallet transactions — into a single queryable ledger. You can also export transaction history as PDF or CSV files.
+The Unified Transaction system aggregates all transaction types — deposits, withdrawals, swaps, card transactions, gateway payments, auto-forwarding, and agentic wallet transactions — into a single queryable ledger. You can also export transaction history as PDF or CSV files.
 
 ---
 
@@ -12,7 +12,7 @@ The Unified Transaction system aggregates all transaction types — deposits, wi
 Instead of querying separate endpoints for each transaction type, the unified system gives you:
 
 - **One endpoint** to list all transactions regardless of type
-- **Consistent schema** across deposits, withdrawals, swaps, card spends, IBAN transfers, and more
+- **Consistent schema** across deposits, withdrawals, swaps, card spends, and more
 - **Export** to PDF (branded) or CSV for accounting and compliance
 - **Fee tracking** with per-transaction fee breakdowns
 - **Analytics** with aggregated volume, fee totals, and type distribution
@@ -76,7 +76,6 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/unified-transactions/list?page
 | `fee` | Platform fee deduction |
 | `auto_forwarding` | Automatically forwarded deposit |
 | `card_transaction` | Yativo Card spend at a merchant |
-| `iban_transfer` | IBAN bank transfer (EUR) |
 | `gateway_payment` | Crypto payment gateway receipt |
 | `agentic_transaction` | AI agent wallet transaction |
 

@@ -130,7 +130,6 @@ Common 422 error codes:
 | `quote_expired` | A swap quote has passed its `expires_at` timestamp |
 | `gas_station_empty` | The gas station for this chain has no native tokens |
 | `card_not_active` | The target card is not in an active state |
-| `iban_not_activated` | The IBAN account has not completed activation |
 
 **How to handle:** Read the `error_code` and `details` to determine the specific issue. These errors require business logic changes (top up wallet, get a fresh quote, etc.) — not just a retry.
 

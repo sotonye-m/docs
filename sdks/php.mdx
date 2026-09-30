@@ -81,7 +81,6 @@ new \Yativo\YativoSDK([
     'api_secret'              => 'your_api_secret',    // optional
     'base_url'                => 'https://crypto-api.yativo.com/api/v1/',
     'timeout'                 => 30,                   // seconds, default 30
-    'standalone_iban_enabled' => false,                // default false
 ]);
 ```
 
@@ -463,31 +462,6 @@ $report = $sdk->analytics->getSummary([
 ]);
 echo 'Total volume: ' . $report['total_volume'] . PHP_EOL;
 echo 'Total fees: '   . $report['total_fees']   . PHP_EOL;
-```
-
----
-
-## IBAN (`$sdk->standaloneIban`)
-
-<Warning>
-  Pass `'standalone_iban_enabled' => true` in the constructor options to unlock this resource.
-</Warning>
-
-```php
-$sdk = new YativoSDK([
-    'api_key'                 => getenv('YATIVO_API_KEY'),
-    'api_secret'              => getenv('YATIVO_API_SECRET'),
-    'standalone_iban_enabled' => true,
-]);
-
-$iban = $sdk->standaloneIban->create([
-    'customer_id' => 'cust_111',
-    'currency'    => 'EUR',
-    'label'       => 'EU Collections',
-]);
-echo "IBAN: {$iban['iban']}, BIC: {$iban['bic']}" . PHP_EOL;
-
-$ibans = $sdk->standaloneIban->list(['customer_id' => 'cust_111']);
 ```
 
 ---

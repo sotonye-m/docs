@@ -359,12 +359,6 @@
             ]
           },
           {
-            "group": "IBAN",
-            "pages": [
-              "yativo-crypto/iban"
-            ]
-          },
-          {
             "group": "Automation",
             "pages": [
               "yativo-crypto/auto-forwarding",
@@ -396,7 +390,6 @@
             "group": "Tutorials",
             "pages": [
               "guides/overview",
-              "guides/neobanking",
               "guides/accept-crypto-payments",
               "guides/payment-gateway",
               "guides/agentic-wallets",
@@ -404,7 +397,6 @@
               "guides/issue-crypto-cards",
               "guides/b2b-card-issuer",
               "guides/card-issuer-webhooks",
-              "guides/iban-onboarding",
               "guides/swap-tokens",
               "guides/webhook-integration",
               "guides/sdk-quickstart"
@@ -439,7 +431,6 @@
               "sandbox/transactions",
               "sandbox/swap",
               "sandbox/cards",
-              "sandbox/iban",
               "sandbox/payment-gateway",
               "sandbox/agentic-wallets"
             ]
@@ -639,16 +630,6 @@
               "api-reference/subscriptions/plans",
               "api-reference/subscriptions/current",
               "api-reference/subscriptions/subscribe"
-            ]
-          },
-          {
-            "group": "IBAN",
-            "pages": [
-              "api-reference/iban/initialize",
-              "api-reference/iban/kyc",
-              "api-reference/iban/options",
-              "api-reference/iban/request",
-              "api-reference/iban/status"
             ]
           },
           {

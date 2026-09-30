@@ -81,7 +81,6 @@ yativo.crypto.webhook.secret=${YATIVO_WEBHOOK_SECRET}
 | `TransactionService` | Query transaction history |
 | `CardService` | Virtual card issuance and management |
 | `SwapService` | Quote and execute swaps |
-| `StandaloneIbanService` | Dedicated IBAN accounts |
 | `GasStationService` | Manage gas station sponsorships |
 | `AutoForwardingService` | Create and manage auto-forwarding rules |
 
@@ -353,34 +352,6 @@ public class SwapManagementService {
             .build();
 
         return swapService.execute(request);
-    }
-}
-```
-
----
-
-## StandaloneIbanService
-
-```java
-import com.yativo.service.StandaloneIbanService;
-import com.yativo.model.StandaloneIban;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-@Service
-public class IbanService {
-
-    @Autowired
-    private StandaloneIbanService standaloneIbanService;
-
-    public StandaloneIban createIban(String customerId, String currency, String label) {
-        return standaloneIbanService.create(
-            CreateIbanRequest.builder()
-                .customerId(customerId)
-                .currency(currency)
-                .label(label)
-                .build()
-        );
     }
 }
 ```

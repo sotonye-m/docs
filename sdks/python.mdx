@@ -80,7 +80,6 @@ YativoSDK(
     api_secret: str | None = None,
     base_url: str = "https://crypto-api.yativo.com/api/v1/",
     timeout: int = 30,                    # seconds
-    standalone_iban_enabled: bool = False,
 )
 ```
 
@@ -454,31 +453,6 @@ report = sdk.analytics.get_summary(
 )
 print("Total volume:", report["total_volume"])
 print("Total fees:",   report["total_fees"])
-```
-
----
-
-## IBAN (`sdk.standalone_iban`)
-
-<Warning>
-  You must pass `standalone_iban_enabled=True` to the constructor to use this resource.
-</Warning>
-
-```python
-sdk = YativoSDK(
-    api_key=os.environ["YATIVO_API_KEY"],
-    api_secret=os.environ["YATIVO_API_SECRET"],
-    standalone_iban_enabled=True,
-)
-
-iban = sdk.standalone_iban.create(
-    customer_id="cust_111",
-    currency="EUR",
-    label="EU Collections",
-)
-print(f"IBAN: {iban['iban']}, BIC: {iban['bic']}")
-
-ibans = sdk.standalone_iban.list(customer_id="cust_111")
 ```
 
 ---
