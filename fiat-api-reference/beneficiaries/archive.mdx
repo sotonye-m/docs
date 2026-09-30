@@ -22,7 +22,8 @@ PUT /v1/beneficiaries/{id}/archive
 <RequestExample>
 ```bash cURL
 curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d/archive' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

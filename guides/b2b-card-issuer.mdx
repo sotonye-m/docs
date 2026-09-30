@@ -408,7 +408,7 @@ Poll every 10 seconds for up to 10 minutes. When `next_step` is `retry_kyc`, fet
   ```bash
   POST /v1/yativo-card/customers/{yativoCardId}/safe/deploy
   ```
-  Even when the platform auto-deploys the Safe in the background, card creation checks the **local DB state**, not the card network directly. Calling this endpoint syncs the deployment status to the DB. You will typically receive `"already_deployed": true` (meaning the card network already has it — this call just ensures the DB record is updated). Skipping it causes `SAFE_NOT_DEPLOYED` at card creation.
+  Even when the platform deploys the card account in the background, card creation requires this confirmation step. You will typically receive `"already_deployed": true`, which is expected. Skipping it causes `SAFE_NOT_DEPLOYED` at card creation.
 
   Both calls are idempotent. Call them in order after KYC approval, then proceed to Source of Funds.
 </Warning>
@@ -779,11 +779,11 @@ Supported query parameters (pass exactly one):
 | Param | Description |
 |---|---|
 | `yativo_card_id` | Yativo's internal card customer ID |
-| `customer_id` | MongoDB customer ObjectId (or `yativo_card_id` as fallback) |
+| `customer_id` | The Yativo customer ID (or `yativo_card_id` as fallback) |
 | `card_id` | Card ID from card creation |
 | `external_id` | Your reference ID set at onboarding |
 | `email` | Customer email address |
-| `id` | MongoDB `_id` of the customer record |
+| `id` | The Yativo customer ID |
 
 ```json Response
 {
@@ -925,7 +925,7 @@ Content-Type: application/json
     "requested_limit": 2500,
     "admin_limit": null,
     "delay_seconds": 180,
-    "note": "Limit changes are processed through a delay relay. Refresh after 3 minutes to see the updated limit.",
+    "note": "Limit changes take about 3 minutes to apply. Refresh after 3 minutes to see the updated limit.",
     "gelato_status": "ExecSuccess",
     "enqueue_task_id": "0xb3f4901cd12347834fe93cc55b6608e1ff81gddd63g9d5771e5b5f161d6f194fe"
   }

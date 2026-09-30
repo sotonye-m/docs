@@ -22,7 +22,8 @@ GET /payment-methods/payin/countries
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/countries' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -56,7 +57,8 @@ GET /payment-methods/payin/currency?country={countryCode}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/currency?country=BR' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -81,7 +83,8 @@ POST /business/virtual-account/create
 <RequestExample>
 ```bash Brazil (PIX / BRL)
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -92,7 +95,8 @@ curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
 
 ```bash Mexico (SPEI / MXN)
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -103,7 +107,8 @@ curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
 
 ```bash USD (ACH / Wire)
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -168,7 +173,8 @@ GET /business/virtual-account
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account?currency=BRL&per_page=20' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -213,7 +219,8 @@ POST /business/virtual-account/history/{account_number}
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/history/9900123456?start_date=2026-04-01&end_date=2026-04-30' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -249,7 +256,8 @@ Call `POST /exchange-rate` with `method_type: "payin"` and the gateway's `method
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{
     "from_currency": "BRL",
@@ -266,7 +274,8 @@ Pass the `quote_id` to lock the rate, plus a `redirect_url` for after the custom
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: deposit-001' \
   -d '{
@@ -296,7 +305,8 @@ GET /crypto/get-wallets
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/crypto/get-wallets' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

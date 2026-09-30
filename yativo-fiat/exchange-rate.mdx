@@ -72,7 +72,8 @@ POST /exchange-rate
 <RequestExample>
 ```bash Payout quote (USD → CLP)
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{
     "from_currency": "USD",
@@ -85,7 +86,8 @@ curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
 
 ```bash Payin quote (CLP → USD)
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{
     "from_currency": "CLP",

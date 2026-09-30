@@ -734,7 +734,7 @@ paths:
                   description: Estimated transaction value in USD
                 asset_id:
                   type: string
-                  description: Asset ObjectId for context-aware estimation
+                  description: Asset ID for context-aware estimation
                 token_symbol:
                   type: string
                   example: USDC
@@ -793,10 +793,10 @@ paths:
               properties:
                 account:
                   type: string
-                  description: MongoDB ObjectId of the account owning the source asset
+                  description: ID of the account owning the source asset
                 assets:
                   type: string
-                  description: MongoDB ObjectId of the asset (wallet) to send from
+                  description: ID of the asset (wallet) to send from
                 receiving_address:
                   type: string
                   description: Recipient blockchain address

@@ -1,15 +1,18 @@
 ---
 title: "Authentication"
-description: "Sign up at app.yativo.com and authenticate with your API credentials"
+description: "Authenticate server-to-server requests with a team API key"
 ---
 
-## Get Started
+<Warning>
+  **Account ID and App Secret login is deprecated.** From **15 October 2026**, tokens from `POST /auth/login` only work inside the Yativo dashboard, and requests from your servers must use a team API key. See [Migrate from Account ID and App Secret](#migrate-from-account-id-and-app-secret).
+</Warning>
 
-Create your Yativo account at [app.yativo.com](https://app.yativo.com). The dashboard uses **passwordless authentication** — enter your email, receive a 5-digit OTP, and you're in. Google OAuth is also supported.
+Your servers authenticate with a **team API key**: a key and secret pair sent as headers on every request. There's no login call, no token to refresh, and keys don't expire.
 
-After signing up, complete the **Business KYC** onboarding to unlock API access. This includes submitting your company details, uploading documents, and verifying UBOs (Ultimate Beneficial Owners).
-
-Once approved, retrieve your **Account ID** and generate your **App Secret** from the **Developer** section of the dashboard (Developer → API Key).
+| You are building | Use |
+|---|---|
+| A backend, job or script that calls Yativo | Team API key (`X-Api-Key` + `X-Api-Secret`) |
+| People signing in to the dashboard | Email code or [passkey](/yativo-fiat/passkeys) at [app.yativo.com](https://app.yativo.com) |
 
 ---
 
@@ -20,141 +23,129 @@ Once approved, retrieve your **Account ID** and generate your **App Secret** fro
 | Production | `https://api.yativo.com/api/v1` |
 | Sandbox | `https://smtp.yativo.com/api/v1` |
 
-Use the sandbox environment for development and testing. No real funds are moved in sandbox.
+Sandbox and production have separate keys. No real funds move in sandbox.
 
 ---
 
-## Generate a Bearer Token
+## Create an API key
 
-All API requests require a Bearer token. For **server-to-server / programmatic API access**, authenticate with your Account ID and App Secret:
+API access is available once your business KYC is approved.
 
-```
-POST /auth/login
-```
+<Steps>
+  <Step title="Open API Keys">
+    Sign in to [app.yativo.com](https://app.yativo.com) and go to **Developers → API Keys**.
+  </Step>
+  <Step title="Generate a key">
+    Under **Team API keys**, click **Generate key**. Enter a **Label** (for example "Production backend") and the **Allowed IPs** of the servers that will use the key. See [IP whitelisting](/yativo-fiat/ip-allowlist).
+  </Step>
+  <Step title="Save the secret">
+    Copy the **API secret** and store it in a secrets manager. It's shown only once and can't be recovered.
+  </Step>
+</Steps>
 
-<ParamField body="account_id" type="string" required>
-  Your Account ID from the Yativo dashboard (Settings → Account).
-</ParamField>
+| Value | Header | Format |
+|---|---|---|
+| API key | `X-Api-Key` | `yativo_pk_...` |
+| API secret | `X-Api-Secret` | `yativo_sk_...` |
 
-<ParamField body="app_secret" type="string" required>
-  Your App Secret generated from Developer → API Key. Treat this like a password.
-</ParamField>
+---
 
-<RequestExample>
+## Authenticate requests
+
+Send both headers on every request. Don't send an `Authorization` header with them.
+
+<CodeGroup>
 ```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/auth/login' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "account_id": "your_account_id",
-    "app_secret": "your_app_secret"
-  }'
+curl 'https://api.yativo.com/api/v1/wallet/balance' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Accept: application/json'
 ```
 
 ```javascript Node.js
-const response = await fetch('https://api.yativo.com/api/v1/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    account_id: process.env.YATIVO_ACCOUNT_ID,
-    app_secret: process.env.YATIVO_APP_SECRET,
-  }),
-});
-const { data } = await response.json();
-const token = data.access_token;
-```
-</RequestExample>
+const yativo = (path, options = {}) =>
+  fetch(`https://api.yativo.com/api/v1${path}`, {
+    ...options,
+    headers: {
+      'X-Api-Key': process.env.YATIVO_API_KEY,
+      'X-Api-Secret': process.env.YATIVO_API_SECRET,
+      Accept: 'application/json',
+      ...options.headers,
+    },
+  });
 
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "status_code": 200,
-  "message": "Request successful",
-  "data": {
-    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
-    "token_type": "bearer",
-    "expires_in": 600
-  }
-}
-```
-</ResponseExample>
-
-<Note>
-  Tokens expire in **600 seconds** (10 minutes). Refresh before expiry to maintain uninterrupted API access.
-</Note>
-
----
-
-## Get Your API Keys
-
-1. Log in to [app.yativo.com](https://app.yativo.com)
-2. Go to **Developer → API Key**
-3. Click **Generate Secret**
-4. Enter your 4-digit **transaction PIN** when prompted
-5. Copy and securely store your **App Secret** — it is shown only once
-
-Your **Account ID** is displayed in the same section. It looks like:
-
-```
-Account ID:  acct_01HXAB3F7VNQP8R2WDGT4E5
-App Secret:  yat_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789
+const res = await yativo('/wallet/balance');
+const { data } = await res.json();
 ```
 
-<Warning>
-  The App Secret is displayed only once. If you lose it, generate a new one — this invalidates the previous secret.
-</Warning>
+```python Python
+import os, requests
 
-You can also programmatically generate a new secret after verifying your PIN:
+session = requests.Session()
+session.headers.update({
+    "X-Api-Key": os.environ["YATIVO_API_KEY"],
+    "X-Api-Secret": os.environ["YATIVO_API_SECRET"],
+    "Accept": "application/json",
+})
 
+data = session.get("https://api.yativo.com/api/v1/wallet/balance").json()["data"]
 ```
-GET /generate-secret
+
+```php PHP
+$response = Http::baseUrl('https://api.yativo.com/api/v1')
+    ->withHeaders([
+        'X-Api-Key'    => env('YATIVO_API_KEY'),
+        'X-Api-Secret' => env('YATIVO_API_SECRET'),
+    ])
+    ->acceptJson()
+    ->get('/wallet/balance');
 ```
+</CodeGroup>
 
----
+Requests made with a key act on your business account. Keys can't change how anyone signs in (passkeys, two-factor authentication, PIN) or manage API keys and IP whitelists. Do those in the dashboard.
 
-## Using the Bearer Token
+### Check your setup
 
-Include the token in the `Authorization` header for all subsequent requests:
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...
-```
+Call [`GET /ip-whitelist/check`](/fiat-api-reference/ip/check) from each server that uses the key. It confirms the key works and whether that server's IP is allowed.
 
 ```bash
-curl -X GET 'https://api.yativo.com/api/v1/wallet/balance' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+curl 'https://api.yativo.com/api/v1/ip-whitelist/check' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ---
 
-## Refresh Token
+## Migrate from Account ID and App Secret
 
-Refresh an expiring token without re-authenticating with your credentials:
+Request and response bodies don't change. Only the authentication headers do.
 
-```
-GET /auth/refresh-token
-```
+| | Account ID + App Secret (deprecated) | Team API key |
+|---|---|---|
+| Authenticate | `POST /auth/login`, then `Authorization: Bearer <token>` | `X-Api-Key` + `X-Api-Secret` on every request |
+| Token refresh | Required | Not needed |
+| Expiry | Tokens expire | Never. Works until revoked |
+| Revoke access | Generate a new App Secret | Revoke one key |
+| Allowed IPs | Any | Only the IPs on the key |
+| Works from servers after 15 Oct 2026 | No | Yes |
 
-<RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/auth/refresh-token' \
-  -H 'Authorization: Bearer YOUR_CURRENT_ACCESS_TOKEN'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "status_code": 200,
-  "message": "Request successful",
-  "data": {
-    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
-    "expires_in": 600
-  }
-}
-```
-</ResponseExample>
+<Steps>
+  <Step title="Find your server IPs">
+    Run `curl https://checkip.amazonaws.com` on every server that calls Yativo.
+  </Step>
+  <Step title="Create a key per system">
+    Create one team API key per system with its allowed IPs, so you can revoke one without affecting the others.
+  </Step>
+  <Step title="Update your client">
+    Remove the `/auth/login` call, token caching and refresh, and the `Authorization` header. Add `X-Api-Key` and `X-Api-Secret` to every request.
+  </Step>
+  <Step title="Test and go live">
+    Test in sandbox, run `GET /ip-whitelist/check` from each production server, then deploy before 15 October 2026.
+  </Step>
+  <Step title="Remove the old secret">
+    Delete the Account ID and App Secret from your configuration.
+  </Step>
+</Steps>
 
 ---
 
@@ -170,7 +161,8 @@ Use a UUID or any unique identifier you generate per request. On retry, Yativo r
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
-  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000' \
   -H 'Content-Type: application/json' \
   -d '{ ... }'
@@ -178,22 +170,22 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
 
 ---
 
-## Two-Factor Authentication (2FA)
+## Errors
 
-2FA is optional but strongly recommended for your dashboard account. Enable it under **Developer → Security → 2FA**.
-
-To set up 2FA programmatically:
-
-1. **Generate a 2FA secret** — `POST /generate-2fa-secret` → returns a secret to add to your authenticator app
-2. **Enable 2FA** — `POST /enable-2fa` → activates 2FA on your account
-3. **Verify a 2FA code** — `POST /verify-2fa` with `{ "otp": "6-digit" }` → returns your app secret after 2FA confirmation
+| HTTP | `data.error` | Fix |
+|---|---|---|
+| 401 | `Both X-Api-Key and X-Api-Secret headers are required.` | Send both headers. |
+| 401 | `Invalid or revoked API credentials.` | Check the key and secret belong to the same key and environment, or create a new key. |
+| 403 | `This IP address is not allowed to use this API key.` | Add your server's IP to the key. See [IP whitelisting](/yativo-fiat/ip-allowlist). |
+| 403 | `Bearer tokens are only accepted from the Yativo dashboard. ...` | Use an API key instead of a login token. |
+| 403 | `This endpoint cannot be used with an API key. ...` | Make the change in the dashboard. |
 
 ---
 
-## Security Best Practices
+## Security best practices
 
-- Store `account_id` and `app_secret` in environment variables or a secrets manager — never hardcode them or commit to source control.
-- Rotate your `app_secret` immediately if you suspect it has been compromised.
-- Use the sandbox environment (`https://smtp.yativo.com/api/v1`) for all development and testing.
-- Enable 2FA on your dashboard account.
-- Use short-lived tokens and refresh them proactively before expiry (before 600 seconds).
+- Store the key and secret in a secrets manager or environment variables. Never commit them or log them.
+- Only call the API from your backend. Never put a key in a browser or mobile app.
+- Use a separate key for each system and environment.
+- Revoke a key straight away if you think it has leaked, then create a new one.
+- Turn on two-factor authentication and [passkeys](/yativo-fiat/passkeys) for everyone who signs in to the dashboard.

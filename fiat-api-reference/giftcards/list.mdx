@@ -20,7 +20,8 @@ GET https://api.yativo.com/api/v1/giftcards
 <RequestExample>
 ```bash US gift cards
 curl -X GET 'https://api.yativo.com/api/v1/giftcards?country=US' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

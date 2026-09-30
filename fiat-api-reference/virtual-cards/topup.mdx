@@ -30,7 +30,8 @@ POST https://api.yativo.com/api/v1/customer/virtual/cards/topup
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/topup' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: topup-card-001' \
   -d '{

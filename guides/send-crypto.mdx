@@ -347,13 +347,13 @@ case "transaction.failed": {
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `Assets required` | `assets` body field missing | Include the asset ObjectId in the request body |
+| `Assets required` | `assets` body field missing | Include the asset ID in the request body |
 | `Receiving address required` | `receiving_address` missing | Include the destination address |
 | `Valid amount required` | `amount` missing, zero, or negative | Provide a positive numeric amount |
 | `Insufficient balance` | Asset balance too low | Check balance before sending |
 | `Withdrawal amount must be greater than total fees` | Amount too small to cover platform fee + gas markup | Increase amount or check fee estimates first |
 | `Self funding is only available for native token transactions` | `use_self_funding: true` on a token asset | Remove `use_self_funding` for token withdrawals |
-| `Transaction blocked due to high-risk receiving address` | Chainalysis/Circle screening blocked the address | Do not send to flagged addresses |
+| `Transaction blocked due to high-risk receiving address` | Compliance screening flagged the receiving address | Do not send to flagged addresses |
 | `DUPLICATE_REQUEST_IN_PROGRESS` | Same `Idempotency-Key` submitted while first request is still processing | Wait for the first request to complete before retrying |
 
 ## Next Steps

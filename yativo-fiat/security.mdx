@@ -5,20 +5,21 @@ description: "Best practices for securing your Yativo API integration"
 
 ## Authentication
 
-All API requests must be authenticated. Yativo supports two authentication methods:
+All API requests must be authenticated:
 
-- **Bearer tokens** — obtained via the magic-link flow or the [API keys](/yativo-fiat/api-keys) endpoint. Include in every request as `Authorization: Bearer <token>`.
-- **Two-factor authentication (2FA)** — optional TOTP-based 2FA for your account login. Enable it via the [Authentication](/yativo-fiat/authentication) endpoints.
+- **Servers** use a [team API key](/yativo-fiat/api-keys): `X-Api-Key` and `X-Api-Secret` on every request, from a [whitelisted IP](/yativo-fiat/ip-allowlist).
+- **People** sign in to the dashboard with an email code or a [passkey](/yativo-fiat/passkeys). Dashboard sign-in only works in the dashboard.
 
-Tokens expire after a set period. Use `GET /auth/refresh-token` to get a new one without re-authenticating.
+Turn on two-factor authentication and passkeys for everyone on your team.
 
 ---
 
 ## API key hygiene
 
-- **One key per environment** — use separate App Secrets for development, staging, and production so you can rotate or revoke one without affecting the others.
+- **One key per system and environment** — use separate API keys so you can rotate or revoke one without affecting the others.
 - **Never expose keys client-side** — API credentials belong on your server. Do not embed them in mobile apps, browser JavaScript, or public repositories.
-- **Rotate after suspected exposure** — revoke your App Secret in the dashboard and generate a new one immediately if you believe it has been compromised.
+- **Revoke after suspected exposure** — revoke the key in **Developers → API Keys** straight away, then create a new one.
+- **Whitelist the fewest IPs you can** — single addresses rather than ranges. See [IP whitelisting](/yativo-fiat/ip-allowlist).
 - **Store in secrets managers** — use environment variables or a dedicated secrets manager (AWS Secrets Manager, HashiCorp Vault, etc.), not plaintext config files.
 
 ---
@@ -53,9 +54,9 @@ The Yativo API only accepts HTTPS connections. Webhook delivery also targets HTT
 
 ---
 
-## IP allowlisting
+## IP whitelisting
 
-For production environments, restrict outbound API calls to Yativo's IP ranges and consider allowlisting inbound webhook IPs on your firewall. Contact support for the current list of Yativo webhook egress IPs.
+Every API key is limited to the server IPs you list on it. See [IP whitelisting](/yativo-fiat/ip-allowlist). To restrict inbound webhooks on your own firewall, contact support for the current list of Yativo webhook IPs.
 
 ---
 
@@ -65,7 +66,8 @@ For mutating requests (payouts, deposits, transfers), use the `Idempotency-Key` 
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Idempotency-Key: your-unique-request-id-abc123' \
   -H 'Content-Type: application/json' \
   -d '{ ... }'
@@ -102,8 +104,8 @@ Security-related errors you may encounter:
 
 | HTTP status | Meaning |
 |-------------|---------|
-| `401 Unauthorized` | Missing or invalid Bearer token / API key |
-| `403 Forbidden` | Valid credentials but insufficient permissions |
+| `401 Unauthorized` | Missing or invalid API key or secret |
+| `403 Forbidden` | Valid credentials, but the request isn't allowed (for example, from an IP that isn't whitelisted) |
 | `429 Too Many Requests` | Rate limit exceeded |
 
 All error responses include a machine-readable `code` field:

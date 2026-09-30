@@ -22,7 +22,8 @@ GET https://api.yativo.com/api/v1/business/transaction/{transactionId}/{type}/re
 <RequestExample>
 ```bash cURL — PDF receipt
 curl -X GET 'https://api.yativo.com/api/v1/business/transaction/a0e9e50e-81be-4bd0-9941-0151e68b9e97/pdf/receipt' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```javascript Node.js
@@ -31,7 +32,7 @@ const type = 'pdf';
 
 const response = await fetch(
   `https://api.yativo.com/api/v1/business/transaction/${transactionId}/${type}/receipt`,
-  { headers: { 'Authorization': `Bearer ${token}` } }
+  { headers: { 'X-Api-Key': process.env.YATIVO_API_KEY, 'X-Api-Secret': process.env.YATIVO_API_SECRET } }
 );
 
 const data = await response.json();

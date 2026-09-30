@@ -18,7 +18,8 @@ GET /currencies/all
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/currencies/all' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -88,7 +89,8 @@ POST /exchange-rate
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{
     "from_currency": "USD",
@@ -139,7 +141,8 @@ GET /auth/verification-locations
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/auth/verification-locations' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

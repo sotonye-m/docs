@@ -34,7 +34,8 @@ POST /customer/virtual/cards/create
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -84,7 +85,8 @@ GET /customer/virtual/cards/list
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/list?page=1&per_page=20' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -105,7 +107,8 @@ GET /customer/virtual/cards/get/{cardId}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/get/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -134,7 +137,8 @@ POST /customer/virtual/cards/topup
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/topup' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -166,7 +170,8 @@ PUT /customer/virtual/cards/update/{cardId}
 <RequestExample>
 ```bash Freeze
 curl -X PUT 'https://api.yativo.com/api/v1/customer/virtual/cards/update/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{ "action": "freeze" }'
@@ -174,7 +179,8 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/virtual/cards/update/card_01
 
 ```bash Unfreeze
 curl -X PUT 'https://api.yativo.com/api/v1/customer/virtual/cards/update/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{ "action": "unfreeze" }'
@@ -198,7 +204,8 @@ GET /customer/virtual/cards/transactions/{cardId}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/customer/virtual/cards/transactions/card_01HX9KZMB3F7VNQP8R2WDGT4E5' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -223,7 +230,8 @@ POST /customer/virtual/cards/withdraw
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/withdraw' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -250,7 +258,8 @@ POST /customer/virtual/cards/terminate
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer/virtual/cards/terminate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{

@@ -36,16 +36,16 @@ Yativo Fiat is a cross-border payment infrastructure platform for businesses. Se
 
 <Steps>
   <Step title="Create your account">
-    Sign up at [app.yativo.com](https://app.yativo.com). Authentication is passwordless — enter your email, receive a 5-digit OTP, and you're in.
+    Sign up at [app.yativo.com](https://app.yativo.com). Sign-in is passwordless — use a 5-digit email code or a passkey.
   </Step>
   <Step title="Complete Business KYC">
     Submit your company details, upload required documents, and verify your UBOs (Ultimate Beneficial Owners). This unlocks full API access.
   </Step>
-  <Step title="Get your API credentials">
-    Go to **Developer → API Key** in your dashboard. Generate your App Secret (PIN verification required). Note your Account ID.
+  <Step title="Create an API key">
+    Go to **Developers → API Keys** in your dashboard and generate a team API key with the IPs of your servers.
   </Step>
-  <Step title="Generate a Bearer token">
-    Call `POST /auth/login` with your Account ID and App Secret to get a Bearer token (valid 10 minutes). Use this token in all API requests.
+  <Step title="Authenticate your requests">
+    Send `X-Api-Key` and `X-Api-Secret` on every request. No login call or token refresh needed.
   </Step>
   <Step title="Start building">
     Create customers, issue virtual accounts, send money, and receive payments — all via the API.

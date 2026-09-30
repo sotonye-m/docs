@@ -19,19 +19,16 @@ All other endpoints remain the same — just swap the base URL.
 
 ## Getting Started
 
-You use the **same Yativo account** for both sandbox and production. Switch between environments by changing the base URL in your requests.
+You use the **same Yativo account** for both sandbox and production. Switch between environments by changing the base URL and the API key in your requests.
 
 1. **Sign up** at [app.yativo.com](https://app.yativo.com) (if you haven't already)
-2. **Get your credentials** — Dashboard → Developer → API Key
-3. **Authenticate** using the sandbox base URL:
+2. **Create a sandbox API key** — in your sandbox dashboard, go to **Developers → API Keys**. Sandbox and production keys are separate.
+3. **Call the sandbox base URL** with your sandbox key:
 
 ```bash
-curl -X POST 'https://smtp.yativo.com/api/v1/auth/login' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "account_id": "YOUR_ACCOUNT_ID",
-    "app_secret": "YOUR_APP_SECRET"
-  }'
+curl 'https://smtp.yativo.com/api/v1/ip-whitelist/check' \
+  -H 'X-Api-Key: YOUR_SANDBOX_API_KEY' \
+  -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET'
 ```
 
 ---
@@ -56,7 +53,7 @@ curl -X POST 'https://smtp.yativo.com/api/v1/auth/login' \
     Set `https://smtp.yativo.com/api/v1` as your base URL in all requests.
   </Step>
   <Step title="Authenticate">
-    Use the same Account ID and App Secret. Call `POST /auth/login` against the sandbox URL to get a token.
+    Create a separate API key in your sandbox dashboard. Sandbox and production keys aren't interchangeable.
   </Step>
   <Step title="Create test customers">
     Use `POST /customer` to create customers. KYC auto-approves in sandbox — no documents needed.
@@ -79,19 +76,10 @@ curl -X POST 'https://smtp.yativo.com/api/v1/auth/login' \
 ```javascript Node.js
 const BASE = 'https://smtp.yativo.com/api/v1';
 
-// 1. Authenticate
-const { data: auth } = await fetch(`${BASE}/auth/login`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    account_id: process.env.YATIVO_ACCOUNT_ID,
-    app_secret: process.env.YATIVO_APP_SECRET,
-  }),
-}).then(r => r.json());
-
-const token = auth.data.access_token;
+// 1. Authenticate with your sandbox API key
 const headers = {
-  Authorization: `Bearer ${token}`,
+  'X-Api-Key': process.env.YATIVO_API_KEY,
+  'X-Api-Secret': process.env.YATIVO_API_SECRET,
   'Content-Type': 'application/json',
   'Idempotency-Key': crypto.randomUUID(),
 };

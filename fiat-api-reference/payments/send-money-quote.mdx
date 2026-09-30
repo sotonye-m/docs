@@ -30,7 +30,8 @@ POST /sendmoney/quote
 <RequestExample>
 ```bash USD → CLP
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -42,7 +43,8 @@ curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
 
 ```bash USD → MXN
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{

@@ -610,7 +610,7 @@ curl -X POST '.../view-token' \
   If card digits still appear dark after passing dark colors, the card program may not have dark-mode digit support configured at the card network level. Contact Yativo to verify your program's configuration.
 </Note>
 
-### Known limitations
+### Styling notes
 
 <Warning>
   **Copy button icon color cannot be changed.** The clipboard SVG inside `.pse-copy-button` has a hardcoded fill. Setting `color` on `.pse-copy-button` affects the button border and background only — not the icon itself.
@@ -619,26 +619,6 @@ curl -X POST '.../view-token' \
 <Warning>
   **View PIN and Change PIN are always light-mode.** These tabs are rendered entirely by the card network's secure iframe and cannot be themed via custom CSS.
 </Warning>
-
----
-
-## Testing
-
-Use the test script in the backend repo to verify the full flow against your running server:
-
-```bash
-# Basic test (picks first card on the account)
-node scripts/test-card-secure-view.js <api_key> <api_secret>
-
-# Target a specific card
-node scripts/test-card-secure-view.js <api_key> <api_secret> <yativo_card_id> <card_id>
-
-# With custom views and theme
-ENABLED_VIEWS=data,pin THEME_ACCENT_COLOR=#813AE3 \
-  node scripts/test-card-secure-view.js <api_key> <api_secret>
-```
-
-The script will print the `secure_view_url` and a ready-to-paste iframe snippet.
 
 ---
 

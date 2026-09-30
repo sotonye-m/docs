@@ -71,7 +71,8 @@ POST /v1/beneficiaries/payment-methods
 <RequestExample>
 ```bash cURL — Chile Bank Transfer
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: pm-create-001' \
   -d '{
@@ -90,7 +91,8 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
 
 ```bash cURL — Mexico SPEI
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: pm-create-001' \
   -d '{

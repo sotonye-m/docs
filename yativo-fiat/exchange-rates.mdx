@@ -86,7 +86,8 @@ POST /exchange-rate
 <RequestExample>
 ```bash Payout quote (USD → USD via PayPal, method 21)
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{
     "from_currency": "USD",
@@ -99,7 +100,8 @@ curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
 
 ```bash FX display only (no method)
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{
     "from_currency": "USD",
@@ -111,7 +113,7 @@ curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
 ```javascript Node.js
 const res = await fetch('https://api.yativo.com/api/v1/exchange-rate', {
   method: 'POST',
-  headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+  headers: { 'X-Api-Key': process.env.YATIVO_API_KEY, 'X-Api-Secret': process.env.YATIVO_API_SECRET, 'Content-Type': 'application/json' },
   body: JSON.stringify({
     from_currency: 'USD',
     to_currency: 'USD',
@@ -180,7 +182,8 @@ Use the `quote_id` in the appropriate execution endpoint:
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: payout-001' \
   -d '{
@@ -195,7 +198,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: deposit-001' \
   -d '{
@@ -219,7 +223,8 @@ POST /sendmoney/quote
 <RequestExample>
 ```bash USD → MXN
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: quote-001' \
   -d '{

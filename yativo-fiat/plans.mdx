@@ -18,7 +18,8 @@ GET https://api.yativo.com/api/v1/business/plans/current
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/plans/current' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -57,7 +58,8 @@ GET https://api.yativo.com/api/v1/business/plans/all
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/plans/all' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -126,7 +128,8 @@ POST https://api.yativo.com/api/v1/business/plans/subscribe/{plan_id}
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/business/plans/subscribe/2' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: subscribe-growth-001'
 ```
@@ -172,7 +175,8 @@ PUT https://api.yativo.com/api/v1/business/plans/upgrade/{plan_id}
 <RequestExample>
 ```bash cURL
 curl -X PUT 'https://api.yativo.com/api/v1/business/plans/upgrade/3' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: upgrade-enterprise-001'
 ```

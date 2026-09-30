@@ -22,7 +22,8 @@ DELETE /v1/beneficiaries/payment-methods/delete/{id}
 <RequestExample>
 ```bash cURL
 curl -X DELETE 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/delete/pm-a1b2c3d4-e5f6-7890-abcd-ef1234567890' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

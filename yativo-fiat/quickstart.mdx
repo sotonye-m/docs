@@ -31,46 +31,28 @@ Once your business is verified, API access is unlocked.
 
 ---
 
-## Step 3: Get Your API Credentials
+## Step 3: Create an API Key
 
-1. Go to **Developer → API Key** in your dashboard
-2. Click **Generate Secret**
-3. Enter your 4-digit **transaction PIN** when prompted
-4. Copy your **App Secret** — it is shown only once
-5. Note your **Account ID** displayed on the same page
+1. Go to **Developers → API Keys** in your dashboard
+2. Under **Team API keys**, click **Generate key**
+3. Enter a **Label** and the public IPs of the servers that will call Yativo (run `curl https://checkip.amazonaws.com` on each server to find it)
+4. Copy the **API secret** — it is shown only once
+
+See [Team API keys](/yativo-fiat/api-keys) and [IP whitelisting](/yativo-fiat/ip-allowlist) for details.
 
 ---
 
-## Step 4: Generate a Bearer Token
+## Step 4: Authenticate Your Requests
 
-Use your Account ID and App Secret to obtain a Bearer token:
-
-```
-POST /auth/login
-```
+Send your key and secret as headers on every request. There's no login call or token to refresh:
 
 ```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/auth/login' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "account_id": "YOUR_ACCOUNT_ID",
-    "app_secret": "YOUR_APP_SECRET"
-  }'
+curl 'https://api.yativo.com/api/v1/ip-whitelist/check' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
-Response:
-
-```json
-{
-  "status": "success",
-  "data": {
-    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
-    "expires_in": 600
-  }
-}
-```
-
-Tokens expire in **600 seconds** (10 minutes). Refresh using `GET /auth/refresh-token`.
+This checks your key and confirms your server's IP is allowed. Look for `"allowed_server": true` in the response.
 
 ---
 
@@ -84,7 +66,8 @@ POST /customer
 
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-001' \
   -d '{
@@ -124,7 +107,8 @@ POST https://kyc.yativo.com/api/individual-kyc/submit
 
 ```bash cURL
 curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-002' \
   -d '{
@@ -186,7 +170,8 @@ POST /business/virtual-account/create
 
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-003' \
   -d '{
@@ -218,26 +203,15 @@ Your customer can now receive PIX payments at this account number. You'll receiv
 ```javascript Node.js
 const BASE_URL = 'https://api.yativo.com/api/v1';
 
-// Step 1: Get Bearer token
-async function getToken() {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      account_id: process.env.YATIVO_ACCOUNT_ID,
-      app_secret: process.env.YATIVO_APP_SECRET,
-    }),
-  });
-  const { data } = await res.json();
-  return data.access_token;
-}
+// Your API key and secret are read from the environment on each request.
 
-// Step 2: Create a customer
-async function createCustomer(token) {
+// Step 1: Create a customer
+async function createCustomer() {
   const res = await fetch(`${BASE_URL}/customer`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
+      'X-Api-Key': process.env.YATIVO_API_KEY,
+      'X-Api-Secret': process.env.YATIVO_API_SECRET,
       'Content-Type': 'application/json',
       'Idempotency-Key': crypto.randomUUID(),
     },
@@ -253,12 +227,13 @@ async function createCustomer(token) {
   return data.customer_id;
 }
 
-// Step 3: Create a virtual account
-async function createVirtualAccount(token, customerId) {
+// Step 2: Create a virtual account
+async function createVirtualAccount(customerId) {
   const res = await fetch(`${BASE_URL}/business/virtual-account/create`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
+      'X-Api-Key': process.env.YATIVO_API_KEY,
+      'X-Api-Secret': process.env.YATIVO_API_SECRET,
       'Content-Type': 'application/json',
       'Idempotency-Key': crypto.randomUUID(),
     },
@@ -272,12 +247,11 @@ async function createVirtualAccount(token, customerId) {
 
 // Run the flow
 (async () => {
-  const token = await getToken();
-  const customerId = await createCustomer(token);
+  const customerId = await createCustomer();
   console.log('Customer ID:', customerId);
 
   // After KYC is approved:
-  const account = await createVirtualAccount(token, customerId);
+  const account = await createVirtualAccount(customerId);
   console.log('Virtual account:', account.data.account_number);
 })();
 ```

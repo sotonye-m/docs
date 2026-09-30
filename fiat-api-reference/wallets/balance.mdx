@@ -12,7 +12,8 @@ GET /wallet/balance
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/wallet/balance' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -67,7 +68,8 @@ GET /wallet/balance/total
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/wallet/balance/total' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

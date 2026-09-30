@@ -26,7 +26,7 @@ Returns an estimated network fee for a transaction before committing to it.
 </ParamField>
 
 <ParamField body="asset_id" type="string">
-  Asset ObjectId for context-aware fee estimation.
+  Asset ID for context-aware fee estimation.
 </ParamField>
 
 <ParamField body="token_symbol" type="string">
@@ -75,11 +75,11 @@ curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-gas-price \
 Initiates an outbound crypto transfer. An idempotency key is automatically generated to prevent duplicate transactions.
 
 <ParamField body="account" type="string" required>
-  The MongoDB ObjectId of the **account** that owns the source asset.
+  The ID of the **account** that owns the source asset.
 </ParamField>
 
 <ParamField body="assets" type="string" required>
-  The MongoDB ObjectId of the **asset** (wallet) to send from.
+  The ID of the **asset** (wallet) to send from.
 </ParamField>
 
 <ParamField body="receiving_address" type="string" required>
@@ -201,7 +201,7 @@ Returns up to 100 transactions for the authenticated user, sorted by most recent
 </ParamField>
 
 <ParamField body="assets_filter" type="string">
-  Filter by asset ObjectId or asset name substring.
+  Filter by asset ID or asset name substring.
 </ParamField>
 
 <ParamField body="method_filter" type="string">

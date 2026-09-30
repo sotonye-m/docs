@@ -9,11 +9,11 @@ description: "Pull funds from a customer's card account back to your master wall
 
 ## How it works
 
-A card withdrawal moves USDC from a customer's card account (their on-chain Safe) back to your issuer master wallet in a single API call:
+A card withdrawal moves USDC from a customer's card account back to your issuer master wallet in a single API call:
 
 1. You call `POST /api/card-issuer/withdraw-from-card` with a customer identifier and amount
 2. Yativo fetches EIP-712 typed data from the card network, signs it server-side using the card's EOA, and submits the transaction
-3. A delay relay holds the transaction for **~3 minutes** — the card is temporarily frozen during this window
+3. A security delay holds the transaction for **~3 minutes** — the card is temporarily frozen during this window
 4. Once the delay elapses the transfer executes on-chain and your master wallet is credited
 5. Three webhooks fire: `card.withdrawal.settled` (customer-scoped), `master_wallet.withdrawal` (issuer-scoped), and `master_wallet.deposit` (master wallet balance credited)
 
@@ -31,7 +31,7 @@ POST /api/card-issuer/withdraw-from-card
   Identifies the customer's card. Accepts any of:
   - `yativo_card_id` — e.g. `yativo_card_customer_...`
   - `external_id` — the ID you assigned during onboarding
-  - `customer_id` — the Yativo internal customer ObjectId
+  - `customer_id` — the Yativo customer ID
   - `email` — only valid when the customer has exactly one card; returns `422` if ambiguous
 </ParamField>
 
@@ -92,12 +92,12 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/withdraw-from-car
 | Stage | Time |
 |---|---|
 | API response (withdrawal accepted) | Immediate |
-| Card frozen (delay relay active) | Immediately after submission |
+| Card frozen (security delay) | Immediately after submission |
 | On-chain settlement | ~3 minutes after submission |
 | Card unfrozen | After settlement confirms |
 | Webhooks delivered | After settlement confirms |
 
-The 3-minute delay is enforced by the card network's on-chain delay relay module and cannot be shortened.
+The 3-minute delay is a security measure and cannot be shortened.
 
 ---
 
@@ -239,7 +239,7 @@ Subscribe to all five events to handle the full lifecycle:
 
 - **Card is frozen during processing.** From submission until on-chain confirmation (~3 min), the card cannot be used for purchases.
 - **Settlement is on-chain and irreversible.** Once submitted the transaction cannot be cancelled. Verify the amount and customer before calling the endpoint.
-- **Master wallet receives USDC on Gnosis Chain.** The credited token matches the customer's card denomination. For USD cards this is USDC (`0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0`).
+- **Your master wallet is credited in the card's currency.** For USD cards this is USDC.
 - **`amount_minor` is in cents** (1 USD = 100 minor units), regardless of the on-chain token decimals.
 
 ---

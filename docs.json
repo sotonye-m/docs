@@ -69,7 +69,9 @@
             "pages": [
               "yativo-fiat/introduction",
               "yativo-fiat/quickstart",
-              "yativo-fiat/authentication"
+              "yativo-fiat/authentication",
+              "yativo-fiat/api-keys",
+              "yativo-fiat/passkeys"
             ]
           },
           {
@@ -138,11 +140,15 @@
         "groups": [
           {
             "group": "Overview",
-            "pages": ["fiat-api-reference/introduction"]
+            "pages": [
+              "fiat-api-reference/introduction"
+            ]
           },
           {
             "group": "Authentication",
-            "pages": ["fiat-api-reference/auth/token"]
+            "pages": [
+              "fiat-api-reference/auth/token"
+            ]
           },
           {
             "group": "Customers",
@@ -270,12 +276,9 @@
             ]
           },
           {
-            "group": "IP Allowlist",
+            "group": "IP Whitelist",
             "pages": [
-              "fiat-api-reference/ip/list",
-              "fiat-api-reference/ip/create",
-              "fiat-api-reference/ip/update",
-              "fiat-api-reference/ip/delete"
+              "fiat-api-reference/ip/check"
             ]
           },
           {
@@ -290,7 +293,6 @@
           {
             "group": "Developer",
             "pages": [
-              "fiat-api-reference/developer/generate-secret",
               "fiat-api-reference/developer/logs",
               "fiat-api-reference/developer/events",
               "fiat-api-reference/developer/event-get"

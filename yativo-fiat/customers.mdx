@@ -61,7 +61,8 @@ POST /customer
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -119,17 +120,20 @@ GET /customer/{customer_id}
 <RequestExample>
 ```bash All relations
 curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx?include=all' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```bash Specific relations
 curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx?include=deposits,virtualaccounts' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```bash Profile only (no include)
 curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -221,7 +225,8 @@ Supports filtering by `kyc_status`, `country`, `email`, and pagination via `page
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/customer?page=1&per_page=15' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -266,7 +271,8 @@ PUT /customer/{customer_id}
 <RequestExample>
 ```bash cURL
 curl -X PUT 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: update-customer-001' \
   -d '{
@@ -302,7 +308,8 @@ DELETE /customer/{customer_id}
 <RequestExample>
 ```bash cURL
 curl -X DELETE 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -327,7 +334,8 @@ GET /customer/kyc/{customer_id}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/customer/kyc/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

@@ -44,12 +44,14 @@ GET /wallet/balance
 <RequestExample>
 ```bash All balances
 curl -X GET 'https://api.yativo.com/api/v1/wallet/balance' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```bash Single currency
 curl -X GET 'https://api.yativo.com/api/v1/wallet/balance?currency=USD' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -106,7 +108,8 @@ GET /wallet/balance/total
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/wallet/balance/total' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -140,7 +143,8 @@ POST /wallet/create
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/wallet/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{ "currency": "COP" }'
@@ -188,7 +192,8 @@ POST /wallet/payout
 <RequestExample>
 ```bash With quote (recommended)
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-payout-key' \
   -d '{
@@ -200,7 +205,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
 
 ```bash Without quote (market rate)
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-payout-key' \
   -d '{

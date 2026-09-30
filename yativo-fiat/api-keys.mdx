@@ -1,174 +1,111 @@
 ---
-title: "API Keys"
-description: "Generate and manage API credentials for programmatic access"
+title: "Team API Keys"
+description: "Create, manage and revoke the API keys your servers use to call Yativo"
 ---
 
-API keys allow your backend services to authenticate with the Yativo API without the magic-link flow. Each key can be scoped to specific permissions and rotated independently.
+A team API key lets your servers call the Yativo API without signing in. It's a pair of values sent as headers on every request:
 
-<Accordion title="Type Definitions">
-```typescript
-interface ApiKey {
-  id: string;
-  name: string;
-  key_prefix: string;   // first 8 characters of the key, e.g. "yat_live"
-  permissions: string[];
-  is_active: boolean;
-  last_used_at?: string;
-  created_at: string;
-  expires_at?: string;
-}
+| Value | Header | Format | Visible later |
+|---|---|---|---|
+| API key | `X-Api-Key` | `yativo_pk_...` | Yes, in the dashboard |
+| API secret | `X-Api-Secret` | `yativo_sk_...` | No. Shown once, when the key is created |
 
-interface CreateApiKeyRequest {
-  name: string;
-  permissions?: string[];
-  expires_at?: string;  // ISO 8601; omit for non-expiring keys
-}
-
-interface ApiKeyResponse extends ApiKey {
-  key: string;  // full key — only returned once on creation
-}
-```
-</Accordion>
+See [Authentication](/yativo-fiat/authentication) for how to send them.
 
 ---
 
-## List API keys
+## Keys and your team
 
-```
-GET /business/api-keys
-```
+- **Keys belong to your business, not to a person.** A key keeps working if the teammate who created it leaves.
+- **Keys act as your business account.** Anyone holding a key and secret can use the API on your behalf, so give the permission to create keys only to people you trust with that access.
+- **Keys don't expire.** They work until someone on your team revokes them.
+- **Keys are for servers only.** Never put one in a browser, mobile app or public repository.
 
-<RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/business/api-keys' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
-```
-</RequestExample>
+### Who can manage keys
 
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": [
-    {
-      "id": "key_01HX9KZMB3F7VNQP8R2WDGT4E5",
-      "name": "Production Backend",
-      "key_prefix": "yat_live",
-      "permissions": ["transactions:read", "payouts:write"],
-      "is_active": true,
-      "last_used_at": "2026-03-25T18:42:00Z",
-      "created_at": "2026-01-10T10:00:00Z"
-    }
-  ]
-}
-```
-</ResponseExample>
+| Role | View keys | Create keys and edit allowed IPs | Revoke keys |
+|---|---|---|---|
+| Owner | Yes | Yes | Yes |
+| Admin | Yes | Yes | Yes |
+| Viewer | Yes | No | No |
+
+The account owner can change which roles have these permissions on the **Team** page.
 
 ---
 
-## Create API key
+## Create a key
 
-```
-POST /business/api-keys
-```
+<Steps>
+  <Step title="Open API Keys">
+    Sign in to [app.yativo.com](https://app.yativo.com) and go to **Developers → API Keys**.
+  </Step>
+  <Step title="Generate a key">
+    Under **Team API keys**, click **Generate key**.
+  </Step>
+  <Step title="Add a label and allowed IPs">
+    Enter a **Label** so your team can tell keys apart, and the public IPs of the servers that will use the key. At least one IP is required. See [IP whitelisting](/yativo-fiat/ip-allowlist).
+  </Step>
+  <Step title="Save the secret">
+    Copy the **API secret** into your secrets manager before closing the window. It can't be shown again.
+  </Step>
+</Steps>
 
-<ParamField body="name" type="string" required>
-  A label to identify this key (e.g. `"Production Backend"`, `"Staging"`).
-</ParamField>
+<Tip>
+  Create one key per system (for example "Production backend" and "Reporting job"). You can then revoke one without affecting the others.
+</Tip>
 
-<ParamField body="permissions" type="string[]">
-  Optional list of permission scopes. Omit to grant all permissions available to your account.
+---
 
-  | Scope | Access |
-  |-------|--------|
-  | `transactions:read` | View transactions |
-  | `payouts:write` | Initiate payouts |
-  | `customers:read` | View customers |
-  | `customers:write` | Create/update customers |
-  | `virtual-accounts:write` | Create virtual accounts |
-  | `webhooks:write` | Manage webhooks |
-</ParamField>
+## Change a key's allowed IPs
 
-<ParamField body="expires_at" type="string">
-  Expiry date in ISO 8601 format. Omit for a non-expiring key.
-</ParamField>
+In **Developers → API Keys**, click **Edit IPs** on the key. The list you save replaces the current one. The key and secret don't change, so there's nothing to redeploy.
 
-<RequestExample>
-```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/business/api-keys' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "name": "Production Backend",
-    "permissions": ["transactions:read", "payouts:write", "customers:read"]
-  }'
-```
-</RequestExample>
+When moving to a new server, add the new IP first, deploy, then remove the old one.
 
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "data": {
-    "id": "key_01HX9KZMB3F7VNQP8R2WDGT4E6",
-    "name": "Production Backend",
-    "key": "yat_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789",
-    "key_prefix": "yat_live",
-    "permissions": ["transactions:read", "payouts:write", "customers:read"],
-    "is_active": true,
-    "created_at": "2026-03-26T10:00:00Z"
-  }
-}
-```
-</ResponseExample>
+---
+
+## Rotate a key
+
+<Steps>
+  <Step title="Create a new key">
+    Create a new key with the same allowed IPs.
+  </Step>
+  <Step title="Deploy it">
+    Deploy the new key and secret to your servers.
+  </Step>
+  <Step title="Confirm traffic has moved">
+    Check that the old key's **Last used** time has stopped changing.
+  </Step>
+  <Step title="Revoke the old key">
+    Revoke the old key in the dashboard.
+  </Step>
+</Steps>
+
+---
+
+## Revoke a key
+
+In **Developers → API Keys**, click **Revoke** on the key. It stops working immediately and can't be restored.
 
 <Warning>
-  The full `key` value is only returned once. Copy it immediately and store it in a secrets manager — it cannot be retrieved again.
+  If a secret may have leaked, revoke the key straight away, then create a new one.
 </Warning>
 
 ---
 
-## Revoke API key
+## FAQ
 
-```
-DELETE /business/api-keys/{id}
-```
-
-<ParamField path="id" type="string" required>
-  The API key ID to revoke.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X DELETE 'https://api.yativo.com/api/v1/business/api-keys/key_01HX9KZMB3F7VNQP8R2WDGT4E6' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
-```
-</RequestExample>
-
----
-
-## Using an API key
-
-Include the key in the `Authorization` header of every request:
-
-```bash
-Authorization: Bearer yat_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789
-```
-
-```javascript Node.js
-const axios = require('axios');
-
-const client = axios.create({
-  baseURL: 'https://api.yativo.com/api',
-  headers: {
-    Authorization: `Bearer ${process.env.YATIVO_API_KEY}`,
-    'Content-Type': 'application/json',
-  },
-});
-
-const { data } = await client.get('/business/transactions/index');
-```
-
-<Note>
-  Store API keys as environment variables or in a secrets manager. Never commit them to source control.
-</Note>
+<AccordionGroup>
+  <Accordion title="I lost the secret. Can Yativo show it again?">
+    No. Only a hash of the secret is stored. Create a new key, deploy it, then revoke the old one.
+  </Accordion>
+  <Accordion title="Can I create or revoke keys through the API?">
+    No. API keys and IP whitelists can only be managed in the dashboard.
+  </Accordion>
+  <Accordion title="Do my teammates need their own keys?">
+    No. Keys belong to the business. Teammates sign in to the dashboard with their own email code or [passkey](/yativo-fiat/passkeys).
+  </Accordion>
+  <Accordion title="Do sandbox keys work in production?">
+    No. Each environment has its own keys. Create a separate key in each one.
+  </Accordion>
+</AccordionGroup>
