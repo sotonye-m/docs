@@ -140,7 +140,7 @@ Request and response bodies don't change. Only the authentication headers do.
     Remove the `/auth/login` call, token caching and refresh, and the `Authorization` header. Add `X-Api-Key` and `X-Api-Secret` to every request.
   </Step>
   <Step title="Test and go live">
-    Test in sandbox, run `GET /ip-whitelist/check` from each production server, then deploy before 15 October 2026.
+    Test in sandbox, run `GET /ip-whitelist/check` from each production server, then deploy before 14 October 2026. IP whitelists are enforced from midnight that day.
   </Step>
   <Step title="Remove the old secret">
     Delete the Account ID and App Secret from your configuration.

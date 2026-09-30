@@ -5,6 +5,10 @@ description: "Limit each API key to the servers allowed to use it"
 
 Every team API key has an **IP whitelist**: the public IP addresses of the servers allowed to use it. Requests made with the key must come from one of those IPs, or they're rejected with `403`.
 
+<Warning>
+  IP whitelists are enforced from **midnight on 14 October 2026**. Before then, run the [check](#check-your-ip) from every server that uses a key.
+</Warning>
+
 ---
 
 ## Find your server's public IP
