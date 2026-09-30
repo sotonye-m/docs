@@ -44,6 +44,28 @@ curl -X GET https://crypto-api.yativo.com/api/v1/swap/routes \
 
 ---
 
+## Find Swap Destinations
+
+Look up the chains and tokens you can swap into, for example to build a token picker.
+
+```
+GET /v1/swap/available-chains
+GET /v1/swap/destinations?chain=base&search=usdc&limit=10
+```
+
+| Query param | Description |
+|---|---|
+| `chain` | Only tokens on this chain |
+| `search` | Token name or symbol |
+| `limit` | Max results (default 10, up to 50) |
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/swap/destinations?chain=base&search=usdc' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+---
+
 ## Get a Quote
 
 **POST** `/swap/quote`

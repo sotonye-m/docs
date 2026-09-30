@@ -1,0 +1,46 @@
+---
+title: "Get Customer"
+api: "GET /v1/customers/{customer_id}"
+description: "Get a customer's profile, wallets, balance and activity"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="customer_id" type="string" required>
+  The customer ID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/customers/6650a1f2c3d4e5f6a7b8c9d0' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": true,
+  "message": "Customer details retrieved successfully",
+  "data": {
+    "customer": { "_id": "6650a1f2c3d4e5f6a7b8c9d0", "username": "Acme Corp", "email": "billing@acme.com", "phone_number": "" },
+    "assets": [],
+    "balance_usd": 1250.4,
+    "wallet_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "metrics": {
+      "total_volume": 8420.15,
+      "total_sent": 3100,
+      "total_received": 5320.15,
+      "first_active": "2026-09-01T09:12:00.000Z",
+      "last_active": "2026-09-29T18:40:00.000Z",
+      "transaction_count": 42
+    }
+  }
+}
+```
+</ResponseExample>
+
+Amounts in `balance_usd` and `metrics` are in USD.

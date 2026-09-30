@@ -80,31 +80,95 @@ stateDiagram-v2
 
 ## Connectors
 
-Connectors are API keys tied to a specific wallet. Think of them as "agent credentials" — each AI agent or service integration gets its own connector.
+Connectors are API keys tied to a specific wallet. Think of them as "agent credentials" — each AI agent or service integration gets its own connector, with its own limits and capabilities.
 
 | Field | Description |
 |-------|-------------|
+| `connector_type` | `anthropic`, `openai`, `polymarket`, `kalshi`, `openclaw` or `custom` |
 | `name` | Human-readable label (e.g., "Production Agent") |
-| `api_key` | Starts with `yac_` — used by the agent for authentication |
-| `per_transaction_limit` | Max USD amount per single transaction |
-| `daily_limit` | Max USD amount per 24-hour period |
-| `monthly_limit` | Max USD amount per calendar month |
-| `status` | `active` or `revoked` |
+| `api_key` | Starts with `yac_`. Returned once, when the connector is created |
+| `max_per_transaction` | Max USD amount per transaction |
+| `max_daily_amount` | Max USD amount per day |
+| `max_monthly_amount` | Max USD amount per month |
+| `allowed_capabilities` | What the agent may do: `transfer`, `x402`, `prediction_market`. Defaults to `transfer` only |
+| `allowed_assets`, `allowed_chains` | Optional allow-lists |
+| `allowed_ips`, `allowed_domains` | Optional request origin allow-lists |
+| `prediction_market_config` | Extra limits for prediction market trades. See [Prediction markets](#prediction-markets) |
+
+Limits must be consistent: `max_per_transaction` can't exceed `max_daily_amount`, which can't exceed `max_monthly_amount`. Any limit you leave out falls back to the wallet's global limit.
 
 You can have multiple connectors per wallet for different agents or environments.
+
+### Capabilities
+
+Every connector has an explicit list of capabilities. A request outside that list is rejected.
+
+| Capability | Allows |
+|---|---|
+| `transfer` | `POST /agent/transact` payments |
+| `x402` | `POST /agent/x402-fetch` paid requests |
+| `prediction_market` | Searching and trading prediction markets |
+
+New connectors get `transfer` only. Add `x402` or `prediction_market` deliberately when you create or update the connector.
 
 ---
 
 ## Agent API
 
-Once a connector is active, the agent authenticates with its API key and hits the Agent API directly:
+Once a connector is active, the agent authenticates with its API key (`Authorization: Bearer yac_...`) and calls the Agent API directly:
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /agent/transact` | Send a crypto payment |
-| `GET /agent/balance` | Check wallet balance |
-| `GET /agent/transactions` | List recent transactions |
-| `POST /agent/x402-fetch` | Fetch a URL with automatic x402 payment |
+| Endpoint | Capability | Description |
+|----------|---|-------------|
+| `GET /agent/openapi.json` | — | Machine-readable description of the Agent API. No auth |
+| `GET /agent/capabilities` | — | What this connector can do, its limits and remaining budget |
+| `POST /agent/transact` | `transfer` | Send a crypto payment |
+| `GET /agent/balance` | — | Check wallet balance |
+| `GET /agent/transactions` | — | List recent transactions |
+| `POST /agent/x402-fetch` | `x402` | Fetch a URL with automatic x402 payment |
+| `GET /agent/markets/search` | `prediction_market` | Search prediction markets |
+| `POST /agent/markets/trade` | `prediction_market` | Buy or sell a market position |
+| `GET /agent/positions` | `prediction_market` | List open positions |
+
+The Agent API allows 30 requests per minute.
+
+### Discover capabilities
+
+Agents can check what they're allowed to do before acting:
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/agent/capabilities?wallet_id=aw_01abc123' \
+  -H 'Authorization: Bearer yac_...'
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "wallet_id": "aw_01abc123",
+    "wallet_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "chain": "solana",
+    "balance": 248.5,
+    "capabilities": ["transfer", "prediction_market"],
+    "limits": {
+      "max_per_transaction": 50,
+      "max_daily_amount": 500,
+      "max_monthly_amount": 5000,
+      "remaining_daily": 420,
+      "remaining_monthly": 4780,
+      "allowed_assets": [],
+      "allowed_chains": []
+    },
+    "prediction_market": {
+      "max_position_usd": 25,
+      "allowed_categories": [],
+      "allowed_providers": []
+    },
+    "supported_assets": ["..."]
+  }
+}
+```
+
+`GET /agent/openapi.json` returns an OpenAPI description of the same surface, so any OpenAPI-aware agent framework (LangChain, GPT Actions, custom code) can discover it.
 
 ### Send a Payment
 
@@ -171,6 +235,70 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/agent/x402-fetch' \
     "body": { "premium_data": "..." }
   }
 }
+```
+
+---
+
+### Prediction markets
+
+Connectors with the `prediction_market` capability can trade prediction markets from a **Solana** agentic wallet, paying in USDC. Every trade goes through the same limits and rules as a payment, and a trade that would move more USDC than authorized is refused.
+
+**Search markets**
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/agent/markets/search?wallet_id=aw_01abc123&query=election&limit=10' \
+  -H 'Authorization: Bearer yac_...'
+```
+
+| Query param | Description |
+|---|---|
+| `wallet_id` | Required. The agentic wallet |
+| `query` | Search text |
+| `category` | Filter by category |
+| `limit` | Max results (default 20) |
+| `provider` | Optional. Leave out to use the default |
+
+**Place a trade**
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/agent/markets/trade' \
+  -H 'Authorization: Bearer yac_...' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: trade-7f3a' \
+  -d '{
+    "wallet_id": "aw_01abc123",
+    "market_id": "MARKET_ID_FROM_SEARCH",
+    "outcome": "yes",
+    "side": "buy",
+    "amount": 10,
+    "category": "politics",
+    "reason": "Agent strategy signal"
+  }'
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `wallet_id` | Yes | The agentic wallet |
+| `market_id` | Yes | From market search |
+| `outcome` | Yes | `yes` or `no` |
+| `side` | No | `buy` (default) or `sell` |
+| `amount` | Yes | USD notional, paid in USDC |
+| `category` | Only if the connector limits categories | The market's category |
+| `reason`, `metadata` | No | Stored with the transaction for your records |
+
+Send an `Idempotency-Key` header (or `idempotency_key` field) so a retried trade isn't placed twice.
+
+**Trade limits** (set per connector in `prediction_market_config`):
+
+- `max_position_usd` — largest single trade.
+- `allowed_categories` — if set, trades must name one of these categories.
+- `allowed_providers` — if set, only these providers can be used.
+
+**List positions**
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/agent/positions?wallet_id=aw_01abc123' \
+  -H 'Authorization: Bearer yac_...'
 ```
 
 ---

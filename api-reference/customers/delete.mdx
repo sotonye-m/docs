@@ -1,0 +1,31 @@
+---
+title: "Delete Customer"
+api: "DELETE /v1/customers/{customer_id}"
+description: "Delete a customer"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="customer_id" type="string" required>
+  The customer ID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X DELETE 'https://crypto-api.yativo.com/api/v1/customers/6650a1f2c3d4e5f6a7b8c9d0' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{ "status": true, "message": "Customer deleted successfully" }
+```
+</ResponseExample>
+
+<Warning>
+  Move any remaining funds out of the customer's wallets before deleting the customer.
+</Warning>

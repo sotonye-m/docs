@@ -558,9 +558,7 @@
               "api-reference/cards/customer-spending-limits-set",
               "api-reference/cards/customer-card-limits",
               "api-reference/cards/customer-terminate",
-              "api-reference/cards/customer-dispute",
-              "api-reference/cards/admin-account-card-limits",
-              "api-reference/cards/admin-reset"
+              "api-reference/cards/customer-dispute"
             ]
           },
           {
@@ -582,8 +580,7 @@
               "api-reference/issuer/customer",
               "api-reference/issuer/aggregate-balances",
               "api-reference/issuer/webhooks",
-              "api-reference/issuer/lookup-customer",
-              "api-reference/issuer/program-card-limits"
+              "api-reference/issuer/lookup-customer"
             ]
           },
           {
@@ -605,7 +602,9 @@
               "api-reference/agentic-wallets/add-connector",
               "api-reference/agentic-wallets/transact",
               "api-reference/agentic-wallets/balance",
-              "api-reference/agentic-wallets/x402-fetch"
+              "api-reference/agentic-wallets/x402-fetch",
+              "api-reference/agentic-wallets/capabilities",
+              "api-reference/agentic-wallets/markets-trade"
             ]
           },
           {
@@ -664,7 +663,11 @@
             "pages": [
               "api-reference/customers/list",
               "api-reference/customers/create",
-              "api-reference/customers/update"
+              "api-reference/customers/get",
+              "api-reference/customers/update",
+              "api-reference/customers/delete",
+              "api-reference/customers/auto-forward-set",
+              "api-reference/customers/auto-forward-get"
             ]
           },
           {

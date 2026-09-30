@@ -81,6 +81,11 @@ type WebhookEventType =
 |-------|-----------|
 | `deposit.detected` | An inbound transaction is detected on-chain (unconfirmed) |
 | `deposit.confirmed` | An inbound transaction has reached sufficient block confirmations |
+| `customer.deposit.detected` | A deposit arrived in one of your [customers'](/yativo-crypto/customers) wallets |
+
+Deposit events use the on-chain transaction hash as `transaction_id`, so the same deposit always carries the same ID. Use it to deduplicate retried deliveries.
+
+Deposits below the minimum (1 unit of a stablecoin, or $5 worth of any other asset) aren't credited and don't send deposit events.
 
 ### Transaction Events
 
@@ -223,24 +228,6 @@ All payloads share the same envelope structure:
     "sender_iban": "GB29NWBK60161331926819",
     "reference": "Invoice #INV-2026-042",
     "received_at": "2026-03-26T12:00:00Z"
-  }
-}
-```
-
-### gas.low
-
-```json
-{
-  "id": "evt_07stu901",
-  "type": "gas.low",
-  "created_at": "2026-03-26T11:00:00Z",
-  "data": {
-    "station_id": "station_01abc123",
-    "chain": "ethereum",
-    "ticker": "ETH",
-    "balance": "0.08",
-    "balance_usd": "200.00",
-    "threshold": "0.10"
   }
 }
 ```

@@ -66,6 +66,8 @@ The request is authenticated, but the API key or user does not have permission t
 
 **How to handle:** Check which permissions your API key has (`GET /apikey/{id}`). If needed, update permissions via `PUT /apikey/{id}/permissions` (requires 2FA).
 
+A send can also return `403` with `error: "WITHDRAWAL_LIMIT_EXCEEDED"` when it would go over your daily or monthly withdrawal limit. See [Withdrawal limits and reviews](/yativo-crypto/transactions#withdrawal-limits-and-reviews).
+
 ---
 
 ### 404 — Not Found

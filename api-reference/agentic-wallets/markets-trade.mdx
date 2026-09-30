@@ -1,0 +1,54 @@
+---
+title: "Trade Prediction Market"
+api: "POST /v1/agent/markets/trade"
+description: "Buy or sell a prediction market position from a Solana agentic wallet"
+authMethod: "bearer"
+---
+
+Requires the `prediction_market` capability and a Solana agentic wallet. Trades are paid in USDC and go through the connector's limits.
+
+<ParamField header="Authorization" type="string" required>
+  Connector API key: `Bearer yac_...`
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Recommended, so a retried trade isn't placed twice. Or send `idempotency_key` in the body.
+</ParamField>
+
+<ParamField body="wallet_id" type="string" required>The agentic wallet ID.</ParamField>
+
+<ParamField body="market_id" type="string" required>Market ID from `GET /v1/agent/markets/search`.</ParamField>
+
+<ParamField body="outcome" type="string" required>`yes` or `no`.</ParamField>
+
+<ParamField body="side" type="string" default="buy">`buy` or `sell`.</ParamField>
+
+<ParamField body="amount" type="number" required>USD notional, paid in USDC.</ParamField>
+
+<ParamField body="category" type="string">The market's category. Required when the connector limits categories.</ParamField>
+
+<ParamField body="provider" type="string">Optional. Leave out to use the default.</ParamField>
+
+<ParamField body="reason" type="string">Stored with the transaction.</ParamField>
+
+<ParamField body="metadata" type="object">Stored with the transaction.</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/agent/markets/trade' \
+  -H 'Authorization: Bearer yac_...' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: trade-7f3a' \
+  -d '{
+    "wallet_id": "aw_01abc123",
+    "market_id": "MARKET_ID_FROM_SEARCH",
+    "outcome": "yes",
+    "side": "buy",
+    "amount": 10
+  }'
+```
+</RequestExample>
+
+Common rejections: the connector lacks `prediction_market`, the wallet isn't on Solana, `amount` exceeds `max_position_usd`, the category isn't allowed, or the balance or spending limit is too low.
+
+Search markets with `GET /v1/agent/markets/search?wallet_id=...&query=...` and list positions with `GET /v1/agent/positions?wallet_id=...`. See [Agentic Wallets](/yativo-crypto/agentic-wallets#prediction-markets).

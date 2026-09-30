@@ -1,316 +1,318 @@
 ---
 title: "Customers"
-description: "Create and manage B2B sub-accounts for your end customers"
+description: "Create and manage wallet customers for your end users"
 ---
 
-The Customers API lets you create managed accounts for your own business customers. Each customer gets their own wallets and transaction history under your platform umbrella — you retain full programmatic control while keeping each customer's data isolated.
+The Customers API lets you create managed accounts for your own customers. Each customer gets their own wallets and transaction history under your platform account — you keep full programmatic control while each customer's data stays separate.
 
-This is the foundation of a B2B crypto-as-a-service product: you use the Yativo API on the backend, and your customers interact with your interface.
+This is the foundation of a wallet-as-a-service product: you use the Yativo API on your backend, and your customers use your interface.
 
 <Note>
-  **These are WaaS (wallet) customers — not card customers.** If you are issuing crypto cards, your card holders are managed separately via the [Card Issuer API](/api-reference/issuer/customers). The two systems use different customer records and different endpoints. A customer enabled for cards is created through the card onboarding flow; a customer here is created with a single API call and gets crypto wallets immediately.
+  **These are wallet customers — not card customers.** If you are issuing crypto cards, your cardholders are managed separately via the [Card Issuer API](/api-reference/issuer/customers). The two use different customer records and endpoints.
 </Note>
 
 <Accordion title="Type Definitions">
 ```typescript
 interface Customer {
-  customer_id: string;
+  _id: string;            // The customer ID used in every other customer endpoint
+  username: string;
   email: string;
-  name?: string;
-  phone?: string;
-  metadata?: Record<string, string>;
-  status: "active" | "suspended";
-  created_at: string;
+  phone_number: string;
+  user_id: string;        // Your platform account
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface CreateCustomerRequest {
-  email: string;
-  name?: string;
-  phone?: string;
-  metadata?: Record<string, string>;
+interface CustomerListItem extends Customer {
+  wallet_address: string | null;   // First wallet address, if any
+  balance_usd: number;             // Total wallet balance in USD
+}
+
+interface CustomerDetails {
+  customer: Customer;
+  assets: CustomerWallet[];
+  balance_usd: number;
+  wallet_address: string | null;
+  metrics: {
+    total_volume: number;       // USD
+    total_sent: number;         // USD
+    total_received: number;     // USD
+    first_active: string;
+    last_active: string | null;
+    transaction_count: number;
+  };
 }
 ```
 </Accordion>
 
 ---
 
-## Create a Customer
+## Create a customer
 
-**POST** `/customers/create-customer`
+```
+POST /v1/customers/create-customer
+```
+
+<ParamField body="username" type="string" required>
+  Display name for the customer.
+</ParamField>
 
 <ParamField body="email" type="string" required>
-  Customer's email address. Used as the unique identifier for the customer.
+  Customer email address. Must be unique.
 </ParamField>
 
-<ParamField body="name" type="string">
-  Full name of the customer or business.
-</ParamField>
-
-<ParamField body="phone" type="string">
-  Customer's phone number.
-</ParamField>
-
-<ParamField body="metadata" type="object">
-  Arbitrary key-value pairs for storing your own reference data (e.g., your internal customer ID, account tier, etc.).
-</ParamField>
-
-<CodeGroup>
-```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/v1/customers/create-customer \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/customers/create-customer' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
   -d '{
-    "email": "customer@example.com",
-    "name": "Acme Corp",
-    "phone": "+14155551234",
-    "metadata": {
-      "internal_id": "cust-8821",
-      "plan": "enterprise"
-    }
+    "username": "Acme Corp",
+    "email": "billing@acme.com"
   }'
 ```
 
-```typescript TypeScript
-const customer = await client.customers.create({
-  email: 'customer@example.com',
-  name: 'Acme Corp',
-  phone: '+14155551234',
-  metadata: {
-    internal_id: 'cust-8821',
-    plan: 'enterprise',
-  },
-});
-console.log('Customer ID:', customer.id);
-```
-
-```python Python
-customer = client.customers.create(
-    email='customer@example.com',
-    name='Acme Corp',
-    phone='+14155551234',
-    metadata={
-        'internal_id': 'cust-8821',
-        'plan': 'enterprise',
-    },
-)
-print('Customer ID:', customer['id'])
-```
-</CodeGroup>
-
 ```json Response
 {
-  "id": "cust_01abc123",
-  "email": "customer@example.com",
-  "name": "Acme Corp",
-  "phone": "+14155551234",
-  "metadata": {
-    "internal_id": "cust-8821",
-    "plan": "enterprise"
-  },
-  "status": "active",
-  "created_at": "2026-03-26T10:00:00Z"
+  "status": true,
+  "message": "Customer created successfully !",
+  "data": {
+    "_id": "6650a1f2c3d4e5f6a7b8c9d0",
+    "username": "Acme Corp",
+    "email": "billing@acme.com",
+    "phone_number": "",
+    "user_id": "664f0e1d2c3b4a5968778695",
+    "createdAt": "2026-09-30T10:00:00.000Z",
+    "updatedAt": "2026-09-30T10:00:00.000Z"
+  }
 }
 ```
 
----
-
-## Get Customers
-
-**POST** `/customers/get-customers`
-
-Returns all customers under your platform account.
-
-```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/v1/customers/get-customers \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
-```json Response
-{
-  "customers": [
-    {
-      "id": "cust_01abc123",
-      "email": "customer@example.com",
-      "name": "Acme Corp",
-      "status": "active",
-      "created_at": "2026-03-26T10:00:00Z"
-    },
-    {
-      "id": "cust_02def456",
-      "email": "another@example.com",
-      "name": "Beta Inc",
-      "status": "active",
-      "created_at": "2026-03-20T08:00:00Z"
-    }
-  ],
-  "total": 2
-}
-```
+A `customer.created` webhook is sent when the customer is created.
 
 ---
 
-## Get Customer Transactions
+## List customers
 
-**POST** `/customers/get-customer-transactions`
+```
+POST /v1/customers/get-customers
+```
 
-Returns the full transaction history for a specific customer.
-
-<ParamField body="customer_id" type="string" required>
-  The ID of the customer to retrieve transactions for.
+<ParamField body="search" type="string">
+  Matches username, email, or a wallet address.
 </ParamField>
 
-```bash cURL
-curl -X POST https://crypto-api.yativo.com/api/v1/customers/get-customer-transactions \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"customer_id": "cust_01abc123"}'
+<ParamField body="page" type="number" default="1">
+  Page number.
+</ParamField>
+
+<ParamField body="limit" type="number" default="20">
+  Results per page.
+</ParamField>
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/customers/get-customers' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "search": "acme", "page": 1, "limit": 20 }'
 ```
 
 ```json Response
 {
-  "customer_id": "cust_01abc123",
-  "transactions": [
+  "status": true,
+  "message": "Customers listed successfully",
+  "data": [
     {
-      "transaction_id": "txn_01pqr456",
-      "type": "withdrawal",
-      "status": "completed",
-      "amount": "100.00",
-      "ticker": "USDC",
-      "chain": "ethereum",
-      "to_address": "0x9F8b3A2c1E4D7F6B5A4C3D2E1F0A9B8C7D6E5F4",
-      "completed_at": "2026-03-26T10:07:30Z"
-    },
-    {
-      "transaction_id": "txn_02stu789",
-      "type": "deposit",
-      "status": "completed",
-      "amount": "500.00",
-      "ticker": "USDC",
-      "chain": "ethereum",
-      "from_address": "0x1A2B3C4D5E6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B",
-      "completed_at": "2026-03-25T14:30:00Z"
+      "_id": "6650a1f2c3d4e5f6a7b8c9d0",
+      "username": "Acme Corp",
+      "email": "billing@acme.com",
+      "phone_number": "",
+      "wallet_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+      "balance_usd": 1250.4,
+      "createdAt": "2026-09-30T10:00:00.000Z"
     }
   ],
-  "total": 2
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 1,
+    "total_records": 1,
+    "records_per_page": 20
+  }
 }
 ```
 
 ---
 
-## Customer Wallets
+## Get a customer
 
-After creating a customer, add wallets using the Assets API with the customer-specific endpoints:
+Returns the customer's profile, wallets, total balance and activity metrics.
+
+```
+GET /v1/customers/{customer_id}
+```
+
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/customers/6650a1f2c3d4e5f6a7b8c9d0' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+```json Response
+{
+  "status": true,
+  "message": "Customer details retrieved successfully",
+  "data": {
+    "customer": {
+      "_id": "6650a1f2c3d4e5f6a7b8c9d0",
+      "username": "Acme Corp",
+      "email": "billing@acme.com",
+      "phone_number": ""
+    },
+    "assets": [ { "...": "..." } ],
+    "balance_usd": 1250.4,
+    "wallet_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "metrics": {
+      "total_volume": 8420.15,
+      "total_sent": 3100,
+      "total_received": 5320.15,
+      "first_active": "2026-09-01T09:12:00.000Z",
+      "last_active": "2026-09-29T18:40:00.000Z",
+      "transaction_count": 42
+    }
+  }
+}
+```
+
+---
+
+## Update a customer
+
+```
+PATCH /v1/customers/{customer_id}
+```
+
+Send only the fields you want to change.
+
+<ParamField body="username" type="string">Display name.</ParamField>
+<ParamField body="email" type="string">Email address.</ParamField>
+<ParamField body="phone_number" type="string">Phone number.</ParamField>
+
+```bash
+curl -X PATCH 'https://crypto-api.yativo.com/api/v1/customers/6650a1f2c3d4e5f6a7b8c9d0' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "phone_number": "+14155550100" }'
+```
+
+---
+
+## Delete a customer
+
+```
+DELETE /v1/customers/{customer_id}
+```
+
+```bash
+curl -X DELETE 'https://crypto-api.yativo.com/api/v1/customers/6650a1f2c3d4e5f6a7b8c9d0' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+
+<Warning>
+  Move any remaining funds out of the customer's wallets before deleting the customer.
+</Warning>
+
+---
+
+## Customer transactions
+
+```
+POST /v1/customers/get-customer-transactions
+```
+
+<ParamField body="customer_id" type="string" required>The customer ID.</ParamField>
+<ParamField body="page" type="number" default="1">Page number.</ParamField>
+<ParamField body="limit" type="number" default="50">Results per page.</ParamField>
+<ParamField body="type" type="string">Filter by transaction type.</ParamField>
+<ParamField body="status" type="string">Filter by status.</ParamField>
+<ParamField body="search" type="string">Search text.</ParamField>
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/customers/get-customer-transactions' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "customer_id": "6650a1f2c3d4e5f6a7b8c9d0", "page": 1, "limit": 50 }'
+```
+
+---
+
+## Customer wallets
+
+Add wallets to a customer with the Assets API:
 
 ```bash
 # Add a wallet for a customer
-curl -X POST https://crypto-api.yativo.com/api/v1/assets/add-customer-asset \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customer_id": "cust_01abc123",
-    "chain": "solana",
-    "ticker": "USDC_SOL"
-  }'
-
-# Get all wallets for a customer
-curl -X POST https://crypto-api.yativo.com/api/v1/assets/get-customer-assets \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"customer_id": "cust_01abc123"}'
-```
-
-See the [Assets](/yativo-crypto/assets) page for full documentation on these endpoints.
-
----
-
-## Customer Data Model
-
-```
-Your Platform Account
-├── Customer: Acme Corp (cust_01abc123)
-│   ├── Wallet: USDC on Ethereum
-│   ├── Wallet: USDC_SOL on Solana
-│   └── Transaction history
-└── Customer: Beta Inc (cust_02def456)
-    └── Wallet: USDT on Polygon
-```
-
-<Note>
-  Customer data is isolated — one customer's wallets and transactions are never accessible from another customer's context. Your platform account has visibility across all customers.
-</Note>
-
----
-
-<Tip>
-  Store your internal customer ID in the `metadata.internal_id` field when creating customers. This makes it easy to cross-reference Yativo customer IDs with your own database.
-</Tip>
-
----
-
-## Sandbox Testing
-
-<Note>
-  Replace `YOUR_SANDBOX_TOKEN` with a token obtained by authenticating against `https://crypto-sandbox.yativo.com/api/v1/`. See [Sandbox Overview](/sandbox/overview).
-</Note>
-
-### Create a Customer (Sandbox)
-
-<CodeGroup>
-```bash cURL (Sandbox)
-curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/customers/create-customer' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/assets/add-customer-asset' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "email": "sandbox-customer@example.com",
-    "name": "Sandbox Test Corp",
-    "phone": "+14155550100",
-    "metadata": {
-      "internal_id": "sandbox-cust-001",
-      "plan": "test"
-    }
+    "customer_id": "6650a1f2c3d4e5f6a7b8c9d0",
+    "ticker_name": "USDC_SOL"
+  }'
+
+# List a customer's wallets
+curl -X POST 'https://crypto-api.yativo.com/api/v1/assets/get-customer-assets' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "customer_id": "6650a1f2c3d4e5f6a7b8c9d0" }'
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `customer_id` | Yes | The customer ID. |
+| `ticker_name` or `asset_id` | Yes | The asset to create a wallet for, e.g. `USDC_SOL`. |
+| `allow_multiple` | No | By default, adding the same asset again returns the existing wallet. Set `true` to create another. |
+
+---
+
+## Auto-forward a customer's deposits
+
+Forward incoming deposits on a customer's wallet to another address automatically, for example to sweep funds into your treasury.
+
+### Set the rule
+
+```
+POST /v1/customers/{customer_id}/auto-forward
+```
+
+<ParamField body="destination_address" type="string" required>Address to forward to.</ParamField>
+<ParamField body="asset_id" type="string" required>The asset to forward.</ParamField>
+<ParamField body="chain" type="string" required>The chain, e.g. `SOL`.</ParamField>
+<ParamField body="percentage" type="number" default="100">Share of each deposit to forward.</ParamField>
+<ParamField body="minimum_amount" type="string" default="0.0001">Deposits below this aren't forwarded.</ParamField>
+<ParamField body="enabled" type="boolean" default="true">Turn the rule on or off.</ParamField>
+
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/customers/6650a1f2c3d4e5f6a7b8c9d0/auto-forward' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "destination_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    "asset_id": "665a0b1c2d3e4f5a6b7c8d9e",
+    "chain": "SOL",
+    "percentage": 100
   }'
 ```
 
-```typescript TypeScript SDK (Sandbox)
-import { YativoSDK } from '@yativo/crypto-sdk';
+Calling it again for the same customer, asset and chain updates the existing rule.
 
-const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
-  apiKey: 'YOUR_SANDBOX_API_KEY',
-  apiSecret: 'YOUR_SANDBOX_API_SECRET',
-});
+### Get the rule
 
-const customer = await sdk.customers.create({
-  email: 'sandbox-customer@example.com',
-  name: 'Sandbox Test Corp',
-  phone: '+14155550100',
-  metadata: {
-    internal_id: 'sandbox-cust-001',
-    plan: 'test',
-  },
-});
-console.log('Customer ID:', customer.customer_id);
 ```
-</CodeGroup>
-
-### List Customers (Sandbox)
-
-<CodeGroup>
-```bash cURL (Sandbox)
-curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/customers/get-customers' \
-  -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
+GET /v1/customers/{customer_id}/auto-forward
 ```
 
-```typescript TypeScript SDK (Sandbox)
-import { YativoSDK } from '@yativo/crypto-sdk';
+Returns the rule, or `null` if the customer has none. For rules across many wallets, see [Auto-Forwarding](/yativo-crypto/auto-forwarding).
 
-const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
-  apiKey: 'YOUR_SANDBOX_API_KEY',
-  apiSecret: 'YOUR_SANDBOX_API_SECRET',
-});
+---
 
-const { customers } = await sdk.customers.list();
-console.log('Total customers:', customers.length);
-```
-</CodeGroup>
+## Sandbox
+
+Use the same endpoints against `https://crypto-sandbox.yativo.com/api/v1/` with a sandbox token. See [Sandbox Overview](/sandbox/overview).

@@ -3,6 +3,24 @@ title: "Changelog"
 description: "Latest updates, improvements, and fixes across all Yativo platforms"
 ---
 
+<Update label="September 2026" description="Team API keys, IP whitelisting, passkeys, and crypto API updates">
+  ### Yativo Fiat
+  - **Team API keys:** servers now authenticate with `X-Api-Key` and `X-Api-Secret`. See [Authentication](/yativo-fiat/authentication)
+  - **Deprecated:** Account ID + App Secret login (`POST /auth/login`). From 15 October 2026, its tokens only work inside the dashboard
+  - **IP whitelisting:** every API key lists the server IPs allowed to use it, enforced from midnight on 14 October 2026. See [IP whitelisting](/yativo-fiat/ip-allowlist)
+  - New `GET /ip-whitelist/check` to confirm each server is allowed
+  - **Passkeys:** everyone on a team can sign in to the dashboard with a passkey. See [Passkeys](/yativo-fiat/passkeys)
+
+  ### Yativo Crypto
+  - Customers: get, update and delete a customer, plus per-customer auto-forwarding. See [Customers](/yativo-crypto/customers)
+  - Agentic wallets: per-connector capabilities, `GET /agent/capabilities`, `GET /agent/openapi.json`, and prediction market trading. See [Agentic Wallets](/yativo-crypto/agentic-wallets)
+  - Transactions: `POST /transactions/preview-fee`, daily and monthly withdrawal limits, and review holds for large sends
+  - Gas station low-balance email alerts with custom thresholds and recipients
+  - Swap: `GET /swap/destinations` and `GET /swap/available-chains`
+  - Deposit webhooks use the on-chain transaction hash as `transaction_id`; deposits below the minimum aren't credited
+  - Secure card view: card data always renders light, and the view can be embedded on any website
+</Update>
+
 <Update label="April 2026" description="Developer experience, documentation, and monitoring improvements">
   ### Docs
   - Comprehensive Yativo Fiat documentation with guides, API references, KYC/KYB docs
