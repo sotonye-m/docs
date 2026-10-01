@@ -761,5 +761,6 @@
       "source": "/api-reference/authentication/refresh",
       "destination": "/api-reference/api-keys/token"
     }
-  ]
+  ],
+  "description": "Yativo developer docs: APIs, guides and SDKs for cross-border fiat payments, payouts and virtual accounts, plus multi-chain crypto wallets, cards, swaps and AI agent integrations."
 }
