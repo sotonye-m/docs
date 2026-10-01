@@ -1,0 +1,322 @@
+---
+title: "MCP Server"
+description: "Let Claude, Cursor or any MCP client check balances, deposits and payouts, and quote and send payouts from your Yativo account"
+---
+
+The Yativo Fiat MCP server gives an AI assistant tools to work with your business account. It can check balances, payouts, deposits, beneficiaries and payout methods, and it can **quote and send payouts** after you approve them.
+
+```
+https://api.yativo.com/mcp
+```
+
+It works with claude.ai, Claude Desktop, Claude Code, Cursor, VS Code and any client that supports the MCP **Streamable HTTP** transport.
+
+<Note>
+  This server acts on your fiat account. To give an agent its own crypto wallet, use the [Agentic Wallet MCP server](/sdks/mcp). To let an assistant read these docs, use the [Docs MCP server](/yativo/mcp). See [AI and MCP servers](/yativo/mcp) to compare them.
+</Note>
+
+<Info>
+  The MCP server is available in production only for now. Try the quote step on small amounts first.
+</Info>
+
+---
+
+## Sign in
+
+| Method | Best for | How |
+|---|---|---|
+| **OAuth sign-in** | claude.ai, Claude Desktop, laptops | Add the server URL. Your client opens a Yativo sign-in page and you approve access. |
+| **API key** | Servers and scripts with a fixed IP | Send `X-Api-Key` and `X-Api-Secret` on every request. |
+
+Both act on the same business account and follow your team permissions. A teammate who can't create payouts in the dashboard can't create them through MCP either.
+
+<Warning>
+  API keys only work from the IPs on the key's [IP whitelist](/yativo-fiat/ip-allowlist), including for MCP. Laptops and home connections usually don't have a fixed IP, so use OAuth sign-in for desktop assistants.
+</Warning>
+
+**OAuth sign-in:**
+
+1. Enter your Yativo account email.
+2. Enter the 6-digit code sent to that email.
+3. If you use two-factor authentication, enter the code from your authenticator app.
+4. Review what the app can do and click **Allow access**.
+
+The approval screen appears every time an app connects. Sign-in codes expire after 10 minutes. Your client renews access automatically for up to 30 days, and you can [disconnect an app](#manage-connected-apps) at any time.
+
+**API keys:** create a separate [API key](/yativo-fiat/api-keys) for each assistant or machine, so you can revoke one without affecting your other integrations.
+
+---
+
+## Connect a client
+
+### claude.ai and Claude Desktop
+
+1. Open **Settings → Connectors → Add custom connector**.
+2. Name it **Yativo** and enter `https://api.yativo.com/mcp`.
+3. Click **Connect**, sign in and click **Allow access**.
+
+The connector then works in claude.ai on the web, in the desktop app and in the mobile apps. On Team and Enterprise plans, an owner may need to add the connector for the organization first.
+
+### Claude Code
+
+With OAuth:
+
+```bash
+claude mcp add --transport http yativo https://api.yativo.com/mcp
+```
+
+Then run `/mcp`, select `yativo` and choose **Authenticate**.
+
+With an API key, from a whitelisted IP:
+
+```bash
+claude mcp add --transport http yativo https://api.yativo.com/mcp \
+  --header "X-Api-Key: yativo_pk_..." \
+  --header "X-Api-Secret: yativo_sk_..."
+```
+
+### Cursor
+
+Add to `~/.cursor/mcp.json`, or `.cursor/mcp.json` in a project. Cursor opens the Yativo sign-in page:
+
+```json
+{
+  "mcpServers": {
+    "yativo": {
+      "url": "https://api.yativo.com/mcp"
+    }
+  }
+}
+```
+
+To use an API key instead, add `"headers": { "X-Api-Key": "yativo_pk_...", "X-Api-Secret": "yativo_sk_..." }`.
+
+### VS Code
+
+Add to `.vscode/mcp.json`. VS Code opens the Yativo sign-in page:
+
+```json
+{
+  "servers": {
+    "yativo": {
+      "type": "http",
+      "url": "https://api.yativo.com/mcp"
+    }
+  }
+}
+```
+
+### Other clients
+
+Any client that supports Streamable HTTP can connect, either with the two API-key headers or through MCP OAuth. The server advertises OAuth at `/.well-known/oauth-protected-resource/mcp` and supports dynamic client registration and PKCE (S256).
+
+---
+
+## Tools
+
+| Tool | What it does | Arguments | Changes data? |
+|---|---|---|---|
+| `get-wallet-balances` | Each wallet's currency and balance, plus the combined balance in USD | none | No |
+| `list-payouts` | Payouts, newest first | `status`, `currency`, `page`, `per_page` | No |
+| `get-payout` | One payout, with its beneficiary | `payout_id` (required) | No |
+| `get-payout-quote` | Rate, fees, amount debited and amount received | `payout_method_id`, `debit_wallet`, `payout_currency`, `amount` (all required), `customer_id` | No |
+| `create-payout` | **Sends a payout** to a saved beneficiary | `payment_method_id`, `customer_id`, `debit_wallet`, `amount`, `idempotency_key` (all required) | **Yes, moves money** |
+| `list-deposits` | Deposits, newest first | `status`, `currency`, `customer_id`, `page`, `per_page` | No |
+| `get-deposit` | One deposit | `deposit_id` (required) | No |
+| `list-beneficiaries` | Saved beneficiaries and their payment methods | `search`, `page`, `per_page` | No |
+| `list-payout-methods` | Active payout methods | `country` (ISO 3166 alpha-3, e.g. `CHL`), `currency` (e.g. `CLP`) | No |
+
+Read-only tools are marked `readOnlyHint`. `create-payout` is marked `destructiveHint`, so MCP clients ask you to approve each call.
+
+Balances are in **major units**: `1250.5` means 1,250.50. `usd_equivalent` uses a live reference rate, is for display only, and is `null` when no rate is available.
+
+```json get-wallet-balances
+{
+  "wallets": [
+    { "currency": "USD", "name": "USD", "balance": 1250.5, "usd_equivalent": 1250.5 },
+    { "currency": "CLP", "name": "CLP", "balance": 480000, "usd_equivalent": 507.12 }
+  ],
+  "total_balance_usd": 1757.62
+}
+```
+
+List tools return 15 items per page by default, up to 50. Each item has the same fields as the matching REST endpoint:
+
+| Tool | Same shape as |
+|---|---|
+| `list-payouts`, `get-payout` | [Get payout](/fiat-api-reference/payouts/get) |
+| `list-deposits`, `get-deposit` | [List deposits](/fiat-api-reference/deposits/list) |
+| `list-beneficiaries` | [List beneficiaries](/fiat-api-reference/beneficiaries/list) |
+| `list-payout-methods` | [Payout methods](/fiat-api-reference/payments/methods) |
+| `get-payout-quote` | [Exchange rate](/fiat-api-reference/payments/exchange-rate) with `method_type: payout` |
+| `create-payout` | [Payout](/fiat-api-reference/payments/payout) |
+
+---
+
+## Sending payouts
+
+`create-payout` runs the same checks as a payout through the REST API: team permissions, KYC, limits, fees and idempotency. Your wallet is debited as soon as the payout is accepted.
+
+The server tells the assistant to follow this flow and to wait for your confirmation before sending:
+
+<Steps>
+  <Step title="Find the beneficiary">
+    `list-beneficiaries` returns each beneficiary's saved payment methods under `payment_object`. The payment method's `id` is `payment_method_id`, its `gateway_id` is the quote's `payout_method_id`, and the beneficiary's `customer_id` is used in both.
+  </Step>
+  <Step title="Quote">
+    `get-payout-quote` shows the rate, fees, total debit and the amount the beneficiary receives.
+  </Step>
+  <Step title="Confirm">
+    The assistant shows you the quote and beneficiary and waits for your approval.
+  </Step>
+  <Step title="Send">
+    `create-payout` with a new `idempotency_key`, such as a UUID.
+  </Step>
+  <Step title="Track">
+    `get-payout` with the returned `payout_id`, or your [webhooks](/yativo-fiat/webhooks).
+  </Step>
+</Steps>
+
+Retrying `create-payout` with the same `idempotency_key` returns the original payout and never sends a second one. A failed payout, for example below the method's minimum, returns `isError: true` with the reason, and your wallet isn't left debited.
+
+### Example prompts
+
+- *"What's my current Yativo balance in each currency?"*
+- *"Show my last 10 payouts that failed and summarise why."*
+- *"Which payout methods do you support for CLP?"*
+- *"Quote sending 200 USD to Rick's Chilean bank account."*
+- *"Send it."* (after reviewing the quote)
+
+---
+
+## Call the server directly
+
+You can test with any HTTP client. Send one JSON-RPC request per `POST`:
+
+```bash
+# Handshake
+curl -s https://api.yativo.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "X-Api-Key: YOUR_API_KEY" \
+  -H "X-Api-Secret: YOUR_API_SECRET" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1.0"}}}'
+
+# Call a tool
+curl -s https://api.yativo.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -H "X-Api-Key: YOUR_API_KEY" \
+  -H "X-Api-Secret: YOUR_API_SECRET" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list-payouts","arguments":{"status":"failed","per_page":5}}}'
+```
+
+A tool result looks like this:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [ { "type": "text", "text": "{\"data\":[...],\"pagination\":{...}}" } ],
+    "isError": false
+  }
+}
+```
+
+---
+
+## Errors
+
+Sign-in errors are plain HTTP responses in the standard Yativo error format, not JSON-RPC:
+
+| HTTP | `data.error` | Cause |
+|---|---|---|
+| 401 | `Both X-Api-Key and X-Api-Secret headers are required.` | Only one of the two headers was sent. |
+| 401 | `Invalid or revoked API credentials.` | Wrong key or secret, or a revoked key. |
+| 401 | `Unauthenticated` | No credentials, or the OAuth sign-in expired or was disconnected. |
+| 403 | `This IP address is not allowed to use this API key.` | The request didn't come from an IP on the key's whitelist. |
+| 429 | | More than 60 MCP requests in a minute. Retry after the `Retry-After` header. |
+
+Every `401` includes a `WWW-Authenticate` header that OAuth clients use to start or renew sign-in automatically.
+
+Once signed in, tool errors come back as a normal result with `isError: true` and the reason as text, so the assistant can act on it. Invalid arguments, such as `per_page` above 50, are reported the same way.
+
+---
+
+## Rate limits
+
+Each account can make **60 MCP requests per minute**. Every `initialize`, `tools/list` and `tools/call` counts. Payouts are also subject to the API's own [rate limits](/yativo-fiat/security#rate-limits).
+
+---
+
+## Manage connected apps
+
+Apps connected with OAuth belong to the person who approved them.
+
+**List connected apps:** `GET /api/v1/mcp/connections`
+
+```bash
+curl -s https://api.yativo.com/api/v1/mcp/connections \
+  -H "X-Api-Key: YOUR_API_KEY" \
+  -H "X-Api-Secret: YOUR_API_SECRET"
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "client_id": "a2dcf5e2-ae51-4873-97b8-f294151b53ea",
+      "name": "Claude",
+      "scopes": ["mcp:use"],
+      "connected_at": "2026-09-29T16:20:11.000000Z",
+      "last_authorized_at": "2026-09-29T16:41:37.000000Z"
+    }
+  ]
+}
+```
+
+**Disconnect an app:** `DELETE /api/v1/mcp/connections/{client_id}`
+
+```bash
+curl -s -X DELETE https://api.yativo.com/api/v1/mcp/connections/a2dcf5e2-ae51-4873-97b8-f294151b53ea \
+  -H "X-Api-Key: YOUR_API_KEY" \
+  -H "X-Api-Secret: YOUR_API_SECRET"
+```
+
+Disconnecting takes effect immediately. To reconnect, the app has to sign in and be approved again. An unknown `client_id` returns `404 Connection not found`.
+
+Clients that use an API key are disconnected by [revoking the key](/yativo-fiat/api-keys#revoke-a-key).
+
+---
+
+## Security best practices
+
+- **Keep approval prompts on.** Don't set `create-payout` to "always allow".
+- **Use team permissions.** Connect assistants as teammates with the least access they need.
+- **One connection or key per assistant or machine.** Label keys, for example "Cursor – Ana's laptop", and disconnect apps you no longer use.
+- **Keep secrets out of repositories.** Use OAuth sign-in, environment variables or your client's secret storage.
+- **Treat tool output as sensitive.** Beneficiary data includes names, emails and bank details. Only connect AI apps your company allows to process that data.
+
+---
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Can the assistant send money without asking me?">
+    The server tells the assistant to quote first and wait for your confirmation, and MCP clients ask you to approve each `create-payout` call. Keep that prompt on.
+  </Accordion>
+  <Accordion title="What if the assistant retries a payout?">
+    With the same `idempotency_key` you get the original payout back, and nothing is sent twice.
+  </Accordion>
+  <Accordion title="Can teammates use it?">
+    Yes. Each teammate signs in with OAuth and acts on the business account with their own permissions. API keys act as the business account owner.
+  </Accordion>
+  <Accordion title="Which data can the assistant see?">
+    Only the account you signed in to, or that owns the API key: its wallets, payouts, deposits and beneficiaries, plus the public list of payout methods.
+  </Accordion>
+</AccordionGroup>

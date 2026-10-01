@@ -9,6 +9,10 @@ description: "Latest updates, improvements, and fixes across all Yativo platform
   - **EUR deposits via SEPA:** customers can fund deposits by bank transfer to a Yativo IBAN. See [Deposits](/yativo-fiat/deposits#eur-bank-transfer-sepa)
   - Endpoints that change sign-in settings (passkeys, two-factor authentication, PIN, app secret) or delete the account now return `403` when called with an API key
   - `GET /ip-whitelist/check` now returns `api_key.label` (was `name`) and a `network.warning` when your request came through a proxy
+  - **MCP server:** connect Claude, Cursor or any MCP client to your fiat account at `https://api.yativo.com/mcp` to check balances and deposits, and quote and send payouts with your approval. See [Fiat MCP server](/yativo-fiat/mcp-server)
+
+  ### Docs
+  - [AI and MCP servers](/yativo/mcp) compares the Docs, Fiat and Agentic Wallet MCP servers, and documents the Docs MCP server at `https://docs.yativo.com/mcp`
 
   ### Yativo Crypto
   - Card IBAN removed from the crypto docs. To receive money by bank transfer, use [Yativo Fiat virtual accounts](/yativo-fiat/virtual-accounts)

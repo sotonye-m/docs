@@ -33,18 +33,19 @@ Yativo is a payments infrastructure platform built for businesses, fintechs, and
 
 ## Authentication
 
-Both platforms authenticate via **Bearer tokens**. Generate a token by exchanging your API key and secret at the authentication endpoint for each platform.
-
-All API requests must include:
-```http
-Authorization: Bearer YOUR_ACCESS_TOKEN
-```
+| Platform | How your servers authenticate |
+|---|---|
+| Yativo Fiat | Send `X-Api-Key` and `X-Api-Secret` on every request, from an IP on the key's whitelist. See [Authentication](/yativo-fiat/authentication). |
+| Yativo Crypto | Exchange your API key and secret for a Bearer token with `POST /v1/auth/token`, then send `Authorization: Bearer <token>`. See [Authentication](/yativo-crypto/authentication). |
 
 ## Explore the docs
 
 <CardGroup cols={2}>
-  <Card title="Fiat API Reference" icon="code" href="/api-reference/introduction">
-    Complete endpoint reference with interactive playground.
+  <Card title="Fiat API Reference" icon="code" href="/fiat-api-reference/introduction">
+    Complete fiat endpoint reference with interactive playground.
+  </Card>
+  <Card title="Crypto API Reference" icon="code" href="/api-reference/introduction">
+    Complete crypto endpoint reference.
   </Card>
   <Card title="Guides" icon="book-open" href="/guides/overview">
     Step-by-step tutorials for common integration patterns.
@@ -54,5 +55,8 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
   </Card>
   <Card title="Sandbox" icon="flask" href="/sandbox/overview">
     Test your integration against live-like sandbox environments.
+  </Card>
+  <Card title="AI and MCP servers" icon="robot" href="/yativo/mcp">
+    Connect Claude, Cursor or any MCP client to the docs, your fiat account or an agentic wallet.
   </Card>
 </CardGroup>

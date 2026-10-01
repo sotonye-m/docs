@@ -19,9 +19,9 @@ info:
     `POST /auth/login` with an Account ID and App Secret is deprecated. From 15 October 2026 its
     tokens only work inside the Yativo dashboard.
 
-    Endpoints that change how a person signs in (passkeys, two-factor authentication, PIN, app secret),
-    delete the account, or manage API keys and IP whitelists can't be called with an API key.
-    Use the dashboard for those.
+    Endpoints that change how a person signs in (passkeys, two-factor authentication, PIN, app secret)
+    or delete the account can't be called with an API key. Use the dashboard for those.
+    From 15 October 2026, API keys and IP whitelists can also only be managed in the dashboard.
 
     **Rate limits**
     20 requests per second per business account. Enterprise plans have custom limits.
