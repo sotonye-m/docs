@@ -276,9 +276,10 @@
             ]
           },
           {
-            "group": "IP Whitelist",
+            "group": "IP Whitelist & Security",
             "pages": [
-              "fiat-api-reference/ip/check"
+              "fiat-api-reference/ip/check",
+              "fiat-api-reference/security/login-history"
             ]
           },
           {
@@ -341,7 +342,6 @@
               "yativo-crypto/cards/transactions",
               "yativo-crypto/cards/disputes",
               "yativo-crypto/cards/spending-limits",
-              "yativo-crypto/cards/iban",
               "yativo-crypto/cards/issuer-program",
               "yativo-crypto/cards/set-pin"
             ]
@@ -449,9 +449,7 @@
           {
             "group": "Authentication",
             "pages": [
-              "api-reference/api-keys/token",
-              "api-reference/authentication/verify-otp",
-              "api-reference/authentication/refresh"
+              "api-reference/api-keys/token"
             ]
           },
           {
@@ -519,9 +517,7 @@
               "api-reference/cards/spending-limits-get",
               "api-reference/cards/spending-limits-set",
               "api-reference/cards/physical-order",
-              "api-reference/cards/physical-order-status",
-              "api-reference/cards/iban-activate",
-              "api-reference/cards/iban-status"
+              "api-reference/cards/physical-order-status"
             ]
           },
           {
@@ -709,5 +705,59 @@
       "linkedin": "https://linkedin.com/company/yativo",
       "website": "https://yativo.com"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/api-reference/cards/iban-activate",
+      "destination": "/yativo-fiat/virtual-accounts"
+    },
+    {
+      "source": "/api-reference/cards/iban-status",
+      "destination": "/yativo-fiat/virtual-accounts"
+    },
+    {
+      "source": "/yativo-crypto/cards/iban",
+      "destination": "/yativo-fiat/virtual-accounts"
+    },
+    {
+      "source": "/api-reference/authentication/login",
+      "destination": "/yativo-crypto/authentication"
+    },
+    {
+      "source": "/api-reference/authentication/register",
+      "destination": "/yativo-crypto/authentication"
+    },
+    {
+      "source": "/yativo/authentication",
+      "destination": "/yativo-crypto/authentication"
+    },
+    {
+      "source": "/yativo/2fa",
+      "destination": "/yativo-crypto/authentication"
+    },
+    {
+      "source": "/yativo/quickstart",
+      "destination": "/yativo-crypto/quickstart"
+    },
+    {
+      "source": "/yativo/api-keys",
+      "destination": "/yativo-crypto/api-keys"
+    },
+    {
+      "source": "/yativo/subscriptions",
+      "destination": "/yativo-crypto/subscriptions"
+    },
+    {
+      "source": "/yativo/notifications",
+      "destination": "/yativo/introduction"
+    },
+    {
+      "source": "/api-reference/authentication/verify-otp",
+      "destination": "/api-reference/api-keys/token"
+    },
+    {
+      "source": "/api-reference/authentication/refresh",
+      "destination": "/api-reference/api-keys/token"
+    }
+  ]
 }

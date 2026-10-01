@@ -3,6 +3,17 @@ title: "Changelog"
 description: "Latest updates, improvements, and fixes across all Yativo platforms"
 ---
 
+<Update label="October 2026" description="Login history, EUR SEPA deposits, and API key restrictions">
+  ### Yativo Fiat
+  - **Login history:** new `GET /auth/login-history` lists sign-ins with IP, device, location and suspicious-sign-in flags, including failed API key attempts. See [Security](/yativo-fiat/security#review-sign-in-activity)
+  - **EUR deposits via SEPA:** customers can fund deposits by bank transfer to a Yativo IBAN. See [Deposits](/yativo-fiat/deposits#eur-bank-transfer-sepa)
+  - Endpoints that change sign-in settings (passkeys, two-factor authentication, PIN, app secret) or delete the account now return `403` when called with an API key
+  - `GET /ip-whitelist/check` now returns `api_key.label` (was `name`) and a `network.warning` when your request came through a proxy
+
+  ### Yativo Crypto
+  - Card IBAN removed from the crypto docs. To receive money by bank transfer, use [Yativo Fiat virtual accounts](/yativo-fiat/virtual-accounts)
+</Update>
+
 <Update label="September 2026" description="API Keys, IP whitelisting, passkeys, and crypto API updates">
   ### Yativo Fiat
   - **API Keys:** servers now authenticate with `X-Api-Key` and `X-Api-Secret`. See [Authentication](/yativo-fiat/authentication)
@@ -34,7 +45,6 @@ description: "Latest updates, improvements, and fixes across all Yativo platform
     - [status.yativo.com](https://status.yativo.com) (primary)
     - [status2.yativo.com](https://status2.yativo.com) (backup)
   - Both pages show real-time uptime, incident history, and scheduled maintenance
-  - Per-service health monitoring for crypto backend (Balance Service, RPC Nodes, XDC WebSocket)
   - Fiat backend health check endpoints added (`/api/health`, `/api/health/ping`)
 
   ### Yativo Crypto SDK
@@ -45,7 +55,6 @@ description: "Latest updates, improvements, and fixes across all Yativo platform
   ### Security
   - Webhook HMAC SHA256 signature verification documented with multi-language examples
   - Removed API registration/login from public docs — onboarding exclusively via dashboard
-  - Hardcoded test keys removed from codebase
 </Update>
 
 <Update label="March 2026" description="Auto-forwarding, XSS hardening, and SDK improvements">

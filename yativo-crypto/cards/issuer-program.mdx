@@ -26,7 +26,7 @@ The Yativo Card Issuer Program lets businesses issue virtual and physical paymen
     Yativo's team reviews your use case and enables the Card Issuer Program on your account. Nothing is visible in your dashboard until this step is complete.
   </Step>
   <Step title="You submit an application">
-    Once eligible, the Card Issuer section appears in your dashboard. Choose your funding structure (`master_wallet` or `non_master`) and an optional IBAN add-on, then submit.
+    Once eligible, the Card Issuer section appears in your dashboard. Choose your funding structure (`master_wallet` or `non_master`), then submit.
   </Step>
   <Step title="Yativo approves your program">
     Our compliance team reviews and approves the application, typically within 2–5 business days. On approval, your settlement wallets are auto-provisioned.
@@ -58,15 +58,13 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "funding_structure": "master_wallet",
-    "iban_enabled": false
+    "funding_structure": "master_wallet"
   }'
 ```
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `funding_structure` | Yes | `master_wallet` or `non_master` |
-| `iban_enabled` | No | Set to `true` to enable EUR IBAN issuance. Requires additional regulatory review. Default: `false` |
 
 ```json Response
 {
@@ -75,8 +73,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   "data": {
     "id": "6634abc...",
     "status": "pending",
-    "funding_structure": "master_wallet",
-    "iban_enabled": false
+    "funding_structure": "master_wallet"
   }
 }
 ```
@@ -98,7 +95,6 @@ curl 'https://crypto-api.yativo.com/api/v1/card-issuer/status' \
     "status": "approved",
     "funding_structure": "master_wallet",
     "enabled_chains": ["SOL"],
-    "iban_enabled": false,
     "card_reissue_enabled": false,
     "master_wallets": {
       "sol": {

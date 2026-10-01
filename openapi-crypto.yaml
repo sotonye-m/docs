@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Yativo Crypto API
   description: |
-    Multi-chain crypto infrastructure: wallets, cards, swaps, payment gateway, agentic wallets, IBAN, and more.
+    Multi-chain crypto infrastructure: wallets, cards, swaps, payment gateway, agentic wallets, and more.
 
     **Authentication**
     Exchange your API key + secret for a Bearer token via `POST /auth/token`. Tokens expire after 60 minutes.
@@ -235,22 +235,6 @@ components:
           type: string
           format: date-time
 
-    IbanStatus:
-      type: object
-      properties:
-        status:
-          type: string
-          enum: [not_started, initializing, kyc_pending, kyc_approved, iban_requested, iban_active, rejected]
-        iban:
-          type: string
-          nullable: true
-          example: DE89370400440532013000
-        profile_kind:
-          type: string
-          enum: [personal, corporate]
-        created_at:
-          type: string
-          format: date-time
 
     CardIssuerStatus:
       type: object
@@ -1595,9 +1579,6 @@ paths:
                 preferred_chain:
                   type: string
                   enum: [SOL, XDC]
-                iban_enabled:
-                  type: boolean
-                  description: Enable IBAN support for card customers
       responses:
         "200":
           description: Application submitted

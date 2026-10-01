@@ -78,8 +78,7 @@ Content-Type: application/json
 
 {
   "funding_structure": "master_wallet",
-  "preferred_chain": "SOL",
-  "iban_enabled": false
+  "preferred_chain": "SOL"
 }
 ```
 
@@ -87,7 +86,6 @@ Content-Type: application/json
 |---|---|---|---|
 | `funding_structure` | string | Yes | `master_wallet` or `non_master` (see below) |
 | `preferred_chain` | string | No | `SOL` (default) or `XDC` — the chain your master wallet will receive funds on |
-| `iban_enabled` | boolean | No | Enable IBAN for cardholders. Defaults to `false`. |
 
 ### Funding Structures
 
@@ -129,7 +127,6 @@ Authorization: Bearer YOUR_TOKEN
     "funding_structure": "master_wallet",
     "preferred_chain": "SOL",
     "enabled_chains": ["SOL"],
-    "iban_enabled": false,
     "card_reissue_enabled": true,
     "master_wallets": {
       "sol": {
@@ -340,13 +337,12 @@ Authorization: Bearer YOUR_TOKEN
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
     "kyc_url": "https://kyc.yativo.com/verify?token=...",
-    "sumsub_sdk_token": "eyJ...",
     "next_step": "kyc_status"
   }
 }
 ```
 
-Redirect the customer to `kyc_url`, or embed the KYC flow in your app using the Sumsub SDK with `sumsub_sdk_token`. Add `?refresh=true` to generate a new link if the existing one has expired.
+Redirect the customer to `kyc_url` to complete verification on the hosted page. The link is valid for 1 hour. Add `?refresh=true` to generate a new one.
 
 ---
 
@@ -573,7 +569,7 @@ The response is identical to the first card creation. Each call issues a new ind
 Limits work in a three-tier hierarchy:
 
 ```
-Yativo Admin
+Yativo
   └── sets program ceiling (e.g. max 3 virtual per customer)
         └── You (the Issuer)
               └── can set per-customer override ≤ program ceiling
@@ -1284,8 +1280,8 @@ Every operation that can fail returns a `data.next_step` field and a `data.actio
 | `OTP_INVALID_OR_EXPIRED` | Wrong or expired code | Retry with correct code, or `POST /customers/{id}/resend-otp` |
 | `OTP_VERIFICATION_FAILED` | Verification service returned an unexpected error | Inspect `message` field; then `resend-otp` |
 | `OTP_ATTEMPTS_EXCEEDED` | 5 wrong attempts | `POST /customers/{id}/resend-otp` — **this resets the counter** |
-| `SESSION_EXPIRED` | JWT expired and SIWE auto-refresh failed | `POST /customers/{id}/resend-otp` — new OTP re-establishes the session |
-| `JWT_REFRESH_FAILED` | SIWE re-auth failed (rare) | `POST /customers/{id}/resend-otp` |
+| `SESSION_EXPIRED` | The customer's card session has expired | `POST /customers/{id}/resend-otp` — new OTP re-establishes the session |
+| `JWT_REFRESH_FAILED` | The card session couldn't be renewed (rare) | `POST /customers/{id}/resend-otp` |
 
 All OTP errors include `data.attempts_remaining`, `data.next_step: "resend_otp"`, and `data.action` in the response body.
 
@@ -1295,7 +1291,7 @@ All OTP errors include `data.attempts_remaining`, `data.next_step: "resend_otp"`
 |---|---|---|
 | `KYC_LINK_FAILED` | Identity verification link could not be generated | Retry `GET /customers/{id}/kyc-link?refresh=true` after a short delay |
 | `KYC_STATUS_ERROR` | Live status check failed | Retry `GET /customers/{id}/kyc-status` — response falls back to cached status |
-| `SESSION_EXPIRED` | JWT expired and can't refresh | `GET /customers/{id}/kyc-link?refresh=true` — this forces a SIWE re-auth internally |
+| `SESSION_EXPIRED` | The customer's card session has expired | `GET /customers/{id}/kyc-link?refresh=true` |
 
 ---
 
@@ -1348,7 +1344,6 @@ Authorization: Bearer YOUR_TOKEN
     "next_step": "retry_kyc",
     "action_taken": "kyc_link_generated",
     "kyc_url": "https://kyc.yativo.com/verify?token=...",
-    "sumsub_sdk_token": "eyJ...",
     "days_since_created": 2
   }
 }
@@ -1396,7 +1391,7 @@ if (kycResult === 'rejected') {
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const { data } = await linkRes.json();
-  redirectCustomer(data.kyc_url); // or embed Sumsub SDK with data.sumsub_sdk_token
+  redirectCustomer(data.kyc_url ?? data.sumsub_link);
 }
 ```
 
@@ -1441,7 +1436,7 @@ Every API response in the customer lifecycle includes `data.next_step`. Use it t
 
 ### Handling `INITIALIZATION_FAILED` on Onboard
 
-`POST /customers/onboard` performs several steps internally (wallet generation, SIWE signing, OTP request, DB write). In rare cases — typically a transient database timeout or network issue — the API returns `500 INITIALIZATION_FAILED` even though the customer record **was** successfully created and the OTP email was already sent.
+`POST /customers/onboard` sets up several things in one call. In rare cases, typically a transient network issue, the API returns `500 INITIALIZATION_FAILED` even though the customer record **was** successfully created and the OTP email was already sent.
 
 **Recovery pattern:** Retry the onboard call with the same email (and `external_customer_id` if you use one). One of two things will happen:
 

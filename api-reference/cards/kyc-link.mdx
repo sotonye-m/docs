@@ -14,11 +14,11 @@ authMethod: "bearer"
 </ParamField>
 
 <Note>
-  Call this endpoint after OTP verification. Open `sumsub_link` in the customer's browser or embed it in your app. They will complete identity verification (government ID upload + liveness check) through the hosted Sumsub flow. After completion, poll [Check KYC Status](/api-reference/cards/kyc-status) until `kyc_status` is `approved` — KYC completion is not delivered as a webhook.
+  Call this endpoint after OTP verification. Open `kyc_url` in the customer's browser. They complete identity verification (government ID upload and liveness check) on the hosted verification page. After completion, poll [Check KYC Status](/api-reference/cards/kyc-status) until `kyc_status` is `approved`. KYC completion is not delivered as a webhook.
 </Note>
 
 <Note>
-  **Link expiry:** The Sumsub link is valid for **1 hour** from when it was generated. If the customer has not completed KYC within that window, call this endpoint again — a fresh link is returned automatically. You do not need to pass any extra parameters to force a refresh.
+  **Link expiry:** a verification link is valid for **1 hour**. Calling this endpoint again within that hour returns the same link, in `sumsub_link` instead of `kyc_url`, so read `kyc_url ?? sumsub_link`. After an hour a new link is generated automatically. Add `?refresh=true` to force a new link.
 </Note>
 
 <RequestExample>
@@ -32,13 +32,12 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
 ```json 200 OK
 {
   "success": true,
-  "message": "KYC link retrieved",
+  "message": "KYC link generated. Open the link to complete identity verification.",
   "data": {
     "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
-    "sumsub_link": "https://kyc.sumsub.com/msdk/v2?accessToken=_act-sbx-...",
-    "sumsub_sdk_token": "_act-sbx-...",
-    "applicant_id": "6627f3a2c5d4e100123abcde",
-    "next_step": "kyc_status"
+    "kyc_url": "https://verify.example.com/...",
+    "next_step": "kyc_status",
+    "instructions": "Open the KYC link to upload your government ID and complete liveness check"
   }
 }
 ```

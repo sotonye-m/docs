@@ -22,10 +22,6 @@ authMethod: "bearer"
   The chain your master wallet will receive deposits on. `SOL` (default) or `XDC`. Yativo auto-provisions a wallet for the chosen chain on approval. Most issuers use `SOL`.
 </ParamField>
 
-<ParamField body="iban_enabled" type="boolean">
-  Whether to enable IBAN functionality for cardholders in your program. Defaults to `false`.
-</ParamField>
-
 <Note>
   The Issuer Program requires prior eligibility approval. Check `GET /v1/card-issuer/eligibility` first. If not eligible, contact your account manager or [support@yativo.com](mailto:support@yativo.com).
 </Note>
@@ -37,8 +33,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
   -H 'Content-Type: application/json' \
   -d '{
     "funding_structure": "master_wallet",
-    "preferred_chain": "SOL",
-    "iban_enabled": false
+    "preferred_chain": "SOL"
   }'
 ```
 </RequestExample>
@@ -52,8 +47,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/card-issuer/apply' \
     "id": "69ecc05a4fc8c9c148ed1a9a",
     "status": "pending",
     "funding_structure": "master_wallet",
-    "preferred_chain": "SOL",
-    "iban_enabled": false
+    "preferred_chain": "SOL"
   }
 }
 ```
