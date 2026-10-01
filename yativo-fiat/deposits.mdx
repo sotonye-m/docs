@@ -53,7 +53,8 @@ GET /payment-methods/payin/countries
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/countries' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -91,7 +92,8 @@ GET /payment-methods/payin?country={iso3}&currency={code}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin?country=CHL&currency=CLP' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -158,7 +160,8 @@ POST /wallet/deposits/new
 <RequestExample>
 ```bash With quote ID (recommended)
 curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -172,7 +175,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
 
 ```bash Without quote ID (market rate)
 curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -219,6 +223,37 @@ Send `deposit_url` to your customer — they complete payment through Yativo's h
 
 ---
 
+## EUR bank transfer (SEPA)
+
+Customers can fund a deposit in EUR with a SEPA transfer to a Yativo IBAN.
+
+1. Find the gateway with `GET /payment-methods/payin?country=MLT&currency=EUR`. The method is named **EUR Bank Transfer (SEPA)**.
+2. Create the payin with that `gateway`, `currency: "EUR"`, an `amount` and a `customer_id`. `customer_id` is required for this method.
+3. Optionally send `sender_account_number` with the IBAN your customer will pay from. It helps match the transfer.
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "gateway": GATEWAY_ID,
+    "currency": "EUR",
+    "amount": 250,
+    "customer_id": "xxxxxx-xxxx-xxxx-xxxxxx",
+    "sender_account_number": "DE89370400440532013000"
+  }'
+```
+
+The `deposit_url` page shows the IBAN, BIC (SWIFT code), account name, amount and a unique **payment reference**.
+
+<Warning>
+  Your customer must put the payment reference in the transfer's reference field, and send it from a bank account in their own name (the name on their KYC). Transfers without the reference, or from third parties, can't be matched to the deposit.
+</Warning>
+
+---
+
 ## List deposits
 
 ```
@@ -230,7 +265,8 @@ Filter by `gateway`, `currency`, `start_date`, or `end_date` as query parameters
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/wallet/deposits/?currency=CLP&start_date=2026-03-01&end_date=2026-03-31' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -286,7 +322,8 @@ POST /crypto/create-wallet
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/crypto/create-wallet' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{ "currency": "USDC_SOL" }'
 ```

@@ -1,0 +1,29 @@
+---
+title: "Get Customer Auto-Forward"
+api: "GET /v1/customers/{customer_id}/auto-forward"
+description: "Get a customer's auto-forward rule"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="customer_id" type="string" required>
+  The customer ID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/customers/6650a1f2c3d4e5f6a7b8c9d0/auto-forward' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{ "status": true, "data": { "destination_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU", "percentage": 100, "chain": "SOL", "enabled": true } }
+```
+</ResponseExample>
+
+`data` is `null` when the customer has no rule.

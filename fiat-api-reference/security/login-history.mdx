@@ -1,0 +1,13 @@
+---
+title: "Login History"
+description: "Review sign-ins to your account, with signals for ones worth a second look"
+openapi: "GET https://api.yativo.com/api/v1/auth/login-history"
+---
+
+Returns sign-ins to your account, newest first. Each entry has the IP, device, approximate location and sign-in method. `risk_level` and `flags` mark sign-ins that may need a second look, such as a new IP, a new device or a new country.
+
+- Add `?flagged=true` to return only suspicious sign-ins.
+- Add `?status=failed` to see failed attempts. Requests with a wrong API secret or a revoked API key appear here with `auth_method` set to `api_key`. If you see these unexpectedly, revoke the key in **Developers → API Keys** and create a new one.
+- Called with an API key, this returns the business account owner's history. Team members see their own history in the dashboard.
+
+See [Security](/yativo-fiat/security#review-sign-in-activity).

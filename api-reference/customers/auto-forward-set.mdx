@@ -1,0 +1,48 @@
+---
+title: "Set Customer Auto-Forward"
+api: "POST /v1/customers/{customer_id}/auto-forward"
+description: "Forward a customer's deposits to another address"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="customer_id" type="string" required>
+  The customer ID.
+</ParamField>
+
+<ParamField body="destination_address" type="string" required>Address to forward deposits to.</ParamField>
+
+<ParamField body="asset_id" type="string" required>The asset to forward.</ParamField>
+
+<ParamField body="chain" type="string" required>The chain, e.g. `SOL`.</ParamField>
+
+<ParamField body="percentage" type="number" default="100">Share of each deposit to forward.</ParamField>
+
+<ParamField body="minimum_amount" type="string" default="0.0001">Deposits below this amount aren't forwarded.</ParamField>
+
+<ParamField body="enabled" type="boolean" default="true">Turn the rule on or off.</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST 'https://crypto-api.yativo.com/api/v1/customers/6650a1f2c3d4e5f6a7b8c9d0/auto-forward' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "destination_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    "asset_id": "665a0b1c2d3e4f5a6b7c8d9e",
+    "chain": "SOL",
+    "percentage": 100
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{ "status": true, "message": "Auto-forward rule saved", "data": { "destination_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU", "percentage": 100, "chain": "SOL", "enabled": true } }
+```
+</ResponseExample>
+
+Calling this again for the same customer, asset and chain updates the existing rule.

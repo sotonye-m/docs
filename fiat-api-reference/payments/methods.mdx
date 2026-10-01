@@ -18,7 +18,8 @@ GET /payment-methods/payout?country={iso3}
 <RequestExample>
 ```bash cURL — Chile
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout?country=CHL' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

@@ -1,7 +1,7 @@
 ---
 title: "List Customers"
 api: "POST /v1/customers/get-customers"
-description: "Retrieve a paginated list of all customers in your account"
+description: "List your wallet customers with balances"
 authMethod: "bearer"
 ---
 
@@ -9,92 +9,44 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField body="page" type="number">
-  Page number for pagination. Default: `1`
-</ParamField>
-
-<ParamField body="limit" type="number">
-  Results per page. Default: `20`, max: `100`
-</ParamField>
-
-<ParamField body="status" type="string">
-  Filter by customer status. Accepted values: `active`, `suspended`, `pending`
-</ParamField>
-
 <ParamField body="search" type="string">
-  Search by email or name (partial match supported).
+  Matches username, email, or a wallet address.
 </ParamField>
 
-<ParamField body="customerId" type="string">
-  Pass a specific customer ID to retrieve a single customer instead of the full list.
+<ParamField body="page" type="number" default="1">
+  Page number.
 </ParamField>
 
-<Accordion title="Response Type Definitions">
-```typescript
-interface Customer {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  status: "active" | "suspended" | "pending";
-  kyc_status: "not_started" | "pending" | "approved" | "rejected";
-  created_at: string;
-  updated_at: string;
-}
-
-interface ListCustomersResponse {
-  status: "success";
-  data: {
-    customers: Customer[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      total_pages: number;
-    };
-  };
-}
-```
-</Accordion>
+<ParamField body="limit" type="number" default="20">
+  Results per page.
+</ParamField>
 
 <RequestExample>
-```bash cURL
+```bash
 curl -X POST 'https://crypto-api.yativo.com/api/v1/customers/get-customers' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -d '{}'
-```
-
-```typescript TypeScript SDK
-const customers = await sdk.customers.list({ page: 1, limit: 20 });
-console.log(customers.data.customers);
+  -d '{ "page": 1, "limit": 20 }'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json Success
+```json
 {
+  "status": true,
+  "message": "Customers listed successfully",
   "data": [
     {
-      "_id": "cust_67d01994740754bbf304abcd",
-      "username": "alice_merchant",
-      "email": "alice@example.com",
-      "phone_number": "+1234567890",
-      "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
-      "createdAt": "2026-01-11T11:08:04.559Z",
-      "updatedAt": "2026-01-11T11:08:04.559Z"
-    },
-    {
-      "_id": "cust_67d2d2a5740754bbf308efgh",
-      "username": "bob_trader",
-      "email": "bob@example.com",
+      "_id": "6650a1f2c3d4e5f6a7b8c9d0",
+      "username": "Acme Corp",
+      "email": "billing@acme.com",
       "phone_number": "",
-      "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
-      "createdAt": "2026-01-13T12:42:13.562Z",
-      "updatedAt": "2026-01-13T12:42:13.562Z"
+      "wallet_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+      "balance_usd": 1250.4,
+      "createdAt": "2026-09-30T10:00:00.000Z"
     }
   ],
-  "status": true
+  "pagination": { "current_page": 1, "total_pages": 1, "total_records": 1, "records_per_page": 20 }
 }
 ```
 </ResponseExample>

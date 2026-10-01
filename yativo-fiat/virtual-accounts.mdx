@@ -65,7 +65,8 @@ POST /business/virtual-account/create
 <RequestExample>
 ```bash Brazil (PIX)
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -76,7 +77,8 @@ curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
 
 ```bash Mexico (SPEI)
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -149,7 +151,8 @@ GET /business/virtual-account
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account?currency=BRL&per_page=20' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -168,7 +171,8 @@ GET /business/virtual-account/show/{id}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/show/va_xxxxxx' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -213,7 +217,8 @@ POST /business/virtual-account/history/{account_number}
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/history/9900123456?start_date=2026-04-01&end_date=2026-04-30' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -253,7 +258,8 @@ DELETE /business/virtual-account/delete-virtual-account/{id}
 <RequestExample>
 ```bash cURL
 curl -X DELETE 'https://api.yativo.com/api/v1/business/virtual-account/delete-virtual-account/va_xxxxxx' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -287,7 +293,8 @@ POST https://api.yativo.com/api/v1/business/virtual-account/bulk-account-creatio
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/bulk-account-creation' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: bulk-va-june-001' \
   -d '{
@@ -321,7 +328,8 @@ PUT https://api.yativo.com/api/v1/business/virtual-account/enable_disable_virtua
 <RequestExample>
 ```bash Disable
 curl -X PUT 'https://api.yativo.com/api/v1/business/virtual-account/enable_disable_virtual_account' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: disable-va-001' \
   -d '{
@@ -332,7 +340,8 @@ curl -X PUT 'https://api.yativo.com/api/v1/business/virtual-account/enable_disab
 
 ```bash Re-enable
 curl -X PUT 'https://api.yativo.com/api/v1/business/virtual-account/enable_disable_virtual_account' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: enable-va-001' \
   -d '{
@@ -363,7 +372,8 @@ POST https://api.yativo.com/api/v1/business/virtual-account/refundPayin/{externa
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/refundPayin/TXNMP2HK81BHJ' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: refund-TXNMP2HK81BHJ-001'
 ```
@@ -396,7 +406,8 @@ GET https://api.yativo.com/api/v1/business/virtual-account/customer/accounts/{cu
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/customer/accounts/da44a3e6-eb5d-429f-8d17-357aa5a6cdf2' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -408,7 +419,8 @@ Before issuing a virtual account, the customer's KYC must be approved. Check the
 
 ```bash
 curl -X GET 'https://api.yativo.com/api/v1/customer/da44a3e6-eb5d-429f-8d17-357aa5a6cdf2' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 If `is_va_approved` is `false`, submit KYC first. See the [Customers & KYC](/yativo-fiat/kyc) guide.

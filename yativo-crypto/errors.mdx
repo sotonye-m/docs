@@ -66,6 +66,8 @@ The request is authenticated, but the API key or user does not have permission t
 
 **How to handle:** Check which permissions your API key has (`GET /apikey/{id}`). If needed, update permissions via `PUT /apikey/{id}/permissions` (requires 2FA).
 
+A send can also return `403` with `error: "WITHDRAWAL_LIMIT_EXCEEDED"` when it would go over your daily or monthly withdrawal limit. See [Withdrawal limits and reviews](/yativo-crypto/transactions#withdrawal-limits-and-reviews).
+
 ---
 
 ### 404 — Not Found
@@ -128,7 +130,6 @@ Common 422 error codes:
 | `quote_expired` | A swap quote has passed its `expires_at` timestamp |
 | `gas_station_empty` | The gas station for this chain has no native tokens |
 | `card_not_active` | The target card is not in an active state |
-| `iban_not_activated` | The IBAN account has not completed activation |
 
 **How to handle:** Read the `error_code` and `details` to determine the specific issue. These errors require business logic changes (top up wallet, get a fresh quote, etc.) — not just a retry.
 

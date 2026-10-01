@@ -12,8 +12,19 @@ info:
     | Sandbox | `https://smtp.yativo.com/api/v1` |
 
     **Authentication**
-    All requests (except `POST /auth/login`) require a Bearer token obtained from `POST /auth/login`.
-    Tokens expire after 600 seconds. Refresh with `GET /auth/refresh-token`.
+    Send `X-Api-Key` and `X-Api-Secret` on every request. Create keys in the dashboard under
+    **Developers → API Keys**. Each key only works from the server IPs listed on it (enforced from
+    midnight on 14 October 2026). Keys don't expire and there's no login call or token refresh.
+
+    `POST /auth/login` with an Account ID and App Secret is deprecated. From 15 October 2026 its
+    tokens only work inside the Yativo dashboard.
+
+    Endpoints that change how a person signs in (passkeys, two-factor authentication, PIN, app secret),
+    delete the account, or manage API keys and IP whitelists can't be called with an API key.
+    Use the dashboard for those.
+
+    **Rate limits**
+    20 requests per second per business account. Enterprise plans have custom limits.
 
     **Idempotency**
     All `POST` and `PUT` requests require an `Idempotency-Key` header — a unique string per request.
@@ -33,15 +44,26 @@ servers:
     description: Sandbox
 
 security:
-  - bearerAuth: []
+  - apiKey: []
+    apiSecret: []
 
 components:
   securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: Your API key (`yativo_pk_...`) from Developers → API Keys. Send together with X-Api-Secret.
+    apiSecret:
+      type: apiKey
+      in: header
+      name: X-Api-Secret
+      description: Your API secret (`yativo_sk_...`), shown once when the key is created.
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Bearer token obtained from POST /auth/login
+      description: Deprecated. Token from POST /auth/login. From 15 October 2026 only accepted from the Yativo dashboard.
 
   parameters:
     IdempotencyKey:
@@ -465,10 +487,11 @@ paths:
   /auth/login:
     post:
       tags: [Authentication]
-      summary: Generate Bearer Token
+      summary: Generate Bearer Token (deprecated)
+      deprecated: true
       description: |
-        Authenticate with your Account ID and App Secret to receive a Bearer token.
-        Tokens expire after **600 seconds**. Use `GET /auth/refresh-token` to renew.
+        **Deprecated.** Use an API key (`X-Api-Key` + `X-Api-Secret`) instead.
+        From 15 October 2026, tokens from this endpoint only work inside the Yativo dashboard.
       security: []
       requestBody:
         required: true
@@ -503,8 +526,11 @@ paths:
   /auth/refresh-token:
     get:
       tags: [Authentication]
-      summary: Refresh Token
-      description: Refresh an expiring token without re-authenticating with credentials.
+      summary: Refresh Token (deprecated)
+      deprecated: true
+      description: "**Deprecated.** Not needed with API keys, which don't expire."
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Token refreshed
@@ -4100,141 +4126,6 @@ paths:
                         format: date
 
   # ============================================================
-  # IP ALLOWLIST
-  # ============================================================
-
-  /ip:
-    get:
-      tags: [IP Allowlist]
-      summary: Get Allowlisted IPs
-      description: |
-        Returns your IP allowlist record. The `ip_address` field contains all currently
-        allowlisted IP addresses as an array.
-      responses:
-        '200':
-          description: IP allowlist record
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      user_id:
-                        type: string
-                      ip_address:
-                        type: array
-                        items:
-                          type: string
-                      created_at:
-                        type: string
-                        format: date-time
-                      updated_at:
-                        type: string
-                        format: date-time
-
-    post:
-      tags: [IP Allowlist]
-      summary: Add IP Addresses
-      description: |
-        Add trusted IP addresses to your allowlist. Once any IP is allowlisted, all requests
-        from non-listed IPs are rejected with 403 Forbidden.
-        Requires an `Idempotency-Key` header.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [new_ip]
-              properties:
-                new_ip:
-                  type: array
-                  items:
-                    type: string
-                  description: Array of IPv4 addresses to allowlist.
-                  example: ['203.0.113.10', '198.51.100.5']
-      responses:
-        '200':
-          description: IPs added
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-
-  /ip/{id}:
-    put:
-      tags: [IP Allowlist]
-      summary: Update IP Allowlist
-      description: |
-        Append additional IP addresses to your existing allowlist record.
-        This **adds** to the existing list — it does not replace it.
-        Requires an `Idempotency-Key` header.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: The ID of the allowlist record.
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [new_ip]
-              properties:
-                new_ip:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        '200':
-          description: IPs updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-
-  /ip/{ipAddress}:
-    delete:
-      tags: [IP Allowlist]
-      summary: Remove IP Address
-      description: Remove a single IP address from the allowlist.
-      parameters:
-        - name: ipAddress
-          in: path
-          required: true
-          schema:
-            type: string
-          description: The IPv4 address to remove (e.g. 203.0.113.10).
-      responses:
-        '200':
-          description: IP removed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-
-  # ============================================================
   # WEBHOOKS
   # ============================================================
 
@@ -4419,20 +4310,27 @@ paths:
                         format: date-time
 
   # ============================================================
-  # DEVELOPER
+  # IP WHITELIST
   # ============================================================
 
-  /generate-secret:
+  /ip-whitelist/check:
     get:
-      tags: [Developer]
-      summary: Generate API Secret
+      tags: [IP Whitelist]
+      summary: Check IP Whitelist
       description: |
-        Generate a new App Secret for API authentication. Requires PIN verification first
-        via `POST /pin/verify`. Generating a new secret **immediately invalidates** the previous one.
-        The secret is returned only once — store it securely.
+        Shows the IP Yativo sees for your request and whether it can use your API key.
+        Never blocks the request. Call it from the server that uses the key. Limited to 30 requests a minute.
+      parameters:
+        - name: ip
+          in: query
+          required: false
+          description: Check this IP against your whitelist instead of the detected one. `key_usage` still describes the calling server.
+          schema:
+            type: string
+            example: 198.51.100.7
       responses:
         '200':
-          description: New App Secret generated
+          description: Check result
           content:
             application/json:
               schema:
@@ -4440,16 +4338,285 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: success
                   status_code:
                     type: integer
+                    example: 200
                   message:
                     type: string
                   data:
                     type: object
                     properties:
-                      app_secret:
+                      key_usage:
+                        type: object
+                        properties:
+                          authenticated_with_api_key:
+                            type: boolean
+                          key:
+                            type: string
+                            example: yativo_pk_9f1c2a...
+                          request_ip:
+                            type: string
+                            example: 203.0.113.10
+                          allowed_server:
+                            type: boolean
+                            nullable: true
+                            description: Whether the calling server can use this key. `null` when not called with an API key.
+                          matched_entry:
+                            type: string
+                            nullable: true
+                            example: 203.0.113.10
+                          message:
+                            type: string
+                      result:
                         type: string
-                        description: Shown once only.
+                        enum: [pass, fail]
+                      summary:
+                        type: string
+                        example: 203.0.113.10 passes the IP whitelist.
+                      tested_ip:
+                        type: string
+                        example: 203.0.113.10
+                      tested_ip_source:
+                        type: string
+                        enum: [detected, query]
+                      network:
+                        type: object
+                        properties:
+                          detected_ip:
+                            type: string
+                            example: 203.0.113.10
+                          warning:
+                            type: string
+                            nullable: true
+                            description: Set when your request reached Yativo through a proxy, so `detected_ip` may be the proxy's IP. Contact support if `detected_ip` isn't your server's public IP.
+                      api_key:
+                        type: object
+                        nullable: true
+                        description: How `tested_ip` compares with this key's whitelist. `null` when not called with an API key.
+                        properties:
+                          key:
+                            type: string
+                            example: yativo_pk_9f1c2a...
+                          label:
+                            type: string
+                            example: Production backend
+                          key_allowed_ips:
+                            type: array
+                            items:
+                              type: string
+                            description: IPs listed on this key.
+                          account_whitelisted_ips:
+                            type: array
+                            items:
+                              type: string
+                            description: IPs from **Profile → Whitelist** that also apply to this key.
+                          matched_entry:
+                            type: string
+                            nullable: true
+                          would_allow:
+                            type: boolean
+                          would_return:
+                            type: object
+                            nullable: true
+                            description: The error a request from `tested_ip` would get. `null` when allowed.
+                            properties:
+                              http_status:
+                                type: integer
+                                example: 403
+                              error:
+                                type: string
+                                example: This IP address is not allowed to use this API key.
+                      sitewide:
+                        type: object
+                        description: How `tested_ip` compares with your account IP whitelist.
+                        properties:
+                          account_whitelisted_ips:
+                            type: array
+                            items:
+                              type: string
+                          matches_own_account_ip:
+                            type: boolean
+                          would_allow:
+                            type: boolean
+                          would_return:
+                            type: object
+                            nullable: true
+                            properties:
+                              http_status:
+                                type: integer
+                              error:
+                                type: string
+        '401':
+          description: Missing or invalid API credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: The `ip` query parameter isn't a valid IP address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login-history:
+    get:
+      tags: [Account Security]
+      summary: Login History
+      description: |
+        Sign-in history for the account, newest first, with signals that make a sign-in worth a second look
+        (new IP, new device, new country, failed attempts beforehand). Failed requests with a wrong API secret
+        or a revoked API key also appear here, with `auth_method` set to `api_key`.
+
+        Called with an API key, this returns the business account owner's history. Limited to 30 requests a minute.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [successful, failed, active]
+          description: '`active` returns sessions that are still signed in.'
+        - name: flagged
+          in: query
+          schema:
+            type: boolean
+          description: Only return sign-ins flagged as suspicious.
+        - name: ip
+          in: query
+          schema:
+            type: string
+          description: Only return sign-ins from this IP.
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+          example: '2026-10-01'
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+          example: '2026-10-31'
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated login history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Records retrieved successfully
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 4182
+                        ip_address:
+                          type: string
+                          example: 203.0.113.10
+                        user_agent:
+                          type: string
+                        auth_method:
+                          type: string
+                          nullable: true
+                          enum: [magic_link, passkey, password, social, api_key]
+                          description: '`password` is the legacy Account ID and App Secret login.'
+                        device:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: Chrome on macOS
+                            browser:
+                              type: string
+                              nullable: true
+                              example: Chrome
+                            platform:
+                              type: string
+                              nullable: true
+                              example: macOS
+                            type:
+                              type: string
+                              nullable: true
+                              enum: [desktop, mobile, tablet, automated]
+                        location:
+                          type: object
+                          nullable: true
+                          description: Approximate location from the IP address.
+                        login_successful:
+                          type: boolean
+                        is_active:
+                          type: boolean
+                          description: Whether this session is still signed in.
+                        is_trusted:
+                          type: boolean
+                        login_at:
+                          type: string
+                          format: date-time
+                        logout_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        last_activity_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        suspicious:
+                          type: boolean
+                          description: '`true` when `risk_level` is `medium` or `high`.'
+                        risk_level:
+                          type: string
+                          enum: [low, medium, high]
+                        risk_score:
+                          type: integer
+                          minimum: 0
+                          maximum: 100
+                        flags:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              code:
+                                type: string
+                                enum: [failed_login, flagged_by_system, new_ip, new_device, new_country, automated_client, preceded_by_failed_attempts]
+                              message:
+                                type: string
+                                example: First login from IP 203.0.113.10.
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Missing or invalid API credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # DEVELOPER
+  # ============================================================
 
   /business/logs/all:
     get:
@@ -4604,7 +4771,7 @@ paths:
 
 tags:
   - name: Authentication
-    description: Obtain and refresh Bearer tokens.
+    description: Deprecated login with legacy API keys (Account ID and App Secret). Use API keys instead.
   - name: Customers
     description: Create and manage customer profiles.
   - name: KYC / KYB
@@ -4631,9 +4798,11 @@ tags:
     description: Preview and execute wallet-to-wallet currency conversions.
   - name: Gift Cards
     description: Browse, purchase, and redeem digital gift cards.
-  - name: IP Allowlist
-    description: Manage IP allowlisting to restrict API access by source IP.
+  - name: IP Whitelist
+    description: Check whether your server's IP can use your API key.
+  - name: Account Security
+    description: Review sign-in activity on your account.
   - name: Webhooks
     description: Register and manage webhook endpoints for real-time event notifications.
   - name: Developer
-    description: API secret management, request logs, and webhook event inspection.
+    description: Request logs and webhook event inspection.

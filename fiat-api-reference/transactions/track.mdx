@@ -18,7 +18,8 @@ GET /v1/transaction/tracking/{quote_id}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/transaction/tracking/4a72ecf8-6c8a-4e38-9971-8aabe9f785ed' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

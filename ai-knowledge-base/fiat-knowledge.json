@@ -31,35 +31,59 @@
     "version": "v1",
     "type": "endpoint",
     "category": "authentication",
-    "title": "Authenticate — Get Bearer Token",
-    "method": "POST",
-    "path": "/auth/login",
+    "title": "Authenticate — API Keys",
+    "method": null,
+    "path": null,
     "baseUrl": "https://api.yativo.com/api/v1",
-    "description": "Exchange your account_id and app_secret for a Bearer token. Tokens expire in 600 seconds (10 minutes). All POST/PUT/PATCH requests require an Idempotency-Key header.",
-    "auth_required": false,
-    "auth_type": null,
-    "request_body": {
-      "account_id": { "type": "string", "required": true, "description": "Your Yativo Fiat account identifier" },
-      "app_secret": { "type": "string", "required": true, "description": "Your application secret key" }
-    },
-    "request_params": null,
-    "response_example": {
-      "status": "success",
-      "data": {
-        "access_token": "eyJhbGciOiJIUzI1NiJ9...",
-        "expires_in": 600,
-        "token_type": "Bearer"
+    "description": "Authenticate server-to-server requests by sending X-Api-Key and X-Api-Secret headers on every request. No login call or token refresh. The Account ID + App Secret login (POST /auth/login) is deprecated and stops working from servers on 15 October 2026.",
+    "auth_required": true,
+    "auth_type": "api_key",
+    "request_body": null,
+    "request_params": {
+      "X-Api-Key": {
+        "type": "header",
+        "required": true,
+        "description": "API key (yativo_pk_...) from Developers → API Keys"
+      },
+      "X-Api-Secret": {
+        "type": "header",
+        "required": true,
+        "description": "API secret (yativo_sk_...), shown once at creation"
       }
     },
+    "response_example": null,
     "errors": [
-      { "status": 401, "code": "unauthorized", "description": "Invalid account_id or app_secret" }
+      {
+        "status": 401,
+        "code": "unauthorized",
+        "description": "Both X-Api-Key and X-Api-Secret headers are required, or the key/secret is invalid or revoked"
+      },
+      {
+        "status": 403,
+        "code": "forbidden",
+        "description": "This IP address is not allowed to use this API key — add the server's public IP to the key"
+      }
     ],
-    "related": ["fiat-introduction", "fiat-send-money-overview"],
-    "tags": ["auth", "login", "token", "bearer"],
+    "related": [
+      "fiat-introduction",
+      "fiat-send-money-overview"
+    ],
+    "tags": [
+      "auth",
+      "api key",
+      "x-api-key",
+      "x-api-secret",
+      "ip whitelist",
+      "deprecation"
+    ],
     "verified": true,
-    "content": "Authenticate with the Yativo Fiat API by calling POST /auth/login. Send a JSON body with account_id (your Yativo Fiat account ID) and app_secret (your application secret). The response returns access_token (Bearer token string), expires_in (600 seconds = 10 minutes), and token_type Bearer. Include the token in all subsequent requests as Authorization: Bearer {access_token}. Tokens expire after 10 minutes — much shorter than the crypto API's 60-minute tokens. When expired, refresh without resending credentials using GET /auth/refresh-token. All mutating requests (POST, PUT, PATCH) require an Idempotency-Key header — a unique string per request to prevent duplicate processing. Use a UUID or timestamp-based key. The sandbox environment is at https://smtp.yativo.com/api/v1 with separate sandbox credentials. Response envelope: { status: 'success', status_code: 200, message: 'Request successful', data: { ... } }.",
-    "created_at": { "$date": "2025-01-01T00:00:00Z" },
-    "updated_at": { "$date": "2025-01-01T00:00:00Z" }
+    "content": "Authenticate with the Yativo Fiat API using an API key. Create one in the dashboard under Developers → API Keys → Generate key, entering a label and the public IPs of the servers that will call the API (at least one IP; single IPs or CIDR ranges no broader than /16 IPv4 or /32 IPv6). The API secret is shown once. Send both headers on every request: X-Api-Key: yativo_pk_... and X-Api-Secret: yativo_sk_... — do not send an Authorization header with them. Keys do not expire and work until revoked; they belong to the business, not a person. Requests must come from an IP on the key's whitelist. Use GET /ip-whitelist/check from each server to confirm key_usage.allowed_server is true. Sandbox (https://smtp.yativo.com/api/v1) and production keys are separate. The old Account ID + App Secret login (POST /auth/login returning a Bearer token) is deprecated: from 15 October 2026 its tokens only work inside the Yativo dashboard, so server integrations must migrate to API keys. All POST/PUT/PATCH requests require an Idempotency-Key header.",
+    "created_at": {
+      "$date": "2025-01-01T00:00:00Z"
+    },
+    "updated_at": {
+      "$date": "2025-01-01T00:00:00Z"
+    }
   },
   {
     "_id": "fiat-send-money-overview",

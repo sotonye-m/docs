@@ -81,7 +81,8 @@ GET /business/transactions/index
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/transactions/index?status=success&transaction_type=deposit&start_date=2026-04-01&end_date=2026-04-30&page=1&per_page=10' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -132,7 +133,8 @@ GET /business/transaction/show/{id}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/transaction/show/14' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -155,7 +157,8 @@ GET /transaction/tracking/{transactionId}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/transaction/tracking/a0e9e50e-81be-4bd0-9941-0151e68b9e97' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -206,7 +209,8 @@ GET /business/transaction/by-currency?currency={code}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/transaction/by-currency?currency=BRL' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -227,7 +231,8 @@ GET /business/transaction/{transactionId}/pdf/receipt
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/transaction/a0e9e50e-81be-4bd0-9941-0151e68b9e97/pdf/receipt' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```javascript Node.js decode
@@ -255,7 +260,8 @@ POST /pin/verify
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/pin/verify' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{ "pin": "1234" }'
 ```
@@ -272,7 +278,8 @@ POST /pin/update
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/pin/update' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{ "pin": "5678" }'
 ```

@@ -1,0 +1,49 @@
+---
+title: "Agent Capabilities"
+api: "GET /v1/agent/capabilities"
+description: "What a connector can do, its limits and remaining budget"
+authMethod: "bearer"
+---
+
+<ParamField header="Authorization" type="string" required>
+  Connector API key: `Bearer yac_...`
+</ParamField>
+
+<ParamField query="wallet_id" type="string" required>
+  The agentic wallet ID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl 'https://crypto-api.yativo.com/api/v1/agent/capabilities?wallet_id=aw_01abc123' \
+  -H 'Authorization: Bearer yac_...'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "data": {
+    "wallet_id": "aw_01abc123",
+    "wallet_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "chain": "solana",
+    "balance": 248.5,
+    "capabilities": ["transfer", "prediction_market"],
+    "limits": {
+      "max_per_transaction": 50,
+      "max_daily_amount": 500,
+      "max_monthly_amount": 5000,
+      "remaining_daily": 420,
+      "remaining_monthly": 4780,
+      "allowed_assets": [],
+      "allowed_chains": []
+    },
+    "prediction_market": { "max_position_usd": 25, "allowed_categories": [], "allowed_providers": [] },
+    "supported_assets": []
+  }
+}
+```
+</ResponseExample>
+
+`prediction_market` is `null` when the connector doesn't have that capability. `GET /v1/agent/openapi.json` (no auth) returns an OpenAPI description of the whole Agent API.

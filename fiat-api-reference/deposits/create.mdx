@@ -38,7 +38,8 @@ POST https://api.yativo.com/api/v1/wallet/deposits/new
 <RequestExample>
 ```bash cURL — with quote_id
 curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: deposit-001' \
   -d '{
@@ -51,7 +52,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
 
 ```bash cURL — without quote_id
 curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: deposit-002' \
   -d '{
@@ -66,7 +68,7 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
 // Step 1: Create a payin quote
 const quoteRes = await fetch('https://api.yativo.com/api/v1/exchange-rate', {
   method: 'POST',
-  headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+  headers: { 'X-Api-Key': process.env.YATIVO_API_KEY, 'X-Api-Secret': process.env.YATIVO_API_SECRET, 'Content-Type': 'application/json' },
   body: JSON.stringify({
     from_currency: 'BRL',
     to_currency: 'USD',
@@ -81,7 +83,8 @@ const { data: quote } = await quoteRes.json();
 const depositRes = await fetch('https://api.yativo.com/api/v1/wallet/deposits/new', {
   method: 'POST',
   headers: {
-    'Authorization': `Bearer ${token}`,
+    'X-Api-Key': process.env.YATIVO_API_KEY,
+    'X-Api-Secret': process.env.YATIVO_API_SECRET,
     'Content-Type': 'application/json',
     'Idempotency-Key': `deposit-${Date.now()}`,
   },

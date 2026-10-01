@@ -38,7 +38,8 @@ GET https://kyc.yativo.com/api/kyc/regenerate/{customerId}/{service}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://kyc.yativo.com/api/kyc/regenerate/c586066b-0f29-468f-b775-15483871a202/sepa' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

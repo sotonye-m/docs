@@ -42,7 +42,8 @@ POST /wallet/payout
 <RequestExample>
 ```bash cURL — With quote
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: payout-c586066b-2026-04-02-001' \
   -d '{
@@ -55,7 +56,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
 
 ```bash cURL — Without quote
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: payout-c586066b-2026-04-02-002' \
   -d '{

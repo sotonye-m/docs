@@ -3,6 +3,36 @@ title: "Changelog"
 description: "Latest updates, improvements, and fixes across all Yativo platforms"
 ---
 
+<Update label="October 2026" description="Login history, EUR SEPA deposits, and API key restrictions">
+  ### Yativo Fiat
+  - **Login history:** new `GET /auth/login-history` lists sign-ins with IP, device, location and suspicious-sign-in flags, including failed API key attempts. See [Security](/yativo-fiat/security#review-sign-in-activity)
+  - **EUR deposits via SEPA:** customers can fund deposits by bank transfer to a Yativo IBAN. See [Deposits](/yativo-fiat/deposits#eur-bank-transfer-sepa)
+  - Endpoints that change sign-in settings (passkeys, two-factor authentication, PIN, app secret) or delete the account now return `403` when called with an API key
+  - `GET /ip-whitelist/check` now returns `api_key.label` (was `name`) and a `network.warning` when your request came through a proxy
+
+  ### Yativo Crypto
+  - Card IBAN removed from the crypto docs. To receive money by bank transfer, use [Yativo Fiat virtual accounts](/yativo-fiat/virtual-accounts)
+</Update>
+
+<Update label="September 2026" description="API Keys, IP whitelisting, passkeys, and crypto API updates">
+  ### Yativo Fiat
+  - **API Keys:** servers now authenticate with `X-Api-Key` and `X-Api-Secret`. See [Authentication](/yativo-fiat/authentication)
+  - **Deprecated:** legacy API keys (Account ID + App Secret, `POST /auth/login`). From 15 October 2026, its tokens only work inside the dashboard
+  - **IP whitelisting:** every API key lists the server IPs allowed to use it, enforced from midnight on 14 October 2026. See [IP whitelisting](/yativo-fiat/ip-allowlist)
+  - New `GET /ip-whitelist/check` to confirm each server is allowed
+  - **Passkeys:** everyone on a team can sign in to the dashboard with a passkey. See [Passkeys](/yativo-fiat/passkeys)
+
+  ### Yativo Crypto
+  - Customers: get, update and delete a customer, plus per-customer auto-forwarding. See [Customers](/yativo-crypto/customers)
+  - Agentic wallets: per-connector capabilities, `GET /agent/capabilities`, `GET /agent/openapi.json`, and prediction market trading. See [Agentic Wallets](/yativo-crypto/agentic-wallets)
+  - Transactions: `POST /transactions/preview-fee`, daily and monthly withdrawal limits, and review holds for large sends
+  - Gas station low-balance email alerts with custom thresholds and recipients
+  - Swap: `GET /swap/destinations` and `GET /swap/available-chains`
+  - Deposit webhooks use the on-chain transaction hash as `transaction_id`; deposits below the minimum aren't credited
+  - Secure card view: card data always renders light, and the view can be embedded on any website
+  - Crypto docs now cover the crypto API only. Fiat features are documented under Yativo Fiat
+</Update>
+
 <Update label="April 2026" description="Developer experience, documentation, and monitoring improvements">
   ### Docs
   - Comprehensive Yativo Fiat documentation with guides, API references, KYC/KYB docs
@@ -15,7 +45,6 @@ description: "Latest updates, improvements, and fixes across all Yativo platform
     - [status.yativo.com](https://status.yativo.com) (primary)
     - [status2.yativo.com](https://status2.yativo.com) (backup)
   - Both pages show real-time uptime, incident history, and scheduled maintenance
-  - Per-service health monitoring for crypto backend (Balance Service, RPC Nodes, XDC WebSocket)
   - Fiat backend health check endpoints added (`/api/health`, `/api/health/ping`)
 
   ### Yativo Crypto SDK
@@ -26,7 +55,6 @@ description: "Latest updates, improvements, and fixes across all Yativo platform
   ### Security
   - Webhook HMAC SHA256 signature verification documented with multi-language examples
   - Removed API registration/login from public docs — onboarding exclusively via dashboard
-  - Hardcoded test keys removed from codebase
 </Update>
 
 <Update label="March 2026" description="Auto-forwarding, XSS hardening, and SDK improvements">

@@ -115,16 +115,14 @@ Authorization: Bearer YOUR_TOKEN
   "message": "KYC link generated. Open the link to complete identity verification.",
   "data": {
     "yativo_card_id": "yativo_card_abc123_1769031332068",
-    "kyc_type": "sumsub",
     "kyc_url": "https://kyc.yativo.com/verify?token=...",
-    "sumsub_sdk_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "next_step": "kyc_status",
     "instructions": "Open the KYC link to upload your government ID and complete liveness check"
   }
 }
 ```
 
-Redirect to `kyc_url`, or embed the verification widget using `sumsub_sdk_token` and the [Sumsub Web SDK](https://docs.sumsub.com/reference/web-sdk-readme). Add `?refresh=true` to force-generate a new link if the old one expired.
+Redirect your customer to `kyc_url` to complete verification on the hosted page. The link is valid for 1 hour. Add `?refresh=true` to generate a new one.
 
 ---
 

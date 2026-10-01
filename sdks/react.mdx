@@ -333,38 +333,6 @@ function SwapForm() {
 
 ---
 
-## `useStandaloneIban()` — IBAN Management
-
-```tsx
-import { useStandaloneIban } from "@yativo/crypto-sdk-react";
-
-function IbanManager({ customerId }: { customerId: string }) {
-  const { ibans, loading, createIban } = useStandaloneIban();
-
-  async function handleCreate() {
-    await createIban({
-      customerId,
-      currency: "EUR",
-      label:    "EU Collections",
-    });
-  }
-
-  return (
-    <div>
-      <button onClick={handleCreate}>Create EUR IBAN</button>
-      {ibans.map((iban) => (
-        <div key={iban.id}>
-          <p>IBAN: {iban.iban}</p>
-          <p>BIC: {iban.bic}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-```
-
----
-
 ## `useGasStations()` — Gas Station Management
 
 ```tsx

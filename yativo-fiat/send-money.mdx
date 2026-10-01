@@ -52,7 +52,8 @@ GET /payment-methods/payout/countries
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout/countries' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -89,17 +90,20 @@ GET /payment-methods/payout?country={iso3}
 <RequestExample>
 ```bash Chile
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout?country=CHL' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```bash Mexico
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout?country=MEX' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```bash Brazil
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout?country=BRA' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -139,7 +143,8 @@ GET /beneficiary/form/show/{payment_method_id}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/beneficiary/form/show/21' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -172,7 +177,8 @@ POST /beneficiaries
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: create-beneficiary-001' \
   -d '{
@@ -227,7 +233,8 @@ POST /beneficiaries/payment-methods
 <RequestExample>
 ```bash Chile (CLP bank transfer)
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -243,7 +250,8 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
 
 ```bash Mexico (SPEI CLABE)
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -257,7 +265,8 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
 
 ```bash Brazil (PIX)
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
@@ -302,7 +311,8 @@ POST /sendmoney/quote
 <RequestExample>
 ```bash USD → CLP
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: quote-001' \
   -d '{
@@ -356,7 +366,8 @@ POST /sendmoney
 <RequestExample>
 ```bash cURL (with quote)
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-payout-key' \
   -d '{
@@ -373,7 +384,8 @@ POST /wallet/payout
 
 ```bash cURL (wallet payout)
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-payout-key' \
   -d '{
@@ -396,7 +408,8 @@ GET /transaction/tracking/{transactionId}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/transaction/tracking/a0e9e50e-81be-4bd0-9941-0151e68b9e97' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -457,7 +470,8 @@ POST /sendmoney/purpose
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney/purpose' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: purpose-001' \
   -d '{

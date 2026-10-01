@@ -1,7 +1,7 @@
 ---
 title: "Create Customer"
 api: "POST /v1/customers/create-customer"
-description: "Register a new customer in your account"
+description: "Create a wallet customer"
 authMethod: "bearer"
 ---
 
@@ -9,89 +9,39 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
+<ParamField body="username" type="string" required>
+  Display name for the customer.
+</ParamField>
+
 <ParamField body="email" type="string" required>
-  The customer's email address. Must be unique within your account.
+  Customer email address. Must be unique.
 </ParamField>
-
-<ParamField body="first_name" type="string" required>
-  Customer's legal first name.
-</ParamField>
-
-<ParamField body="last_name" type="string" required>
-  Customer's legal last name.
-</ParamField>
-
-<ParamField body="phone" type="string">
-  Customer's phone number in E.164 format (e.g. `+14155552671`).
-</ParamField>
-
-<ParamField body="metadata" type="object">
-  Arbitrary key-value pairs you can attach to the customer for your own reference.
-</ParamField>
-
-<Accordion title="Request/Response Type Definitions">
-```typescript
-interface CreateCustomerRequest {
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone?: string;
-  metadata?: Record<string, string>;
-}
-
-interface CreateCustomerResponse {
-  status: "success";
-  data: {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    phone?: string;
-    status: "pending";
-    kyc_status: "not_started";
-    created_at: string;
-  };
-}
-```
-</Accordion>
 
 <RequestExample>
-```bash cURL
+```bash
 curl -X POST 'https://crypto-api.yativo.com/api/v1/customers/create-customer' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
-  -d '{
-    "email": "jane@example.com",
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "phone": "+14155552671"
-  }'
-```
-
-```typescript TypeScript SDK
-const customer = await sdk.customers.create({
-  email: 'jane@example.com',
-  first_name: 'Jane',
-  last_name: 'Doe',
-});
-console.log('Customer ID:', customer.data.id);
+  -d '{ "username": "Acme Corp", "email": "billing@acme.com" }'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json Success
+```json
 {
   "status": true,
-  "message": "Customer created successfully",
+  "message": "Customer created successfully !",
   "data": {
-    "_id": "cust_67e54665e759c943cd376abc",
-    "username": "new_customer",
-    "email": "customer@example.com",
+    "_id": "6650a1f2c3d4e5f6a7b8c9d0",
+    "username": "Acme Corp",
+    "email": "billing@acme.com",
     "phone_number": "",
-    "user_id": "usr_6615c3a1e55d9ff7bc0a1234",
-    "createdAt": "2026-03-28T10:00:00.000Z",
-    "updatedAt": "2026-03-28T10:00:00.000Z"
+    "user_id": "664f0e1d2c3b4a5968778695",
+    "createdAt": "2026-09-30T10:00:00.000Z",
+    "updatedAt": "2026-09-30T10:00:00.000Z"
   }
 }
 ```
 </ResponseExample>
+
+The customer's `_id` is the `customer_id` used by every other customer endpoint. A `customer.created` webhook is sent on success.

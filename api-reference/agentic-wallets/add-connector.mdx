@@ -1,7 +1,7 @@
 ---
 title: "Add Connector"
 api: "POST /v1/agentic-wallets/{walletId}/connectors"
-description: "Create a new connector (API key) for an agentic wallet"
+description: "Create a connector (agent API key) for an agentic wallet"
 authMethod: "bearer"
 ---
 
@@ -10,35 +10,74 @@ authMethod: "bearer"
 </ParamField>
 
 <ParamField path="walletId" type="string" required>
-  The wallet ID to add a connector to.
+  The wallet to add a connector to. The wallet must be active.
 </ParamField>
 
-<ParamField body="name" type="string" required>
-  Human-readable name for the connector (e.g., "Claude Agent", "GPT Agent").
+<ParamField body="connector_type" type="string" required>
+  One of `anthropic`, `openai`, `polymarket`, `kalshi`, `openclaw`, `custom`.
 </ParamField>
 
-<ParamField body="per_transaction_limit" type="number">
-  Maximum USD amount per single transaction. Defaults to the wallet's global limit.
+<ParamField body="name" type="string">
+  Human-readable name, e.g. "Claude Agent". Defaults to the connector type.
 </ParamField>
 
-<ParamField body="daily_limit" type="number">
-  Maximum USD amount per 24-hour period.
+<ParamField body="description" type="string">
+  Optional description.
 </ParamField>
 
-<ParamField body="monthly_limit" type="number">
-  Maximum USD amount per calendar month.
+<ParamField body="allowed_capabilities" type="string[]" default="[&quot;transfer&quot;]">
+  What the agent may do: `transfer`, `x402`, `prediction_market`.
+</ParamField>
+
+<ParamField body="max_per_transaction" type="number">
+  Max USD per transaction. Can't exceed `max_daily_amount`.
+</ParamField>
+
+<ParamField body="max_daily_amount" type="number">
+  Max USD per day. Can't exceed `max_monthly_amount`.
+</ParamField>
+
+<ParamField body="max_monthly_amount" type="number">
+  Max USD per month.
+</ParamField>
+
+<ParamField body="allowed_assets" type="string[]">
+  Restrict to these assets. Empty allows all.
+</ParamField>
+
+<ParamField body="allowed_chains" type="string[]">
+  Restrict to these chains. Empty allows all.
+</ParamField>
+
+<ParamField body="allowed_ips" type="string[]">
+  Only accept agent requests from these IPs.
+</ParamField>
+
+<ParamField body="allowed_domains" type="string[]">
+  Only accept agent requests from these domains.
+</ParamField>
+
+<ParamField body="webhook_url" type="string">
+  Receive this connector's events. A webhook secret is returned once when set.
+</ParamField>
+
+<ParamField body="prediction_market_config" type="object">
+  Limits for the `prediction_market` capability: `max_position_usd` (largest trade), `allowed_categories` and `allowed_providers` (empty allows all).
 </ParamField>
 
 <RequestExample>
 ```bash
-curl -X POST '/v1/agentic-wallets/aw_01abc123/connectors' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/agentic-wallets/aw_01abc123/connectors' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
+    "connector_type": "anthropic",
     "name": "Claude Agent",
-    "per_transaction_limit": 50,
-    "daily_limit": 500,
-    "monthly_limit": 5000
+    "allowed_capabilities": ["transfer", "prediction_market"],
+    "max_per_transaction": 50,
+    "max_daily_amount": 500,
+    "max_monthly_amount": 5000,
+    "prediction_market_config": { "max_position_usd": 25 }
   }'
 ```
 </RequestExample>
@@ -48,19 +87,23 @@ curl -X POST '/v1/agentic-wallets/aw_01abc123/connectors' \
 {
   "success": true,
   "data": {
-    "connector_id": "conn_01abc123",
+    "connector_id": "6650c3d4e5f6a7b8c9d0e1f2",
+    "connector_type": "anthropic",
     "name": "Claude Agent",
     "api_key": "yac_a1b2c3d4e5f6...",
-    "per_transaction_limit": 50,
-    "daily_limit": 500,
-    "monthly_limit": 5000,
-    "status": "active",
-    "created_at": "2026-04-01T12:00:00Z"
+    "webhook_secret": null,
+    "allowed_ips": [],
+    "allowed_domains": [],
+    "max_per_transaction": 50,
+    "max_daily_amount": 500,
+    "max_monthly_amount": 5000,
+    "allowed_capabilities": ["transfer", "prediction_market"],
+    "prediction_market_config": { "max_position_usd": 25, "allowed_categories": [], "allowed_providers": [] }
   }
 }
 ```
 </ResponseExample>
 
 <Warning>
-  The `api_key` is shown **only once** in this response. Store it securely. If lost, revoke the connector and create a new one.
+  The `api_key` is shown **only once**. Store it securely. If lost, revoke the connector and create a new one.
 </Warning>

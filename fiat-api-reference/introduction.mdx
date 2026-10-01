@@ -16,13 +16,18 @@ Use the sandbox environment for development and testing. Sandbox transactions do
 
 ## Authentication
 
-All API requests require a Bearer token obtained from the authentication endpoint. Tokens expire after **600 seconds** (10 minutes).
+Send your API key and secret on every request. Create them in the dashboard under **Developers → API Keys**.
 
 ```bash
-Authorization: Bearer YOUR_ACCESS_TOKEN
+X-Api-Key: YOUR_API_KEY
+X-Api-Secret: YOUR_API_SECRET
 ```
 
-See [Generate Token](/fiat-api-reference/auth/token) for details on obtaining a token.
+Requests must come from an IP on the key's whitelist. See [Authentication](/yativo-fiat/authentication) and [IP whitelisting](/yativo-fiat/ip-allowlist).
+
+<Warning>
+  Legacy API keys (Account ID and App Secret, used with [Generate Token](/fiat-api-reference/auth/token)) are deprecated. From 15 October 2026 its tokens don't work from servers.
+</Warning>
 
 ## Idempotency
 
@@ -58,7 +63,8 @@ All successful responses follow this structure:
 | `200` | OK — Request succeeded |
 | `201` | Created — Resource created successfully |
 | `400` | Bad Request — Invalid request parameters |
-| `401` | Unauthorized — Missing or invalid token |
+| `401` | Unauthorized — Missing or invalid API key or secret |
+| `403` | Forbidden — The request isn't allowed, for example from an IP that isn't whitelisted |
 | `404` | Not Found — Resource does not exist |
 | `422` | Unprocessable Entity — Validation failed |
 | `429` | Too Many Requests — Rate limit exceeded |

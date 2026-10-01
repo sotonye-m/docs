@@ -22,7 +22,8 @@ GET /v1/transaction/track
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/transaction/track?txn_id=TXN123456789&txn_type=payout' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

@@ -47,7 +47,8 @@ POST https://api.yativo.com/api/v1/swap/init
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/swap/init' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: swap-init-usd-brl-001' \
   -d '{
@@ -61,7 +62,8 @@ curl -X POST 'https://api.yativo.com/api/v1/swap/init' \
 const response = await fetch('https://api.yativo.com/api/v1/swap/init', {
   method: 'POST',
   headers: {
-    'Authorization': `Bearer ${token}`,
+    'X-Api-Key': process.env.YATIVO_API_KEY,
+    'X-Api-Secret': process.env.YATIVO_API_SECRET,
     'Content-Type': 'application/json',
     'Idempotency-Key': `swap-init-${Date.now()}`,
   },
@@ -143,7 +145,8 @@ POST https://api.yativo.com/api/v1/swap/process
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/swap/process' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: swap-process-usd-brl-001' \
   -d '{
@@ -157,7 +160,8 @@ curl -X POST 'https://api.yativo.com/api/v1/swap/process' \
 const response = await fetch('https://api.yativo.com/api/v1/swap/process', {
   method: 'POST',
   headers: {
-    'Authorization': `Bearer ${token}`,
+    'X-Api-Key': process.env.YATIVO_API_KEY,
+    'X-Api-Secret': process.env.YATIVO_API_SECRET,
     'Content-Type': 'application/json',
     'Idempotency-Key': `swap-process-${Date.now()}`,
   },
@@ -177,7 +181,8 @@ import requests
 response = requests.post(
     'https://api.yativo.com/api/v1/swap/process',
     headers={
-        'Authorization': f'Bearer {token}',
+        'X-Api-Key': os.environ['YATIVO_API_KEY'],
+        'X-Api-Secret': os.environ['YATIVO_API_SECRET'],
         'Content-Type': 'application/json',
         'Idempotency-Key': f'swap-process-{int(time.time())}',
     },
@@ -221,7 +226,8 @@ response = requests.post(
 async function swapCurrency(token, fromCurrency, toCurrency, amount) {
   const BASE = 'https://api.yativo.com/api/v1';
   const headers = {
-    'Authorization': `Bearer ${token}`,
+    'X-Api-Key': process.env.YATIVO_API_KEY,
+    'X-Api-Secret': process.env.YATIVO_API_SECRET,
     'Content-Type': 'application/json',
   };
 

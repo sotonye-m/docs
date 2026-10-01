@@ -84,8 +84,6 @@ interface YativoSDKOptions {
   baseURL?: string;
   /** Request timeout in milliseconds (default: 30000) */
   timeout?: number;
-  /** Enable the IBAN feature (must be true to use sdk.standaloneIban) */
-  standaloneIbanEnabled?: boolean;
 }
 ```
 
@@ -472,31 +470,6 @@ const report = await sdk.analytics.getSummary({
 });
 console.log("Total volume:", report.totalVolume);
 console.log("Total fees:",   report.totalFees);
-```
-
----
-
-## IBAN (`sdk.standaloneIban`)
-
-<Warning>
-  You must set `standaloneIbanEnabled: true` in the constructor to use this resource. Attempting to call these methods without the feature flag will throw a `FeatureNotEnabledError`.
-</Warning>
-
-```typescript
-const sdk = new YativoSDK({
-  apiKey:                process.env.YATIVO_API_KEY,
-  apiSecret:             process.env.YATIVO_API_SECRET,
-  standaloneIbanEnabled: true,
-});
-
-const iban = await sdk.standaloneIban.create({
-  customerId: "cust_111",
-  currency:   "EUR",
-  label:      "EU Collections",
-});
-console.log("IBAN:", iban.iban, "BIC:", iban.bic);
-
-const ibans = await sdk.standaloneIban.list({ customerId: "cust_111" });
 ```
 
 ---

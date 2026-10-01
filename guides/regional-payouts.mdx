@@ -56,7 +56,8 @@ GET https://api.yativo.com/api/v1/clabe/generate
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/clabe/generate' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -65,12 +66,14 @@ curl -X GET 'https://api.yativo.com/api/v1/clabe/generate' \
 ```bash
 # 1. Get payment method ID for Mexico
 curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payout?country=MEX' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 # → returns id: 30 (SPEI)
 
 # 2. Save beneficiary with CLABE
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: pm-mexico-001' \
   -d '{
@@ -83,14 +86,16 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
 
 # 3. Get a quote (USD → MXN)
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: quote-mx-001' \
   -d '{ "from_currency": "USD", "to_currency": "MXN", "amount": 500, "beneficiary_payment_method_id": "PM_ID" }'
 
 # 4. Execute
 curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: send-mx-001' \
   -d '{ "quote_id": "QUOTE_ID" }'
@@ -102,7 +107,8 @@ To receive SPEI payments for a customer, create a virtual account with currency 
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: va-mx-001' \
   -d '{ "customer_id": "CUSTOMER_ID", "currency": "MXNBASE" }'
@@ -140,7 +146,8 @@ The returned `account_number` is a CLABE your customers can send SPEI transfers 
 ```bash
 # Save beneficiary payment method for Brazil PIX
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: pm-brazil-001' \
   -d '{
@@ -157,7 +164,8 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: va-br-001' \
   -d '{ "customer_id": "CUSTOMER_ID", "currency": "BRL" }'
@@ -212,7 +220,8 @@ Without both `bvn` and `nin`, KYC submission will fail validation for Nigerian n
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: pm-ng-001' \
   -d '{
@@ -246,7 +255,8 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: va-us-001' \
   -d '{ "customer_id": "CUSTOMER_ID", "currency": "USDBASE" }'
@@ -346,7 +356,8 @@ Argentina virtual accounts require additional customer identity fields that are 
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: va-ar-001' \
   -d '{
@@ -376,7 +387,8 @@ Use the form fields endpoint to get the precise required fields dynamically — 
 ```bash
 # Replace 30 with the payment_method_id from GET /payment-methods/payout?country=...
 curl -X GET 'https://api.yativo.com/api/v1/beneficiary/form/show/30' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 This returns the exact fields with labels, validation rules, and whether each is required — the authoritative source for building your payment forms.

@@ -26,7 +26,7 @@ Returns an estimated network fee for a transaction before committing to it.
 </ParamField>
 
 <ParamField body="asset_id" type="string">
-  Asset ObjectId for context-aware fee estimation.
+  Asset ID for context-aware fee estimation.
 </ParamField>
 
 <ParamField body="token_symbol" type="string">
@@ -68,6 +68,40 @@ curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-gas-price \
 
 ---
 
+## Preview Fees
+
+See exactly what a send will cost before you submit it. The preview uses the same fee and gas calculation as the send itself.
+
+```
+POST /v1/transactions/preview-fee
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `assets` | Yes | The source wallet (asset) ID |
+| `amount` | Yes | Amount to send |
+| `account` | No | The account that owns the wallet |
+| `chain` | No | Chain override |
+| `send_mode` | No | `send_exact` (default): `amount` leaves the wallet and fees come out of it. `receive_exact`: the recipient gets `amount` and fees are added on top |
+| `use_self_funding` | No | Pay gas from the wallet's own native balance |
+
+```json Response
+{
+  "status": true,
+  "data": {
+    "send_amount": 100,
+    "receive_amount": 99.42,
+    "platform_fee": 0.5,
+    "gas_funding_markup": 0.08,
+    "total_fee": 0.58,
+    "is_token": true,
+    "requires_gas_funding": true
+  }
+}
+```
+
+---
+
 ## Send Funds
 
 **POST** `/transactions/send-funds`
@@ -75,11 +109,11 @@ curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-gas-price \
 Initiates an outbound crypto transfer. An idempotency key is automatically generated to prevent duplicate transactions.
 
 <ParamField body="account" type="string" required>
-  The MongoDB ObjectId of the **account** that owns the source asset.
+  The ID of the **account** that owns the source asset.
 </ParamField>
 
 <ParamField body="assets" type="string" required>
-  The MongoDB ObjectId of the **asset** (wallet) to send from.
+  The ID of the **asset** (wallet) to send from.
 </ParamField>
 
 <ParamField body="receiving_address" type="string" required>
@@ -178,7 +212,24 @@ tx = client.transactions.send_funds(
 
 ### Idempotency
 
-Supply an `Idempotency-Key` header to prevent duplicate transactions on retry. If the same key is submitted again by the same user, the original response is returned instead of creating a new transaction. Without a key, no deduplication is applied. Keys expire after 24 hours.
+Supply an `Idempotency-Key` header to prevent duplicate transactions on retry. If the same key is submitted again by the same user, the original response is returned instead of creating a new transaction. Keys expire after 24 hours. Always send your own key: it's the only way a retry of the same request is recognised as a duplicate.
+
+### Withdrawal limits and reviews
+
+Sends are checked against your account's daily and monthly limits before they're processed.
+
+- **Limit reached** — the request fails with `403` and `error: "WITHDRAWAL_LIMIT_EXCEEDED"`. `reason` is `daily_transaction_limit_exceeded` or the monthly volume limit, and `current` and `limit` show where you stand.
+- **Held for review** — a send above your account's review threshold returns `202` with `review_id`. It isn't sent until it's approved. Track it in your transaction history.
+
+```json 202 Held for review
+{
+  "status": true,
+  "message": "This withdrawal ($25000.00) is above the $10000.00 manual-review threshold and has been held for admin approval. Check your transaction history for its status.",
+  "review_id": "6650d4e5f6a7b8c9d0e1f203"
+}
+```
+
+Contact your account manager to change your limits.
 
 <Warning>
   Double-check `receiving_address` before sending. Blockchain transactions are irreversible — funds sent to the wrong address cannot be recovered.
@@ -201,7 +252,7 @@ Returns up to 100 transactions for the authenticated user, sorted by most recent
 </ParamField>
 
 <ParamField body="assets_filter" type="string">
-  Filter by asset ObjectId or asset name substring.
+  Filter by asset ID or asset name substring.
 </ParamField>
 
 <ParamField body="method_filter" type="string">

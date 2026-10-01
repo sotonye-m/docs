@@ -3,7 +3,7 @@ title: "Webhooks"
 description: "Real-time event notifications for crypto deposits, withdrawals, swaps, cards, and more"
 ---
 
-Yativo Crypto fires webhook events for every significant state change across wallets, transactions, cards, IBAN accounts, and system events. Configure webhooks once and your server stays in sync without polling.
+Yativo Crypto fires webhook events for every significant state change across wallets, transactions, cards, and system events. Configure webhooks once and your server stays in sync without polling.
 
 For webhook management (creating, updating, deleting webhook endpoints), see the [Webhook Management](/yativo/webhooks) docs. This page covers the crypto-specific event types and their payloads.
 
@@ -37,9 +37,6 @@ type WebhookEventType =
   | "transaction.initiated"
   | "transaction.submitted"
   | "transaction.failed"
-  // IBAN
-  | "iban.activated"
-  | "iban.transfer.received"
   // KYC
   | "kyc.submitted"
   | "kyc.approved"
@@ -81,6 +78,11 @@ type WebhookEventType =
 |-------|-----------|
 | `deposit.detected` | An inbound transaction is detected on-chain (unconfirmed) |
 | `deposit.confirmed` | An inbound transaction has reached sufficient block confirmations |
+| `customer.deposit.detected` | A deposit arrived in one of your [customers'](/yativo-crypto/customers) wallets |
+
+Deposit events use the on-chain transaction hash as `transaction_id`, so the same deposit always carries the same ID. Use it to deduplicate retried deliveries.
+
+Deposits below the minimum (1 unit of a stablecoin, or $5 worth of any other asset) aren't credited and don't send deposit events.
 
 ### Transaction Events
 
@@ -115,13 +117,6 @@ type WebhookEventType =
 | `master_wallet.deposit` | A deposit arrived in the card program master wallet |
 | `master_wallet.swap` | A swap executed in the card program master wallet |
 | `master_wallet.customer_funded` | Master wallet funds allocated to a customer |
-
-### IBAN Events
-
-| Event | Fired When |
-|-------|-----------|
-| `iban.activated` | An IBAN account has been activated and is ready to receive funds |
-| `iban.transfer.received` | A SEPA transfer has been received into the IBAN account |
 
 ### KYC Events
 
@@ -203,44 +198,6 @@ All payloads share the same envelope structure:
     "currency": "USD",
     "status": "settled",
     "new_balance": "450.01"
-  }
-}
-```
-
-### iban.transfer.received
-
-```json
-{
-  "id": "evt_06pqr678",
-  "type": "iban.transfer.received",
-  "created_at": "2026-03-26T12:00:00Z",
-  "data": {
-    "iban_id": "iban_01abc",
-    "iban_number": "DE89370400440532013000",
-    "amount": "1000.00",
-    "currency": "EUR",
-    "sender_name": "John Smith",
-    "sender_iban": "GB29NWBK60161331926819",
-    "reference": "Invoice #INV-2026-042",
-    "received_at": "2026-03-26T12:00:00Z"
-  }
-}
-```
-
-### gas.low
-
-```json
-{
-  "id": "evt_07stu901",
-  "type": "gas.low",
-  "created_at": "2026-03-26T11:00:00Z",
-  "data": {
-    "station_id": "station_01abc123",
-    "chain": "ethereum",
-    "ticker": "ETH",
-    "balance": "0.08",
-    "balance_usd": "200.00",
-    "threshold": "0.10"
   }
 }
 ```

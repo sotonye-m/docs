@@ -22,7 +22,8 @@ GET /v1/business/virtual-account/history/{accountNumber}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/history/9900123456' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

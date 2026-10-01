@@ -1,9 +1,41 @@
 ---
 title: "Update Customer"
-description: "Update a customer's profile information"
+api: "PATCH /v1/customers/{customer_id}"
+description: "Update a customer's profile"
+authMethod: "bearer"
 ---
 
-<Info>
-  The Update Customer endpoint is coming soon. To modify customer details, create a new customer
-  with the updated information using the [Create Customer](/api-reference/customers/create) endpoint.
-</Info>
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField path="customer_id" type="string" required>
+  The customer ID.
+</ParamField>
+
+<ParamField body="username" type="string">Display name.</ParamField>
+
+<ParamField body="email" type="string">Email address.</ParamField>
+
+<ParamField body="phone_number" type="string">Phone number.</ParamField>
+
+<RequestExample>
+```bash
+curl -X PATCH 'https://crypto-api.yativo.com/api/v1/customers/6650a1f2c3d4e5f6a7b8c9d0' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{ "phone_number": "+14155550100" }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": true,
+  "message": "Customer updated successfully",
+  "data": { "_id": "6650a1f2c3d4e5f6a7b8c9d0", "username": "Acme Corp", "email": "billing@acme.com", "phone_number": "+14155550100" }
+}
+```
+</ResponseExample>
+
+Send only the fields you want to change.
