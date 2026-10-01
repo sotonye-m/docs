@@ -93,6 +93,12 @@ curl 'https://api.yativo.com/api/v1/ip-whitelist/check' \
 | `key_usage.request_ip` | The IP Yativo sees for your request. Whitelist this if it isn't the IP you expected. |
 | `key_usage.message` | The result in one sentence, including the error you'd get if the server isn't allowed. |
 | `result` | `pass` or `fail` for `tested_ip`. |
+| `network.warning` | Set when your request reached Yativo through a proxy, so `request_ip` may be the proxy's IP. Contact support if it isn't your server's public IP. |
+| `api_key.key_allowed_ips` | The IPs listed on this key. |
+| `api_key.account_whitelisted_ips` | IPs from **Profile → Whitelist** that also apply to this key. |
+| `api_key.would_return` | The error a request from `tested_ip` would get, or `null` if allowed. |
+
+The full response is in the [API reference](/fiat-api-reference/ip/check).
 
 To check a server you haven't deployed yet, add `?ip=<address>`. `result` then describes that address, and `key_usage` still describes the server you called from.
 

@@ -7,10 +7,34 @@ description: "Best practices for securing your Yativo API integration"
 
 All API requests must be authenticated:
 
-- **Servers** use a [API key](/yativo-fiat/api-keys): `X-Api-Key` and `X-Api-Secret` on every request, from a [whitelisted IP](/yativo-fiat/ip-allowlist).
+- **Servers** use an [API key](/yativo-fiat/api-keys): `X-Api-Key` and `X-Api-Secret` on every request, from a [whitelisted IP](/yativo-fiat/ip-allowlist).
 - **People** sign in to the dashboard with an email code or a [passkey](/yativo-fiat/passkeys). Dashboard sign-in only works in the dashboard.
 
 Turn on two-factor authentication and passkeys for everyone on your team.
+
+---
+
+## Review sign-in activity
+
+[`GET /auth/login-history`](/fiat-api-reference/security/login-history) lists sign-ins to your account with the IP, device, approximate location and method. Entries that may need a second look have `suspicious: true`, a `risk_level` of `medium` or `high`, and `flags` explaining why:
+
+| Flag | Meaning |
+|---|---|
+| `new_ip` | First sign-in from this IP |
+| `new_device` | First sign-in from this browser or device |
+| `new_country` | First sign-in from this country |
+| `preceded_by_failed_attempts` | Several failed attempts shortly before this sign-in |
+| `failed_login` | The attempt failed |
+| `automated_client` | Made by a script or API tool rather than a browser or app |
+| `flagged_by_system` | Marked suspicious by Yativo |
+
+```bash
+curl 'https://api.yativo.com/api/v1/auth/login-history?flagged=true' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+
+Failed requests with a wrong API secret or a revoked API key also appear, with `auth_method` set to `api_key`. If you see ones you don't recognise, revoke the key and create a new one.
 
 ---
 
@@ -79,14 +103,12 @@ If a request with the same idempotency key succeeds, subsequent requests with th
 
 ## Rate limits
 
-The API enforces rate limits per API key:
+| Plan | Limit |
+|------|-------|
+| Default | 20 requests per second per business account |
+| Enterprise | Custom |
 
-| Tier | Requests per minute |
-|------|-------------------|
-| Default | 120 |
-| Elevated | 600 (on request) |
-
-When a limit is hit, the API returns `429 Too Many Requests` with a `Retry-After` header indicating when to retry.
+Some endpoints have their own lower limits, such as 30 requests a minute for `GET /ip-whitelist/check` and `GET /auth/login-history`. When a limit is hit, the API returns `429 Too Many Requests` with a `Retry-After` header indicating when to retry.
 
 ---
 
@@ -105,15 +127,18 @@ Security-related errors you may encounter:
 | HTTP status | Meaning |
 |-------------|---------|
 | `401 Unauthorized` | Missing or invalid API key or secret |
-| `403 Forbidden` | Valid credentials, but the request isn't allowed (for example, from an IP that isn't whitelisted) |
+| `403 Forbidden` | Valid credentials, but the request isn't allowed (for example, from an IP that isn't whitelisted, or an endpoint that can't be used with an API key) |
 | `429 Too Many Requests` | Rate limit exceeded |
 
-All error responses include a machine-readable `code` field:
+Errors use the standard response envelope, with the reason in `data.error`:
 
 ```json
 {
-  "status": "error",
-  "code": "UNAUTHORIZED",
-  "message": "Invalid or expired access token"
+  "status": "failed",
+  "status_code": 401,
+  "message": "Request failed.",
+  "data": {
+    "error": "Invalid or revoked API credentials."
+  }
 }
 ```

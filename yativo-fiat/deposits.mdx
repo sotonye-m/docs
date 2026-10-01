@@ -223,6 +223,37 @@ Send `deposit_url` to your customer — they complete payment through Yativo's h
 
 ---
 
+## EUR bank transfer (SEPA)
+
+Customers can fund a deposit in EUR with a SEPA transfer to a Yativo IBAN.
+
+1. Find the gateway with `GET /payment-methods/payin?country=MLT&currency=EUR`. The method is named **EUR Bank Transfer (SEPA)**.
+2. Create the payin with that `gateway`, `currency: "EUR"`, an `amount` and a `customer_id`. `customer_id` is required for this method.
+3. Optionally send `sender_account_number` with the IBAN your customer will pay from. It helps match the transfer.
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "gateway": GATEWAY_ID,
+    "currency": "EUR",
+    "amount": 250,
+    "customer_id": "xxxxxx-xxxx-xxxx-xxxxxx",
+    "sender_account_number": "DE89370400440532013000"
+  }'
+```
+
+The `deposit_url` page shows the IBAN, BIC (SWIFT code), account name, amount and a unique **payment reference**.
+
+<Warning>
+  Your customer must put the payment reference in the transfer's reference field, and send it from a bank account in their own name (the name on their KYC). Transfers without the reference, or from third parties, can't be matched to the deposit.
+</Warning>
+
+---
+
 ## List deposits
 
 ```

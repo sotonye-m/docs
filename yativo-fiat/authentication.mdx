@@ -7,7 +7,7 @@ description: "Authenticate server-to-server requests with an API key"
   **Legacy API keys (Account ID and App Secret) are deprecated.** From **15 October 2026**, tokens from `POST /auth/login` only work inside the Yativo dashboard, and requests from your servers must use an API key. See [Migrate from legacy API keys](#migrate-from-legacy-api-keys).
 </Warning>
 
-Your servers authenticate with a **API key**: a key and secret pair sent as headers on every request. There's no login call, no token to refresh, and keys don't expire.
+Your servers authenticate with an **API key**: a key and secret pair sent as headers on every request. There's no login call, no token to refresh, and keys don't expire.
 
 | You are building | Use |
 |---|---|
@@ -102,7 +102,11 @@ $response = Http::baseUrl('https://api.yativo.com/api/v1')
 ```
 </CodeGroup>
 
-Requests made with a key act on your business account. Keys can't change how anyone signs in (passkeys, two-factor authentication, PIN) or manage API keys and IP whitelists. Do those in the dashboard.
+Requests made with a key act on your business account. Some endpoints can't be called with a key and return `403 This endpoint cannot be used with an API key.` Do these in the dashboard instead:
+
+- Passkeys, two-factor authentication, PIN changes and generating an app secret
+- Deleting the account
+- Managing API keys and IP whitelists
 
 ### Check your setup
 
