@@ -1,17 +1,17 @@
 ---
-title: "MCP Server"
-description: "Model Context Protocol server for AI agents — manage crypto wallets, send payments, and pay for x402 APIs"
+title: "Agentic Wallet MCP Server"
+description: "Give an AI agent a crypto wallet: check its balance, send payments and pay for x402 APIs within the connector's limits"
 ---
-
-# @yativo/mcp-server
 
 The Yativo MCP Server exposes [Agentic Wallet](/yativo-crypto/agentic-wallets) operations as [Model Context Protocol](https://modelcontextprotocol.io) tools. Any MCP-compatible AI agent (Claude, GPT, custom agents) can manage crypto wallets, send payments, and interact with x402-paywalled APIs through a standardized tool interface.
 
 <Info>
-  **Package**: [`@yativo/mcp-server`](https://www.npmjs.com/package/@yativo/mcp-server) on npm
-
-  Looking for an agent that just needs to *read the docs* (no wallet, no API key)? See the [Docs MCP Server](/yativo/mcp-docs-server) instead.
+  **Package**: [`@yativo/mcp-server`](https://www.npmjs.com/package/@yativo/mcp-server) on npm. It runs locally over stdio.
 </Info>
+
+<Note>
+  This server works on one [agentic wallet](/yativo-crypto/agentic-wallets), within the spending limits of its connector key. To let an assistant work with your **fiat** account (balances, deposits, bank payouts), use the [Fiat MCP server](/yativo-fiat/mcp-server). To let it read these docs, use the [Docs MCP server](/yativo/mcp). See [AI and MCP servers](/yativo/mcp) to compare them.
+</Note>
 
 ---
 

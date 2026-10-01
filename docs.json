@@ -56,7 +56,7 @@
             "group": "Company",
             "pages": [
               "yativo/introduction",
-              "yativo/mcp-docs-server",
+              "yativo/mcp",
               "yativo/changelog"
             ]
           }
@@ -123,6 +123,7 @@
             "pages": [
               "yativo-fiat/developer",
               "yativo-fiat/webhooks",
+              "yativo-fiat/mcp-server",
               "yativo-fiat/ip-allowlist",
               "yativo-fiat/sandbox",
               "yativo-fiat/security"
