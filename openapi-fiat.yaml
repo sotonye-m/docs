@@ -75,6 +75,53 @@ components:
       description: A unique string per request to ensure idempotent processing.
 
   schemas:
+    FeeLine:
+      type: object
+      properties:
+        fixed_fee:
+          type: number
+          description: Flat fee per transaction or action, in fee_currency.
+          example: 0.5
+        float_fee:
+          type: number
+          description: Percentage of the transaction amount (1.2 = 1.2%).
+          example: 1.2
+        min_charge:
+          type: number
+          nullable: true
+          description: Lowest fee charged. null = no minimum.
+          example: 1
+        max_charge:
+          type: number
+          nullable: true
+          description: Highest fee charged. null = no maximum.
+          example: 50
+        fee_currency:
+          type: string
+          example: USD
+        source:
+          type: string
+          enum: [custom, default]
+          description: custom = pricing agreed for your account. default = your plan's standard rate.
+    MethodFeeLine:
+      allOf:
+        - type: object
+          properties:
+            gateway_id:
+              oneOf:
+                - type: integer
+                - type: string
+              description: The payin or payout method ID.
+            method_name:
+              type: string
+              example: SPEI
+            country:
+              type: string
+              example: MEX
+            currency:
+              type: string
+              example: MXN
+        - $ref: '#/components/schemas/FeeLine'
     # ── Generic wrappers ──────────────────────────────────────────────────────
     SuccessEnvelope:
       type: object
@@ -1576,6 +1623,14 @@ paths:
                   type: string
                   enum: [payout, payin]
                   description: Required when method_id is provided.
+                amount_type:
+                  type: string
+                  enum: [send, receive]
+                  default: send
+                  description: |
+                    Payout quotes only. `send`: `amount` is what leaves your wallet, in `from_currency`.
+                    `receive`: `amount` is what the customer receives, in `to_currency`; the quote works
+                    out the send amount and fees. `receive` with `method_type: payin` returns 422.
       responses:
         '200':
           description: Quote created
@@ -1597,6 +1652,10 @@ paths:
                         type: string
                         format: uuid
                         description: Valid for 5 minutes. Use in payout or deposit execution.
+                      quote_expire_at:
+                        type: string
+                        format: date-time
+                        description: When the quote expires.
                       from_currency:
                         type: string
                       to_currency:
@@ -1605,6 +1664,14 @@ paths:
                         type: string
                       amount:
                         type: string
+                        description: The send amount, in from_currency. Calculated for you in receive mode.
+                      amount_type:
+                        type: string
+                        enum: [send, receive]
+                        description: Payout quotes only.
+                      receive_amount:
+                        type: string
+                        description: Only in receive mode. The amount the customer receives, in to_currency.
                       payout_data:
                         type: object
                         properties:
@@ -1626,8 +1693,210 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Invalid amount_type, or amount_type receive on a payin quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '429':
           description: Rate limit exceeded (30 requests/min)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /exchange-rates:
+    get:
+      tags: [Payments & Transfers]
+      summary: Get Market Rates
+      description: |
+        Current indicative market rate for every wallet currency Yativo supports, quoted as
+        "1 `base` = `rate` units of that currency". Rates refresh about once a minute and don't
+        include fees. To price a specific payout or deposit with fees, use `POST /exchange-rate`.
+
+        Limited to **one request per minute** per account. Team members need the
+        **Currency Exchange → view** permission.
+      parameters:
+        - name: base
+          in: query
+          required: false
+          description: The currency rates are quoted against. Must be a supported wallet currency.
+          schema:
+            type: string
+            default: USD
+            example: USD
+      responses:
+        '200':
+          description: Current rates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      base:
+                        type: string
+                        example: USD
+                      rates:
+                        type: object
+                        description: One entry per supported wallet currency. `null` means no rate is available right now.
+                        additionalProperties:
+                          type: number
+                          nullable: true
+                        example:
+                          ARS: 1185.5
+                          BRL: 5.4321
+                          EUR: 0.9187
+                          MXN: 18.6024
+                          USD: 1
+                      updated_at:
+                        type: string
+                        format: date-time
+                        description: When the rates were last refreshed (UTC).
+                        example: '2026-10-01T12:00:00+00:00'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Team member without the Currency Exchange view permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: base is not a supported wallet currency. The error lists the allowed values.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: More than one request in a minute. The Retry-After header says how many seconds to wait.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Rates are temporarily unavailable. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /fees:
+    get:
+      tags: [Payments & Transfers]
+      summary: Get Fee Schedule
+      description: |
+        The fees your account is charged for every service it can use. Each line shows the fixed fee,
+        the percentage fee and the minimum and maximum charge. Lines with custom pricing for your
+        account have `source: custom`; the rest show your plan's default rate (`source: default`).
+
+        Team members need the **Billing & Plans → view** permission.
+      responses:
+        '200':
+          description: Fee schedule
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      plan_id:
+                        type: integer
+                        example: 2
+                      payin:
+                        type: array
+                        description: Every active payin method. `gateway_id` is the method ID used for deposits and quotes.
+                        items:
+                          $ref: '#/components/schemas/MethodFeeLine'
+                      payout:
+                        type: array
+                        description: Every active payout method. `gateway_id` is the payout method ID.
+                        items:
+                          $ref: '#/components/schemas/MethodFeeLine'
+                      virtual_account:
+                        type: array
+                        description: Deposit fees per virtual-account currency. A currency whose fee depends on the network it arrives on has one line per network.
+                        items:
+                          allOf:
+                            - type: object
+                              properties:
+                                currency:
+                                  type: string
+                                  example: USD
+                                display_currency:
+                                  type: string
+                                  example: USD
+                                network:
+                                  type: string
+                                  nullable: true
+                                  example: ACH
+                            - $ref: '#/components/schemas/FeeLine'
+                      virtual_card:
+                        type: array
+                        description: 'Virtual card actions: card_creation, topup, charge_back, card_termination, card_decline.'
+                        items:
+                          allOf:
+                            - type: object
+                              properties:
+                                action:
+                                  type: string
+                                  example: card_creation
+                            - $ref: '#/components/schemas/FeeLine'
+                      employee_card:
+                        type: array
+                        nullable: true
+                        description: Employee card actions. `null` if your business isn't enabled for employee cards. Free actions are left out.
+                        items:
+                          allOf:
+                            - type: object
+                              properties:
+                                action:
+                                  type: string
+                                  example: virtual_card_create
+                                waive_above:
+                                  type: number
+                                  nullable: true
+                                  description: The fee is waived when the transaction amount is above this value. `null` = never waived.
+                            - $ref: '#/components/schemas/FeeLine'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Team member without the Billing & Plans view permission
           content:
             application/json:
               schema:
@@ -1925,25 +2194,32 @@ paths:
           application/json:
             schema:
               type: object
-              required: [debit_wallet, payment_method_id]
+              required: [debit_wallet, payment_method_id, customer_id]
               properties:
                 debit_wallet:
                   type: string
-                  description: Source wallet currency to debit (e.g. USD, EUR).
+                  description: Wallet currency to debit (e.g. USD, EUR).
                   example: USD
                 payment_method_id:
                   type: integer
-                  description: Beneficiary payment method ID from GET /payment-methods/payout.
+                  description: The customer's saved payout method ID, from POST /beneficiaries/payment-methods.
+                  example: 555
+                customer_id:
+                  type: string
+                  description: The customer the payout method belongs to.
+                  example: da44a3e6-eb5d-429f-8d17-357aa5a6cdf2
                 quote_id:
                   type: string
                   format: uuid
-                  description: Recommended. Locks rate from POST /exchange-rate or POST /sendmoney/quote.
+                  description: Recommended. A payout quote from POST /exchange-rate. Supplies the amount, so amount and amount_type are ignored.
                 amount:
                   type: number
-                  description: Required if quote_id is not provided.
-                beneficiary_id:
+                  description: Required if quote_id is not provided. With amount_type send, the amount to send in debit_wallet. With amount_type receive, the amount the customer receives in the payout currency.
+                amount_type:
                   type: string
-                  description: UUID of a saved beneficiary.
+                  enum: [send, receive]
+                  default: send
+                  description: Ignored when quote_id is provided. Fees are added on top in both modes.
       responses:
         '201':
           description: Payout initiated
@@ -1962,30 +2238,43 @@ paths:
                     type: object
                     properties:
                       transaction_id:
-                        type: string
+                        type: integer
+                        description: Use with GET /transaction/tracking/{id}.
+                      payout_id:
+                        type: integer
+                        description: Use with GET /payout/fetch/{payout_id}.
                       status:
                         type: string
-                      debit_wallet:
+                        example: pending
+                      amount_type:
                         type: string
+                        enum: [send, receive]
+                      send_amount:
+                        type: number
+                        description: Amount sent, in the debit wallet currency, before fees.
+                      customer_receive_amount:
+                        type: number
+                        description: Amount the customer receives, in currency.
                       debit_amount:
                         type: number
-                      credit_currency:
+                        description: Total debited from your wallet, fees included.
+                      currency:
                         type: string
-                      credit_amount:
-                        type: number
-                      exchange_rate:
-                        type: number
-                      fee:
-                        type: number
-                      payment_method_id:
-                        type: integer
-                      beneficiary_id:
-                        type: string
-                      created_at:
+                        description: The payout currency.
+                      fees:
+                        type: object
+                        description: Full fee and rate breakdown.
+                      processed_at:
                         type: string
                         format: date-time
         '400':
-          description: Insufficient funds or expired quote
+          description: Insufficient balance, expired quote, or amount outside the method's limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: amount_type is not send or receive
           content:
             application/json:
               schema:

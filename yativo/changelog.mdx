@@ -3,8 +3,11 @@ title: "Changelog"
 description: "Latest updates, improvements, and fixes across all Yativo platforms"
 ---
 
-<Update label="October 2026" description="Login history, EUR SEPA deposits, and API key restrictions">
+<Update label="October 2026" description="Login history, EUR SEPA deposits, market rates, fee schedule, and API key restrictions">
   ### Yativo Fiat
+  - **Pay out by receive amount:** set `amount_type: "receive"` on `POST /exchange-rate` (payout quotes) or `POST /wallet/payout` to fix exactly what the customer receives. Yativo works out the send amount and fees. `POST /wallet/payout` responses now include `amount_type`, `send_amount`, `customer_receive_amount` and `debit_amount`. See [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount)
+  - **Market rates:** new `GET /exchange-rates` returns live indicative rates for every wallet currency, for display to your customers. See [Live market rates](/yativo-fiat/exchange-rates#live-market-rates)
+  - **Fee schedule:** new `GET /fees` returns your account's fees for every payin and payout method, virtual account currency and card action, including custom pricing. See [Fees](/yativo-fiat/fees)
   - **Login history:** new `GET /auth/login-history` lists sign-ins with IP, device, location and suspicious-sign-in flags, including failed API key attempts. See [Security](/yativo-fiat/security#review-sign-in-activity)
   - **EUR deposits via SEPA:** customers can fund deposits by bank transfer to a Yativo IBAN. See [Deposits](/yativo-fiat/deposits#eur-bank-transfer-sepa)
   - Endpoints that change sign-in settings (passkeys, two-factor authentication, PIN, app secret) or delete the account now return `403` when called with an API key

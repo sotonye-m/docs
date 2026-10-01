@@ -1,0 +1,13 @@
+---
+title: "Get Market Rates"
+description: "Live indicative rates for every wallet currency, to show to your customers"
+openapi: "GET https://api.yativo.com/api/v1/exchange-rates"
+---
+
+Returns the current rate for every wallet currency Yativo supports. Each rate means **1 `base` = `rate` units of that currency**. To convert from the base currency, multiply by the rate. To convert back, divide.
+
+Rates are indicative market rates. They refresh about once a minute and **don't include fees**. To price a specific payout or deposit with fees applied, and lock it, use [`POST /exchange-rate`](/fiat-api-reference/payments/exchange-rate).
+
+<Note>
+  You can call this endpoint **once per minute** per account. Further calls in the same minute get `429` with a `Retry-After` header. Polling faster wouldn't return newer data. To show rates against several bases, make one request and divide: the rate from `A` to `B` is `rates[B] / rates[A]`.
+</Note>

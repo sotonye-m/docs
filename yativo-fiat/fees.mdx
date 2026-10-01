@@ -1,0 +1,154 @@
+---
+title: "Fees"
+description: "See the fees your account is charged for payins, payouts, virtual accounts and cards"
+---
+
+`GET /fees` returns the fees your account is charged for every service it can use. Use it to show your own team or customers what each rail costs, or to estimate fees before you request a quote.
+
+The schedule is specific to your account:
+
+- Where your account has **custom pricing** for a line, it shows your custom fees and your custom minimum and maximum charge, with `source: "custom"`.
+- Otherwise it shows the **default** rate for your plan, with `source: "default"`.
+
+Quotes and transactions use these same fees. See [Plans](/yativo-fiat/plans) for what each plan includes.
+
+## Request
+
+```
+GET /fees
+```
+
+<RequestExample>
+```bash cURL
+curl 'https://api.yativo.com/api/v1/fees' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+
+```javascript Node.js
+const res = await fetch('https://api.yativo.com/api/v1/fees', {
+  headers: {
+    'X-Api-Key': process.env.YATIVO_API_KEY,
+    'X-Api-Secret': process.env.YATIVO_API_SECRET,
+  },
+});
+const { data } = await res.json();
+const spei = data.payin.find((line) => line.method_name === 'SPEI');
+```
+</RequestExample>
+
+Team members need the **Billing & Plans → view** permission.
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "plan_id": 2,
+    "payin": [
+      {
+        "gateway_id": 42,
+        "method_name": "SPEI",
+        "country": "MEX",
+        "currency": "MXN",
+        "fixed_fee": 0.5,
+        "float_fee": 1.2,
+        "min_charge": 1,
+        "max_charge": 50,
+        "fee_currency": "USD",
+        "source": "custom"
+      }
+    ],
+    "payout": [
+      {
+        "gateway_id": 12,
+        "method_name": "ACH",
+        "country": "USA",
+        "currency": "USD",
+        "fixed_fee": 1,
+        "float_fee": 0.5,
+        "min_charge": null,
+        "max_charge": null,
+        "fee_currency": "USD",
+        "source": "default"
+      }
+    ],
+    "virtual_account": [
+      {
+        "currency": "USD",
+        "display_currency": "USD",
+        "network": "ACH",
+        "fixed_fee": 0.6,
+        "float_fee": 0.6,
+        "min_charge": null,
+        "max_charge": null,
+        "fee_currency": "USD",
+        "source": "default"
+      }
+    ],
+    "virtual_card": [
+      {
+        "action": "card_creation",
+        "fixed_fee": 3,
+        "float_fee": 0,
+        "min_charge": null,
+        "max_charge": null,
+        "fee_currency": "USD",
+        "source": "default"
+      }
+    ],
+    "employee_card": null
+  }
+}
+```
+</ResponseExample>
+
+### Sections
+
+| Key | What it covers |
+|---|---|
+| `payin` | Every active payin method. `gateway_id` is the method ID you use when you create a deposit or quote. |
+| `payout` | Every active payout method. `gateway_id` is the payout method ID. |
+| `virtual_account` | Deposit fees for each virtual-account currency. A currency whose fee depends on the network it arrives on (for example USD over ACH or wire) has one line per `network`. |
+| `virtual_card` | Virtual card actions: `card_creation`, `topup`, `charge_back`, `card_termination`, `card_decline`. |
+| `employee_card` | Employee (business spend) card actions, such as `virtual_card_create`, `physical_card_create` and `authorization_domestic`. It's `null` if your business isn't enabled for employee cards. Free actions are left out. |
+
+### Fee line fields
+
+| Field | Description |
+|---|---|
+| `fixed_fee` | Flat fee per transaction or action, in `fee_currency`. |
+| `float_fee` | Percentage of the transaction amount (`1.2` = 1.2%). |
+| `min_charge` | The lowest fee charged. If fixed plus percentage comes to less, you pay `min_charge`. `null` = no minimum. |
+| `max_charge` | The highest fee charged. `null` = no maximum. |
+| `waive_above` | `employee_card` only: the fee is waived when the transaction amount is above this value. `null` = never waived. |
+| `fee_currency` | Currency of `fixed_fee`, `min_charge` and `max_charge`. |
+| `source` | `custom` = pricing agreed for your account. `default` = your plan's standard rate. |
+
+## How a fee is calculated
+
+```
+fee = fixed_fee + amount × float_fee / 100
+fee = max(fee, min_charge)   // when min_charge is set
+fee = min(fee, max_charge)   // when max_charge is set
+```
+
+For example, a 1,000 USD payin on the SPEI line above costs `0.5 + 1000 × 1.2 / 100 = 12.5`, which is between the 1 minimum and the 50 maximum, so the fee is **12.50 USD**.
+
+Custom pricing replaces the default entirely, including its minimum and maximum. A custom line with `min_charge: null` has no minimum, even if the default rate has one.
+
+<Note>
+  Payin and payout quotes also include an exchange-rate margin, which isn't part of this schedule. Request a quote with [`POST /exchange-rate`](/yativo-fiat/exchange-rates#generate-a-quote) to see the full amount you'll be charged.
+</Note>
+
+## Errors
+
+| Status | When |
+|---|---|
+| `401` | Missing or invalid credentials. |
+| `403` | A team member without the Billing & Plans view permission. |
+| `400` | `Something went wrong, please try again later`. |

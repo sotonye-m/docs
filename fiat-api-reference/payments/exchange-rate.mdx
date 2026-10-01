@@ -24,7 +24,7 @@ POST https://api.yativo.com/api/v1/exchange-rate
 </ParamField>
 
 <ParamField body="amount" type="number" required>
-  Amount in the source currency to convert.
+  Amount in the source currency to convert. With `amount_type: "receive"`, the amount the customer receives in `to_currency`.
 </ParamField>
 
 <ParamField body="method_id" type="integer">
@@ -33,6 +33,10 @@ POST https://api.yativo.com/api/v1/exchange-rate
 
 <ParamField body="method_type" type="string">
   Transaction direction: `"payout"` (for sends/withdrawals) or `"payin"` (for deposits). Required when `method_id` is provided.
+</ParamField>
+
+<ParamField body="amount_type" type="string" default="send">
+  Payout quotes only. `send` (default): `amount` is what leaves your wallet. `receive`: `amount` is what the customer receives, and the quote works out the send amount and fees. Using `receive` with `method_type: "payin"` returns `422`. See [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount).
 </ParamField>
 
 <RequestExample>
@@ -61,6 +65,22 @@ curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
     "from_currency": "USD",
     "to_currency": "CLP",
     "amount": 500
+  }'
+```
+
+```bash cURL — payout quote by receive amount (customer gets exactly 5,000 MXN)
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: quote-002' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "MXN",
+    "method_id": 12,
+    "method_type": "payout",
+    "amount": 5000,
+    "amount_type": "receive"
   }'
 ```
 
@@ -153,6 +173,31 @@ const { data } = await response.json();
 }
 ```
 
+```json Receive amount (amount_type receive)
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "quote_id": "9c1e5b2a-3f4d-4e6a-8b7c-2d1e0f9a8b7c",
+    "quote_expire_at": "2026-10-01T12:05:00.000000Z",
+    "from_currency": "USD",
+    "to_currency": "MXN",
+    "rate": "18.12340000",
+    "amount": "275.88642300",
+    "amount_type": "receive",
+    "receive_amount": "5000.00000000",
+    "converted_amount": "1USD - 18.12340000 MXN",
+    "payout_data": {
+      "customer_sent_amount": "275.89",
+      "customer_receive_amount": "5,000.00",
+      "customer_total_amount_due": "278.39"
+    },
+    "calculator": { "...": "full fee and rate breakdown" }
+  }
+}
+```
+
 ```json Without method_id (FX only)
 {
   "status": "success",
@@ -190,9 +235,14 @@ const { data } = await response.json();
 | Field | Description |
 |---|---|
 | `quote_id` | Binding quote identifier — valid for **5 minutes** |
+| `quote_expire_at` | When the quote expires. Use it before this time. |
 | `rate` | Exchange rate applied (source → target currency) |
+| `amount` | The send amount, in `from_currency`. In `receive` mode this is calculated for you. |
+| `amount_type` | Payout quotes: `send` or `receive`. |
+| `receive_amount` | Only in `receive` mode: the amount the customer receives, in `to_currency`. |
 | `payout_data.customer_total_amount_due` | Total deducted from your wallet (amount + fees) |
-| `payout_data.customer_receive_amount` | Amount the recipient receives |
+| `payout_data.customer_receive_amount` | In `receive` mode, the amount the customer receives. In `send` mode, read `calculator.customer_receive_amount.payout_currency` for the amount the customer receives. |
+| `calculator.customer_receive_amount.payout_currency` | The amount the customer receives, in `to_currency` |
 | `payout_data.total_transaction_fee_in_from_currency` | Total fees in the source currency |
 | `calculator.fee_breakdown.float` | Percentage-based fee component |
 | `calculator.fee_breakdown.fixed` | Flat fee component |
@@ -213,8 +263,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -d '{
     "debit_wallet": "USD",
     "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
-    "amount": 406,
-    "payment_method_id": 21
+    "payment_method_id": 555,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
   }'
 ```
 

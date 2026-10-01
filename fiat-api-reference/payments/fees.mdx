@@ -1,0 +1,17 @@
+---
+title: "Get Fee Schedule"
+description: "The fees your account is charged for every payin, payout, virtual account and card service"
+openapi: "GET https://api.yativo.com/api/v1/fees"
+---
+
+Returns your account's fees for every service it can use. Each line has a fixed fee, a percentage fee and an optional minimum and maximum charge. Where your account has custom pricing, the line shows it with `source: "custom"`. Otherwise it shows your plan's default rate with `source: "default"`.
+
+A fee is calculated as:
+
+```
+fee = fixed_fee + amount × float_fee / 100
+fee = max(fee, min_charge)   // when min_charge is set
+fee = min(fee, max_charge)   // when max_charge is set
+```
+
+Payin and payout quotes also include an exchange-rate margin, which isn't part of this schedule. Request a quote with [`POST /exchange-rate`](/fiat-api-reference/payments/exchange-rate) to see the full amount you'll be charged. See [Fees](/yativo-fiat/fees) for more detail.

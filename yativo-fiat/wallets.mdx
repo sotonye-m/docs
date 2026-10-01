@@ -181,12 +181,20 @@ POST /wallet/payout
   The saved beneficiary payment method ID.
 </ParamField>
 
+<ParamField body="customer_id" type="string" required>
+  The customer the payment method belongs to.
+</ParamField>
+
 <ParamField body="quote_id" type="string">
   Quote ID from `POST /sendmoney/quote` or `POST /exchange-rate`. Locks the rate for 5 minutes. Recommended — amount is taken from the quote.
 </ParamField>
 
 <ParamField body="amount" type="number">
   Amount to send. Required if `quote_id` is not provided. Uses current market rate.
+</ParamField>
+
+<ParamField body="amount_type" type="string" default="send">
+  `send` (default): `amount` is debited from your wallet. `receive`: `amount` is what the customer receives in the payout currency. See [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount).
 </ParamField>
 
 <RequestExample>
@@ -199,7 +207,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -d '{
     "debit_wallet": "USD",
     "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
-    "payment_method_id": 21
+    "payment_method_id": 21,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
   }'
 ```
 
@@ -212,7 +221,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -d '{
     "debit_wallet": "USD",
     "amount": 500,
-    "payment_method_id": 21
+    "payment_method_id": 21,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
   }'
 ```
 </RequestExample>

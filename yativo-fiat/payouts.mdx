@@ -254,9 +254,10 @@ curl -X GET 'https://api.yativo.com/api/v1/payout/fetch/txn-a1b2c3d4-e5f6-7890-a
 
 | | `POST /payout/simple` or `/batch` | `POST /wallet/payout` |
 |--|---|---|
-| **Beneficiary required** | Yes — `beneficiary_details_id` | Yes — `beneficiary_id` |
+| **Beneficiary required** | Yes — `beneficiary_details_id` | Yes — `payment_method_id` + `customer_id` |
 | **Quote support** | No | Yes — pass `quote_id` for locked rate |
+| **Fix the receive amount** | No | Yes — `amount_type: "receive"` |
 | **Bulk support** | Yes (`/batch`) | No |
 | **Use case** | Disbursements, payroll | Single cross-currency payments with rate lock |
 
-For a single payment where you want to lock a rate first, use `POST /sendmoney/quote` → `POST /wallet/payout`. For payroll-style bulk disbursements without rate locking, use `POST /payout/batch`.
+For a single payment where you want to lock a rate first, use `POST /exchange-rate` (with `method_type: "payout"`) → `POST /wallet/payout`. To fix what the customer receives rather than what you send, see [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount). For payroll-style bulk disbursements without rate locking, use `POST /payout/batch`.

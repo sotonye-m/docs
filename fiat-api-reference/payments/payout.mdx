@@ -1,102 +1,142 @@
 ---
 title: "Initiate Payout"
-description: "Send money to a beneficiary using a payment method"
+description: "Send money from your wallet to a customer's saved payout method"
 ---
 
-Initiate an outgoing payment to a beneficiary. Use a `quote_id` to lock the exchange rate for 5 minutes and ensure the recipient receives the quoted amount.
+Send money from one of your wallets to a customer's saved payout method. Pass a `quote_id` to lock the rate and fees for 5 minutes, or send `amount` to pay at the current rate.
+
+By default `amount` is what leaves your wallet. Set `amount_type` to `receive` to fix what the customer receives instead. See [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount).
 
 ```
 POST /wallet/payout
 ```
 
 <Note>
-  Requires `Idempotency-Key` header. Use a unique key per payout to prevent duplicate transactions.
+  Requires an `Idempotency-Key` header. Use a unique key per payout to prevent duplicate transactions.
 </Note>
 
 ## Request body
 
 <ParamField body="debit_wallet" type="string" required>
-  The source wallet currency to debit (e.g. `"USD"`, `"EUR"`).
+  The wallet currency to debit (e.g. `"USD"`, `"EUR"`).
 </ParamField>
 
-<ParamField body="payment_method_id" type="number" required>
-  The ID of the beneficiary payment method to use. Obtained from `GET /payment-methods/payout` or saved beneficiary payment methods.
+<ParamField body="payment_method_id" type="integer" required>
+  The customer's saved payout method ID, from `POST /beneficiaries/payment-methods`.
+</ParamField>
+
+<ParamField body="customer_id" type="string" required>
+  The customer the payout method belongs to.
 </ParamField>
 
 <ParamField body="quote_id" type="string">
-  A quote ID from `POST /exchange-rate` or `POST /sendmoney/quote`. When provided, the exchange rate is locked and `amount` is taken from the quote. Recommended to guarantee rates.
+  A payout quote from `POST /exchange-rate` (`method_type: "payout"`). Recommended. The quote supplies the amount, so `amount` and `amount_type` are ignored. The quote's `method_id` must be the payout method behind `payment_method_id`.
 </ParamField>
 
 <ParamField body="amount" type="number">
-  Amount to send in the source wallet currency. Required if `quote_id` is not provided. If `quote_id` is provided, the amount is taken from the quote.
+  Required if `quote_id` is not provided. With `amount_type: "send"` (the default), the amount to send in the `debit_wallet` currency. With `amount_type: "receive"`, the amount the customer receives in the payout currency.
 </ParamField>
 
-<ParamField body="beneficiary_id" type="string">
-  The UUID of a saved beneficiary to pay.
+<ParamField body="amount_type" type="string" default="send">
+  `send` or `receive`. Ignored when `quote_id` is provided. In both modes fees are added on top and charged to your wallet.
 </ParamField>
-
-<Warning>
-  Using a `quote_id` is strongly recommended for cross-currency payouts to protect both you and your customers from exchange rate fluctuations during processing.
-</Warning>
 
 <RequestExample>
-```bash cURL — With quote
+```bash cURL — With quote (recommended)
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: payout-c586066b-2026-04-02-001' \
+  -H 'Idempotency-Key: payout-c586066b-2026-10-01-001' \
   -d '{
     "debit_wallet": "USD",
-    "payment_method_id": 42,
-    "quote_id": "qte_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d"
+    "payment_method_id": 555,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed"
   }'
 ```
 
-```bash cURL — Without quote
+```bash cURL — Fixed receive amount
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: payout-c586066b-2026-04-02-002' \
+  -H 'Idempotency-Key: payout-c586066b-2026-10-01-002' \
   -d '{
     "debit_wallet": "USD",
-    "payment_method_id": 15,
-    "amount": 500.00,
-    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d"
+    "payment_method_id": 555,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "amount": 5000,
+    "amount_type": "receive"
+  }'
+```
+
+```bash cURL — Fixed send amount
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: payout-c586066b-2026-10-01-003' \
+  -d '{
+    "debit_wallet": "USD",
+    "payment_method_id": 555,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "amount": 500
   }'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json Success
+```json 201 Created
 {
   "status": "success",
   "status_code": 201,
-  "message": "Payout initiated successfully",
+  "message": "Withdrawal request initiated successfully",
   "data": {
-    "transaction_id": "txn_f1e2d3c4-b5a6-7890-cdef-123456789abc",
-    "status": "processing",
-    "debit_wallet": "USD",
-    "debit_amount": 100.00,
-    "credit_currency": "CLP",
-    "credit_amount": 95240.00,
-    "exchange_rate": 952.40,
-    "fee": 2.50,
-    "payment_method_id": 42,
-    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-    "created_at": "2026-04-02T10:00:00.000000Z"
+    "transaction_id": 4321,
+    "payout_id": 4321,
+    "status": "pending",
+    "amount_type": "receive",
+    "send_amount": 275.886423,
+    "customer_receive_amount": 5000,
+    "debit_amount": 278.386423,
+    "currency": "MXN",
+    "fees": { "...": "full fee and rate breakdown" },
+    "processed_at": "2026-10-01T12:01:30.000000Z"
   }
 }
 ```
 
-```json Insufficient Funds
+```json Insufficient balance
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 400,
-  "message": "Insufficient wallet balance",
-  "data": null
+  "message": "Request failed.",
+  "data": { "error": "Insufficient wallet balance" }
 }
 ```
 </ResponseExample>
+
+## Response fields
+
+| Field | Description |
+|---|---|
+| `transaction_id` | The transaction ID for this payout. Use it with `GET /transaction/tracking/{id}`. |
+| `payout_id` | The payout ID. Use it with `GET /payout/fetch/{payout_id}`. |
+| `status` | Starts as `pending`. Payouts settle asynchronously; use webhooks for the final status. |
+| `amount_type` | `send` or `receive`, as applied to this payout. |
+| `send_amount` | The amount sent, in the debit wallet currency, before fees. |
+| `customer_receive_amount` | The amount the customer receives, in `currency`. |
+| `debit_amount` | The total debited from your wallet, fees included. |
+| `currency` | The payout currency. |
+| `fees` | The full fee and rate breakdown. |
+
+## Errors
+
+| Status | `data.error` |
+|---|---|
+| `400` | `Insufficient wallet balance`. Nothing is debited. |
+| `400` | `Quote has expired. Please generate a new quote.` |
+| `400` | `Minimum withdrawal: ...` or `Maximum withdrawal: ...`. Limits are checked against the send amount and shown in your wallet currency, so a receive amount can be rejected for being above or below a limit. |
+| `400` | `Unsupported withdrawal method for quotes`. The quote's method doesn't match the payout method. |
+| `422` | `amount_type must be either send or receive` |

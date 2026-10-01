@@ -69,6 +69,10 @@ POST /wallet/payout
   Saved beneficiary payment method ID.
 </ParamField>
 
+<ParamField body="customer_id" type="string" required>
+  The customer the payment method belongs to.
+</ParamField>
+
 <ParamField body="quote_id" type="string">
   Quote ID to lock the rate. Recommended.
 </ParamField>
@@ -87,7 +91,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -d '{
     "debit_wallet": "USD",
     "quote_id": "7b91acf8-9d2a-4e38-aa71-9babe9f785cd",
-    "payment_method_id": 21
+    "payment_method_id": 21,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
   }'
 ```
 </RequestExample>

@@ -3,7 +3,14 @@ title: "Exchange Rates & Quotes"
 description: "Generate locked quotes for payouts and deposits, or fetch live rates for display"
 ---
 
-The `POST /exchange-rate` endpoint is the single source for pricing any transaction on Yativo. It returns a `quote_id` valid for 5 minutes — use this ID in the execution step to guarantee the rate and fee shown to your customer.
+Yativo has two rate endpoints:
+
+| Endpoint | Use it to |
+|---|---|
+| [`GET /exchange-rates`](#live-market-rates) | Show live market rates for every wallet currency. No fees, no quote. |
+| [`POST /exchange-rate`](#generate-a-quote) | Price a specific payout or deposit with fees, and lock it with a `quote_id`. |
+
+`POST /exchange-rate` is the single source for pricing any transaction on Yativo. It returns a `quote_id` valid for 5 minutes — use this ID in the execution step to guarantee the rate and fee shown to your customer.
 
 There are two modes:
 
@@ -20,14 +27,18 @@ interface ExchangeRateRequest {
   amount: number;           // amount in source currency
   method_id?: number;       // payment method ID (from /payment-methods/payout or /payin)
   method_type?: "payout" | "payin";  // required when method_id is provided
+  amount_type?: "send" | "receive";  // payout quotes only; default "send"
 }
 
 interface Quote {
   quote_id: string;         // valid for 5 minutes — use in /wallet/payout or /wallet/deposits/new
+  quote_expire_at: string;  // ISO 8601
   from_currency: string;
   to_currency: string;
   rate: string;
-  amount: string;
+  amount: string;           // send amount, in from_currency
+  amount_type?: "send" | "receive";
+  receive_amount?: string;  // receive mode only, in to_currency
   payout_data: {
     total_transaction_fee_in_from_currency: string;
     total_transaction_fee_in_to_currency: string;
@@ -81,6 +92,10 @@ POST /exchange-rate
 
 <ParamField body="method_type" type="string">
   `"payout"` for sends/withdrawals or `"payin"` for deposits. Required when `method_id` is provided.
+</ParamField>
+
+<ParamField body="amount_type" type="string" default="send">
+  Payout quotes only. Set to `"receive"` to make `amount` the amount the customer receives, in `to_currency`. See [Pay out by receive amount](#pay-out-by-receive-amount).
 </ParamField>
 
 <RequestExample>
@@ -189,8 +204,8 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -d '{
     "debit_wallet": "USD",
     "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
-    "amount": 406,
-    "payment_method_id": 21
+    "payment_method_id": 555,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
   }'
 ```
 
@@ -209,6 +224,177 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
     "redirect_url": "https://your-app.com/deposit/complete"
   }'
 ```
+
+---
+
+## Pay out by receive amount
+
+By default, a payout's `amount` is what you **send** from your wallet, and the customer receives that amount converted into the payout currency. To fix what the customer **receives** instead, for example exactly 5,000 MXN, set `amount_type` to `receive`. Yativo works out the send amount and fees, then debits your wallet for both. The customer always gets the full requested amount.
+
+| `amount_type` | `amount` means | Currency of `amount` |
+|---|---|---|
+| `send` (default) | What leaves your wallet, before fees | Your debit wallet (`from_currency` / `debit_wallet`) |
+| `receive` | What the customer receives | The payout currency (`to_currency`) |
+
+`amount_type` works on `POST /exchange-rate` (payout quotes) and `POST /wallet/payout`.
+
+### Option A: quote first (recommended)
+
+A quote fixes the rate and fees for 5 minutes, so you can show the exact debit before you commit.
+
+<Steps>
+  <Step title="Get a receive-mode quote">
+    ```bash
+    curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
+      -H 'X-Api-Key: YOUR_API_KEY' \
+      -H 'X-Api-Secret: YOUR_API_SECRET' \
+      -H 'Content-Type: application/json' \
+      -H 'Idempotency-Key: quote-receive-001' \
+      -d '{
+        "method_type": "payout",
+        "method_id": 12,
+        "from_currency": "USD",
+        "to_currency": "MXN",
+        "amount": 5000,
+        "amount_type": "receive"
+      }'
+    ```
+
+    ```json
+    {
+      "status": "success",
+      "status_code": 200,
+      "message": "Request successful",
+      "data": {
+        "quote_id": "9c1e5b2a-3f4d-4e6a-8b7c-2d1e0f9a8b7c",
+        "quote_expire_at": "2026-10-01T12:05:00.000000Z",
+        "from_currency": "USD",
+        "to_currency": "MXN",
+        "rate": "18.12340000",
+        "amount": "275.88642300",
+        "amount_type": "receive",
+        "receive_amount": "5000.00000000",
+        "payout_data": {
+          "customer_sent_amount": "275.89",
+          "customer_receive_amount": "5,000.00",
+          "customer_total_amount_due": "278.39"
+        },
+        "calculator": { "...": "full fee and rate breakdown" }
+      }
+    }
+    ```
+
+    `amount` is the send amount in `from_currency`, `receive_amount` is what the customer gets, and `payout_data.customer_total_amount_due` is the total your wallet is debited.
+  </Step>
+  <Step title="Create the payout with the quote">
+    ```bash
+    curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+      -H 'X-Api-Key: YOUR_API_KEY' \
+      -H 'X-Api-Secret: YOUR_API_SECRET' \
+      -H 'Content-Type: application/json' \
+      -H 'Idempotency-Key: payout-receive-001' \
+      -d '{
+        "quote_id": "9c1e5b2a-3f4d-4e6a-8b7c-2d1e0f9a8b7c",
+        "payment_method_id": 555,
+        "debit_wallet": "USD",
+        "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
+      }'
+    ```
+
+    The quote supplies the amount, so don't send `amount` or `amount_type`. Any `amount_type` you send with a `quote_id` is ignored. The quote's `method_id` must be the payout method behind `payment_method_id`.
+  </Step>
+</Steps>
+
+### Option B: pay out directly
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: payout-receive-002' \
+  -d '{
+    "amount": 5000,
+    "amount_type": "receive",
+    "payment_method_id": 555,
+    "debit_wallet": "USD",
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
+  }'
+```
+
+The send amount is calculated at the current rate when the request is processed. Use Option A if you need to know the debit in advance.
+
+### Payout response
+
+Every `POST /wallet/payout` response includes these fields, in either mode:
+
+| Field | Meaning |
+|---|---|
+| `amount_type` | `send` or `receive`, as applied. |
+| `send_amount` | The amount sent, in the debit wallet currency, before fees. |
+| `customer_receive_amount` | The amount the customer receives, in `currency`. |
+| `debit_amount` | The total debited from your wallet, fees included. |
+
+When the debit wallet and payout currency are the same (for example USD to USD), the send amount equals the receive amount. Fees are still added on top.
+
+### Limits and errors
+
+- The payout method's minimum and maximum are checked against the calculated **send** amount, so a receive amount can be rejected for being above or below a limit. The error shows the limit in your wallet currency.
+- If your wallet can't cover the send amount plus fees, the request fails with `Insufficient wallet balance` and nothing is debited.
+- An `amount_type` other than `send` or `receive` returns `422`.
+- `amount_type: "receive"` on a payin quote returns `422`.
+
+---
+
+## Live market rates
+
+To show live rates to your customers, without fees or a quote, use:
+
+```
+GET /exchange-rates?base=USD
+```
+
+<ParamField query="base" type="string" default="USD">
+  The currency rates are quoted against. Must be a supported wallet currency.
+</ParamField>
+
+<RequestExample>
+```bash
+curl 'https://api.yativo.com/api/v1/exchange-rates?base=USD' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "base": "USD",
+    "rates": {
+      "ARS": 1185.5,
+      "BRL": 5.4321,
+      "EUR": 0.9187,
+      "MXN": 18.6024,
+      "USD": 1
+    },
+    "updated_at": "2026-10-01T12:00:00+00:00"
+  }
+}
+```
+</ResponseExample>
+
+Each rate means **1 `base` = `rate` units of that currency**. To convert from the base currency, multiply by the rate. To convert back, divide. A rate of `null` means no rate is available for that currency right now.
+
+- Rates are indicative market rates. They refresh about once a minute and **don't include fees**.
+- You can call this endpoint **once per minute** per account. Further calls in the same minute get `429` with a `Retry-After` header. To show several bases, make one request and divide: the rate from `A` to `B` is `rates[B] / rates[A]`.
+- Team members need the **Currency Exchange → view** permission.
+- An unsupported `base` returns `422` with the allowed values. `503` means rates are temporarily unavailable.
+
+See [Get Market Rates](/fiat-api-reference/payments/market-rates) for the full reference.
 
 ---
 
@@ -267,4 +453,6 @@ Always display `payout_data.customer_total_amount_due` to the customer — this 
 
 ## Rate Limits
 
-The exchange rate endpoint is limited to **30 requests per minute** per API key. Cache quotes client-side for display rather than calling on every user keystroke.
+`POST /exchange-rate` is limited to **30 requests per minute** per API key. Cache quotes client-side for display rather than calling on every user keystroke.
+
+`GET /exchange-rates` is limited to **1 request per minute** per account. Its rates only refresh once a minute.

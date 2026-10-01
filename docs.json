@@ -82,6 +82,7 @@
               "yativo-fiat/send-money",
               "yativo-fiat/payouts",
               "yativo-fiat/exchange-rates",
+              "yativo-fiat/fees",
               "yativo-fiat/deposits",
               "yativo-fiat/virtual-accounts",
               "yativo-fiat/virtual-cards",
@@ -177,6 +178,8 @@
             "group": "Payments & Transfers",
             "pages": [
               "fiat-api-reference/payments/exchange-rate",
+              "fiat-api-reference/payments/market-rates",
+              "fiat-api-reference/payments/fees",
               "fiat-api-reference/payments/send-money-quote",
               "fiat-api-reference/payments/send-money",
               "fiat-api-reference/payments/methods",
