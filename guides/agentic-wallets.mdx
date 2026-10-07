@@ -164,43 +164,11 @@ This guide walks you through creating an agentic wallet, generating a connector 
 
 ---
 
-## Using with the MCP Server
-
-For AI agents that support the Model Context Protocol, skip the API calls and use the MCP server:
-
-```bash
-npm install -g @yativo/mcp-server
-```
-
-Then configure it in your AI client (e.g., Claude Desktop):
-
-```json
-{
-  "mcpServers": {
-    "yativo-wallet": {
-      "command": "npx",
-      "args": ["-y", "@yativo/mcp-server"],
-      "env": {
-        "YATIVO_API_KEY": "yac_your_connector_key",
-        "YATIVO_WALLET_ID": "aw_your_wallet_id"
-      }
-    }
-  }
-}
-```
-
-Your agent can now say "check my balance" or "send $5 to 0x..." and it works.
-
----
-
 ## Next Steps
 
 <CardGroup cols={2}>
   <Card title="Agentic Wallets" icon="robot" href="/yativo-crypto/agentic-wallets">
     Full Agentic Wallets documentation.
-  </Card>
-  <Card title="MCP Server" icon="terminal" href="/sdks/mcp">
-    MCP server setup and tool reference.
   </Card>
   <Card title="Sandbox" icon="flask" href="/sandbox/agentic-wallets">
     Test in sandbox first.

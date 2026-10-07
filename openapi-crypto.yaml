@@ -337,7 +337,7 @@ paths:
       summary: Generate Bearer Token
       description: |
         Exchange an API key + secret for a JWT Bearer token. Tokens expire after 60 minutes.
-        Implement the auto-refresh pattern in your SDK — see the Authentication guide.
+        Implement the auto-refresh pattern in your client — see the Authentication guide.
       security: []
       requestBody:
         required: true

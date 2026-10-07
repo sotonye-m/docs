@@ -28,46 +28,7 @@ curl -X POST https://crypto-api.yativo.com/api/v1/transactions/get-gas-price \
   }'
 ```
 
-```typescript TypeScript
-import { YativoCrypto } from "@yativo/crypto-sdk";
 
-const client = new YativoCrypto({
-  apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/v1/",
-});
-
-const gasEstimate = await client.transactions.getGasPrice({
-  chain: "ethereum",
-  asset: "USDC",
-});
-
-console.log(gasEstimate);
-/*
-{
-  chain: "ethereum",
-  slow:   { gasPrice: "18.2", estimatedFeeUsd: "0.82",  estimatedTimeSeconds: 120 },
-  medium: { gasPrice: "22.5", estimatedFeeUsd: "1.02",  estimatedTimeSeconds: 30  },
-  fast:   { gasPrice: "31.0", estimatedFeeUsd: "1.40",  estimatedTimeSeconds: 10  },
-  nativeAsset: "ETH",
-  updatedAt: "2026-03-26T11:00:00Z"
-}
-*/
-```
-
-```python Python
-from yativo_crypto import YativoCrypto
-
-client = YativoCrypto(
-    api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-api.yativo.com/api/v1/",
-)
-
-gas_estimate = client.transactions.get_gas_price(
-    chain="ethereum",
-    asset="USDC",
-)
-print(gas_estimate.medium.estimated_fee_usd)  # "1.02"
-```
 
 </CodeGroup>
 
