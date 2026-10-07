@@ -22,35 +22,7 @@ curl -X GET https://crypto-api.yativo.com/api/v1/swap/assets \
   -H "Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c3JfMDFIWVo..."
 ```
 
-```typescript TypeScript
-import { YativoCrypto } from "@yativo/crypto-sdk";
 
-const client = new YativoCrypto({
-  apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/v1/",
-});
-
-const assets = await client.swap.getAssets();
-
-// Filter to assets available as swap input
-const fromAssets = assets.filter((a) => a.canSwapFrom);
-const toAssets = assets.filter((a) => a.canSwapTo);
-
-console.log(fromAssets.map((a) => `${a.symbol} on ${a.chain}`));
-// ["USDC on ethereum", "ETH on ethereum", "USDC on polygon", ...]
-```
-
-```python Python
-from yativo_crypto import YativoCrypto
-
-client = YativoCrypto(
-    api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-api.yativo.com/api/v1/",
-)
-
-assets = client.swap.get_assets()
-from_assets = [a for a in assets if a.can_swap_from]
-```
 
 </CodeGroup>
 

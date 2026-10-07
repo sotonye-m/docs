@@ -1,18 +1,18 @@
 ---
 title: "AI and MCP servers"
-description: "Connect Claude, Cursor or any MCP client to the Yativo docs, your fiat account or an agentic crypto wallet"
+description: "Connect Claude, Cursor or any MCP client to the Yativo docs or your fiat account"
 ---
 
-Yativo has three [Model Context Protocol](https://modelcontextprotocol.io) servers. Pick the one that matches what your assistant needs to do.
+Yativo has two [Model Context Protocol](https://modelcontextprotocol.io) servers. Pick the one that matches what your assistant needs to do.
 
-| | Docs MCP | Fiat MCP | Agentic Wallet MCP (crypto) |
-|---|---|---|---|
-| **What it does** | Searches and cites these docs | Checks balances, deposits, payouts and beneficiaries, and quotes and sends payouts | Checks an agentic wallet's balance, sends crypto payments and pays for x402 APIs |
-| **Acts on** | Public docs only | Your Yativo Fiat business account | One agentic wallet, within its connector's limits |
-| **Moves money** | No | Yes, with your approval for each payout | Yes, within the connector's spending limits |
-| **Connect with** | `https://docs.yativo.com/mcp` | `https://api.yativo.com/mcp` | `npx @yativo/mcp-server` (runs locally) |
-| **Sign in with** | Nothing | OAuth sign-in or an [API key](/yativo-fiat/api-keys) | A connector key (`yac_...`) |
-| **Guide** | Below | [Fiat MCP server](/yativo-fiat/mcp-server) | [Agentic Wallet MCP server](/sdks/mcp) |
+| | Docs MCP | Fiat MCP |
+|---|---|---|
+| **What it does** | Searches and cites these docs | Checks balances, deposits, payouts and beneficiaries, and quotes and sends payouts |
+| **Acts on** | Public docs only | Your Yativo Fiat business account |
+| **Moves money** | No | Yes, with your approval for each payout |
+| **Connect with** | `https://docs.yativo.com/mcp` | `https://api.yativo.com/mcp` |
+| **Sign in with** | Nothing | OAuth sign-in or an [API key](/yativo-fiat/api-keys) |
+| **Guide** | Below | [Fiat MCP server](/yativo-fiat/mcp-server) |
 
 <Tip>
   Start with the Docs MCP while you build. It needs no credentials and answers questions from the current docs instead of your assistant's training data.
@@ -74,13 +74,10 @@ Add to your `mcp.json`, then reload Cursor:
   <Card title="Fiat MCP server" icon="building-columns" href="/yativo-fiat/mcp-server">
     Let an assistant check balances and send payouts from your fiat account.
   </Card>
-  <Card title="Agentic Wallet MCP server" icon="robot" href="/sdks/mcp">
-    Give an AI agent a crypto wallet with spending limits.
-  </Card>
   <Card title="Fiat API reference" icon="code" href="/fiat-api-reference/introduction">
     The fiat endpoints behind the Fiat MCP tools.
   </Card>
   <Card title="Crypto API reference" icon="code" href="/api-reference/introduction">
-    The crypto endpoints, including agentic wallets.
+    The crypto endpoints.
   </Card>
 </CardGroup>

@@ -403,28 +403,7 @@
               "guides/b2b-card-issuer",
               "guides/card-issuer-webhooks",
               "guides/swap-tokens",
-              "guides/webhook-integration",
-              "guides/sdk-quickstart"
-            ]
-          },
-          {
-            "group": "SDKs",
-            "pages": [
-              "sdks/overview",
-              "sdks/typescript",
-              "sdks/python",
-              "sdks/php",
-              "sdks/java",
-              "sdks/react",
-              "sdks/mcp"
-            ]
-          },
-          {
-            "group": "Browser Extensions (Coming Soon)",
-            "pages": [
-              "extensions/overview",
-              "extensions/chrome",
-              "extensions/firefox"
+              "guides/webhook-integration"
             ]
           },
           {
@@ -763,7 +742,19 @@
     {
       "source": "/api-reference/authentication/refresh",
       "destination": "/api-reference/api-keys/token"
+    },
+    {
+      "source": "/sdks/:slug*",
+      "destination": "/yativo-crypto/quickstart"
+    },
+    {
+      "source": "/extensions/:slug*",
+      "destination": "/yativo-crypto/quickstart"
+    },
+    {
+      "source": "/guides/sdk-quickstart",
+      "destination": "/yativo-crypto/quickstart"
     }
   ],
-  "description": "Yativo developer docs: APIs, guides and SDKs for cross-border fiat payments, payouts and virtual accounts, plus multi-chain crypto wallets, cards, swaps and AI agent integrations."
+  "description": "Yativo developer docs: APIs and guides for cross-border fiat payments, payouts and virtual accounts, plus multi-chain crypto wallets, cards, swaps and AI agent integrations."
 }
