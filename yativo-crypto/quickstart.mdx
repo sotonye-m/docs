@@ -26,28 +26,6 @@ This guide takes you from zero to a completed on-chain transaction using the Yat
           }'
         ```
       </Tab>
-      <Tab title="TypeScript">
-        ```typescript
-        import { YativoCrypto } from '@yativo/sdk';
-
-        const client = new YativoCrypto({
-          apiKey: process.env.YATIVO_API_KEY!,
-          apiSecret: process.env.YATIVO_API_SECRET!,
-        });
-        // The SDK handles token exchange automatically
-        ```
-      </Tab>
-      <Tab title="Python">
-        ```python
-        from yativo import YativoCrypto
-
-        client = YativoCrypto(
-            api_key=os.environ['YATIVO_API_KEY'],
-            api_secret=os.environ['YATIVO_API_SECRET'],
-        )
-        # The SDK handles token exchange automatically
-        ```
-      </Tab>
     </Tabs>
 
     Save the `access_token` — you'll use it as `Authorization: Bearer {token}` in all subsequent requests.

@@ -40,43 +40,7 @@ curl -X POST https://crypto-api.yativo.com/api/v1/accounts/create-account \
   }'
 ```
 
-```typescript TypeScript
-import { YativoCrypto } from "@yativo/crypto-sdk";
 
-const client = new YativoCrypto({
-  apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/v1/",
-});
-
-const account = await client.accounts.create({
-  label: "alice_account",
-  metadata: {
-    userId: "usr_01HYZPQR3NMVK8F2GXB7T9D4CE",
-    email: "alice@example.com",
-  },
-});
-
-console.log(account.accountId); // acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y
-```
-
-```python Python
-from yativo_crypto import YativoCrypto
-
-client = YativoCrypto(
-    api_key=os.environ["YATIVO_API_KEY"],
-    base_url="https://crypto-api.yativo.com/api/v1/",
-)
-
-account = client.accounts.create(
-    label="alice_account",
-    metadata={
-        "userId": "usr_01HYZPQR3NMVK8F2GXB7T9D4CE",
-        "email": "alice@example.com",
-    },
-)
-
-print(account.account_id)  # acc_01J2K9MNPQ3R4S5T6U7V8W9X0Y
-```
 
 </CodeGroup>
 

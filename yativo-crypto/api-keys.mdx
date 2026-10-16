@@ -106,23 +106,6 @@ curl -X POST https://crypto-api.yativo.com/api/v1/transactions/send-funds \
 Here's a complete server-to-server setup using the Bearer token method with auto-refresh:
 
 ```typescript
-import { YativoCrypto } from '@yativo/sdk';
-
-// The SDK handles token exchange and refresh automatically
-const yativo = new YativoCrypto({
-  apiKey: process.env.YATIVO_API_KEY!,
-  apiSecret: process.env.YATIVO_API_SECRET!,
-  // environment: 'sandbox', // uncomment for sandbox
-});
-
-// All methods are authenticated automatically
-const accounts = await yativo.accounts.list();
-const balance = await yativo.balance.check({ asset_id: 'asset_01xyz' });
-```
-
-Without the SDK:
-
-```typescript
 class YativoClient {
   private token: string | null = null;
   private expiresAt = 0;

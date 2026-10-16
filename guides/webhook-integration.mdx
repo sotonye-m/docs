@@ -144,29 +144,6 @@ curl -X POST https://crypto-api.yativo.com/api/v1/webhook/create-webhook \
   }'
 ```
 
-```typescript TypeScript
-import { YativoCrypto } from "@yativo/crypto-sdk";
-
-const client = new YativoCrypto({
-  apiKey: process.env.YATIVO_API_KEY!,
-  baseUrl: "https://crypto-api.yativo.com/api/v1/",
-});
-
-const webhook = await client.webhooks.create({
-  url: "https://api.yourapp.com/webhooks/yativo",
-  events: [
-    "deposit.detected",
-    "deposit.confirmed",
-    "transaction.failed",
-    "transaction.authorized",
-    "transaction.settled",
-    "customer.funded",
-  ],
-  description: "Production webhook",
-});
-
-console.log(webhook.data.secret); // whsec_a8f3c2e1d4b7f9e2c5a3b6d8f1e4c7a2
-```
 
 ```python Python
 webhook = client.webhooks.create(

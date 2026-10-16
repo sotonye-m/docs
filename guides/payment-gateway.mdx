@@ -167,24 +167,38 @@ This guide walks you through setting up the Yativo Crypto Payment Gateway to acc
 ## Full Example (TypeScript)
 
 ```typescript
-import { YativoCrypto } from '@yativo/crypto-sdk';
+const API = 'https://crypto-api.yativo.com/api/v1';
 
-const client = new YativoCrypto({
-  apiKey: process.env.YATIVO_API_KEY!,
-  apiSecret: process.env.YATIVO_API_SECRET!,
-});
+async function getToken(): Promise<string> {
+  const res = await fetch(`${API}/auth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      api_key: process.env.YATIVO_API_KEY,
+      api_secret: process.env.YATIVO_API_SECRET,
+    }),
+  });
+  return (await res.json()).data.access_token;
+}
 
 // Create a payment for a customer's order
-async function createPayment(orderId: string, amount: number) {
-  const payment = await client.gateway.createPayment({
-    title: `Order #${orderId}`,
-    description: 'Your purchase from Acme Store',
-    requestedAmount: amount,
-    acceptedAssets: ['USDC_SOL', 'USDT_POL', 'USDC_BASE'],
-    externalReference: orderId,
+async function createPayment(orderId: string, amount: number): Promise<string> {
+  const res = await fetch(`${API}/crypto-gateway/payments`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${await getToken()}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      title: `Order #${orderId}`,
+      description: 'Your purchase from Acme Store',
+      requested_amount: amount,
+      accepted_assets: ['USDC_SOL', 'USDT_POL', 'USDC_BASE'],
+      external_reference: orderId,
+    }),
   });
-
-  return payment.checkoutUrl; // Send this to your customer
+  const { data } = await res.json();
+  return data.checkout_url; // Send this to your customer
 }
 ```
 

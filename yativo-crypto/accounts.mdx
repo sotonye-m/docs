@@ -278,17 +278,4 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/accounts/create-account' 
   }'
 ```
 
-```typescript TypeScript SDK
-const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
-  apiKey: 'YOUR_SANDBOX_API_KEY',
-  apiSecret: 'YOUR_SANDBOX_API_SECRET',
-});
-
-const account = await sdk.accounts.create({
-  account_name: 'Sandbox Treasury',
-  account_type: 'business',
-});
-console.log('Account ID:', account.id);
-```
 </CodeGroup>

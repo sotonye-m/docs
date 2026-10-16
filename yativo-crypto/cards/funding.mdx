@@ -168,14 +168,4 @@ curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/yativo-card/yc_01SANDBOX_C
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
 
-```typescript TypeScript SDK
-const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
-  apiKey: 'YOUR_SANDBOX_API_KEY',
-  apiSecret: 'YOUR_SANDBOX_API_SECRET',
-});
-
-const fundingAddress = await sdk.cardWallet.getFundingAddress('yc_01SANDBOX_CARD_ID');
-console.log('Send USDC on Solana to:', fundingAddress.data.funding_address);
-```
 </CodeGroup>

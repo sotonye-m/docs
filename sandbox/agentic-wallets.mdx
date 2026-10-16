@@ -45,27 +45,3 @@ curl -X POST 'https://crypto-sandbox.yativo.com/api/v1/sandbox/simulate-agentic-
 ```
 
 This creates a mock transaction with realistic data including service name, payment category, and audit trail fields.
-
----
-
-## Test the MCP Server
-
-Point the MCP server at the sandbox:
-
-```json
-{
-  "mcpServers": {
-    "yativo-wallet": {
-      "command": "npx",
-      "args": ["-y", "@yativo/mcp-server"],
-      "env": {
-        "YATIVO_API_KEY": "yac_sandbox_connector_key",
-        "YATIVO_WALLET_ID": "aw_sandbox_wallet_id",
-        "YATIVO_API_URL": "https://crypto-sandbox.yativo.com/api/v1"
-      }
-    }
-  }
-}
-```
-
-The MCP server works identically against sandbox — all transactions use testnet chains.

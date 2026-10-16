@@ -253,21 +253,4 @@ curl -X GET 'https://crypto-sandbox.yativo.com/api/v1/yativo-card/yc_sandbox_exa
   -H 'Authorization: Bearer YOUR_SANDBOX_TOKEN'
 ```
 
-```typescript TypeScript SDK (Sandbox)
-import { YativoSDK } from '@yativo/crypto-sdk';
-
-const sdk = new YativoSDK({
-  baseURL: 'https://crypto-sandbox.yativo.com/api/v1/',
-  apiKey: 'YOUR_SANDBOX_API_KEY',
-  apiSecret: 'YOUR_SANDBOX_API_SECRET',
-});
-
-// Fetch transactions for a specific card (returns mock data in sandbox)
-const transactions = await sdk.cards.getTransactions('yc_sandbox_example', 'card_sandbox_example', {
-  limit: 20,
-  offset: 0,
-  status: 'completed',
-});
-console.log('Transactions:', transactions.data.transactions);
-```
 </CodeGroup>

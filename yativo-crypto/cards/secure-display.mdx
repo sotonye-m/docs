@@ -296,33 +296,6 @@ app.post('/api/card-view-token', async (req, res) => {
 });
 ```
   </Tab>
-  <Tab title="TypeScript SDK">
-```typescript
-import { YativoSDK } from '@yativo/crypto-sdk';
-
-const sdk = new YativoSDK({
-  baseURL: 'https://crypto-api.yativo.com/api/v1/',
-  apiKey: process.env.YATIVO_API_KEY!,
-  apiSecret: process.env.YATIVO_API_SECRET!,
-});
-
-// In your backend route handler:
-const result = await sdk.cards.getViewToken(
-  'yc_01HX9KZMB3F7VNQP8R2WDGT4E5',   // yativoCardId
-  'card_01HX9KZMB3F7VNQP8R2WDGT4E5',  // cardId
-  {
-    enabled_views: ['data', 'pin-view', 'pin-set'],
-    theme: {
-      accent_color: '#813AE3',
-      border_radius: 16,
-    },
-  }
-);
-
-// Send result.data.secure_view_url to your frontend
-return res.json({ url: result.data.secure_view_url });
-```
-  </Tab>
   <Tab title="Frontend (after fetch)">
 ```html
 <!-- Your frontend fetches the URL from your backend, then sets it on the iframe -->
