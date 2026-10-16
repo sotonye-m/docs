@@ -1,0 +1,287 @@
+---
+title: "Corporate Cards in Sandbox"
+description: "Test employee corporate cards end to end in the sandbox before going live"
+---
+
+Corporate cards let your business issue spend cards to its employees. Each employee is a cardholder with one card balance, and every card they hold spends from it. You fund that balance from your USDC balance and can withdraw it back at any time.
+
+Corporate cards are available in sandbox now, ahead of production. Use the sandbox to build and test your integration, then switch the base URL and API key when production opens.
+
+<Note>
+  Sandbox behaves like production for corporate cards. Account approval, customer requirements, fees and the USDC reserve all apply. Fees are charged to your sandbox USDC balance, which holds test funds only.
+</Note>
+
+---
+
+## Before you start
+
+| Requirement | How to meet it in sandbox |
+|---|---|
+| Sandbox API key | Create one in the sandbox dashboard under **Developers → API Keys**. See [Sandbox Environment](/yativo-fiat/sandbox) |
+| Verified sandbox account | `kyc_status` is `approved` and `is_kyc_submitted` is true. See [Sandbox KYC](/yativo-fiat/sandbox-kyc) |
+| Corporate cards enabled | Ask Yativo support to enable Business Spend Cards on your sandbox account. Until then every corporate card request returns `403` |
+| A business customer | Create it with `customer_type: "business"` and submit its KYB. Corporate cards are issued to business customers |
+| `faster_payments` endorsement | The customer needs an approved `faster_payments` [endorsement](/yativo-fiat/kyc#service-endorsements). Requests for a customer without it return `403` |
+| USDC balance | Enough to cover card funding, fees and the [reserve](#reserve) |
+
+All requests go to the sandbox base URL with your sandbox key:
+
+```bash
+BASE=https://smtp.yativo.com/api/v1
+
+curl "$BASE/corporate-card/employees" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET"
+```
+
+`customer_id` and `employee_id` are never part of a `POST` path. Send them in the request body, or in the query string on `GET`. Every `customer_id` must be one of your customers and every `employee_id` must belong to that customer, or the request returns `404`.
+
+---
+
+## Test in the dashboard
+
+The sandbox dashboard has the same Corporate Card screens as production. Open **Issuing → Corporate Card**, pick a customer, then add employees, issue cards, fund balances and review memos. Use it to see the flow before you call the API.
+
+---
+
+## Test flow
+
+<Steps>
+  <Step title="Check your USDC balance">
+    Provision the customer's funding address once with `POST /corporate-card/wallet`. Calling it again returns the same address.
+
+    ```bash
+    curl -X POST "$BASE/corporate-card/wallet" \
+      -H "X-Api-Key: $YATIVO_API_KEY" -H "X-Api-Secret: $YATIVO_API_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{ "customer_id": "cus_123" }'
+    ```
+
+    Then `GET /corporate-card/wallet?customer_id=...` returns the address and your USDC balance:
+
+    ```bash
+    curl "$BASE/corporate-card/wallet?customer_id=cus_123" \
+      -H "X-Api-Key: $YATIVO_API_KEY" -H "X-Api-Secret: $YATIVO_API_SECRET"
+    ```
+
+    ```json
+    {
+      "status": "success",
+      "status_code": 200,
+      "message": "Request successful",
+      "data": {
+        "wallet": {
+          "customer_id": "cus_123",
+          "wallet_address": "7xKX...9fQe",
+          "wallet_currency": "USDC_SOL",
+          "wallet_status": "active"
+        },
+        "usdc_balance": 350000,
+        "usdc_reserved_balance": 200000,
+        "usdc_available_balance": 150000
+      }
+    }
+    ```
+
+    The three balances are in cents: `350000` is 3,500.00 USD. Spend only from `usdc_available_balance`.
+
+    <Warning>
+      Never send real USDC to a sandbox funding address. If your sandbox USDC balance is empty, contact Yativo support.
+    </Warning>
+  </Step>
+
+  <Step title="Create an employee">
+    ```bash
+    curl -X POST "$BASE/corporate-card/employees" \
+      -H "X-Api-Key: $YATIVO_API_KEY" -H "X-Api-Secret: $YATIVO_API_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customer_id": "cus_123",
+        "full_name": "Jane Doe",
+        "email": "jane@example.com",
+        "dob": "1990-04-12",
+        "occupation": "Operations Manager",
+        "metadata": { "department": "Finance", "employee_number": "EMP-0042" }
+      }'
+    ```
+
+    Only `customer_id` and `full_name` are required. To attach a selfie, send `selfie_image` as a `multipart/form-data` file (jpeg, jpg, png or webp, up to 10 MB) or `selfie_image_url` as a hosted URL. The response includes the new `employee_id`.
+  </Step>
+
+  <Step title="Submit employee KYC">
+    ```bash
+    curl -X POST "$BASE/corporate-card/employees/kyc" \
+      -H "X-Api-Key: $YATIVO_API_KEY" -H "X-Api-Secret: $YATIVO_API_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "employee_id": "emp_456",
+        "full_name": "Jane Doe",
+        "id_type": "passport",
+        "id_number": "X1234567",
+        "dob": "1990-04-12",
+        "street": "100 Main St",
+        "city": "Miami",
+        "postal_code": "33101",
+        "country_id": "US",
+        "nationality": "US",
+        "gov_id_type": "passport",
+        "gov_id_number": "X1234567",
+        "gov_id_image_url": "https://example.com/id.jpg"
+      }'
+    ```
+
+    `country_id` and `nationality` are ISO2 codes. `state_id` is optional and is the numeric `id` from `GET /locations/states/{country_id}`, where `{country_id}` is the numeric id from `GET /locations/countries`. Documents (`gov_id_image`, `payslip`, `proof_of_address`) are optional and accept a file or a `*_url` field.
+
+    In sandbox, a KYC submission is approved straight away. `GET /corporate-card/employees/{employee_id}/kyc` returns `status: "approved"`. The first submission for each employee charges the `employee_kyc` fee. Resubmissions are free.
+  </Step>
+
+  <Step title="Issue a card">
+    ```bash
+    curl -X POST "$BASE/corporate-card/employees/cards" \
+      -H "X-Api-Key: $YATIVO_API_KEY" -H "X-Api-Secret: $YATIVO_API_SECRET" \
+      -H "Content-Type: application/json" \
+      -H "Idempotency-Key: $(uuidgen)" \
+      -d '{ "customer_id": "cus_123", "employee_id": "emp_456", "card_type": "Virtual" }'
+    ```
+
+    `card_type` is `Virtual` (default) or `Physical`. Omit `employee_id` and the card goes to the customer's employee, created automatically the first time. An employee can hold any number of cards. The response contains the card under `data.card`, including its `card_id`, `status`, `masked_pan` and `expiration_date`.
+
+    An employee's first virtual card is free. Further virtual cards and physical cards are charged as listed in [Fees](#fees). If a fee can't be charged the request returns `402` and no card is issued.
+  </Step>
+
+  <Step title="Fund the employee's card balance">
+    ```bash
+    curl -X POST "$BASE/corporate-card/employees/balance" \
+      -H "X-Api-Key: $YATIVO_API_KEY" -H "X-Api-Secret: $YATIVO_API_SECRET" \
+      -H "Content-Type: application/json" \
+      -H "Idempotency-Key: $(uuidgen)" \
+      -d '{ "employee_id": "emp_456", "action": "fund", "amount": 500.00 }'
+    ```
+
+    `action` is `fund` or `withdraw`, and `amount` is in USD (minimum `0.01`). Funding debits your USDC balance and can't use the reserve. Withdrawing returns money to your USDC balance, charges the `card_withdrawal` fee, and fails with `422` if it exceeds the employee's available balance. An employee with no card yet returns `404`.
+
+    Check the balance with `GET /corporate-card/employees/{employee_id}/balance`:
+
+    ```json
+    {
+      "employee_id": "emp_456",
+      "currency": "USD",
+      "has_cardholder": true,
+      "available_balance": 500.00,
+      "ledger_balance": 500.00,
+      "balance_unavailable": false,
+      "accounts": [
+        { "account_id": "8f0c...", "primary": true, "available_balance": 500.00, "ledger_balance": 500.00, "card_count": 1 }
+      ]
+    }
+    ```
+  </Step>
+
+  <Step title="Manage the card">
+    | Request | Body |
+    |---|---|
+    | `GET /corporate-card/employees/cards?customer_id=...` | Optional `employee_id` and `status` filters |
+    | `GET /corporate-card/employees/cards/{card_id}` | — |
+    | `POST /corporate-card/employees/cards/status` | `customer_id`, `card_id`, `action`: `activate`, `suspend` or `terminate` |
+    | `PUT /corporate-card/employees/cards/limits` | `customer_id`, `card_id`, `limits` array |
+    | `GET /corporate-card/employees/cards/{card_id}/link` | — |
+
+    Only the employee sees the full card number, expiry, CVV and PIN, on the card's [card link](/yativo-fiat/corporate-card-links). Share the link or embed it in your app. The employee confirms their email the first time, sets up a passkey or authenticator app, and sets their PIN there.
+  </Step>
+
+  <Step title="Test memos">
+    Employees attach notes and invoices to card activity, and you approve or reject them:
+
+    ```
+    POST /corporate-card/employees/memos                    employee_id, note, invoice or invoice_url, optional card_id
+    GET  /corporate-card/employees/{employee_id}/memos
+    POST /corporate-card/employees/memos/{memo_id}/approve
+    POST /corporate-card/employees/memos/{memo_id}/reject   reject_reason
+    ```
+  </Step>
+
+  <Step title="Test suspension and termination">
+    `PUT /corporate-card/employees/{employee_id}` with `"status": "suspended"` blocks every corporate card request for that employee with `403`. Set it back to `active` to restore access.
+
+    `DELETE /corporate-card/employees/{employee_id}` terminates the employee and suspends all of their cards. It can't be undone, so create a fresh employee for each test run.
+  </Step>
+</Steps>
+
+---
+
+## Card transactions
+
+Card authorizations are recorded in your spend card transaction history, and Yativo sends `business_spend_card.transaction.*` webhooks for them. The `transaction_id` in those webhooks is the `id` used below.
+
+```
+GET    /business/spend-card/transactions                 optional status, card_id
+GET    /business/spend-card/transactions/{id}
+POST   /business/spend-card/transactions/{id}/dispute    reason (max 500 characters)
+POST   /business/spend-card/transactions/{id}/notes      note
+POST   /business/spend-card/transactions/{id}/invoices   multipart invoice (jpg, jpeg, png or pdf, max 10 MB)
+```
+
+Raising a dispute charges the `dispute` fee. A second dispute on the same transaction returns `409`.
+
+<Note>
+  Sandbox has no endpoint to simulate a card authorization. Test the transaction and dispute flows with transactions that appear on your sandbox cards, and test your webhook handling with the payloads in [Webhooks](/yativo-fiat/webhooks).
+</Note>
+
+---
+
+## Reserve
+
+While Business Spend Cards are enabled, a minimum amount must stay in your USDC balance. The default is 2,000 USD. Card funding, payouts, transfers and swaps out of the USDC balance stop at the reserve. Fees can still use it. A debit that would go below it returns an error that states the reserve and how much is available to spend.
+
+---
+
+## Fees
+
+Every corporate card fee is charged to your USDC balance, in sandbox as in production. Amounts come from your pricing agreement. `GET /fees` returns them under `employee_card`. See [Fees](/yativo-fiat/fees).
+
+| Fee | Charged |
+|---|---|
+| `monthly_subscription` | Once per calendar month while enabled |
+| `customer_kyb` | Once per business customer, when its first card is issued |
+| `employee_kyc` | Once per employee, on the first KYC submission |
+| `virtual_card_create` | Each virtual card after an employee's first. Terminated cards still count |
+| `physical_card_create`, `physical_card_shipping` | Each physical card |
+| `authorization_domestic`, `authorization_cross_border` | Each approved authorization |
+| `cross_border_transaction` | A percentage of each approved cross-border authorization |
+| `reversal` | Each reversed authorization |
+| `dispute` | Each dispute you raise |
+| `card_withdrawal` | Each withdrawal from an employee's card balance |
+
+---
+
+## Errors
+
+Errors use the standard envelope:
+
+```json
+{
+  "status": "failed",
+  "status_code": 403,
+  "message": "Request failed.",
+  "data": { "error": "Your account is not yet approved for Business Spend Cards. Please contact support." }
+}
+```
+
+| Status | Common sandbox cause |
+|---|---|
+| `402` | Your USDC balance can't cover a fee, or a debit would go below the reserve |
+| `403` | Business Spend Cards aren't enabled on your sandbox account, the customer has no approved `faster_payments` endorsement, the customer hasn't submitted full KYC, the customer isn't a business, or the employee is suspended or terminated |
+| `404` | A `customer_id`, `employee_id` or `card_id` isn't yours, or the employee has no card yet when funding |
+| `409` | The transaction has already been disputed |
+| `422` | Validation error, an unknown `state_id`, a rejected upload, or a withdrawal larger than the available balance |
+| `502` | A file upload failed. Nothing was saved, so retry the request |
+
+---
+
+## Going live
+
+1. Change the base URL to `https://api.yativo.com/api/v1` and use your production API key.
+2. Ask Yativo support to enable Business Spend Cards on your production account.
+3. Make sure each customer has an approved `faster_payments` endorsement in production.
+4. Fund your production USDC balance above the reserve.
+5. Point your webhook URL at your production endpoint.

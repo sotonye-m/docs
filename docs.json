@@ -102,6 +102,7 @@
             "pages": [
               "yativo-fiat/customers",
               "yativo-fiat/kyc",
+              "yativo-fiat/sandbox-kyc",
               "yativo-fiat/kyc-frontend-guide",
               "yativo-fiat/beneficiaries"
             ]
@@ -127,6 +128,8 @@
               "yativo-fiat/mcp-server",
               "yativo-fiat/ip-allowlist",
               "yativo-fiat/sandbox",
+              "yativo-fiat/sandbox-corporate-cards",
+              "yativo-fiat/corporate-card-links",
               "yativo-fiat/security"
             ]
           },
@@ -285,6 +288,22 @@
             "pages": [
               "fiat-api-reference/ip/check",
               "fiat-api-reference/security/login-history"
+            ]
+          },
+          {
+            "group": "Corporate Card Links",
+            "pages": [
+              "fiat-api-reference/corporate-card-links/get-link",
+              "fiat-api-reference/corporate-card-links/rotate-link",
+              "fiat-api-reference/corporate-card-links/get-card-access",
+              "fiat-api-reference/corporate-card-links/reset-card-access",
+              "fiat-api-reference/corporate-card-links/cancel-email-change",
+              "fiat-api-reference/corporate-card-links/list-themes",
+              "fiat-api-reference/corporate-card-links/create-theme",
+              "fiat-api-reference/corporate-card-links/get-theme",
+              "fiat-api-reference/corporate-card-links/update-theme",
+              "fiat-api-reference/corporate-card-links/delete-theme",
+              "fiat-api-reference/corporate-card-links/test-theme-email"
             ]
           },
           {

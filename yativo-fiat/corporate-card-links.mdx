@@ -1,0 +1,266 @@
+---
+title: "Corporate Card Links"
+description: "Give each employee a secure, embeddable page for their card details and PIN, branded with your logo, font and colours"
+---
+
+Each corporate card has one reusable **card link**. It's the only place the full card number, expiry, CVV and PIN are available, and only the card's employee can open it. Your business, your team and Yativo staff can't see card details or the PIN, through the dashboard or the API.
+
+You get the link from the API or the dashboard, then share it with the employee or embed it in your own app or site.
+
+Every endpoint on this page is also in the [API reference](/fiat-api-reference/corporate-card-links/get-link).
+
+<Note>
+  The card details and PIN endpoints were removed: `GET /spend/cards/{card_id}/widget-token`, `POST /spend/cards/pin`, `POST /corporate-card/employees/cards/pin`, and the employee portal's card details and PIN actions. Use the card link instead.
+</Note>
+
+---
+
+## How the employee opens it
+
+<Steps>
+  <Step title="First visit: confirm their email">
+    The page emails a 6-digit code to the employee's email on file. The code expires after 10 minutes.
+  </Step>
+  <Step title="Set up sign-in">
+    The employee chooses a **passkey** (Face ID, fingerprint or their device's screen lock) or an **authenticator app** (Google Authenticator, Microsoft Authenticator, 1Password or similar).
+  </Step>
+  <Step title="Set their PIN">
+    The employee chooses a 4-digit PIN. Yativo doesn't store the PIN, only that one has been set.
+  </Step>
+  <Step title="Every later visit">
+    The employee confirms it's them with their passkey or authenticator app, then shows their card details or updates their PIN. An email code alone never opens the card.
+  </Step>
+</Steps>
+
+To change their PIN, the employee enters their current PIN and the new one. If they forgot it, they ask for an email code on the page and then choose a new PIN.
+
+If you've asked to change the employee's email, the page also asks them to confirm or decline it. See [Change an employee's email](#change-an-employees-email).
+
+Card details hide again after a short time, when the tab goes to the background, or when the employee clicks **Lock**. Too many wrong codes or PINs lock the employee's card links for 15 minutes. You can unlock them sooner by [resetting their sign-in](#reset-an-employees-sign-in).
+
+---
+
+## Get a card's link
+
+```bash
+curl "$BASE/corporate-card/employees/cards/{card_id}/link" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET"
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "card_id": "9b1d3c52-0f0e-4a8e-b0b1-6f7a1c2d3e4f",
+    "url": "https://checkout.yativo.com/card-access/cl_Vq3...",
+    "created_at": "2026-10-16T09:12:44+00:00",
+    "rotated_at": null
+  }
+}
+```
+
+The link is created on the first request and then stays the same, so you can store it. It doesn't expire. Add `?theme_id=` to get the URL with one of your [themes](#brand-the-page).
+
+### Replace a link
+
+If a link was shared somewhere it shouldn't be, replace it. The old URL stops working straight away, including anywhere it's embedded. The employee keeps their passkey or authenticator app.
+
+```bash
+curl -X POST "$BASE/corporate-card/employees/cards/{card_id}/link/rotate" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "theme_id": "optional-theme-id" }'
+```
+
+The response has the same shape, with the new `url` and `rotated_at`.
+
+A link stops working when its card is terminated or its employee is terminated. While the employee or the customer is suspended, the page says the card isn't available.
+
+---
+
+## Embed the page
+
+Put the link in an iframe in your app or site. Any site can embed it. The `allow` attribute lets the employee use a passkey inside the frame:
+
+```html
+<iframe
+  src="https://checkout.yativo.com/card-access/cl_Vq3..."
+  title="Your card"
+  width="100%"
+  height="680"
+  style="border:0;max-width:480px"
+  allow="publickey-credentials-get *; publickey-credentials-create *; clipboard-write"
+></iframe>
+```
+
+Your page can't read anything inside the frame, and the card number and CVV render in their own secure frame inside it. Without the `allow` attribute, or in a browser that doesn't support passkeys in frames, the employee can still use an authenticator app.
+
+To size the frame to its content, listen for the height the page posts:
+
+```js
+window.addEventListener("message", (event) => {
+  if (event.data?.type === "yativo-card:resize") {
+    document.querySelector("#card-frame").style.height = `${event.data.height}px`;
+  }
+});
+```
+
+---
+
+## Brand the page
+
+A theme sets the logo, font, colours and corner radius of the card page, and the sender name and copy of its email codes. Save up to 20 themes. Mark one as the default and it applies to every link that doesn't name another theme.
+
+```bash
+curl -X POST "$BASE/corporate-card/card-link/themes" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Acme",
+    "is_default": true,
+    "logo_url": "https://cdn.acme.com/logo.png",
+    "font_family": "Inter",
+    "radius": 10,
+    "colors": {
+      "primary": "#0A7C4B",
+      "primary_text": "#FFFFFF",
+      "background": "#F6F8F7",
+      "surface": "#FFFFFF",
+      "text": "#10231A",
+      "muted": "#5B6B63",
+      "border": "#DDE5E0",
+      "error": "#C62828"
+    },
+    "email": {
+      "sender_name": "Acme Cards",
+      "reply_to": "cards@acme.com",
+      "subject": "Your Acme card code",
+      "intro": "Hi from the Acme finance team.",
+      "footer": "Acme Ltd, 1 Market Street"
+    }
+  }'
+```
+
+| Field | Rules |
+|---|---|
+| `name` | Required on create. Up to 100 characters |
+| `is_default` | `true` makes this the default theme and clears the flag on the others |
+| `logo_url` | `https://` URL, shown 32px tall on the page and in emails |
+| `font_family` | A [Google Fonts](https://fonts.google.com) family name, such as `Inter`. Letters, numbers, spaces and hyphens |
+| `colors` | Any of `primary`, `primary_text`, `background`, `surface`, `text`, `muted`, `border`, `error`, as `#RRGGBB`. Colours you leave out use Yativo's defaults |
+| `radius` | Corner radius in pixels, `0` to `24`. Default `12` |
+| `email.sender_name` | The name emails come from. Up to 100 characters, no line breaks |
+| `email.reply_to` | Where replies to the emails go |
+| `email.subject` | Subject of the code emails. Up to 150 characters, no line breaks |
+| `email.intro`, `email.footer` | Plain text above the code and at the bottom, up to 1,000 characters each |
+
+The response returns the theme with its `theme_id`. Other theme requests:
+
+| Request | Notes |
+|---|---|
+| `GET /corporate-card/card-link/themes` | All your themes |
+| `GET /corporate-card/card-link/themes/{theme_id}` | One theme |
+| `PUT /corporate-card/card-link/themes/{theme_id}` | Send only the fields you're changing |
+| `POST /corporate-card/card-link/themes/{theme_id}/test-email` | Sends a sample code email with this theme to your account's email. Returns `sent_to` |
+| `DELETE /corporate-card/card-link/themes/{theme_id}` | Links that used it switch to your default theme |
+
+To use a theme, get the link with `?theme_id={theme_id}`. The page and its code emails use that theme. Emails that aren't tied to a link (the sign-in reset notice and the email-change code) use your default theme.
+
+Emails come from Yativo's sending address, under your sender name and with your reply-to address. They show your logo, colours, font, intro and footer and don't mention Yativo. Without a theme, they use your business name and Yativo's default colours.
+
+---
+
+## Employee sign-in
+
+### Check an employee's sign-in
+
+```bash
+curl "$BASE/corporate-card/employees/{employee_id}/card-access" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET"
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "employee_id": "emp_456",
+    "email_verified": true,
+    "enrolled": true,
+    "methods": ["passkey"],
+    "locked": false,
+    "locked_until": null,
+    "pending_email": null,
+    "reset_at": null
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `email_verified` | The employee has confirmed their email on a card link |
+| `enrolled` | They've set up a passkey or authenticator app |
+| `methods` | `passkey`, `totp` (authenticator app), or both |
+| `locked` | Too many wrong attempts. Their links unlock at `locked_until` (15 minutes), or when you reset their sign-in |
+| `pending_email` | A new email waiting for the employee to confirm on their card link. See [Change an employee's email](#change-an-employees-email) |
+
+The card's own `pin_set_at` (in card list and card responses) shows when the employee last set their PIN, or `null` if they haven't.
+
+### Reset an employee's sign-in
+
+When an employee loses their phone or passkey, or their links are locked:
+
+```bash
+curl -X POST "$BASE/corporate-card/employees/{employee_id}/card-access/reset" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET"
+```
+
+This removes their passkeys and authenticator app, unlocks their links and closes any open card page. The next time they open a card link they confirm their email and set up sign-in again. Their PIN doesn't change, and a later email change still needs the employee's confirmation. The employee gets an email, with your default theme, telling them their sign-in was reset.
+
+### Change an employee's email
+
+Once an employee has confirmed their email on a card link, that address protects their card. Only the employee can approve a change.
+
+1. Send the new address with `PUT /corporate-card/employees/{employee_id}`:
+
+   ```json
+   { "email": "jane.new@example.com" }
+   ```
+
+   The email doesn't change yet. The response includes:
+
+   ```json
+   "email_change": { "status": "pending_confirmation", "pending_email": "jane.new@example.com" }
+   ```
+
+   Yativo emails a 6-digit code to the employee's **current** address. It expires after 10 minutes. The code is for the employee only. You can't confirm the change with it.
+
+2. The employee opens their card link, confirms it's them with their passkey or authenticator app, and enters the code. They can also decline the change and keep their current email.
+
+`GET /corporate-card/employees/{employee_id}/card-access` shows the change in `pending_email` until the employee confirms or declines it. To drop it yourself, call `DELETE /corporate-card/employees/{employee_id}/email/pending`. To send a new code, repeat step 1.
+
+If the employee hasn't confirmed their email on a card link yet, `PUT` changes the email straight away. An employee who has confirmed their email can't have it removed, only changed.
+
+---
+
+## Employee portal
+
+In the employee portal, each card has a **Card details and PIN** button that opens its card link. `GET /employee/cards/{card_id}/link` returns the same `url` for an employee's own card.
+
+---
+
+## Errors
+
+| Status | Cause |
+|---|---|
+| `404` | The `card_id`, `employee_id` or `theme_id` isn't yours, or the card has no employee |
+| `422` | Validation error |
+| `429` | A code was sent to this employee less than a minute ago |
