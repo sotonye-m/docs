@@ -1,0 +1,159 @@
+---
+title: "Sandbox KYC"
+description: "How account verification and customer KYC work on the Yativo sandbox"
+---
+
+Sandbox has two separate verification checks. Your **Yativo account** has to be approved before most API calls succeed. Each **customer** you create still goes through the same KYC or KYB submission as production.
+
+Sandbox base URL: `https://smtp.yativo.com/api/v1`.
+
+---
+
+## Your account
+
+The API allows a call when the signed-in user **or** the linked business has both of these:
+
+- `kyc_status` is `approved` (comparison ignores case)
+- `is_kyc_submitted` is `true`
+
+Until that is true, calls outside account setup return:
+
+```json
+{
+  "status": "failed",
+  "status_code": 403,
+  "message": "Request failed.",
+  "data": {
+    "error": "KYC is pending, please complete the KYC process to access this feature"
+  }
+}
+```
+
+`GET /profile` is available before approval. It returns `kyc_status` and `is_kyc_submitted`. When `is_business` is `true`, `errors` lists business fields that are still empty:
+
+`business_legal_name`, `business_operating_name`, `incorporation_country`, `business_operation_address`, `entity_type`, `business_registration_number`, `business_tax_id`, `business_industry`, `business_sub_industry`, `business_description`, `business_website`, `account_purpose`, `plan_of_use`, `is_pep_owner`, `is_ofac_sanctioned`, `shareholder_count`, `shareholders`, `directors_count`, `directors`, `documents`, `administrator`, `use_case`, `estimated_monthly_transactions`, `estimated_monthly_payments`, `is_self_use`, `terms_agreed_date`.
+
+On the business record, `kyc_status` is one of `not submitted`, `pending`, `approved`, or `rejected`. A new business record starts at `not submitted`.
+
+<Note>
+  `GET /profile` also works with an API key. Payment, customer, virtual account, and payout calls stay on the 403 above until the account is approved.
+</Note>
+
+---
+
+## Sandbox business verification
+
+The production dashboard opens a hosted verification page. The sandbox dashboard collects business verification in the app, at `/business_kyc` on [smtp.yativo.com](https://smtp.yativo.com).
+
+<Steps>
+  <Step title="Company information">
+    Legal name, doing-business-as name, country of incorporation, operating address, entity type, registration number, and tax ID.
+
+    Saving this step with a legal name sets the user's `is_kyc_submitted` to `true`. It does not change `kyc_status`. The account stays on the 403 until `kyc_status` is `approved`.
+  </Step>
+  <Step title="Business description">
+    Industry, sub-industry when that industry has one, description, website, account purpose, and how you plan to use Yativo. The website value has to contain `http`.
+  </Step>
+  <Step title="Ownership">
+    Whether any ultimate beneficial owner is a politically exposed person (`is_pep_owner`), whether any owner is sanctioned (`is_ofac_sanctioned`), and shareholders. Each shareholder saved from this step stores `name`, `email`, and `percentage`.
+
+    You can email a shareholder from this step to complete their own verification. A successful request returns `Email notification sent successfully`.
+  </Step>
+  <Step title="Management">
+    Number of directors and one entry per director. The count has to match the number of directors you add. Each director saved from this step stores `name`, `role`, and `email`.
+  </Step>
+  <Step title="Usage">
+    How you plan to use Yativo, estimated monthly transfer volume, estimated monthly payment count, and whether the payments are for yourself (`is_self_use` is `"1"` or `"0"`).
+  </Step>
+  <Step title="Administrator">
+    Choose an existing person or add an administrator with name, email, phone number, and position. You can email that person to complete verification. The success message is the same as on the ownership step.
+  </Step>
+  <Step title="Documents">
+    Upload PNG, JPG, JPEG, or PDF files. The dashboard stores each file with `POST /storage/upload` (field name `document`) and keeps the URL from `data.document`.
+
+    | `type` | What the form asks for |
+    |---|---|
+    | `certificate_of_incorporation` | Certificate of incorporation |
+    | `proof_of_address` | Proof of address (bank statement, utility bill, or lease) |
+    | `source_of_fund` | Source of funds |
+    | `memorandum_of_association` | Memorandum of association, articles of association, or operating agreement |
+    | `license` | License, or a note explaining why the business does not need one. The form asks for this when the business is regulated. |
+    | `aml_policy` | AML policy. The form marks this as not required. |
+    | `board_approval` | Board approval. The form offers a template. |
+    | `source_funds` | Source of funds affidavit. The form offers a template. |
+    | `Extended_due_dilligence` | Extended due diligence. The form offers a template. |
+    | `ubo_affidavit` | UBO affidavit. The form offers a template. |
+
+    Saved documents are an array of `{ "type", "URL" }`.
+  </Step>
+  <Step title="Terms">
+    Accept the terms. The dashboard sends the details collected above with `terms_agreed_date` set to the time you accept. The confirmation screen says the submission is under review.
+  </Step>
+</Steps>
+
+### Entity types
+
+The company step offers these `entity_type` values:
+
+| Value | Label |
+|---|---|
+| `LLC` | Limited Liability Company |
+| `C-Corp` | C Corporation |
+| `S-Corp` | S Corporation |
+| `LLP` | Limited Liability Partnership |
+| `LP` | Limited Partnership |
+| `Non-Profit` | Non-Profit |
+| `S.A.` | Sociedad Anónima |
+| `S.R.L.` | Sociedad de Responsabilidad Limitada |
+| `Ltda.` | Sociedad Limitada |
+| `EIRELI` | Empresa Individual de Responsabilidade Limitada |
+| `SpA` | Sociedad por Acciones |
+| `S.A. de C.V.` | Sociedad Anónima de Capital Variable |
+| `S.A.P.I. de C.V.` | Sociedad Anónima Promotora de Inversión de Capital Variable |
+| `S.A.C.` | Sociedad Anónima Cerrada |
+| `E.I.R.L.` | Empresa Individual de Responsabilidad Limitada |
+| `Exempted Company` | Exempted Company |
+| `Non-Resident Company` | Non-Resident Company |
+| `Segregated Portfolio Company (SPC)` | Segregated Portfolio Company |
+| `Ordinary Resident Company` | Ordinary Resident Company |
+| `Limited Duration Company (LDC)` | Limited Duration Company |
+
+### Volume ranges
+
+`estimated_monthly_transactions`:
+
+| Value | Label |
+|---|---|
+| `0-10000` | 0–10,000 USD |
+| `10000-100000` | 10,000–100,000 USD |
+| `100000-1000000` | 100,000–1,000,000 USD |
+| `1000000-5000000` | 1,000,000–5,000,000 USD |
+| `5m+` | 5m+ USD |
+
+`estimated_monthly_payments`:
+
+| Value | Label |
+|---|---|
+| `0-1000` | 1–1k |
+| `1000-10000` | 1k–10k |
+| `10000-100000` | 10k+ |
+
+Industry, sub-industry, and account purpose are fixed lists in the form.
+
+Submitting the form records the business details. It does not set `kyc_status` to `approved`. Poll `GET /profile` until `kyc_status` is `approved` and `is_kyc_submitted` is `true` on the user or the business.
+
+---
+
+## Customer KYC
+
+`POST /customer` creates a customer record. That request does not submit identity documents and does not set the customer to approved.
+
+Customer verification uses the same hosted pages and the same submission API in sandbox and production:
+
+- Individual: `https://kyc.yativo.com/individual/{customer_id}`
+- Business: `https://kyc.yativo.com/business/{customer_id}`
+- Submit: `POST https://kyc.yativo.com/api/individual-kyc/submit` or `POST https://kyc.yativo.com/api/business-kyc/submit`
+
+The sandbox dashboard links to those same hosted pages. Read status with `GET /customer/kyc/{customer_id}` on the sandbox base URL. Payment features for that customer still wait on `status` of `approved` and `is_va_approved` of `true`. Field reference: [KYC / KYB](/yativo-fiat/kyc).
+
+`GET /customer/kyc/{customer_id}` is behind the account check above, so it returns the account 403 until your own account is approved.

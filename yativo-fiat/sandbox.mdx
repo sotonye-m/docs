@@ -3,7 +3,7 @@ title: "Sandbox Environment"
 description: "Test your integration without real money"
 ---
 
-The Yativo sandbox lets you develop and test your integration without moving real funds. Payments are simulated, KYC approves automatically, and virtual accounts work end-to-end.
+The Yativo sandbox lets you develop and test your integration without moving real funds. Your account and each customer still have to pass verification before payment calls succeed. See [Sandbox KYC](/yativo-fiat/sandbox-kyc).
 
 ---
 
@@ -38,8 +38,10 @@ curl 'https://smtp.yativo.com/api/v1/ip-whitelist/check' \
 | Feature | Sandbox | Production |
 |---------|---------|------------|
 | Payments | Simulated — no real funds | Real money moves |
-| KYC | Auto-approves instantly | Takes minutes to hours |
-| Virtual accounts | Work end-to-end | Live bank accounts |
+| Your account | Approved only when `kyc_status` is `approved` and `is_kyc_submitted` is true. The sandbox dashboard collects this in a form. | The production dashboard opens a hosted verification page |
+| Customer KYC | Same submission and hosted pages as production. Creating a customer does not approve them | Same submission and hosted pages |
+| Virtual accounts | Issued after the customer is approved | Live bank accounts |
+| Corporate cards | Available now. Employee KYC is approved on submission. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards) | Coming soon |
 | Exchange rates | Live rates returned | Live rates |
 | Webhooks | Fired normally | Fired normally |
 | API logs | Recorded | Recorded |
@@ -55,11 +57,14 @@ curl 'https://smtp.yativo.com/api/v1/ip-whitelist/check' \
   <Step title="Authenticate">
     Create a separate API key in your sandbox dashboard. Sandbox and production keys aren't interchangeable.
   </Step>
+  <Step title="Verify your sandbox account">
+    Complete business verification in the sandbox dashboard. Most API calls return 403 until `kyc_status` is `approved` and `is_kyc_submitted` is true. See [Sandbox KYC](/yativo-fiat/sandbox-kyc).
+  </Step>
   <Step title="Create test customers">
-    Use `POST /customer` to create customers. KYC auto-approves in sandbox — no documents needed.
+    Use `POST /customer` to create customers. That call does not approve the customer. Submit KYC or KYB on `https://kyc.yativo.com`, the same way you do in production.
   </Step>
   <Step title="Create virtual accounts">
-    Once a customer is created (KYC auto-approved), call `POST /business/virtual-account/create`.
+    After the customer is approved (`is_va_approved` is true), call `POST /business/virtual-account/create`.
   </Step>
   <Step title="Simulate deposits">
     Use the sandbox dashboard or API to trigger test deposits to your virtual accounts.
@@ -84,7 +89,11 @@ const headers = {
   'Idempotency-Key': crypto.randomUUID(),
 };
 
-// 2. Create customer (KYC auto-approves in sandbox)
+// 2. Your account has to be approved before customer and payment calls succeed.
+const { data: profile } = await fetch(`${BASE}/profile`, { headers }).then(r => r.json());
+console.log(profile.kyc_status, profile.is_kyc_submitted);
+
+// 3. Create a customer. This does not approve KYC.
 const { data: customer } = await fetch(`${BASE}/customer`, {
   method: 'POST', headers,
   body: JSON.stringify({
@@ -96,24 +105,17 @@ const { data: customer } = await fetch(`${BASE}/customer`, {
   }),
 }).then(r => r.json());
 
-// 3. Create virtual account
-const { data: account } = await fetch(`${BASE}/business/virtual-account/create`, {
-  method: 'POST',
-  headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() },
-  body: JSON.stringify({
-    customer_id: customer.data.customer_id,
-    currency: 'BRL',
-  }),
-}).then(r => r.json());
-
-console.log('Test account number:', account.data.account_number);
+console.log('Customer:', customer.customer_id);
+// Submit KYC at https://kyc.yativo.com/individual/{customer_id}
+// Create a virtual account only after GET /customer/kyc/{customer_id}
+// returns status "approved" and is_va_approved true.
 ```
 
 ---
 
 ## Differences from Production
 
-- **KYC is instant** — submit a customer and `is_kyc_submitted` / `is_va_approved` are set immediately
+- **Account and customer KYC are separate** — [Sandbox KYC](/yativo-fiat/sandbox-kyc) covers both. Creating a customer does not set them to approved
 - **No real funds** — wallet balances may be pre-funded in sandbox; payouts simulate the full transaction lifecycle
 - **Some payment methods may be limited** — not all live corridors are available in sandbox; contact your integration team if you need a specific one
 - **Webhooks fire normally** — you'll receive all webhook events in sandbox; make sure your test endpoint is reachable
@@ -126,7 +128,7 @@ When you're ready to go live:
 
 1. Change your base URL from `https://smtp.yativo.com/api/v1` to `https://api.yativo.com/api/v1`
 2. Ensure your business KYC is approved in the dashboard
-3. Real customers will need to complete KYC (not auto-approved)
+3. Customers complete KYC on `https://kyc.yativo.com`, the same way they do in sandbox
 4. Update your webhook URL to point to your production endpoint
 
 <Note>

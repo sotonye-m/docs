@@ -14,7 +14,7 @@ Yativo requires identity verification before customers can access payment servic
 | KYC Platform | `https://kyc.yativo.com` |
 
 <Note>
-  KYC and KYB submissions are sent to **`https://kyc.yativo.com`**, not the main API base URL. All other endpoints (status check, update) use the standard base URL. Send your `X-Api-Key` and `X-Api-Secret` headers on every request.
+  KYC and KYB submissions are sent to **`https://kyc.yativo.com`**, not the main API base URL. All other endpoints (status check, update) use the standard base URL. Send your `X-Api-Key` and `X-Api-Secret` headers on every request. Sandbox uses this same KYC platform. See [Sandbox KYC](/yativo-fiat/sandbox-kyc).
 </Note>
 
 ---
@@ -80,13 +80,13 @@ curl -X POST 'https://api.yativo.com/api/v1/storage/upload' \
   "status_code": 200,
   "message": "Request successful",
   "data": {
-    "url": "https://storage.yativo.com/documents/abc123/passport_front.jpg"
+    "document": "https://storage.yativo.com/documents/abc123/passport_front.jpg"
   }
 }
 ```
 </ResponseExample>
 
-Use the returned `url` value in the `selfie_image`, `image_front_file`, `proof_of_address_file`, and similar fields below.
+Use the returned `document` value in the `selfie_image`, `image_front_file`, `proof_of_address_file`, and similar fields below.
 
 ---
 
@@ -655,6 +655,7 @@ After approval, customers receive service endorsements that unlock specific paym
 | `usd_latam` | USD Latin America transfers |
 | `eur_latam` | EUR Latin America transfers |
 | `virtual_card` | Virtual card issuance |
+| `faster_payments` | UK Faster Payments. Also required for [corporate cards](/yativo-fiat/sandbox-corporate-cards) |
 | `asian` | Asian region payments |
 | `native` | Native payment rails |
 | `cobo_pobo` | Collection / payment-on-behalf-of |

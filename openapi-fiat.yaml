@@ -122,6 +122,133 @@ components:
               type: string
               example: MXN
         - $ref: '#/components/schemas/FeeLine'
+    CardLink:
+      type: object
+      properties:
+        card_id:
+          type: string
+          example: 9b1d3c52-0f0e-4a8e-b0b1-6f7a1c2d3e4f
+        url:
+          type: string
+          description: The card link. Stays the same until you replace it.
+          example: https://checkout.yativo.com/card-access/cl_Vq3eX9...
+        created_at:
+          type: string
+          format: date-time
+        rotated_at:
+          type: string
+          format: date-time
+          nullable: true
+    CardAccess:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          example: emp_456
+        email_verified:
+          type: boolean
+          description: The employee has confirmed their email on a card link.
+        enrolled:
+          type: boolean
+          description: The employee has set up a passkey or authenticator app.
+        methods:
+          type: array
+          items:
+            type: string
+            enum: [passkey, totp]
+        locked:
+          type: boolean
+          description: Too many wrong attempts. Unlocks at `locked_until` or on reset.
+        locked_until:
+          type: string
+          format: date-time
+          nullable: true
+        pending_email:
+          type: string
+          nullable: true
+          description: A new email waiting for the employee to confirm on their card link.
+        reset_at:
+          type: string
+          format: date-time
+          nullable: true
+    CardLinkThemeInput:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Acme
+        is_default:
+          type: boolean
+          description: Use for every link that doesn't name another theme. Clears the flag on your other themes.
+        logo_url:
+          type: string
+          nullable: true
+          description: https URL, shown 32px tall.
+          example: https://cdn.acme.com/logo.png
+        font_family:
+          type: string
+          nullable: true
+          maxLength: 64
+          description: A Google Fonts family. Letters, numbers, spaces and hyphens.
+          example: Inter
+        radius:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 24
+          example: 10
+        colors:
+          type: object
+          description: Any of these keys as `#RRGGBB`. Missing colours use Yativo's defaults.
+          properties:
+            primary: { type: string, example: '#0A7C4B' }
+            primary_text: { type: string, example: '#FFFFFF' }
+            background: { type: string, example: '#F6F8F7' }
+            surface: { type: string, example: '#FFFFFF' }
+            text: { type: string, example: '#10231A' }
+            muted: { type: string, example: '#5B6B63' }
+            border: { type: string, example: '#DDE5E0' }
+            error: { type: string, example: '#C62828' }
+        email:
+          type: object
+          properties:
+            sender_name:
+              type: string
+              nullable: true
+              maxLength: 100
+              example: Acme Cards
+            reply_to:
+              type: string
+              format: email
+              nullable: true
+              example: cards@acme.com
+            subject:
+              type: string
+              nullable: true
+              maxLength: 150
+              example: Your Acme card code
+            intro:
+              type: string
+              nullable: true
+              maxLength: 1000
+            footer:
+              type: string
+              nullable: true
+              maxLength: 1000
+    CardLinkTheme:
+      allOf:
+        - type: object
+          properties:
+            theme_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+        - $ref: '#/components/schemas/CardLinkThemeInput'
     # ── Generic wrappers ──────────────────────────────────────────────────────
     SuccessEnvelope:
       type: object
@@ -5058,6 +5185,469 @@ paths:
                         type: string
                         format: date-time
 
+  # ── Corporate Card Links ────────────────────────────────────────────────────
+  /corporate-card/employees/cards/{card_id}/link:
+    get:
+      tags: [Corporate Card Links]
+      summary: Get Card Link
+      description: |
+        The card's reusable link, created on the first request. Card number, expiry, CVV and PIN are
+        only available on this page, and only the card's employee can open it: an email code the
+        first time, then their passkey or authenticator app. Share the URL or embed it in an iframe.
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The card's `card_id`.
+        - name: theme_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: One of your themes. Adds `?theme=` to the URL so the page and its emails use it.
+      responses:
+        '200':
+          description: Card link
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CardLink'
+        '404':
+          description: The card or theme isn't yours, or the card has no employee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /corporate-card/employees/cards/{card_id}/link/rotate:
+    post:
+      tags: [Corporate Card Links]
+      summary: Replace Card Link
+      description: |
+        Replaces the card's link. The old URL stops working straight away, including anywhere it's
+        embedded. The employee keeps their passkey or authenticator app.
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The card's `card_id`.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                theme_id:
+                  type: string
+                  description: Optional theme for the returned URL.
+      responses:
+        '200':
+          description: The new card link
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CardLink'
+        '404':
+          description: The card or theme isn't yours, or the card has no employee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /corporate-card/employees/{employee_id}/card-access:
+    get:
+      tags: [Corporate Card Links]
+      summary: Get Employee Card Sign-in
+      description: Whether the employee has confirmed their email, set up a passkey or authenticator app, or is locked, and any email change waiting for them.
+      parameters:
+        - name: employee_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card sign-in status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CardAccess'
+        '404':
+          description: The employee isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /corporate-card/employees/{employee_id}/card-access/reset:
+    post:
+      tags: [Corporate Card Links]
+      summary: Reset Employee Card Sign-in
+      description: |
+        For an employee who lost their phone or passkey, or is locked. Removes their passkeys and
+        authenticator app, unlocks their links and closes any open card page. Next time they open a
+        card link they confirm their email and set up sign-in again. Their PIN doesn't change, and a
+        later email change still needs their confirmation. The employee is emailed, with your default theme.
+      parameters:
+        - name: employee_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card sign-in status after the reset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CardAccess'
+        '404':
+          description: The employee isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /corporate-card/employees/{employee_id}/email/pending:
+    delete:
+      tags: [Corporate Card Links]
+      summary: Cancel Employee Email Change
+      description: |
+        Drops an email change that's waiting for the employee. Once an employee has confirmed their
+        email on a card link, `PUT /corporate-card/employees/{employee_id}` with a new `email` doesn't
+        apply it: a code goes to the employee's current address and only the employee can confirm it,
+        on their card link.
+      parameters:
+        - name: employee_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Change cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      pending_email:
+                        type: string
+                        nullable: true
+                        example: null
+        '404':
+          description: The employee isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /corporate-card/card-link/themes:
+    get:
+      tags: [Corporate Card Links]
+      summary: List Card Link Themes
+      description: Your themes for the card link page and its emails.
+      responses:
+        '200':
+          description: Themes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CardLinkTheme'
+
+    post:
+      tags: [Corporate Card Links]
+      summary: Create Card Link Theme
+      description: |
+        Logo, font, colours and corner radius for the card link page, and sender name, reply-to,
+        subject, intro and footer for its emails. Up to 20 themes. Emails come from Yativo's sending
+        address under your sender name and don't mention Yativo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  required: [name]
+                - $ref: '#/components/schemas/CardLinkThemeInput'
+      responses:
+        '200':
+          description: The new theme
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CardLinkTheme'
+        '422':
+          description: Validation error, or you already have 20 themes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /corporate-card/card-link/themes/{theme_id}:
+    get:
+      tags: [Corporate Card Links]
+      summary: Get Card Link Theme
+      parameters:
+        - name: theme_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Theme
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CardLinkTheme'
+        '404':
+          description: Theme not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Corporate Card Links]
+      summary: Update Card Link Theme
+      description: Send only the fields you're changing.
+      parameters:
+        - name: theme_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardLinkThemeInput'
+      responses:
+        '200':
+          description: Updated theme
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CardLinkTheme'
+        '404':
+          description: Theme not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Corporate Card Links]
+      summary: Delete Card Link Theme
+      description: Links that used it switch to your default theme.
+      parameters:
+        - name: theme_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      deleted:
+                        type: boolean
+                        example: true
+        '404':
+          description: Theme not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /corporate-card/card-link/themes/{theme_id}/test-email:
+    post:
+      tags: [Corporate Card Links]
+      summary: Send Theme Test Email
+      description: Sends a sample code email with this theme to your account's email address. Up to 5 per minute.
+      parameters:
+        - name: theme_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Test email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      sent_to:
+                        type: string
+                        example: finance@acme.com
+        '404':
+          description: Theme not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Your account has no email address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
 tags:
   - name: Authentication
     description: Deprecated login with legacy API keys (Account ID and App Secret). Use API keys instead.
@@ -5091,6 +5681,8 @@ tags:
     description: Check whether your server's IP can use your API key.
   - name: Account Security
     description: Review sign-in activity on your account.
+  - name: Corporate Card Links
+    description: Each corporate card's employee-only page for card details and PIN, employee card sign-in, and branding.
   - name: Webhooks
     description: Register and manage webhook endpoints for real-time event notifications.
   - name: Developer

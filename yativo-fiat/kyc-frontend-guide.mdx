@@ -263,7 +263,7 @@ async function uploadDocument(file) {
   }
 
   const data = await response.json();
-  return data.data.url; // Pass this URL in the KYC payload
+  return data.data.document; // Pass this URL in the KYC payload
 }
 ```
 
