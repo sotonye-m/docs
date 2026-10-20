@@ -50,7 +50,7 @@ Failed requests with a wrong API secret or a revoked API key also appear, with `
 
 ## Webhook signature verification
 
-Always verify the `X-Yativo-Signature` header on incoming webhook requests. This prevents replay attacks and spoofed events.
+Always verify the `Signature` header on incoming webhook requests. This stops spoofed events. The signature has no timestamp, so also deduplicate events to handle replays. See [Webhooks](/yativo-fiat/webhooks#verify-the-signature).
 
 ```javascript Node.js
 const crypto = require('crypto');
@@ -97,18 +97,20 @@ curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
   -d '{ ... }'
 ```
 
-If a request with the same idempotency key succeeds, subsequent requests with that key return the original response without executing the operation again. Keys expire after 24 hours.
+A retry with the same key and body within 60 minutes returns the original response without running the operation again. See [Idempotency](/yativo-fiat/authentication#idempotency) for the full rules.
 
 ---
 
 ## Rate limits
 
-| Plan | Limit |
+| Requests | Default limit per business account |
 |------|-------|
-| Default | 20 requests per second per business account |
-| Enterprise | Custom |
+| `POST`, `PUT`, `PATCH`, `DELETE` | 20 a second |
+| `GET` | 50 a second |
 
-Some endpoints have their own lower limits, such as 30 requests a minute for `GET /ip-whitelist/check` and `GET /auth/login-history`. When a limit is hit, the API returns `429 Too Many Requests` with a `Retry-After` header indicating when to retry.
+Some plans set their own limit. Enterprise plans have no general limit.
+
+Some endpoints have their own lower limits, such as 30 requests a minute for `POST /exchange-rate`, `GET /ip-whitelist/check` and `GET /auth/login-history`, and 1 a minute for `GET /exchange-rates`. When a limit is hit, the API returns `429 Too Many Requests` with a `Retry-After` header indicating when to retry.
 
 ---
 
@@ -142,3 +144,5 @@ Errors use the standard response envelope, with the reason in `data.error`:
   }
 }
 ```
+
+Every failed response also carries an `error_details` object with a stable `code`, `message`, `fields`, `retryable` and `retry_after`. Examples on these pages leave it out for brevity. See [Error response format](/fiat-api-reference/introduction#error-response-format).

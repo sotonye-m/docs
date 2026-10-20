@@ -64,9 +64,12 @@ curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/customer/acc
 
 ```json Customer not found
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 404,
-  "message": "Customer not found"
+  "message": "Request failed.",
+  "data": {
+    "error": "Customer not found"
+  }
 }
 ```
 </ResponseExample>

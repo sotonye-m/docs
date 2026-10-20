@@ -303,7 +303,7 @@ curl -X GET 'https://api.yativo.com/api/v1/wallet/deposits/?currency=CLP&start_d
 
 ## Stablecoin funding
 
-Fund your Yativo USD balance using stablecoins (USDC or EURC on Solana) to use for payouts or fee payments.
+Fund your Yativo balance with stablecoins, to use for payouts or fee payments.
 
 ### Generate a deposit wallet address
 
@@ -312,7 +312,12 @@ POST /crypto/create-wallet
 ```
 
 <ParamField body="currency" type="string" required>
-  `"USDC_SOL"` or `"EURC_SOL"`.
+  The coin and network, as `{COIN}_{NETWORK}`:
+
+  | Network | Values |
+  |---|---|
+  | Solana | `USDC_SOL`, `EURC_SOL`, `USDT_SOL`, `USDG_SOL`, `PYUSD_SOL` |
+  | Polygon | `USDC_POL`, `USDT_POL` |
 </ParamField>
 
 <ParamField body="customer_id" type="string">
@@ -336,15 +341,37 @@ curl -X POST 'https://api.yativo.com/api/v1/crypto/create-wallet' \
   "status_code": 200,
   "message": "Request successful",
   "data": {
-    "coin_name": "USDC_SOL",
+    "customer_id": null,
     "wallet_address": "7TzXXXXXXXXXXXXX",
+    "wallet_currency": "USDC_SOL",
     "wallet_network": "SOL",
-    "wallet_status": "active",
-    "wallet_balance": "0"
+    "coin_name": "USDC",
+    "wallet_balance": 0
   }
 }
 ```
 </ResponseExample>
+
+Each address belongs to one currency, and to one customer when you pass `customer_id`. Asking again for the same currency and customer returns the existing address with the message `Wallet already exists`.
+
+### Wallet address limits
+
+You can request at most 3 wallet addresses a minute for each `customer_id`, or 3 a minute for your own account when you don't pass one. This applies to `POST /crypto/create-wallet` and `POST /corporate-card/wallet`.
+
+The request that goes over the limit returns `403`. Both endpoints then stay blocked for that customer for 24 hours:
+
+```json
+{
+  "status": "failed",
+  "status_code": 403,
+  "message": "Request failed.",
+  "data": {
+    "error": "Too many wallet address generation requests. Access to this endpoint has been blocked."
+  }
+}
+```
+
+Later requests during the block return `403` with `You have been blocked from generating wallet addresses due to excessive requests.` Contact Yativo support to lift it early. To avoid the limit, store each address and look it up with `GET /crypto/get-wallets` instead of requesting a new one.
 
 ### Retrieve your deposit wallet addresses
 

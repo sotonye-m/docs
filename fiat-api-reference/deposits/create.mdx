@@ -123,33 +123,42 @@ const deposit = await depositRes.json();
 
 ```json Expired quote
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 400,
-  "message": "Quote has expired. Please generate a new quote."
+  "message": "Request failed.",
+  "data": {
+    "error": "Quote has expired. Please generate a new quote."
+  }
 }
 ```
 
 ```json Invalid gateway
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 404,
-  "message": "Payment gateway not found"
+  "message": "Request failed.",
+  "data": {
+    "error": "Payment gateway not found"
+  }
 }
 ```
 
 ```json Below minimum
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 400,
-  "message": "Minimum deposit amount is 5 BRL"
+  "message": "Request failed.",
+  "data": {
+    "error": "Minimum deposit amount is 5 BRL"
+  }
 }
 ```
 
 ```json Validation error
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 422,
-  "message": "Request failed",
+  "message": "Request failed.",
   "data": {
     "gateway": ["The gateway field is required."],
     "currency": ["The currency field is required."]

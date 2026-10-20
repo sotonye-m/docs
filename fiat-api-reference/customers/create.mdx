@@ -75,10 +75,10 @@ curl -X POST 'https://api.yativo.com/api/v1/customer' \
 
 ```json Validation Error
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 422,
-  "message": "Validation failed",
-  "errors": {
+  "message": "Request failed.",
+  "data": {
     "customer_email": ["The customer email has already been taken."]
   }
 }

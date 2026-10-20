@@ -1,79 +1,122 @@
 ---
 title: "Currency Swap"
-description: "Convert balances between your wallets instantly at the live exchange rate"
+description: "Move balance between your own currency wallets, for example USD to USDC"
 ---
 
-Currency swap lets you convert funds between any two currency wallets you hold in your Yativo account — for example, moving USD to BRL, EUR to MXN, or CLP to USD — without sending to an external beneficiary.
+A swap converts balance from one of your wallets to another, for example from your USD wallet to your USDC wallet. No beneficiary is involved, and the swap completes immediately.
 
-The flow is two steps: first **initiate** to preview the rate and terms, then **process** to execute the conversion and move the balance.
+You can only swap between the currency pairs Yativo has enabled for your account. Each pair has its own rate, fees and amount limits.
 
 ---
 
 ## How it works
 
 ```
-1. POST /swap/init    → preview rate, receive swap details
-2. POST /swap/process → debit from_currency wallet, credit to_currency wallet
+1. GET  /wallet/swap/pairs  → see which pairs you can swap, with rates and fees
+2. POST /wallet/swap/quote  → price a swap without moving money
+3. POST /wallet/swap        → debit the source wallet and credit the destination wallet
 ```
 
-Both wallets must exist before swapping. Create missing wallets with `POST /wallet/create`.
+The fee is charged in the source currency and deducted before conversion:
+
+```
+fee       = fixed_fee + amount × percent_fee / 100
+fee       = max(fee, min_fee)   // when min_fee is set
+fee       = min(fee, max_fee)   // when max_fee is set
+to_amount = (amount − fee) × rate
+```
+
+`to_amount` is rounded down to the destination currency's decimal places.
+
+You need a wallet in the source currency. If you don't have a wallet in the destination currency yet, Yativo creates it on your first swap into it.
+
+<Note>
+  Team members need the **Wallets → view** permission to list pairs, quote and view swaps, and **Wallets → manage** to run a swap.
+</Note>
 
 ---
 
-## Step 1: Initiate Swap
-
-Preview the exchange rate and resulting converted amount before committing.
+## List swap pairs
 
 ```
-POST https://api.yativo.com/api/v1/swap/init
+GET https://api.yativo.com/api/v1/wallet/swap/pairs
 ```
 
-<Note>
-  Requires `Idempotency-Key` header.
-</Note>
+Returns every pair you can swap, with its current rate and fees.
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/wallet/swap/pairs' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "from_currency": "USD",
+      "to_currency": "USDC",
+      "rate": 1,
+      "fixed_fee": 0,
+      "percent_fee": 0.5,
+      "min_fee": 1,
+      "max_fee": null,
+      "min_amount": 10,
+      "max_amount": 50000
+    }
+  ]
+}
+```
+</ResponseExample>
+
+| Field | Description |
+|---|---|
+| `rate` | Units of `to_currency` per unit of `from_currency`. Applied after the fee is deducted |
+| `fixed_fee` | Flat fee in `from_currency` |
+| `percent_fee` | Percentage of the amount, charged in `from_currency` |
+| `min_fee`, `max_fee` | Lower and upper bounds on the fee. `null` means no bound |
+| `min_amount`, `max_amount` | Smallest and largest `amount` you can swap, in `from_currency`. `null` means no limit |
+
+---
+
+## Quote a swap
+
+```
+POST https://api.yativo.com/api/v1/wallet/swap/quote
+```
+
+Prices a swap without moving money. Use it to show the fee and the amount you'll receive before you confirm.
 
 <ParamField body="from_currency" type="string" required>
-  The source wallet currency code (ISO 4217), e.g. `"USD"`, `"EUR"`.
+  Currency of the wallet to debit, for example `"USD"`.
 </ParamField>
 
 <ParamField body="to_currency" type="string" required>
-  The target wallet currency code (ISO 4217), e.g. `"BRL"`, `"MXN"`, `"CLP"`.
+  Currency of the wallet to credit, for example `"USDC"`. Must differ from `from_currency`.
 </ParamField>
 
 <ParamField body="amount" type="number" required>
-  Amount in the source currency to convert.
+  Amount to swap, in `from_currency`, including the fee. Must be greater than 0.
 </ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/swap/init' \
+curl -X POST 'https://api.yativo.com/api/v1/wallet/swap/quote' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: swap-init-usd-brl-001' \
+  -H 'Idempotency-Key: swap-quote-001' \
   -d '{
     "from_currency": "USD",
-    "to_currency": "BRL",
-    "amount": 500
+    "to_currency": "USDC",
+    "amount": 1000
   }'
-```
-
-```javascript Node.js
-const response = await fetch('https://api.yativo.com/api/v1/swap/init', {
-  method: 'POST',
-  headers: {
-    'X-Api-Key': process.env.YATIVO_API_KEY,
-    'X-Api-Secret': process.env.YATIVO_API_SECRET,
-    'Content-Type': 'application/json',
-    'Idempotency-Key': `swap-init-${Date.now()}`,
-  },
-  body: JSON.stringify({
-    from_currency: 'USD',
-    to_currency: 'BRL',
-    amount: 500,
-  }),
-});
-const data = await response.json();
 ```
 </RequestExample>
 
@@ -85,113 +128,157 @@ const data = await response.json();
   "message": "Request successful",
   "data": {
     "from_currency": "USD",
-    "to_currency": "BRL",
-    "from_amount": "500.00",
-    "to_amount": "2491.00",
-    "exchange_rate": "4.9820",
-    "fee": "5.00",
-    "fee_currency": "USD"
+    "to_currency": "USDC",
+    "from_amount": 1000,
+    "fee": 5,
+    "net_amount": 995,
+    "rate": 1,
+    "to_amount": 995,
+    "available_balance": 2500
+  }
+}
+```
+
+```json Pair not available
+{
+  "status": "failed",
+  "status_code": 422,
+  "message": "Request failed.",
+  "data": {
+    "error": "Swapping USD to EUR is not available."
+  }
+}
+```
+</ResponseExample>
+
+| Field | Description |
+|---|---|
+| `from_amount` | Amount debited from the source wallet |
+| `fee` | Fee in `from_currency`, included in `from_amount` |
+| `net_amount` | `from_amount` minus `fee`. This is the amount converted |
+| `rate` | Rate applied to `net_amount` |
+| `to_amount` | Amount credited to the destination wallet |
+| `available_balance` | Your current balance in the source wallet |
+
+A quote doesn't reserve the rate or your balance. The swap uses the pair's rate and fees at the moment you run it.
+
+---
+
+## Run a swap
+
+```
+POST https://api.yativo.com/api/v1/wallet/swap
+```
+
+Debits the source wallet and credits the destination wallet in one step. If the credit fails, the debit is reversed.
+
+Takes the same body as [Quote a swap](#quote-a-swap), plus:
+
+<ParamField body="idempotency_key" type="string">
+  Alternative to the `Idempotency-Key` header, up to 100 characters.
+</ParamField>
+
+<Note>
+  Send a unique `Idempotency-Key` header. If you retry with the same key, you get the original swap back and no second swap runs.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/wallet/swap' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: swap-usd-usdc-001' \
+  -d '{
+    "from_currency": "USD",
+    "to_currency": "USDC",
+    "amount": 1000
+  }'
+```
+
+```javascript Node.js
+const response = await fetch('https://api.yativo.com/api/v1/wallet/swap', {
+  method: 'POST',
+  headers: {
+    'X-Api-Key': process.env.YATIVO_API_KEY,
+    'X-Api-Secret': process.env.YATIVO_API_SECRET,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': crypto.randomUUID(),
+  },
+  body: JSON.stringify({
+    from_currency: 'USD',
+    to_currency: 'USDC',
+    amount: 1000,
+  }),
+});
+const { data: swap } = await response.json();
+```
+
+```python Python
+import os, uuid, requests
+
+response = requests.post(
+    'https://api.yativo.com/api/v1/wallet/swap',
+    headers={
+        'X-Api-Key': os.environ['YATIVO_API_KEY'],
+        'X-Api-Secret': os.environ['YATIVO_API_SECRET'],
+        'Idempotency-Key': str(uuid.uuid4()),
+    },
+    json={'from_currency': 'USD', 'to_currency': 'USDC', 'amount': 1000},
+)
+swap = response.json()['data']
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "reference": "9b1f0c52-3a8e-4f4e-b2a1-6f0e5d7c8a91",
+    "from_currency": "USD",
+    "to_currency": "USDC",
+    "from_amount": 1000,
+    "fee": 5,
+    "rate": 1,
+    "to_amount": 995,
+    "status": "completed",
+    "created_at": "2026-10-20T10:15:00+00:00"
   }
 }
 ```
 
 ```json Insufficient balance
 {
-  "status": "error",
-  "status_code": 400,
-  "message": "Insufficient wallet balance"
-}
-```
-
-```json Invalid currencies
-{
-  "status": "error",
+  "status": "failed",
   "status_code": 422,
-  "message": "Invalid currencies supplied"
+  "message": "Request failed.",
+  "data": {
+    "error": "Insufficient balance or invalid debit wallet."
+  }
 }
 ```
 </ResponseExample>
 
+Keep the `reference`. Use it to look the swap up later. Each swap also appears in your transaction history as two entries of type `swap`: the debit from the source wallet and the credit to the destination wallet.
+
 ---
 
-## Step 2: Process Swap
-
-Execute the conversion. Funds are debited from the `from_currency` wallet and credited to the `to_currency` wallet at the live rate.
+## List swaps
 
 ```
-POST https://api.yativo.com/api/v1/swap/process
+GET https://api.yativo.com/api/v1/wallet/swap
 ```
 
-<Note>
-  Requires `Idempotency-Key` header. Use a **new, unique key** for the process step — reusing the init key will be rejected.
-</Note>
-
-<ParamField body="from_currency" type="string" required>
-  The source wallet currency code.
-</ParamField>
-
-<ParamField body="to_currency" type="string" required>
-  The target wallet currency code.
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Amount in the source currency to convert.
-</ParamField>
-
-<ParamField body="transaction_purpose" type="string">
-  Optional description for this swap, recorded on the transaction record.
-</ParamField>
+Returns your swaps, newest first, 10 per page. Use `page` and `per_page` to page through them.
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/swap/process' \
+curl -X GET 'https://api.yativo.com/api/v1/wallet/swap?page=1&per_page=20' \
   -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
-  -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: swap-process-usd-brl-001' \
-  -d '{
-    "from_currency": "USD",
-    "to_currency": "BRL",
-    "amount": 500
-  }'
-```
-
-```javascript Node.js
-const response = await fetch('https://api.yativo.com/api/v1/swap/process', {
-  method: 'POST',
-  headers: {
-    'X-Api-Key': process.env.YATIVO_API_KEY,
-    'X-Api-Secret': process.env.YATIVO_API_SECRET,
-    'Content-Type': 'application/json',
-    'Idempotency-Key': `swap-process-${Date.now()}`,
-  },
-  body: JSON.stringify({
-    from_currency: 'USD',
-    to_currency: 'BRL',
-    amount: 500,
-    transaction_purpose: 'Fund BRL wallet for local payouts',
-  }),
-});
-const data = await response.json();
-```
-
-```python Python
-import requests
-
-response = requests.post(
-    'https://api.yativo.com/api/v1/swap/process',
-    headers={
-        'X-Api-Key': os.environ['YATIVO_API_KEY'],
-        'X-Api-Secret': os.environ['YATIVO_API_SECRET'],
-        'Content-Type': 'application/json',
-        'Idempotency-Key': f'swap-process-{int(time.time())}',
-    },
-    json={
-        'from_currency': 'USD',
-        'to_currency': 'BRL',
-        'amount': 500,
-    }
-)
+  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -202,17 +289,23 @@ response = requests.post(
   "status_code": 200,
   "message": "Request successful",
   "data": {
-    "from_currency": "USD",
-    "to_currency": "BRL",
-    "from_amount": "500.00",
-    "to_amount": "2491.00",
-    "exchange_rate": "4.9820",
-    "transaction_type": "currency_swap",
-    "gateway_id": "currency_swap",
-    "swap_from_currency": "USD",
-    "swap_to_currency": "BRL",
-    "transaction_purpose": "Fund BRL wallet for local payouts",
-    "created_at": "2026-06-01T10:00:00.000000Z"
+    "current_page": 1,
+    "data": [
+      {
+        "reference": "9b1f0c52-3a8e-4f4e-b2a1-6f0e5d7c8a91",
+        "from_currency": "USD",
+        "to_currency": "USDC",
+        "from_amount": 1000,
+        "fee": 5,
+        "rate": 1,
+        "to_amount": 995,
+        "status": "completed",
+        "created_at": "2026-10-20T10:15:00+00:00"
+      }
+    ],
+    "per_page": 20,
+    "last_page": 1,
+    "total": 1
   }
 }
 ```
@@ -220,45 +313,58 @@ response = requests.post(
 
 ---
 
-## Full example
+## Get a swap
 
-```javascript Node.js — complete swap flow
-async function swapCurrency(token, fromCurrency, toCurrency, amount) {
-  const BASE = 'https://api.yativo.com/api/v1';
-  const headers = {
-    'X-Api-Key': process.env.YATIVO_API_KEY,
-    'X-Api-Secret': process.env.YATIVO_API_SECRET,
-    'Content-Type': 'application/json',
-  };
-
-  // Step 1: Preview the rate
-  const initRes = await fetch(`${BASE}/swap/init`, {
-    method: 'POST',
-    headers: { ...headers, 'Idempotency-Key': `swap-init-${Date.now()}` },
-    body: JSON.stringify({ from_currency: fromCurrency, to_currency: toCurrency, amount }),
-  });
-  const preview = await initRes.json();
-  console.log(`Rate: ${preview.data.exchange_rate} — you receive ${preview.data.to_amount} ${toCurrency}`);
-
-  // Step 2: Execute
-  const processRes = await fetch(`${BASE}/swap/process`, {
-    method: 'POST',
-    headers: { ...headers, 'Idempotency-Key': `swap-process-${Date.now()}` },
-    body: JSON.stringify({ from_currency: fromCurrency, to_currency: toCurrency, amount }),
-  });
-  return processRes.json();
-}
-
-// Usage
-const result = await swapCurrency(token, 'USD', 'BRL', 500);
-console.log('Swap complete:', result.data);
 ```
+GET https://api.yativo.com/api/v1/wallet/swap/{reference}
+```
+
+<ParamField path="reference" type="string" required>
+  The `reference` returned when you ran the swap.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/wallet/swap/9b1f0c52-3a8e-4f4e-b2a1-6f0e5d7c8a91' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>
+
+Returns the same object as [Run a swap](#run-a-swap), or `404` with `Swap not found` if the reference isn't one of yours.
 
 ---
 
-## Notes
+## USDC wallet
 
-- Both wallets must exist before swapping. Create them with `POST /wallet/create` if needed.
-- The live rate is fetched at execution time — rates are not locked between `/init` and `/process`. Use `/init` to show the customer a preview, then execute `/process` promptly.
-- Swaps are recorded as `currency_swap` transactions and appear in your transaction history.
-- Check available wallet balances with `GET /wallet/balance` before initiating.
+Your USDC wallet funds [corporate cards](/yativo-fiat/sandbox-corporate-cards). You can swap into it from USD only, and you can't swap out of it. A swap from USDC, or into USDC from any currency other than USD, fails with `Invalid wallet selected.`
+
+---
+
+## Errors
+
+Swap errors return `422` with a message in `data.error`, except a missing swap, which returns `404`.
+
+| Message | Cause |
+|---|---|
+| `Swapping {FROM} to {TO} is not available.` | The pair isn't enabled for your account. Check `GET /wallet/swap/pairs` |
+| `Minimum swap amount is {min} {FROM}.` | `amount` is below the pair's `min_amount` |
+| `Maximum swap amount is {max} {FROM}.` | `amount` is above the pair's `max_amount` |
+| `You don't have a {FROM} wallet.` | You have no wallet in the source currency |
+| `Amount is too small to cover the swap fee.` | The fee is equal to or larger than `amount` |
+| `Amount is too small to swap.` | `to_amount` would round down to 0 |
+| `Insufficient balance or invalid debit wallet.` | The source wallet's balance is lower than `amount` |
+| `Invalid wallet selected.` | The swap would debit your USDC wallet, or credit it from a currency other than USD |
+
+A validation error, such as a missing field or `to_currency` equal to `from_currency`, returns the failing fields in `data`:
+
+```json
+{
+  "status": "failed",
+  "status_code": 422,
+  "message": "Request failed.",
+  "data": {
+    "to_currency": ["The to currency field and from currency must be different."]
+  }
+}
+```

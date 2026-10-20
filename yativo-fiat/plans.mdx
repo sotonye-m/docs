@@ -151,9 +151,12 @@ curl -X POST 'https://api.yativo.com/api/v1/business/plans/subscribe/2' \
 
 ```json Insufficient balance
 {
-  "status": "error",
-  "status_code": 402,
-  "message": "Insufficient wallet balance"
+  "status": "failed",
+  "status_code": 400,
+  "message": "Request failed.",
+  "data": {
+    "error": "Insufficient wallet balance"
+  }
 }
 ```
 </ResponseExample>

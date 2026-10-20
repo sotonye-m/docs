@@ -43,10 +43,12 @@ curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/show/va_xxxx
 
 ```json Not Found
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 404,
-  "message": "Virtual account not found",
-  "data": null
+  "message": "Request failed.",
+  "data": {
+    "error": "Virtual account not found"
+  }
 }
 ```
 </ResponseExample>

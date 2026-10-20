@@ -3,8 +3,10 @@ title: "Changelog"
 description: "Latest updates, improvements, and fixes across all Yativo platforms"
 ---
 
-<Update label="October 2026" description="Login history, EUR SEPA deposits, market rates, fee schedule, and API key restrictions">
+<Update label="October 2026" description="Login tokens and gift cards discontinued, currency swap, login history, EUR SEPA deposits, market rates, fee schedule, and API key restrictions">
   ### Yativo Fiat
+  - **Login tokens discontinued:** `POST /auth/login`, `GET /auth/refresh-token` and `Authorization: Bearer` tokens (legacy Account ID and App Secret) no longer work for API requests. Send `X-Api-Key` and `X-Api-Secret` on every request. See [Authentication](/yativo-fiat/authentication)
+  - **Gift cards discontinued:** `GET /giftcards`, `GET /giftcards/categories`, `POST /giftcards`, `GET /giftcards/redeem/{transactionId}` and the `giftcard.status_changed` webhook are no longer available
   - **Corporate cards in sandbox:** issue cards to your business customers' employees, fund each employee's card balance from your USDC balance, and review memos, in the sandbox API and dashboard ahead of production. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards)
   - **Corporate card links:** card number, CVV and PIN are now only on each card's reusable, embeddable link, which only the card's employee can open (email code the first time, then a passkey or authenticator app). Brand it with your logo, font and colours, reset an employee's sign-in, and change an employee's email with their confirmation on the card link. Removed: `GET /spend/cards/{card_id}/widget-token`, `POST /spend/cards/pin` and `POST /corporate-card/employees/cards/pin`. See [Corporate Card Links](/yativo-fiat/corporate-card-links)
   - **Sandbox KYC:** sandbox does not approve KYC when you create a customer. Your account stays limited until `kyc_status` is `approved` and `is_kyc_submitted` is true. The sandbox dashboard collects business verification in a form. See [Sandbox KYC](/yativo-fiat/sandbox-kyc)
@@ -15,9 +17,19 @@ description: "Latest updates, improvements, and fixes across all Yativo platform
   - **EUR deposits via SEPA:** customers can fund deposits by bank transfer to a Yativo IBAN. See [Deposits](/yativo-fiat/deposits#eur-bank-transfer-sepa)
   - Endpoints that change sign-in settings (passkeys, two-factor authentication, PIN, app secret) or delete the account now return `403` when called with an API key
   - `GET /ip-whitelist/check` now returns `api_key.label` (was `name`) and a `network.warning` when your request came through a proxy
+  - **Currency swap:** swap balance between your own wallets with `GET /wallet/swap/pairs`, `POST /wallet/swap/quote`, `POST /wallet/swap`, `GET /wallet/swap` and `GET /wallet/swap/{reference}`. Each pair has its own rate, fees and limits. `POST /swap/init` and `POST /swap/process` are no longer available. See [Currency Swap](/yativo-fiat/swap)
+  - **USDC balance:** your USDC balance is only for corporate cards. Payouts, transfers and swaps out of it fail with `Invalid wallet selected.` Fund it with a USDC deposit or a swap from USD. See [USDC balance](/yativo-fiat/sandbox-corporate-cards#usdc-balance)
+  - **Wallet address limits:** `POST /crypto/create-wallet` and `POST /corporate-card/wallet` allow 3 requests a minute per customer. Going over returns `403` and blocks both for that customer for 24 hours. See [Wallet address limits](/yativo-fiat/deposits#wallet-address-limits)
+  - **Unified errors:** every failed response now includes `error_details`, with a stable `code`, `message`, `fields`, `retryable` and `retry_after`. See [Error response format](/fiat-api-reference/introduction#error-response-format)
+  - **Payout references and invoices:** `POST /wallet/payout` and `POST /payout/simple` accept `reference` (shown to the recipient's bank), plus `invoice` or `invoice_url`. `payout.updated` webhooks include `reference`. See [Initiate Payout](/fiat-api-reference/payments/payout)
+  - **Endorsement resubmission:** `POST /customer/kyc/resubmit/{customer_id}/{endorsement}` re-runs verification for one endorsement. See [KYC / KYB](/yativo-fiat/kyc#resubmit-one-endorsement)
+  - **KYC and KYB rules:** files can be 5 KB–30 MB; tax IDs take letters and digits only; KYB requires `primary_website`, proof of address for every address, `pep_status`, `third_party_msb_payments`, `expected_monthly_payments_usd` and a `shareholding_structure` extra document; associated persons below the ownership threshold (default 25%) are dropped; individual submissions return `warnings` for values verification is likely to reject. See [KYC / KYB](/yativo-fiat/kyc)
   - **MCP server:** connect Claude, Cursor or any MCP client to your fiat account at `https://api.yativo.com/mcp` to check balances and deposits, and quote and send payouts with your approval. See [Fiat MCP server](/yativo-fiat/mcp-server)
 
   ### Docs
+  - **Corrected:** the fiat webhook signature header is `Signature`, not `X-Yativo-Signature`. Webhooks time out after 3 seconds and are attempted up to 3 times. The [Webhooks](/yativo-fiat/webhooks) page now lists every event type, including virtual card and corporate card events
+  - **Corrected:** `POST /payout/simple` requires `debit_wallet` and `customer_id`. Insufficient balance returns `400`, not `402`. Idempotency keys are kept for 60 minutes, not 24 hours
+  - **Corrected:** KYB `account_purpose` and `source_of_funds` use their own lists, separate from individual KYC. KYB associated persons send ID images as `image_front` and `image_back`
   - [AI and MCP servers](/yativo/mcp) compares the Docs, Fiat and Agentic Wallet MCP servers, and documents the Docs MCP server at `https://docs.yativo.com/mcp`
 
   ### Yativo Crypto

@@ -41,6 +41,20 @@ POST /wallet/payout
   `send` or `receive`. Ignored when `quote_id` is provided. In both modes fees are added on top and charged to your wallet.
 </ParamField>
 
+<ParamField body="reference" type="string">
+  Payment reference passed to the recipient's bank, up to 250 characters. Depending on the payout rail, it may be shortened or have unsupported characters removed. For example, ACH allows only 10 letters, numbers or spaces.
+</ParamField>
+
+<ParamField body="invoice" type="file">
+  Supporting invoice: PDF, PNG or JPEG, up to 15 MB. Send the request as `multipart/form-data` to attach it.
+</ParamField>
+
+<ParamField body="invoice_url" type="string">
+  Public `http` or `https` link to the supporting invoice, as an alternative to `invoice`.
+</ParamField>
+
+Every payout goes through compliance checks before it's sent. If you include an invoice, it's reviewed with the payout, so make sure its total and beneficiary match. A payout that needs a closer look stays `pending` until the review is finished.
+
 <RequestExample>
 ```bash cURL — With quote (recommended)
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \

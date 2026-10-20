@@ -26,22 +26,24 @@ X-Api-Secret: YOUR_API_SECRET
 Requests must come from an IP on the key's whitelist. See [Authentication](/yativo-fiat/authentication) and [IP whitelisting](/yativo-fiat/ip-allowlist).
 
 <Warning>
-  Legacy API keys (Account ID and App Secret, used with [Generate Token](/fiat-api-reference/auth/token)) are deprecated. From 15 October 2026 its tokens don't work from servers.
+  Login tokens from `POST /auth/login` (legacy Account ID and App Secret) have been discontinued. `Authorization: Bearer` tokens don't work for API requests. Use `X-Api-Key` and `X-Api-Secret`.
 </Warning>
 
 ## Idempotency
 
-All `POST`, `PUT`, and `PATCH` requests require an `Idempotency-Key` header. This ensures that duplicate requests (e.g. due to network retries) are not processed twice.
+Send an `Idempotency-Key` header on every `POST`, `PUT`, `PATCH` and `DELETE` request, so a retried request isn't processed twice.
 
 ```bash
 Idempotency-Key: your-unique-key-here
 ```
 
-Use a UUID or a deterministic string based on the operation (e.g. `payout-{customer_id}-{timestamp}`). Keys are scoped to your account.
+Use a UUID or a deterministic string based on the operation (e.g. `payout-{customer_id}-{timestamp}`). Keys are scoped to your account. A retry with the same key and body within 60 minutes returns the original response. Reusing a key with a different body returns `409`. See [Idempotency](/yativo-fiat/authentication#idempotency).
 
 ## Rate limits
 
-Requests are rate-limited per API key. If you exceed the limit, you will receive a `429 Too Many Requests` response. Implement exponential backoff when retrying after rate limit errors.
+Requests are rate-limited per business account: by default 20 writes (`POST`, `PUT`, `PATCH`, `DELETE`) and 50 reads (`GET`) a second. Some endpoints have lower limits. See [Rate limits](/yativo-fiat/security#rate-limits).
+
+Over the limit, you get `429 Too Many Requests` with a `Retry-After` header. Wait that many seconds, then retry with exponential backoff.
 
 ## Standard response format
 
@@ -63,25 +65,52 @@ All successful responses follow this structure:
 | `200` | OK — Request succeeded |
 | `201` | Created — Resource created successfully |
 | `400` | Bad Request — Invalid request parameters |
+| `402` | Payment Required — Your balance can't cover the amount or fee |
 | `401` | Unauthorized — Missing or invalid API key or secret |
 | `403` | Forbidden — The request isn't allowed, for example from an IP that isn't whitelisted |
 | `404` | Not Found — Resource does not exist |
+| `409` | Conflict — Idempotency key reused with a different body, or the same request is still running |
 | `422` | Unprocessable Entity — Validation failed |
 | `429` | Too Many Requests — Rate limit exceeded |
 | `500` | Internal Server Error — Something went wrong on our end |
 
 ### Error response format
 
+Every failed response has `status: "failed"`, and the reason in `data`. Most errors put a message in `data.error`. Validation errors list the failing fields in `data`.
+
+Every failed response also includes `error_details`, with the same shape for every endpoint. Read errors from `error_details` so you don't have to handle each endpoint's `data` shape.
+
 ```json
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 422,
-  "message": "Validation failed",
-  "errors": {
+  "message": "Request failed.",
+  "data": {
     "customer_email": ["The customer email field is required."]
+  },
+  "error_details": {
+    "code": "validation_error",
+    "message": "The customer email field is required.",
+    "http_status": 422,
+    "fields": {
+      "customer_email": ["The customer email field is required."]
+    },
+    "retryable": false,
+    "retry_after": null
   }
 }
 ```
+
+| Field | Description |
+|---|---|
+| `code` | Stable error code from the HTTP status: `bad_request`, `unauthenticated`, `payment_required`, `forbidden`, `not_found`, `method_not_allowed`, `conflict`, `validation_error`, `rate_limited`, `server_error`, `upstream_error`, `service_unavailable` or `upstream_timeout` |
+| `message` | A readable description of the error |
+| `http_status` | The HTTP status code |
+| `fields` | Messages per field. When the error isn't about a field, the message is under `error` |
+| `retryable` | `true` for `409`, `429`, `500`, `502`, `503` and `504`, where the same request may succeed later |
+| `retry_after` | Seconds to wait before retrying, from the `Retry-After` header. `null` when not set |
+
+A `5xx` response's `message` is always generic. It never contains internal details.
 
 ## KYC platform
 

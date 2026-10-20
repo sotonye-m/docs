@@ -95,7 +95,7 @@ In **Developers → API Keys**, click **Revoke** on the key. It stops working im
 
 ## Legacy API keys
 
-The Account ID and App Secret shown under **Legacy API keys** on the same page are deprecated. From **15 October 2026** they stop working for requests from your servers. Move to the API keys above: see [Migrate from legacy API keys](/yativo-fiat/authentication#migrate-from-legacy-api-keys).
+The legacy Account ID and App Secret, and the login tokens from `POST /auth/login`, have been discontinued and don't work for API requests. Use the API keys above. See [Move from login tokens to API keys](/yativo-fiat/authentication#move-from-login-tokens-to-api-keys).
 
 ---
 
@@ -106,7 +106,7 @@ The Account ID and App Secret shown under **Legacy API keys** on the same page a
     No. Only a hash of the secret is stored. Create a new key, deploy it, then revoke the old one.
   </Accordion>
   <Accordion title="Can I create or revoke keys through the API?">
-    No. From 15 October 2026, API keys and IP whitelists can only be managed in the dashboard.
+    No. API keys and IP whitelists can only be managed in the dashboard.
   </Accordion>
   <Accordion title="Do my teammates need their own keys?">
     No. Keys belong to the business. Teammates sign in to the dashboard with their own email code or [passkey](/yativo-fiat/passkeys).

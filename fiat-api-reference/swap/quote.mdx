@@ -1,0 +1,7 @@
+---
+title: "Quote Swap"
+description: "Price a swap between two of your wallets without moving money"
+openapi: "POST https://api.yativo.com/api/v1/wallet/swap/quote"
+---
+
+Returns the fee, the amount converted and the amount you'll receive. A quote doesn't reserve the rate or your balance. To run the swap, call [`POST /wallet/swap`](/fiat-api-reference/swap/create) with the same body.

@@ -45,7 +45,7 @@ POST https://kyc.yativo.com/api/individual-kyc/submit
 </ParamField>
 
 <ParamField body="birth_date" type="string" required>
-  Date of birth in `YYYY-MM-DD` format. Must be before today.
+  Date of birth in `YYYY-MM-DD` format. The customer must be at least 18.
 </ParamField>
 
 <ParamField body="nationality" type="string" required>
@@ -57,19 +57,19 @@ POST https://kyc.yativo.com/api/individual-kyc/submit
 </ParamField>
 
 <ParamField body="taxId" type="string" required>
-  Tax identification number. Max 100 characters.
+  Tax identification number. Letters and digits only, up to 255 characters. Send `"123456789"`, not `"123-45-6789"`.
 </ParamField>
 
 <ParamField body="selfie_image" type="string" required>
-  Selfie photo of the customer. Provide as a hosted URL (from `POST /storage/upload`) or a base64-encoded string. Accepted formats: PDF, JPG, JPEG, PNG, HEIC, TIF. Max 5 MB.
+  Selfie photo of the customer. Provide as a hosted URL (from `POST /storage/upload`) or a base64-encoded string. Accepted formats: PDF, JPG, JPEG, PNG, HEIC, TIF, between 5 KB and 30 MB.
 </ParamField>
 
 <ParamField body="bvn" type="string">
-  Bank Verification Number. **Required when `nationality` is `"NG"`**. Exactly 11 digits.
+  Bank Verification Number. **Required when `nationality` or `residential_address.country` is `"NG"`**. Exactly 11 digits.
 </ParamField>
 
 <ParamField body="nin" type="string">
-  National Identification Number. **Required when `nationality` is `"NG"`**. Exactly 11 digits.
+  National Identification Number. **Required when `nationality` or `residential_address.country` is `"NG"`**. Exactly 11 digits.
 </ParamField>
 
 ## Residential address
@@ -97,7 +97,7 @@ POST https://kyc.yativo.com/api/individual-kyc/submit
       ISO 3166-1 alpha-2 country code.
     </ParamField>
     <ParamField body="proof_of_address_file" type="string" required>
-      Proof of address document (utility bill, bank statement, etc.). Hosted URL or base64. PDF/JPG/JPEG/PNG/HEIC/TIF, max 5 MB.
+      Proof of address document (utility bill, bank statement, etc.). Hosted URL or base64. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB.
     </ParamField>
   </Expandable>
 </ParamField>
@@ -124,10 +124,10 @@ POST https://kyc.yativo.com/api/individual-kyc/submit
       Expiration date in `YYYY-MM-DD` format. Must be after today.
     </ParamField>
     <ParamField body="image_front_file" type="string" required>
-      Front image of the document. Hosted URL or base64. PDF/JPG/JPEG/PNG, max 5 MB.
+      Front image of the document. Hosted URL or base64. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
     </ParamField>
     <ParamField body="image_back_file" type="string">
-      Back image of the document. Required for documents that have a reverse side (e.g. national ID cards). Hosted URL or base64. PDF/JPG/JPEG/PNG, max 5 MB.
+      Back image of the document. Required for documents that have a reverse side (e.g. national ID cards). Hosted URL or base64. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
     </ParamField>
   </Expandable>
 </ParamField>
@@ -147,15 +147,31 @@ POST https://kyc.yativo.com/api/individual-kyc/submit
 </ParamField>
 
 <ParamField body="source_of_funds" type="string" required>
-  Primary source of funds. One of: `"salary"`, `"business_income"`, `"company_funds"`, `"savings"`, `"investments_loans"`, `"inheritance"`, `"gifts"`, `"government_benefits"`, `"pension_retirement"`, `"sale_of_assets_real_estate"`, `"ecommerce_reseller"`, `"gambling_proceeds"`, `"someone_elses_funds"`.
+  Primary source of funds. One of: `"salary"`, `"company_funds"`, `"savings"`, `"investments_loans"`, `"inheritance"`, `"gifts"`, `"government_benefits"`, `"pension_retirement"`, `"sale_of_assets_real_estate"`, `"ecommerce_reseller"`, `"gambling_proceeds"`, `"someone_elses_funds"`.
 </ParamField>
 
 <ParamField body="account_purpose" type="string" required>
-  Intended use of the account. One of: `"receive_salary"`, `"business_transactions"`, `"purchase_goods_and_services"`, `"personal_or_living_expenses"`, `"payments_to_friends_or_family_abroad"`, `"receive_payment_for_freelancing"`, `"investment_purposes"`, `"protect_wealth"`, `"ecommerce_retail_payments"`, `"operating_a_company"`, `"charitable_donations"`, `"other"`.
+  Intended use of the account. One of: `"receive_salary"`, `"purchase_goods_and_services"`, `"personal_or_living_expenses"`, `"payments_to_friends_or_family_abroad"`, `"receive_payment_for_freelancing"`, `"investment_purposes"`, `"protect_wealth"`, `"ecommerce_retail_payments"`, `"operating_a_company"`, `"charitable_donations"`, `"other"`.
 </ParamField>
 
 <ParamField body="account_purpose_other" type="string">
   Required when `account_purpose` is `"other"`. Provide a plain-text description.
+</ParamField>
+
+<ParamField body="annual_salary" type="string">
+  Optional. Up to 20 characters.
+</ParamField>
+
+<ParamField body="current_employer" type="string">
+  Optional. Up to 512 characters.
+</ParamField>
+
+<ParamField body="immigration_status" type="string">
+  Optional. `"Permanent U.S. Resident"`, `"Non-Permanent U.S. Resident"` or `"Non-Resident of U.S."`
+</ParamField>
+
+<ParamField body="usd_virtual_account" type="boolean">
+  Also `eur_virtual_account`, `gbp_virtual_account` and `native_endorsement`: the services to verify the customer for. See [Virtual account flags](/yativo-fiat/kyc#virtual-account-flags).
 </ParamField>
 
 <ParamField body="acting_as_intermediary" type="boolean">
@@ -172,7 +188,7 @@ POST https://kyc.yativo.com/api/individual-kyc/submit
       A label identifying the document type, e.g. `"bank_statement"`, `"tax_return"`.
     </ParamField>
     <ParamField body="file" type="string" required>
-      Hosted URL or base64-encoded file. PDF/JPG/JPEG/PNG, max 5 MB.
+      Hosted URL or base64-encoded file. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
     </ParamField>
   </Expandable>
 </ParamField>
@@ -194,7 +210,7 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
     "gender": "male",
     "birth_date": "1990-01-15",
     "nationality": "US",
-    "taxId": "998-88-7766",
+    "taxId": "998887766",
     "selfie_image": "https://storage.yativo.com/documents/abc/selfie.jpg",
     "residential_address": {
       "street_line_1": "123 Maple Street",
@@ -248,7 +264,7 @@ const response = await fetch('https://kyc.yativo.com/api/individual-kyc/submit',
     gender: 'male',
     birth_date: '1990-01-15',
     nationality: 'US',
-    taxId: '998-88-7766',
+    taxId: '998887766',
     selfie_image: selfieUrl,
     residential_address: {
       street_line_1: '123 Maple Street',
@@ -299,7 +315,7 @@ response = requests.post(
         'gender': 'male',
         'birth_date': '1990-01-15',
         'nationality': 'US',
-        'taxId': '998-88-7766',
+        'taxId': '998887766',
         'selfie_image': selfie_url,
         'residential_address': {
             'street_line_1': '123 Maple Street',
@@ -330,42 +346,38 @@ response = requests.post(
 </RequestExample>
 
 <ResponseExample>
-```json Submitted
+```json Submitted (201)
 {
   "success": true,
-  "message": "KYC submission received successfully",
+  "message": "KYC submitted successfully.",
   "data": {
-    "submission": {
-      "id": "sub_8f3b2a1c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
-      "type": "individual",
-      "status": "submitted",
-      "customer_id": "c586066b-0f29-468f-b775-15483871a202",
-      "first_name": "Alex",
-      "last_name": "Smith",
-      "email": "alex.smith@example.com",
-      "endorsements": [
-        {
-          "service": "base",
-          "status": "pending",
-          "link": "https://kyc.yativo.com/endorsement/base/c586066b-0f29-468f-b775-15483871a202"
-        }
-      ],
-      "created_at": "2026-06-01T10:00:00.000000Z"
-    }
+    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "type": "individual",
+    "status": "submitted",
+    "first_name": "Alex",
+    "last_name": "Smith",
+    "email": "alex.smith@example.com",
+    "submitted_at": "2026-10-20T10:00:00.000000Z"
+  },
+  "warnings": {
+    "account_purpose": ["account_purpose is not one of the values from GET /api/individual-kyc/account-purposes; providers will reject it."]
   }
 }
 ```
 
 ```json Validation error
 {
-  "status": "failed",
-  "status_code": 422,
-  "message": "Request failed",
-  "data": {
-    "nationality": ["The nationality must be 2 characters."],
-    "expected_monthly_payments_usd": ["The selected expected monthly payments usd is invalid."],
-    "identifying_information": ["The identifying information field is required."]
-  }
+  "success": false,
+  "message": "Validation error.",
+  "validation_errors": {
+    "nationality": ["The nationality field must be 2 characters."],
+    "taxId": ["Tax ID must contain only letters and digits, up to 255 characters."]
+  },
+  "field_labels": {
+    "nationality": "Nationality",
+    "taxId": "Tax ID"
+  },
+  "field_hints": {}
 }
 ```
 </ResponseExample>

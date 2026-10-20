@@ -1,24 +1,35 @@
 ---
 title: "Webhooks"
-description: "Receive real-time event notifications for payments, transfers, and account activity"
+description: "Receive real-time event notifications for payments, transfers, cards and account activity"
 ---
 
-Webhooks push event notifications to your server the moment something happens — no polling needed. Configure a single HTTPS endpoint to receive all events, then filter by `event.type` in your handler.
+Webhooks push an event to your server when something happens on your account, such as a deposit landing, a payout settling or a card being charged. You register one HTTPS URL, and every event is sent to it.
 
-<Note>
-  All webhook requests from Yativo include an `X-Yativo-Signature` header. Always verify this signature before processing any event.
-</Note>
+| | |
+|---|---|
+| HTTP method | `POST` |
+| Content type | `application/json` |
+| Signature header | `Signature` |
+| Signature algorithm | HMAC-SHA256, hex-encoded |
+| Timeout | 3 seconds |
+| Success | Any `2xx` status |
+
+<Warning>
+  The signature header is named `Signature`. It is not `X-Yativo-Signature` or `X-Signature`. Always [verify it](#verify-the-signature) before you process an event.
+</Warning>
 
 ---
 
-## Set Webhook URL
+## Register your endpoint
+
+### Create or replace your webhook
 
 ```
-POST /business/webhook
+POST https://api.yativo.com/api/v1/business/webhook
 ```
 
 <ParamField body="url" type="string" required>
-  Your HTTPS endpoint that will receive webhook events.
+  The HTTPS endpoint that receives events.
 </ParamField>
 
 <RequestExample>
@@ -27,201 +38,57 @@ curl -X POST 'https://api.yativo.com/api/v1/business/webhook' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
-  -d '{
-    "url": "https://your-app.com/webhooks/yativo"
-  }'
+  -H 'Idempotency-Key: webhook-setup-001' \
+  -d '{ "url": "https://your-app.com/webhooks/yativo" }'
 ```
 </RequestExample>
 
----
-
-## Get Webhook Configuration
-
-```
-GET /business/webhook
-```
-
-<RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/business/webhook' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
-```
-</RequestExample>
-
----
-
-## Update Webhook URL
-
-```
-PUT /business/webhook/{webhook_id}
-```
-
-<ParamField path="webhook_id" type="string" required>
-  The webhook ID returned when the webhook was created.
-</ParamField>
-
-<ParamField body="url" type="string" required>
-  New destination URL.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/business/webhook/wh-01abc123' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
-  -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: unique-key-here' \
-  -d '{
-    "url": "https://your-app.com/webhooks/yativo-v2"
-  }'
-```
-</RequestExample>
-
----
-
-## Webhook Event Types
-
-Your endpoint receives `POST` requests with a JSON body containing an `event.type` field.
-
-| Event type | Triggered when |
-|------------|---------------|
-| `deposit.created` | A new deposit is initiated |
-| `deposit.updated` | A deposit status changes (e.g. `pending` → `success`) |
-| `deposit.completed` | A deposit is successfully completed |
-| `payout.updated` | A payout status changes (e.g. completed or failed) |
-| `payout.completed` | A payout is successfully completed |
-| `customer.created` | A new customer is created |
-| `customer.kyc.approved` | A customer's KYC is approved |
-| `customer.kyc.rejected` | A customer's KYC is rejected |
-| `virtual_account.deposit` | A payment arrives at a virtual account |
-| `virtual_account.funded` | A virtual account receives funds (settled) |
-
----
-
-## Event Payloads
-
-### `deposit.created`
-
-```json
+<ResponseExample>
+```json Success
 {
-  "event.type": "deposit.created",
-  "payload": {
-    "id": "93df8440-b756-449c-b0e8-190e2bd8e2bf",
-    "amount": 11,
-    "gateway": "23",
-    "currency": "CLP",
-    "status": "pending",
-    "deposit_currency": "USD",
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "created_at": "2026-04-01T17:19:56.000000Z"
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "id": "b1a7c6e0-4b2a-4c39-9c2e-3a2f6a8e9d10",
+    "user_id": 1024,
+    "url": "https://your-app.com/webhooks/yativo",
+    "secret": "aZ3kP9mQw2Ry7Ln5Xj1Vb8Ct4Fh6Ds0G",
+    "events": "general",
+    "created_at": "2026-09-07T14:32:10.000000Z",
+    "updated_at": "2026-09-07T14:32:10.000000Z"
   }
 }
 ```
+</ResponseExample>
 
-### `deposit.updated`
+- **One endpoint per account.** Calling `POST /business/webhook` again replaces your URL and issues a new secret.
+- Save the `secret`. You need it to verify signatures.
+- Every event goes to your URL. There's no per-event subscription, so ignore event types you don't handle.
+- Right after you save a webhook, Yativo sends a [`webhook_updated`](#account-and-platform-events) test event to the new URL.
 
-```json
-{
-  "event.type": "deposit.updated",
-  "payload": {
-    "id": "93df8440-b756-449c-b0e8-190e2bd8e2bf",
-    "amount": 11,
-    "gateway": "23",
-    "currency": "CLP",
-    "status": "success",
-    "deposit_currency": "USD",
-    "receive_amount": 2681,
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "updated_at": "2026-04-01T17:22:10.000000Z"
-  }
-}
-```
+### Other webhook endpoints
 
-### `payout.updated`
-
-```json
-{
-  "event.type": "payout.updated",
-  "payload": {
-    "payout_id": "4533bb23-0f2d-4c00-8ce3-a2b4ab727b0e",
-    "amount": "20.00",
-    "currency": "ARS",
-    "debit_wallet": "USD",
-    "beneficiary_id": 5,
-    "status": "completed",
-    "created_at": "2026-04-01T21:32:46.000000Z",
-    "updated_at": "2026-04-01T21:43:59.000000Z"
-  }
-}
-```
-
-### `customer.created`
-
-```json
-{
-  "event.type": "customer.created",
-  "payload": {
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "customer_name": "Jane Doe",
-    "customer_email": "jane@example.com",
-    "customer_phone": "+5511999999999",
-    "customer_country": "BRA",
-    "customer_status": "active",
-    "customer_kyc_status": "approved",
-    "created_at": "2026-04-01T16:15:20.000000Z"
-  }
-}
-```
-
-### `virtual_account.deposit`
-
-```json
-{
-  "event.type": "virtual_account.deposit",
-  "payload": {
-    "amount": 1000,
-    "currency": "BRL",
-    "status": "completed",
-    "credited_amount": 950,
-    "transaction_type": "virtual_account_topup",
-    "transaction_id": "TXNMP2HK81BHJ",
-    "customer": {
-      "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-      "customer_name": "Jane Doe",
-      "customer_kyc_status": "approved"
-    },
-    "source": {
-      "account_number": "93405934593930",
-      "sender_name": "Jane Doe",
-      "transaction_fees": 50,
-      "amount_received": 1000,
-      "credited_amount": 950
-    }
-  }
-}
-```
+| Endpoint | Description |
+|---|---|
+| `GET /business/webhook` | Your webhook, inside a `data` array |
+| `PUT /business/webhook/{webhook_id}` | Change the URL. The secret stays the same |
+| `POST /business/webhook/{webhook_id}/regenerate-secret` | Issue a new secret. The old one stops working immediately |
+| `DELETE /business/webhook/{webhook_id}` | Delete your webhook |
 
 ---
 
-## Verifying Webhook Signatures
+## Verify the signature
 
-Every webhook request includes an `X-Yativo-Signature` header containing an HMAC SHA256 hex digest of the raw request body, signed with your webhook secret. **Always verify this before trusting the payload.**
-
-The signature is computed as:
+Every request carries a `Signature` header:
 
 ```
-HMAC-SHA256(secret, JSON.stringify(payload))  →  hex string
+Signature: hex( HMAC_SHA256( raw_request_body, your_webhook_secret ) )
 ```
 
-Your webhook secret is available in your dashboard under **Developer → Webhooks**.
+Compute the HMAC over the exact raw request body. Don't parse and re-serialize the JSON first, because whitespace or key order changes break the match. Compare with a constant-time function.
 
-<Warning>
-  Never process a webhook event without first verifying its signature. Skipping this step exposes your endpoint to spoofed events.
-</Warning>
-
-### Verification examples
+Requests also carry a `Timestamp` header (Unix seconds). It isn't part of the signature.
 
 <CodeGroup>
 
@@ -229,152 +96,105 @@ Your webhook secret is available in your dashboard under **Developer → Webhook
 const crypto = require('crypto');
 
 app.post('/webhooks/yativo', express.raw({ type: 'application/json' }), (req, res) => {
-  const secret = process.env.YATIVO_WEBHOOK_SECRET;
-  const receivedSignature = req.headers['x-yativo-signature'];
-
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(req.body) // raw Buffer — do NOT parse before this step
+  const signature = req.header('Signature') || '';
+  const expected = crypto
+    .createHmac('sha256', process.env.YATIVO_WEBHOOK_SECRET)
+    .update(req.body) // raw Buffer, not the parsed object
     .digest('hex');
 
-  if (!crypto.timingSafeEqual(
-    Buffer.from(expectedSignature),
-    Buffer.from(receivedSignature)
-  )) {
-    return res.status(401).send('Invalid signature');
-  }
+  const valid =
+    signature.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+
+  if (!valid) return res.status(401).send('Invalid signature');
 
   const event = JSON.parse(req.body);
-  // safe to process
-  res.status(200).send('OK');
+  res.sendStatus(200);
+  // process the event after responding
 });
 ```
 
 ```python Python
-import hmac
-import hashlib
-import json
+import hmac, hashlib, os
 from flask import Flask, request, abort
 
 app = Flask(__name__)
 
 @app.route('/webhooks/yativo', methods=['POST'])
 def webhook():
-    secret = os.environ['YATIVO_WEBHOOK_SECRET']
-    received_signature = request.headers.get('X-Yativo-Signature', '')
+    raw_body = request.get_data()
+    signature = request.headers.get('Signature', '')
 
-    expected_signature = hmac.new(
-        secret.encode(),
-        request.data,  # raw bytes — do NOT use request.json here
-        hashlib.sha256
+    expected = hmac.new(
+        os.environ['YATIVO_WEBHOOK_SECRET'].encode(), raw_body, hashlib.sha256
     ).hexdigest()
 
-    if not hmac.compare_digest(expected_signature, received_signature):
+    if not hmac.compare_digest(expected, signature):
         abort(401)
 
     event = request.get_json()
-    # safe to process
-    return 'OK', 200
+    return '', 200
 ```
 
 ```php PHP
 <?php
-$secret = getenv('YATIVO_WEBHOOK_SECRET');
-$receivedSignature = $_SERVER['HTTP_X_YATIVO_SIGNATURE'] ?? '';
-
 $payload = file_get_contents('php://input'); // raw body
-$expectedSignature = hash_hmac('sha256', $payload, $secret);
+$signature = $_SERVER['HTTP_SIGNATURE'] ?? '';
 
-if (!hash_equals($expectedSignature, $receivedSignature)) {
+$expected = hash_hmac('sha256', $payload, getenv('YATIVO_WEBHOOK_SECRET'));
+
+if (!hash_equals($expected, $signature)) {
     http_response_code(401);
     exit('Invalid signature');
 }
 
 $event = json_decode($payload, true);
-// safe to process
 ```
 
 ```go Go
-package main
-
-import (
-    "crypto/hmac"
-    "crypto/sha256"
-    "encoding/hex"
-    "io"
-    "net/http"
-    "os"
-)
-
 func webhookHandler(w http.ResponseWriter, r *http.Request) {
-    secret := []byte(os.Getenv("YATIVO_WEBHOOK_SECRET"))
-    receivedSig := r.Header.Get("X-Yativo-Signature")
-
     body, _ := io.ReadAll(r.Body)
 
-    mac := hmac.New(sha256.New, secret)
+    mac := hmac.New(sha256.New, []byte(os.Getenv("YATIVO_WEBHOOK_SECRET")))
     mac.Write(body)
-    expectedSig := hex.EncodeToString(mac.Sum(nil))
+    expected := hex.EncodeToString(mac.Sum(nil))
 
-    if !hmac.Equal([]byte(expectedSig), []byte(receivedSig)) {
+    if !hmac.Equal([]byte(expected), []byte(r.Header.Get("Signature"))) {
         http.Error(w, "Invalid signature", http.StatusUnauthorized)
         return
     }
 
-    // safe to process body
     w.WriteHeader(http.StatusOK)
 }
 ```
 
 ```java Java
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.MessageDigest;
-
 @PostMapping("/webhooks/yativo")
 public ResponseEntity<String> webhook(
-    @RequestHeader("X-Yativo-Signature") String receivedSignature,
+    @RequestHeader("Signature") String signature,
     @RequestBody byte[] rawBody
 ) throws Exception {
-    String secret = System.getenv("YATIVO_WEBHOOK_SECRET");
-
     Mac mac = Mac.getInstance("HmacSHA256");
-    mac.init(new SecretKeySpec(secret.getBytes(), "HmacSHA256"));
-    byte[] rawHmac = mac.doFinal(rawBody);
+    mac.init(new SecretKeySpec(System.getenv("YATIVO_WEBHOOK_SECRET").getBytes(), "HmacSHA256"));
 
     StringBuilder hex = new StringBuilder();
-    for (byte b : rawHmac) hex.append(String.format("%02x", b));
-    String expectedSignature = hex.toString();
+    for (byte b : mac.doFinal(rawBody)) hex.append(String.format("%02x", b));
 
-    // Constant-time comparison
-    if (!MessageDigest.isEqual(
-        expectedSignature.getBytes(),
-        receivedSignature.getBytes()
-    )) {
+    if (!MessageDigest.isEqual(hex.toString().getBytes(), signature.getBytes())) {
         return ResponseEntity.status(401).body("Invalid signature");
     }
-
-    // safe to process
     return ResponseEntity.ok("OK");
 }
 ```
 
 ```ruby Ruby
-require 'openssl'
-
 post '/webhooks/yativo' do
-  secret = ENV['YATIVO_WEBHOOK_SECRET']
-  received_signature = request.env['HTTP_X_YATIVO_SIGNATURE']
-
   payload = request.body.read
-  expected_signature = OpenSSL::HMAC.hexdigest('SHA256', secret, payload)
+  expected = OpenSSL::HMAC.hexdigest('SHA256', ENV['YATIVO_WEBHOOK_SECRET'], payload)
 
-  unless Rack::Utils.secure_compare(expected_signature, received_signature)
-    halt 401, 'Invalid signature'
-  end
+  halt 401, 'Invalid signature' unless Rack::Utils.secure_compare(expected, request.env['HTTP_SIGNATURE'].to_s)
 
   event = JSON.parse(payload)
-  # safe to process
   status 200
 end
 ```
@@ -383,126 +203,678 @@ end
 [HttpPost("/webhooks/yativo")]
 public async Task<IActionResult> Webhook()
 {
-    var secret = Environment.GetEnvironmentVariable("YATIVO_WEBHOOK_SECRET");
-    var receivedSignature = Request.Headers["X-Yativo-Signature"].ToString();
-
     using var reader = new StreamReader(Request.Body);
     var rawBody = await reader.ReadToEndAsync();
 
-    using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-    var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody));
-    var expectedSignature = BitConverter.ToString(hash).Replace("-", "").ToLower();
+    using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("YATIVO_WEBHOOK_SECRET")));
+    var expected = Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(rawBody))).ToLowerInvariant();
 
-    // Constant-time comparison
     if (!CryptographicOperations.FixedTimeEquals(
-        Encoding.UTF8.GetBytes(expectedSignature),
-        Encoding.UTF8.GetBytes(receivedSignature)
-    )) return Unauthorized("Invalid signature");
+        Encoding.UTF8.GetBytes(expected),
+        Encoding.UTF8.GetBytes(Request.Headers["Signature"].ToString())))
+        return Unauthorized("Invalid signature");
 
-    // safe to process
     return Ok();
 }
 ```
 
 </CodeGroup>
 
-<Warning>
-  Always use **constant-time comparison** (`crypto.timingSafeEqual`, `hmac.compare_digest`, `hash_equals`, etc.) — never a plain `===` or `==`. Regular string comparison is vulnerable to timing attacks.
-</Warning>
-
-<Note>
-  Use the **raw request body bytes** to compute the signature — not a re-serialized version of the parsed JSON. Parsing and re-stringifying can change whitespace or key order, causing signature mismatches.
-</Note>
+The signed body has no timestamp, so pair signature checks with [deduplication](#best-practices).
 
 ---
 
-## Webhook Handler Example
+## Payload envelope
 
-```javascript Node.js (Express)
-app.post('/webhooks/yativo', express.raw({ type: 'application/json' }), (req, res) => {
-  // 1. Verify signature first (see above)
-  verifySignature(req);
+Every event uses this envelope:
+
+```json
+{
+  "event.type": "deposit.updated",
+  "payload": { }
+}
+```
+
+`event.type` names the event. `payload` holds the event data. The envelope has no delivery ID or timestamp, so use fields inside `payload`, such as `id`, `event_id`, `status` and `created_at`, to deduplicate and order events.
+
+### The customer object
+
+Every payload includes `customer_id` and a `customer` object, so you know whose event it is without another API call:
+
+```json
+"customer": {
+  "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+  "customer_email": "jane@example.com",
+  "customer_name": "Jane Doe",
+  "customer_phone": "+15551234567",
+  "customer_type": "individual"
+}
+```
+
+`customer_type` is `individual` or `business`. `customer` is `null` when the event isn't about one of your customers, for example `user.updated`. Only these five fields are sent.
+
+---
+
+## Event catalog
+
+| Event | Sent when |
+|---|---|
+| `deposit.created`, `deposit.updated` | A deposit is created, or its status changes |
+| `payout.updated` | A payout changes status |
+| `customer.created`, `customer.updated` | A customer is created or updated, for example when their KYC status changes |
+| `endorsement.updated` | A customer's endorsement status changes |
+| `virtual_account.created`, `virtual_account.updated` | A virtual account is provisioned or updated |
+| `virtual_account.deposit` | Funds land in a virtual account |
+| `metadata.created`, `metadata.updated` | Metadata is attached to, or changed on, a transaction |
+| `tracking.created` | A tracking update is posted on a transaction |
+| `crypto.wallet.created` | A stablecoin deposit address is created |
+| `crypto.deposit.completed` | A stablecoin deposit lands |
+| `crypto_deposit` | Older name for a completed stablecoin deposit, still sent by some flows |
+| `wallet.deleted` | A stablecoin deposit address is deleted |
+| `virtualcard.*` | Virtual card KYC, lifecycle, funding, transactions and declines |
+| `business_spend_card.*` | Corporate card issuance, funding, transactions, disputes and status changes |
+| `user.updated` | Your account profile is updated |
+| `webhook_updated` | You create or replace your webhook |
+| `payin_method.enabled`, `payin_method.disabled` | A payin method is turned on or off for everyone |
+| `payout_method.enabled`, `payout_method.disabled` | A payout method is turned on or off for everyone |
+
+New event types are added over time. Ignore ones you don't recognize.
+
+---
+
+## Payments
+
+### `deposit.created` and `deposit.updated`
+
+```json
+{
+  "event.type": "deposit.updated",
+  "payload": {
+    "id": "5b1e6b2a-df3d-4a9a-8e93-6c9f4a2b7e10",
+    "currency": "USD",
+    "amount": 500.00,
+    "receive_amount": 495.00,
+    "deposit_id": "DEP-00A1B2C3",
+    "status": "success",
+    "transaction_id": "TXN-00123456",
+    "idempotency_key": "your-idempotency-key",
+    "created_at": "2026-09-07T14:00:00.000000Z",
+    "updated_at": "2026-09-07T14:03:12.000000Z",
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+`status` is `pending`, `processing`, `success`, `failed`, `cancelled` or `expired`.
+
+### `payout.updated`
+
+Sent whenever a payout changes status. There's no `payout.created` event. The first event you see is usually `pending` or `processing`.
+
+```json
+{
+  "event.type": "payout.updated",
+  "payload": {
+    "id": "9a3c7e2b-1d4f-4a6b-8c9d-2e3f4a5b6c7d",
+    "payout_id": "9a3c7e2b-1d4f-4a6b-8c9d-2e3f4a5b6c7d",
+    "beneficiary_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+    "currency": "USD",
+    "amount": 1000.00,
+    "status": "completed",
+    "reference": "INV-2026-0042",
+    "created_at": "2026-09-07T13:00:00.000000Z",
+    "updated_at": "2026-09-07T13:05:44.000000Z",
+    "beneficiary": {
+      "nickname": "John's account",
+      "currency": "USD",
+      "payment_data": {
+        "account_number": "0001234567",
+        "bank_name": "Example Bank",
+        "account_holder_name": "John Doe"
+      }
+    },
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+`status` is `pending`, `processing`, `completed`, `failed`, `cancelled` or `refunded`. `beneficiary` fields vary by payout rail and currency. `reference` is the payment reference you sent, or `null`.
+
+### `virtual_account.deposit`
+
+```json
+{
+  "event.type": "virtual_account.deposit",
+  "payload": {
+    "transaction_id": "TXN-00998877",
+    "currency": "USD",
+    "amount": 4996.00,
+    "amount_recevied": 5000.00,
+    "status": "success",
+    "account_number": "2343554353454",
+    "sender": {
+      "name": "John Doe",
+      "Details": {
+        "account_number": "1234567890",
+        "bank": "Sender Bank"
+      }
+    },
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+`amount` is the net amount credited. `amount_recevied` is the gross amount received, before fees.
+
+### `virtual_account.created` and `virtual_account.updated`
+
+```json
+{
+  "event.type": "virtual_account.created",
+  "payload": {
+    "account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "account_number": "2343554353454",
+    "currency": "USD",
+    "account_info": {
+      "bank_name": "Example Bank",
+      "routing_number": "021000021",
+      "account_type": "checking"
+    },
+    "created_at": "2026-09-07T11:00:00.000000Z",
+    "updated_at": "2026-09-07T11:00:00.000000Z",
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+`customer` is `null` when the account belongs to your business.
+
+### `metadata.created`, `metadata.updated` and `tracking.created`
+
+```json
+{
+  "event.type": "metadata.updated",
+  "payload": {
+    "metadata_id": 4821,
+    "transaction_id": "TXN-00123456",
+    "meta_key": "order_reference",
+    "meta_value": "ORD-9981",
+    "created_at": "2026-09-07T10:15:00.000000Z",
+    "updated_at": "2026-09-07T10:20:00.000000Z",
+    "customer": null
+  }
+}
+```
+
+```json
+{
+  "event.type": "tracking.created",
+  "payload": {
+    "tracking_status": "in_transit",
+    "transaction_type": "withdrawal",
+    "created_at": "2026-09-07T09:00:00.000000Z",
+    "transaction_details": {
+      "transaction_id": "TXN-00123456",
+      "transaction_beneficiary_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+      "transaction_amount": "1000.00",
+      "transaction_currency": "USD",
+      "transaction_status": "processing",
+      "transaction_memo": "payout"
+    },
+    "customer": null
+  }
+}
+```
+
+---
+
+## Customers
+
+### `customer.created` and `customer.updated`
+
+```json
+{
+  "event.type": "customer.created",
+  "payload": {
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "customer_name": "Jane Doe",
+    "customer_email": "jane@example.com",
+    "customer_phone": "+15551234567",
+    "customer_address": {
+      "street": "123 Main St",
+      "city": "Miami",
+      "state": "FL",
+      "postal_code": "33101",
+      "country": "US"
+    },
+    "customer_type": "individual",
+    "customer_status": "active",
+    "created_at": "2026-09-07T12:00:00.000000Z",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+### `endorsement.updated`
+
+```json
+{
+  "event.type": "endorsement.updated",
+  "payload": {
+    "endorsements": [
+      { "service": "base", "status": "approved" },
+      { "service": "sepa", "status": "pending" }
+    ],
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+`endorsements` is the customer's full current list, not only the one that changed. Compare it with your stored copy.
+
+---
+
+## Stablecoin deposits
+
+### `crypto.wallet.created` and `wallet.deleted`
+
+```json
+{
+  "event.type": "crypto.wallet.created",
+  "payload": {
+    "id": "d1e2f3a4-b5c6-4d7e-8f9a-0b1c2d3e4f5a",
+    "is_customer": true,
+    "wallet_address": "7TzXXXXXXXXXXXXX",
+    "wallet_currency": "USDC_SOL",
+    "wallet_network": "SOL",
+    "coin_name": "USDC",
+    "wallet_status": "active",
+    "created_at": "2026-09-07T08:00:00.000000Z",
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+When `is_customer` is `false`, the address belongs to your business and `customer` is `null`. `wallet.deleted` has the same payload with `wallet_status: "deleted"`. Funds sent to a deleted address can't be recovered.
+
+### `crypto.deposit.completed`
+
+```json
+{
+  "event.type": "crypto.deposit.completed",
+  "payload": {
+    "id": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+    "currency": "USDC",
+    "amount": 250.00,
+    "address": "7TzXXXXXXXXXXXXX",
+    "transaction_id": "5h3k...9QzL",
+    "transaction_hash": "5h3k...9QzL",
+    "status": "success",
+    "created_at": "2026-09-07T07:30:00.000000Z",
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+Match a deposit to its on-chain transfer with `transaction_hash`. `transaction_id` is Yativo's reference and isn't always the hash. `transaction_hash` is `null` if the hash isn't available.
+
+The older `crypto_deposit` event has the same payload plus `user_id`. Handle both names.
+
+---
+
+## Virtual cards
+
+Every `virtualcard.*` payload includes:
+
+- `event_id`: unique per event, and the same on every redelivery. Use it to deduplicate
+- `card_id`: the card ID you pass to the card endpoints
+- `customer_id` and `customer`: the cardholder
+
+Amounts are decimal USD (`4.5` means $4.50).
+
+### KYC
+
+| Event | Sent when |
+|---|---|
+| `virtualcard.user.kyc.pending` | Verification was received and is under review. Not a final result |
+| `virtualcard.user.kyc.complete` | Verification passed. You can now create a card for this customer |
+| `virtualcard.user.kyc.failed` | Verification was rejected. Resubmit after the customer fixes what `rejection_details` describes |
+
+```json
+{
+  "event.type": "virtualcard.user.kyc.failed",
+  "payload": {
+    "event_id": "6f1c2a9e-4b7d-5e8f-9a0b-1c2d3e4f5a6b",
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "kyc_status": "rejected",
+    "reason": "RETRY: UNSATISFACTORY_PHOTOS",
+    "rejection_details": [
+      {
+        "code": "UNSATISFACTORY_PHOTOS",
+        "message": "The document or its details could not be read clearly. Please upload a sharper photo."
+      }
+    ],
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+`kyc_status` is `under_review`, `approved` or `rejected`. Show `rejection_details[].message` to your customer and branch on `code`.
+
+### Card lifecycle
+
+| Event | Sent when | Effect on your USD wallet |
+|---|---|---|
+| `virtualcard.created.completed` | The card is issued and ready to use | None |
+| `virtualcard.created.failed` | Issuing failed after the request was accepted | Creation fee, top-up fee and opening balance are refunded |
+| `virtualcard.regularized` | A card recovered from an indeterminate state. `status` is its new status | None |
+| `virtualcard.expiration` | The card reached its expiry date. Includes `expired_at` | None |
+| `virtualcard.contactless.activation` | Contactless payments were turned on. Includes `activated_at` | None |
+| `virtualcard.terminated.refund` | The card was terminated and its balance returned | `amount` is credited |
+| `virtualcard.transaction.terminated.refund` | A refund was posted while terminating the card | Credited once per card across both termination events |
+| `virtualcard.deactivated` | The card was frozen after 2 failed charge attempts | None |
+
+When you terminate a card through the API, the remaining balance reaches your wallet when `virtualcard.terminated.refund` arrives, not in the terminate response.
+
+### Funding
+
+| Event | Sent when | Effect on your USD wallet |
+|---|---|---|
+| `virtualcard.topup.completed` | A top-up reached the card | None. Your wallet was debited when you requested it |
+| `virtualcard.topup.failed` | A top-up failed after it was accepted | Top-up amount and fee are refunded |
+| `virtualcard.withdrawal.completed` | A withdrawal from the card completed | None. Your wallet was credited when you requested it |
+| `virtualcard.withdrawal.failed` | A withdrawal failed after it was accepted | The wallet credit is reversed |
+
+```json
+{
+  "event.type": "virtualcard.topup.completed",
+  "payload": {
+    "event_id": "3d4e5f6a-7b8c-5d9e-0f1a-2b3c4d5e6f7a",
+    "card_id": "c8f1a3b2-9e4d-4f1a-b8c7-2d3e5f6a7b8c",
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "reference": "9f8e7d6c-1a2b-4c3d-8e9f-0a1b2c3d4e5f",
+    "status": "completed",
+    "amount": 25,
+    "currency": "USD",
+    "card_terminated": false,
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+`reference` matches the `reference` returned by your top-up or withdrawal request.
+
+### Card transactions
+
+| Event | Sent when |
+|---|---|
+| `virtualcard.transaction.authorization` | A purchase was authorized. Settlement follows |
+| `virtualcard.transaction.settlement` | An authorized purchase settled |
+| `virtualcard.transaction.debit` | A settled debit on the card |
+| `virtualcard.transaction.pre-auth.approved` | A pre-authorization hold was placed, such as a hotel or fuel deposit |
+| `virtualcard.transaction.contactless` | A tap-to-pay payment |
+| `virtualcard.transaction.credit` | A credit was posted to the card |
+| `virtualcard.transaction.refund` | A merchant refund |
+| `virtualcard.transaction.reversed` | An authorization was reversed before settlement |
+| `virtualcard.transaction.verification` | A zero-amount card check |
+| `virtualcard.transaction.crossborder` | An international purchase |
+
+```json
+{
+  "event.type": "virtualcard.transaction.settlement",
+  "payload": {
+    "event_id": "8a9b0c1d-2e3f-5a4b-9c6d-7e8f9a0b1c2d",
+    "card_id": "c8f1a3b2-9e4d-4f1a-b8c7-2d3e5f6a7b8c",
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "transaction_id": "tx_settle_c3d4e5f6a1b2",
+    "reference": "settle_ref_3456cdef",
+    "transaction_type": "settlement",
+    "status": "completed",
+    "amount": 4.5,
+    "currency": "USD",
+    "narrative": "settlement_at_amazon_com",
+    "reason": null,
+    "merchant": { "name": "amazon_com", "mcc": "5942", "country": "US" },
+    "occurred_at": "2026-05-16T15:01:33Z",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `reference` | Matches an authorization to its settlement or reversal |
+| `transaction_type` | `authorization`, `settlement`, `pre_auth_approved`, `authorization_declined`, `refund_authorization`, `refund_settled`, `reversal_settled`, `cross_border_pending`, `cross_border_settled`, `cross_border_reversal`, `contactless_pending`, `contactless_settled` or `verification` |
+| `status` | `completed`, `pending`, `declined`, `terminated` or `failed` |
+| `merchant` | Name, category code and two-letter country code. Any field may be `null` |
+
+Branch on `event.type` first, then on `transaction_type`.
+
+A cross-border purchase sends `virtualcard.transaction.crossborder` twice with the same `reference`. The first, `cross_border_pending`, includes `fee_amount`, which is debited from your USD wallet. The second, `cross_border_settled`, moves the purchase amount off the card.
+
+### Declines
+
+| Event | Sent when | Effect on your USD wallet |
+|---|---|---|
+| `virtualcard.transaction.declined` | A purchase was declined. `reason` explains why | None |
+| `virtualcard.transaction.authorization.failed` | An authorization was rejected, such as for a CVV mismatch | None |
+| `virtualcard.transaction.declined.frozen` | A charge was declined because the card is frozen | The decline fee (`fee_amount`) is debited |
+| `virtualcard.transaction.declined.terminated` | A charge was attempted on a terminated card | None |
+| `virtualcard.transaction.declined.charge` | The card broke the decline rules after repeated declines | The violation fee (`fee_amount`) is debited. Includes `violation_count` |
+| `virtualcard.transaction.issuerexpiration` | A charge was declined because the card expired | None |
+
+After 2 failed charges, the card is frozen and you receive `virtualcard.deactivated`.
+
+---
+
+## Corporate cards
+
+`business_spend_card.*` events cover [corporate cards](/yativo-fiat/sandbox-corporate-cards). `card_id` is your card ID. Events not tied to one of your customers have `"customer": null`.
+
+| Event | Sent when | Payload highlights |
+|---|---|---|
+| `business_spend_card.created` | A card is issued, through the API or by an employee | The card object: `card_id`, `issuance_type`, `status`, `masked_pan` |
+| `business_spend_card.funded`, `business_spend_card.withdrawn` | Money moves into or out of an employee's card balance or a card | `amount`. For employee balances, `card_id` is `null` and `employee_id` is set |
+| `business_spend_card.terminated` | A card is closed, including after a full-balance withdrawal | `card_id`, `reason` |
+| `business_spend_card.pin_updated` | A card's PIN changed | The PIN is never included |
+| `business_spend_card.limits_updated` | A card's spend limits changed | `limits` as submitted |
+| `business_spend_card.transaction.approved`, `.declined`, `.refunded`, `.reversed` | A card purchase or ATM authorization | `transaction_id`, `card_id`, `request_code`, `amount`, `currency`, `status` |
+| `business_spend_card.transaction.disputed` | You raised a dispute. The dispute fee has been charged | `transaction_id`, `card_id`, `amount`, `currency`, `disputed_at` |
+| `business_spend_card.status_changed` | A card was activated, suspended or replaced | `card_id`, `status`, `event_type` |
+
+```json
+{
+  "event.type": "business_spend_card.transaction.approved",
+  "payload": {
+    "transaction_id": "c234cf50-662c-4eed-8a34-27fbb1fd4294",
+    "card_id": "5e318920-0454-4a8d-bc91-d47cdb82645a",
+    "request_code": "PURCHASE",
+    "amount": 99.95,
+    "currency": "USD",
+    "status": "approved",
+    "created_at": "2026-09-16T13:56:19.000000Z",
+    "updated_at": "2026-09-16T13:56:19.000000Z",
+    "customer": null
+  }
+}
+```
+
+`transaction_id` is the ID of the record in `GET /business/spend-card/transactions`, which you use to attach notes and invoices.
+
+---
+
+## Account and platform events
+
+| Event | Sent when | Payload |
+|---|---|---|
+| `user.updated` | Your account or business profile is updated | `id`, `name`, `email`, `membership_id`, `kyc_status`, `business` |
+| `webhook_updated` | Once, right after you create or replace your webhook | The webhook object, including `secret`. Don't log it |
+| `payin_method.enabled`, `payin_method.disabled` | A payin method is turned on or off for everyone | `method_id`, `method_name`, `country`, `currency`, `active` |
+| `payout_method.enabled`, `payout_method.disabled` | A payout method is turned on or off for everyone | `method_id`, `method_name`, `country`, `currency`, `active` |
+
+Use `webhook_updated` to confirm your endpoint receives events and your signature check works.
+
+---
+
+## Respond to a webhook
+
+- Return a `2xx` status as soon as you've stored or queued the event. Do slow work afterwards.
+- Respond within **3 seconds**. Some events are sent while the API call that caused them is still running, so a slow endpoint can slow that call down.
+- Yativo doesn't read your response body. An empty `200` is enough.
+- A non-`2xx` status, a connection error or a timeout is a failed delivery. Failed deliveries are retried up to 3 times in total, with exponential backoff, then dropped. [Resend](#resend-an-event) any event you missed.
+
+```javascript Node.js
+app.post('/webhooks/yativo', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!verifySignature(req)) return res.status(401).end();
 
   const event = JSON.parse(req.body);
+  res.sendStatus(200); // acknowledge first
 
-  switch (event['event.type']) {
+  const type = event['event.type'];
+  const payload = event.payload;
+
+  switch (type) {
     case 'deposit.updated':
-      if (event.payload.status === 'success') {
-        creditCustomer(event.payload.customer_id, event.payload.receive_amount);
-      }
+      if (payload.status === 'success') await creditOrder(payload.id, payload.receive_amount);
       break;
-
     case 'payout.updated':
-      updatePayoutStatus(event.payload.payout_id, event.payload.status);
+      await updatePayout(payload.id, payload.status);
       break;
-
     case 'virtual_account.deposit':
-      notifyCustomer(event.payload.customer.customer_id, event.payload.credited_amount);
+      await notifyCustomer(payload.customer_id, payload.amount);
       break;
-
-    case 'customer.kyc.approved':
-      enableCustomerFeatures(event.payload.customer_id);
-      break;
+    default:
+      // ignore events you don't handle
   }
-
-  res.status(200).send('OK');
 });
 ```
 
-<Note>
-  Respond with a `2xx` status within **10 seconds** to acknowledge receipt. Failed deliveries are retried automatically.
-</Note>
-
 ---
 
-## Event Log
+## Delivery log
 
-Retrieve all webhook events sent to your endpoint:
+Every delivery attempt is logged:
 
 ```
-GET /business/events/all
+GET https://api.yativo.com/api/v1/business/events/all
+GET https://api.yativo.com/api/v1/business/events/show/{eventId}
 ```
 
 <ParamField query="per_page" type="number">
   Results per page.
 </ParamField>
 
-<RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/business/events/all?per_page=20' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": 981,
+      "user_id": 1024,
+      "url": "https://your-app.com/webhooks/yativo",
+      "payload": { "event.type": "deposit.updated", "payload": { "...": "..." } },
+      "status": "success",
+      "status_code": 200,
+      "response_body": "",
+      "created_at": "2026-09-07T14:03:12.000000Z"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "per_page": 15,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
 ```
-</RequestExample>
 
-### Get Single Event
+### Resend an event
 
 ```
-GET /business/events/show/{id}
+POST https://api.yativo.com/api/v1/business/events/resend/{eventId}
 ```
+
+`eventId` is the `id` from the delivery log, not an ID from inside the event's payload.
 
 ```bash
-curl -X GET 'https://api.yativo.com/api/v1/business/events/show/evt_01HX9KZMB3F7VNQP8R2WDGT4E5' \
+curl -X POST 'https://api.yativo.com/api/v1/business/events/resend/981' \
   -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: resend-981'
 ```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": { "message": "Webhook event resend has been queued" }
+}
+```
+
+- The original payload is resent, signed with your current secret, to the URL you have registered now.
+- The resend appears as a new entry in the delivery log.
+- `404 Webhook event not found` means the ID isn't in your log. `400 No webhook endpoint is configured for your account` means you have no webhook.
 
 ---
 
-## API Request Logs
+## Test in sandbox
 
-Audit all API calls made against your account:
+Send sample events to your registered URL without creating real records:
 
 ```
-GET /business/logs/all
+POST https://smtp.yativo.com/api/v1/demo/webhook/{type}
+```
+
+`type` is one of `payin`, `payout`, `virtual_account`, `virtual_account_created`, `virtual_account_updated`, `customer`, `customer_updated`, `endorsement`, `metadata_created`, `metadata_updated`, `webhook_updated`, `user`, `tracking`, `payin_method_enabled`, `payin_method_disabled`, `payout_method_enabled`, `payout_method_disabled`, `crypto_wallet`, `crypto_deposit` or `wallet_deleted`.
+
+```bash
+curl -X POST 'https://smtp.yativo.com/api/v1/demo/webhook/payin' \
+  -H 'X-Api-Key: YOUR_SANDBOX_API_KEY' \
+  -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET'
+```
+
+Sample events are signed like real ones. For example, `payin` sends `deposit.created` and then `deposit.updated`. Their `customer` may be `null`. `virtualcard.*` events can't be simulated.
+
+---
+
+## Best practices
+
+- **Verify every signature** before trusting the contents.
+- **Respond fast, process later.** Return `2xx` immediately and do the work in a background job.
+- **Deduplicate.** The same event can arrive more than once. Use `event_id` where present, otherwise the record's `id`, `transaction_id` or `deposit_id` with its `status`.
+- **Don't rely on order.** `deposit.created` can arrive after `deposit.updated`. Use `status` and timestamps.
+- **Ignore unknown events.** New types are added over time.
+- **Keep your secret safe**, and rotate it with `regenerate-secret` if it may have leaked.
+- **Use HTTPS.**
+
+---
+
+## API request logs
+
+Audit the API calls made on your account:
+
+```
+GET https://api.yativo.com/api/v1/business/logs/all
 ```
 
 <ParamField query="status" type="string">
-  Filter by HTTP status code (e.g. `200`, `400`).
+  Filter by HTTP status code, for example `200` or `400`.
 </ParamField>
 
 <ParamField query="method" type="string">
-  Filter by HTTP method (`GET`, `POST`, `PUT`, `DELETE`).
+  Filter by HTTP method: `GET`, `POST`, `PUT` or `DELETE`.
 </ParamField>
 
 <ParamField query="page" type="number">
@@ -513,10 +885,8 @@ GET /business/logs/all
   Results per page.
 </ParamField>
 
-<RequestExample>
-```bash cURL
+```bash
 curl -X GET 'https://api.yativo.com/api/v1/business/logs/all?method=POST&per_page=20' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
-</RequestExample>

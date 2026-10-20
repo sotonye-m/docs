@@ -3,11 +3,11 @@ title: "Authentication"
 description: "Authenticate server-to-server requests with an API key"
 ---
 
-<Warning>
-  **Legacy API keys (Account ID and App Secret) are deprecated.** From **15 October 2026**, tokens from `POST /auth/login` only work inside the Yativo dashboard, and requests from your servers must use an API key. See [Migrate from legacy API keys](#migrate-from-legacy-api-keys).
-</Warning>
+Your servers authenticate with an **API key**: a key and secret pair sent as `X-Api-Key` and `X-Api-Secret` headers on every request. There's no login call, no token to refresh, and keys don't expire.
 
-Your servers authenticate with an **API key**: a key and secret pair sent as headers on every request. There's no login call, no token to refresh, and keys don't expire.
+<Warning>
+  **Login tokens have been discontinued.** The legacy Account ID and App Secret, `POST /auth/login`, `GET /auth/refresh-token` and `Authorization: Bearer` tokens no longer work for API requests. A request from your servers with a bearer token returns `403`. Use an API key. See [Move from login tokens to API keys](#move-from-login-tokens-to-api-keys).
+</Warning>
 
 | You are building | Use |
 |---|---|
@@ -102,12 +102,12 @@ $response = Http::baseUrl('https://api.yativo.com/api/v1')
 ```
 </CodeGroup>
 
-Requests made with a key act on your business account. Some endpoints can't be called with a key and return `403 This endpoint cannot be used with an API key.` Do these in the dashboard instead:
+Requests made with a key act on your business account. Some endpoints can't be called with a key and return `403 This endpoint cannot be used with an API key. Sign in to the Yativo dashboard instead.` Do these in the dashboard instead:
 
-- Passkeys, two-factor authentication, PIN changes and generating an app secret
+- Passkeys, two-factor authentication and PIN changes
 - Deleting the account
 
-From **15 October 2026**, API keys and IP whitelists can also only be managed in the dashboard. Requests from anywhere else, including with an API key, return `403 IP whitelists and API keys can only be managed from the Yativo dashboard.`
+API keys and IP whitelists can only be managed in the dashboard. Requests from anywhere else, including with an API key, return `403 IP whitelists and API keys can only be managed from the Yativo dashboard.`
 
 ### Check your setup
 
@@ -121,18 +121,18 @@ curl 'https://api.yativo.com/api/v1/ip-whitelist/check' \
 
 ---
 
-## Migrate from legacy API keys
+## Move from login tokens to API keys
 
-Request and response bodies don't change. Only the authentication headers do.
+If your integration still calls `POST /auth/login`, it no longer works. Request and response bodies don't change. Only the authentication headers do.
 
-| | Legacy API keys (deprecated) | API keys |
+| | Login tokens (discontinued) | API keys |
 |---|---|---|
 | Authenticate | `POST /auth/login`, then `Authorization: Bearer <token>` | `X-Api-Key` + `X-Api-Secret` on every request |
-| Token refresh | Required | Not needed |
+| Token refresh | `GET /auth/refresh-token` | Not needed |
 | Expiry | Tokens expire | Never. Works until revoked |
 | Revoke access | Generate a new App Secret | Revoke one key |
 | Allowed IPs | Any | Only the IPs on the key |
-| Works from servers after 15 Oct 2026 | No | Yes |
+| Works for API requests | No | Yes |
 
 <Steps>
   <Step title="Find your server IPs">
@@ -142,10 +142,10 @@ Request and response bodies don't change. Only the authentication headers do.
     Create one API key per system with its allowed IPs, so you can revoke one without affecting the others.
   </Step>
   <Step title="Update your client">
-    Remove the `/auth/login` call, token caching and refresh, and the `Authorization` header. Add `X-Api-Key` and `X-Api-Secret` to every request.
+    Remove the `/auth/login` call, token caching and refresh, and the `Authorization` header. Add `X-Api-Key` and `X-Api-Secret` to every request. If you send both, the bearer token is ignored.
   </Step>
   <Step title="Test and go live">
-    Test in sandbox, run `GET /ip-whitelist/check` from each production server, then deploy before 14 October 2026. IP whitelists are enforced from midnight that day.
+    Test in sandbox, run `GET /ip-whitelist/check` from each production server, then deploy. IP whitelists have been enforced since 14 October 2026, so a key without your server's IP is refused.
   </Step>
   <Step title="Remove the old secret">
     Delete the legacy Account ID and App Secret from your configuration.
@@ -156,13 +156,18 @@ Request and response bodies don't change. Only the authentication headers do.
 
 ## Idempotency
 
-All `POST`, `PUT`, and `PATCH` requests require an `Idempotency-Key` header. This ensures safe retries without risk of duplicate operations.
+Send an `Idempotency-Key` header on every `POST`, `PUT`, `PATCH` and `DELETE` request. It makes retries safe: a repeated request returns the original response and doesn't run again.
 
 ```
 Idempotency-Key: <unique-string-per-request>
 ```
 
-Use a UUID or any unique identifier you generate per request. On retry, Yativo returns the original response without re-processing.
+Use a UUID or another value you generate once per operation, and reuse it only when retrying that operation.
+
+- Yativo keeps the original response for **60 minutes**. A retry with the same key and body in that time gets the same response, including errors below `500`. A `5xx` response isn't kept, so you can retry it with the same key.
+- Reusing a key with a different body returns `409` with `Idempotency key reuse detected with a different request payload.`
+- Sending a retry while the first request is still running returns `409` with `A matching request is already being processed. Please wait a moment and refresh.`
+- If you leave the header out, Yativo treats an identical request to the same endpoint within 60 minutes as a retry, and returns the first response. To send two identical operations on purpose, such as two equal payouts, give each its own key.
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
@@ -181,9 +186,12 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
 |---|---|---|
 | 401 | `Both X-Api-Key and X-Api-Secret headers are required.` | Send both headers. |
 | 401 | `Invalid or revoked API credentials.` | Check the key and secret belong to the same key and environment, or create a new key. |
+| 403 | `This API key has no whitelisted IP addresses. Add at least one allowed IP before using it.` | Add your server's IPs to the key in the dashboard. |
 | 403 | `This IP address is not allowed to use this API key.` | Add your server's IP to the key. See [IP whitelisting](/yativo-fiat/ip-allowlist). |
-| 403 | `Bearer tokens are only accepted from the Yativo dashboard. ...` | Use an API key instead of a login token. |
+| 403 | `Bearer tokens are only accepted from the Yativo dashboard. ...` | Login tokens are discontinued. Send `X-Api-Key` and `X-Api-Secret` instead. |
 | 403 | `This endpoint cannot be used with an API key. ...` | Make the change in the dashboard. |
+| 403 | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | Manage keys and IPs in **Developers → API Keys**. |
+| 409 | `Idempotency key reuse detected with a different request payload.` | Use a new `Idempotency-Key` for a new operation. |
 
 ---
 

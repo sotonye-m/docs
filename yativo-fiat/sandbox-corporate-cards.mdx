@@ -48,7 +48,7 @@ The sandbox dashboard has the same Corporate Card screens as production. Open **
 
 <Steps>
   <Step title="Check your USDC balance">
-    Provision the customer's funding address once with `POST /corporate-card/wallet`. Calling it again returns the same address.
+    Provision the customer's funding address once with `POST /corporate-card/wallet`. Calling it again returns the same address. You can call it at most 3 times a minute per customer. See [wallet address limits](/yativo-fiat/deposits#wallet-address-limits).
 
     ```bash
     curl -X POST "$BASE/corporate-card/wallet" \
@@ -86,7 +86,7 @@ The sandbox dashboard has the same Corporate Card screens as production. Open **
     The three balances are in cents: `350000` is 3,500.00 USD. Spend only from `usdc_available_balance`.
 
     <Warning>
-      Never send real USDC to a sandbox funding address. If your sandbox USDC balance is empty, contact Yativo support.
+      Never send real USDC to a sandbox funding address. If your sandbox USDC balance is empty, [swap from your USD balance](/yativo-fiat/swap) or contact Yativo support.
     </Warning>
   </Step>
 
@@ -231,7 +231,18 @@ Raising a dispute charges the `dispute` fee. A second dispute on the same transa
 
 ## Reserve
 
-While Business Spend Cards are enabled, a minimum amount must stay in your USDC balance. The default is 2,000 USD. Card funding, payouts, transfers and swaps out of the USDC balance stop at the reserve. Fees can still use it. A debit that would go below it returns an error that states the reserve and how much is available to spend.
+While Business Spend Cards are enabled, a minimum amount must stay in your USDC balance. The default is 2,000 USD. Card funding stops at the reserve. Fees can still use it. A debit that would go below it returns an error that states the reserve and how much is available to spend.
+
+---
+
+## USDC balance
+
+Your USDC balance is only for corporate cards. Card funding and corporate card fees are the only debits from it. Payouts, transfers between Yativo accounts and swaps out of USDC fail with `Invalid wallet selected.`
+
+You can add to it in two ways:
+
+- Deposit USDC to the funding address from `GET /corporate-card/wallet`
+- Swap from your USD wallet with [`POST /wallet/swap`](/yativo-fiat/swap). USD is the only currency you can swap into USDC
 
 ---
 
@@ -270,7 +281,7 @@ Errors use the standard envelope:
 | Status | Common sandbox cause |
 |---|---|
 | `402` | Your USDC balance can't cover a fee, or a debit would go below the reserve |
-| `403` | Business Spend Cards aren't enabled on your sandbox account, the customer has no approved `faster_payments` endorsement, the customer hasn't submitted full KYC, the customer isn't a business, or the employee is suspended or terminated |
+| `403` | Business Spend Cards aren't enabled on your sandbox account, the customer has no approved `faster_payments` endorsement, the customer hasn't submitted full KYC, the customer isn't a business, the employee is suspended or terminated, or you requested a funding address more than 3 times in a minute |
 | `404` | A `customer_id`, `employee_id` or `card_id` isn't yours, or the employee has no card yet when funding |
 | `409` | The transaction has already been disputed |
 | `422` | Validation error, an unknown `state_id`, a rejected upload, or a withdrawal larger than the available balance |

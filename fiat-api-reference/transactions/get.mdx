@@ -53,10 +53,12 @@ curl -X GET 'https://api.yativo.com/api/v1/business/transaction/show/14' \
 
 ```json Not Found
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 404,
-  "message": "Transaction not found",
-  "data": null
+  "message": "Request failed.",
+  "data": {
+    "error": "Transaction not found"
+  }
 }
 ```
 </ResponseExample>

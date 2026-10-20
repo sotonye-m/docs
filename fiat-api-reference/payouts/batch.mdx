@@ -81,8 +81,9 @@ const response = await fetch('https://api.yativo.com/api/v1/payout/batch', {
 
 ```json Partial failure
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 400,
+  "message": "Request failed.",
   "data": {
     "errors": {
       "1": { "error": "Beneficiary not found" }

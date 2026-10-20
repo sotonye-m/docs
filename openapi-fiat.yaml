@@ -13,22 +13,24 @@ info:
 
     **Authentication**
     Send `X-Api-Key` and `X-Api-Secret` on every request. Create keys in the dashboard under
-    **Developers → API Keys**. Each key only works from the server IPs listed on it (enforced from
-    midnight on 14 October 2026). Keys don't expire and there's no login call or token refresh.
+    **Developers → API Keys**. Each key only works from the server IPs listed on it (enforced since
+    14 October 2026). Keys don't expire and there's no login call or token refresh.
 
-    `POST /auth/login` with an Account ID and App Secret is deprecated. From 15 October 2026 its
-    tokens only work inside the Yativo dashboard.
+    Login tokens (`POST /auth/login` with an Account ID and App Secret, and `Authorization: Bearer`)
+    have been discontinued and don't work for API requests.
 
-    Endpoints that change how a person signs in (passkeys, two-factor authentication, PIN, app secret)
+    Endpoints that change how a person signs in (passkeys, two-factor authentication, PIN)
     or delete the account can't be called with an API key. Use the dashboard for those.
-    From 15 October 2026, API keys and IP whitelists can also only be managed in the dashboard.
+    API keys and IP whitelists can only be managed in the dashboard.
 
     **Rate limits**
-    20 requests per second per business account. Enterprise plans have custom limits.
+    Per business account: 20 writes (`POST`, `PUT`, `PATCH`, `DELETE`) and 50 reads (`GET`) a second.
+    Some plans set their own limit. Enterprise plans have no general limit.
 
     **Idempotency**
-    All `POST` and `PUT` requests require an `Idempotency-Key` header — a unique string per request.
-    On retry Yativo returns the original response without re-processing.
+    Send an `Idempotency-Key` header on every `POST`, `PUT`, `PATCH` and `DELETE` request. A retry with
+    the same key and body within 60 minutes returns the original response without running again.
+    Reusing a key with a different body returns `409`.
 
     **KYC endpoints** are hosted on a separate platform at `https://kyc.yativo.com`. They are
     documented here for completeness but use that base URL, not the main API base.
@@ -59,11 +61,7 @@ components:
       in: header
       name: X-Api-Secret
       description: Your API secret (`yativo_sk_...`), shown once when the key is created.
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Deprecated. Token from POST /auth/login. From 15 October 2026 only accepted from the Yativo dashboard.
+
 
   parameters:
     IdempotencyKey:
@@ -75,6 +73,97 @@ components:
       description: A unique string per request to ensure idempotent processing.
 
   schemas:
+    WalletSwapRequest:
+      type: object
+      required: [from_currency, to_currency, amount]
+      properties:
+        from_currency:
+          type: string
+          description: Currency of the wallet to debit.
+          example: USD
+        to_currency:
+          type: string
+          description: Currency of the wallet to credit. Must differ from `from_currency`.
+          example: USDC
+        amount:
+          type: number
+          description: Amount to swap in `from_currency`, including the fee. Must be greater than 0.
+          example: 1000
+        idempotency_key:
+          type: string
+          maxLength: 100
+          description: "`POST /wallet/swap` only. Alternative to the `Idempotency-Key` header."
+
+    WalletSwapPair:
+      type: object
+      properties:
+        from_currency:
+          type: string
+          example: USD
+        to_currency:
+          type: string
+          example: USDC
+        rate:
+          type: number
+          description: Units of `to_currency` per unit of `from_currency`, applied after the fee is deducted.
+          example: 1
+        fixed_fee:
+          type: number
+          description: Flat fee in `from_currency`.
+          example: 0
+        percent_fee:
+          type: number
+          description: Percentage of the amount, charged in `from_currency`.
+          example: 0.5
+        min_fee:
+          type: number
+          nullable: true
+          example: 1
+        max_fee:
+          type: number
+          nullable: true
+          example: null
+        min_amount:
+          type: number
+          nullable: true
+          example: 10
+        max_amount:
+          type: number
+          nullable: true
+          example: 50000
+
+    WalletSwap:
+      type: object
+      properties:
+        reference:
+          type: string
+          example: 9b1f0c52-3a8e-4f4e-b2a1-6f0e5d7c8a91
+        from_currency:
+          type: string
+          example: USD
+        to_currency:
+          type: string
+          example: USDC
+        from_amount:
+          type: number
+          example: 1000
+        fee:
+          type: number
+          example: 5
+        rate:
+          type: number
+          example: 1
+        to_amount:
+          type: number
+          example: 995
+        status:
+          type: string
+          example: completed
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-10-20T10:15:00+00:00'
+
     FeeLine:
       type: object
       properties:
@@ -262,37 +351,77 @@ components:
         message:
           type: string
 
+    ErrorDetails:
+      type: object
+      description: Included on every failed response, with the same shape for every endpoint.
+      properties:
+        code:
+          type: string
+          enum: [bad_request, unauthenticated, payment_required, forbidden, not_found, method_not_allowed, conflict, validation_error, rate_limited, server_error, not_implemented, upstream_error, service_unavailable, upstream_timeout]
+          example: validation_error
+        message:
+          type: string
+          example: The amount field is required.
+        http_status:
+          type: integer
+          example: 422
+        fields:
+          type: object
+          description: Messages per field. When the error isn't about a field, the message is under `error`.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        retryable:
+          type: boolean
+          description: "`true` for 409, 429, 500, 502, 503 and 504."
+          example: false
+        retry_after:
+          type: integer
+          nullable: true
+          description: Seconds to wait before retrying, from the `Retry-After` header.
+
     ErrorResponse:
       type: object
       properties:
         status:
           type: string
-          example: error
+          example: failed
         status_code:
           type: integer
         message:
           type: string
+          example: Request failed.
         data:
+          type: object
           nullable: true
+          properties:
+            error:
+              type: string
+        error_details:
+          $ref: '#/components/schemas/ErrorDetails'
 
     ValidationError:
       type: object
       properties:
         status:
           type: string
-          example: error
+          example: failed
         status_code:
           type: integer
           example: 422
         message:
           type: string
-          example: Validation failed
-        errors:
+          example: Request failed.
+        data:
           type: object
+          description: The failing fields and their messages.
           additionalProperties:
             type: array
             items:
               type: string
+        error_details:
+          $ref: '#/components/schemas/ErrorDetails'
 
     Pagination:
       type: object
@@ -313,30 +442,6 @@ components:
           nullable: true
 
     # ── Auth ──────────────────────────────────────────────────────────────────
-    TokenResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: success
-        status_code:
-          type: integer
-          example: 200
-        message:
-          type: string
-          example: Authentication successful
-        data:
-          type: object
-          properties:
-            access_token:
-              type: string
-            token_type:
-              type: string
-              example: bearer
-            expires_in:
-              type: integer
-              example: 600
-
     # ── Customer ──────────────────────────────────────────────────────────────
     Customer:
       type: object
@@ -410,7 +515,7 @@ components:
           description: ISO 3166-1 alpha-2
         proof_of_address_file:
           type: string
-          description: Hosted URL or base64. PDF/JPG/JPEG/PNG/HEIC/TIF, max 5 MB.
+          description: Hosted URL, base64 data URI or multipart file. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB.
 
     IdentifyingInformationItem:
       type: object
@@ -434,6 +539,57 @@ components:
           type: string
         image_back_file:
           type: string
+
+    KybAddress:
+      type: object
+      required: [street_line_1, city, state, postal_code, country, proof_of_address_file]
+      properties:
+        street_line_1:
+          type: string
+          maxLength: 255
+        street_line_2:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          description: Subdivision code, e.g. FL.
+        postal_code:
+          type: string
+          description: Must match the country's format.
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2.
+        proof_of_address_file:
+          type: string
+          description: Hosted URL, base64 data URI or multipart file.
+
+    KycValidationError:
+      type: object
+      description: Validation errors from the KYC platform.
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Validation error.
+        validation_errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        field_labels:
+          type: object
+          description: A readable name for each failing field.
+          additionalProperties:
+            type: string
+        field_hints:
+          type: object
+          description: Advice for fixing a field, where available.
 
     UploadedDocumentItem:
       type: object
@@ -653,86 +809,6 @@ components:
           format: date-time
 
 paths:
-
-  # ============================================================
-  # AUTHENTICATION
-  # ============================================================
-
-  /auth/login:
-    post:
-      tags: [Authentication]
-      summary: Generate Bearer Token (deprecated)
-      deprecated: true
-      description: |
-        **Deprecated.** Use an API key (`X-Api-Key` + `X-Api-Secret`) instead.
-        From 15 October 2026, tokens from this endpoint only work inside the Yativo dashboard.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [account_id, app_secret]
-              properties:
-                account_id:
-                  type: string
-                  description: Your Yativo Account ID from Settings → Account.
-                  example: acct_01HXAB3F7VNQP8R2WDGT4E5
-                app_secret:
-                  type: string
-                  description: Your App Secret from Developer → API Key. Keep confidential.
-                  example: yat_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789
-      responses:
-        '200':
-          description: Authentication successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenResponse'
-        '401':
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /auth/refresh-token:
-    get:
-      tags: [Authentication]
-      summary: Refresh Token (deprecated)
-      deprecated: true
-      description: "**Deprecated.** Not needed with API keys, which don't expire."
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Token refreshed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  status_code:
-                    type: integer
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      access_token:
-                        type: string
-                      expires_in:
-                        type: integer
-                        example: 600
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /auth/occupation-codes:
     get:
@@ -1201,7 +1277,6 @@ paths:
                 - expected_monthly_payments_usd
                 - source_of_funds
                 - account_purpose
-                - uploaded_documents
               properties:
                 customer_id:
                   type: string
@@ -1229,7 +1304,7 @@ paths:
                 birth_date:
                   type: string
                   format: date
-                  description: Must be before today.
+                  description: The customer must be at least 18.
                 nationality:
                   type: string
                   description: ISO 3166-1 alpha-2 (e.g. US, NG, BR).
@@ -1240,18 +1315,20 @@ paths:
                   enum: [male, female]
                 taxId:
                   type: string
-                  maxLength: 100
+                  maxLength: 255
+                  pattern: '^[A-Za-z0-9]+$'
+                  description: Letters and digits only.
                 selfie_image:
                   type: string
-                  description: Hosted URL or base64. PDF/JPG/JPEG/PNG/HEIC/TIF, max 5 MB.
+                  description: Hosted URL, base64 data URI or multipart file. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB.
                 bvn:
                   type: string
-                  description: Required when nationality is NG. Exactly 11 digits.
+                  description: Required when nationality or residential_address.country is NG. Exactly 11 digits.
                   minLength: 11
                   maxLength: 11
                 nin:
                   type: string
-                  description: Required when nationality is NG. Exactly 11 digits.
+                  description: Required when nationality or residential_address.country is NG. Exactly 11 digits.
                   minLength: 11
                   maxLength: 11
                 residential_address:
@@ -1275,7 +1352,6 @@ paths:
                   type: string
                   enum:
                     - salary
-                    - business_income
                     - company_funds
                     - savings
                     - investments_loans
@@ -1291,7 +1367,6 @@ paths:
                   type: string
                   enum:
                     - receive_salary
-                    - business_transactions
                     - purchase_goods_and_services
                     - personal_or_living_expenses
                     - payments_to_friends_or_family_abroad
@@ -1308,14 +1383,30 @@ paths:
                 acting_as_intermediary:
                   type: boolean
                   default: false
+                annual_salary:
+                  type: string
+                  maxLength: 20
+                current_employer:
+                  type: string
+                  maxLength: 512
+                immigration_status:
+                  type: string
+                  enum: [Permanent U.S. Resident, Non-Permanent U.S. Resident, Non-Resident of U.S.]
+                usd_virtual_account:
+                  type: boolean
+                eur_virtual_account:
+                  type: boolean
+                gbp_virtual_account:
+                  type: boolean
+                native_endorsement:
+                  type: boolean
                 uploaded_documents:
                   type: array
-                  minItems: 1
                   items:
                     $ref: '#/components/schemas/UploadedDocumentItem'
       responses:
-        '200':
-          description: KYC submission received
+        '201':
+          description: KYC submitted. Verification runs afterwards.
           content:
             application/json:
               schema:
@@ -1323,41 +1414,38 @@ paths:
                 properties:
                   success:
                     type: boolean
+                    example: true
                   message:
                     type: string
+                    example: KYC submitted successfully.
                   data:
                     type: object
+                    description: The saved submission.
                     properties:
-                      submission:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                          type:
-                            type: string
-                          status:
-                            type: string
-                          customer_id:
-                            type: string
-                          first_name:
-                            type: string
-                          last_name:
-                            type: string
-                          email:
-                            type: string
-                          endorsements:
-                            type: array
-                            items:
-                              type: object
-                          created_at:
-                            type: string
-                            format: date-time
+                      customer_id:
+                        type: string
+                      type:
+                        type: string
+                        example: individual
+                      status:
+                        type: string
+                        example: submitted
+                      submitted_at:
+                        type: string
+                        format: date-time
+                  warnings:
+                    type: object
+                    description: Fields verification is likely to reject, such as values not on the lookup lists. Only present when there are warnings.
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
         '422':
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidationError'
+                $ref: '#/components/schemas/KycValidationError'
 
   /business-kyc/submit:
     post:
@@ -1367,7 +1455,11 @@ paths:
         **Base URL for this endpoint: `https://kyc.yativo.com/api`**
 
         Submit KYB data for a business customer. The customer must already exist with
-        `customer_type: "business"`. Requires an `Idempotency-Key` header.
+        `customer_type: "business"`, or the request returns `404`. A successful response means the data
+        was accepted. Verification runs afterwards.
+
+        Associated persons below `ownership_threshold` (default 25) are dropped. At least one person must
+        meet it, and the combined ownership of persons with `has_ownership: true` can't exceed 100.
       servers:
         - url: https://kyc.yativo.com/api
           description: KYC Platform
@@ -1388,17 +1480,21 @@ paths:
                 - business_type
                 - registration_number
                 - incorporation_date
+                - primary_website
                 - registered_address
                 - physical_address
                 - associated_persons
                 - account_purpose
                 - source_of_funds
+                - expected_monthly_payments_usd
                 - high_risk_activities
+                - pep_status
+                - third_party_msb_payments
                 - documents
+                - extra_documents
               properties:
                 customer_id:
                   type: string
-                  format: uuid
                 business_legal_name:
                   type: string
                   maxLength: 255
@@ -1407,7 +1503,8 @@ paths:
                   maxLength: 255
                 business_description:
                   type: string
-                  maxLength: 1000
+                  minLength: 140
+                  maxLength: 5000
                 email:
                   type: string
                   format: email
@@ -1420,16 +1517,21 @@ paths:
                 incorporation_date:
                   type: string
                   format: date
+                  description: Before today.
+                incorporation_country:
+                  type: string
+                  description: ISO 3166-1 alpha-2.
                 tax_id:
                   type: string
-                  maxLength: 100
+                  maxLength: 255
+                  pattern: '^[A-Za-z0-9]+$'
+                  description: Required unless identifying_information is sent. Letters and digits only.
                 phone_calling_code:
                   type: string
                   pattern: '^\+[1-9]\d{0,3}$'
                 phone_number:
                   type: string
-                  minLength: 7
-                  maxLength: 15
+                  pattern: '^\d{7,15}$'
                 business_industry:
                   type: string
                 primary_website:
@@ -1440,44 +1542,10 @@ paths:
                 statement_descriptor:
                   type: string
                   maxLength: 22
-                has_material_intermediary_ownership:
-                  type: boolean
                 registered_address:
-                  type: object
-                  required: [street_line_1, city, state, postal_code, country]
-                  properties:
-                    street_line_1:
-                      type: string
-                    street_line_2:
-                      type: string
-                    city:
-                      type: string
-                    state:
-                      type: string
-                    postal_code:
-                      type: string
-                    country:
-                      type: string
-                    proof_of_address_file:
-                      type: string
+                  $ref: '#/components/schemas/KybAddress'
                 physical_address:
-                  type: object
-                  required: [street_line_1, city, state, postal_code, country]
-                  properties:
-                    street_line_1:
-                      type: string
-                    street_line_2:
-                      type: string
-                    city:
-                      type: string
-                    state:
-                      type: string
-                    postal_code:
-                      type: string
-                    country:
-                      type: string
-                    proof_of_address_file:
-                      type: string
+                  $ref: '#/components/schemas/KybAddress'
                 associated_persons:
                   type: array
                   minItems: 1
@@ -1487,11 +1555,14 @@ paths:
                     properties:
                       first_name:
                         type: string
+                        maxLength: 100
                       last_name:
                         type: string
+                        maxLength: 100
                       birth_date:
                         type: string
                         format: date
+                        description: The person must be at least 18.
                       nationality:
                         type: string
                       email:
@@ -1499,22 +1570,48 @@ paths:
                         format: email
                       phone:
                         type: string
+                        pattern: '^\d{7,15}$'
                       title:
                         type: string
                       ownership_percentage:
                         type: number
                         minimum: 0
                         maximum: 100
+                      tax_id:
+                        type: string
+                        pattern: '^[A-Za-z0-9]+$'
+                      annual_salary:
+                        type: string
+                        maxLength: 20
                       relationship_established_at:
                         type: string
                         format: date
                       residential_address:
-                        type: object
+                        $ref: '#/components/schemas/KybAddress'
                       identifying_information:
                         type: array
                         minItems: 1
+                        description: At least one entry that isn't a tax ID.
                         items:
-                          $ref: '#/components/schemas/IdentifyingInformationItem'
+                          type: object
+                          required: [type, number, image_front]
+                          properties:
+                            type:
+                              type: string
+                              example: passport
+                            number:
+                              type: string
+                            issuing_country:
+                              type: string
+                            expiration:
+                              type: string
+                              format: date
+                            image_front:
+                              type: string
+                              description: File. Not required for tax_id.
+                            image_back:
+                              type: string
+                              description: File. Required except for passport and tax_id.
                       has_ownership:
                         type: boolean
                       has_control:
@@ -1525,57 +1622,28 @@ paths:
                         type: boolean
                 account_purpose:
                   type: string
-                  enum:
-                    - business_transactions
-                    - ecommerce_retail_payments
-                    - operating_a_company
-                    - investment_purposes
-                    - charitable_donations
-                    - receive_salary
-                    - receive_payment_for_freelancing
-                    - purchase_goods_and_services
-                    - personal_or_living_expenses
-                    - payments_to_friends_or_family_abroad
-                    - protect_wealth
-                    - other
+                  enum: [charitable_donations, ecommerce_retail_payments, investment_purposes, other, payments_to_friends_or_family_abroad, payroll, personal_or_living_expenses, protect_wealth, purchase_goods_and_services, receive_payments_for_goods_and_services, tax_optimization, third_party_money_transmission, treasury_management]
                 account_purpose_other:
                   type: string
+                  description: Required when account_purpose is other.
                 source_of_funds:
                   type: string
-                  enum:
-                    - business_income
-                    - company_funds
-                    - salary
-                    - savings
-                    - investments_loans
-                    - inheritance
-                    - gifts
-                    - government_benefits
-                    - pension_retirement
-                    - sale_of_assets_real_estate
-                    - ecommerce_reseller
-                    - gambling_proceeds
-                    - someone_elses_funds
+                  enum: [BusinessLoans, Grants, InterCompanyFunds, InvestmentProceeds, LegalSettlement, OwnersCapital, PensionRetirement, SaleOfAssets, SalesOfGoodsAndServices, ThirdPartyFunds, TreasuryReserves]
+                expected_monthly_payments_usd:
+                  type: integer
+                  minimum: 1
                 high_risk_activities:
                   type: array
                   items:
                     type: string
-                    enum:
-                      - adult_entertainment
-                      - gambling
-                      - hold_client_funds
-                      - investment_services
-                      - lending_banking
-                      - marijuana_or_related_services
-                      - money_services
-                      - operate_foreign_exchange_virtual_currencies_brokerage_otc
-                      - pharmaceuticals
-                      - precious_metals_precious_stones_jewelry
-                      - safe_deposit_box_rentals
-                      - weapons_firearms_and_explosives
-                      - none_of_the_above
+                    enum: [adult_entertainment, gambling, hold_client_funds, investment_services, lending_banking, marijuana_or_related_services, money_services, nicotine_tobacco_or_related_services, operate_foreign_exchange_virtual_currencies_brokerage_otc, pharmaceuticals, precious_metals_precious_stones_jewelry, safe_deposit_box_rentals, third_party_payment_processing, weapons_firearms_and_explosives, none_of_the_above]
                 high_risk_activities_explanation:
                   type: string
+                  maxLength: 5000
+                pep_status:
+                  type: boolean
+                third_party_msb_payments:
+                  type: boolean
                 conducts_money_services:
                   type: boolean
                 conducts_money_services_description:
@@ -1584,15 +1652,16 @@ paths:
                   type: string
                 estimated_annual_revenue_usd:
                   type: string
-                expected_monthly_payments_usd:
-                  type: number
                 operates_in_prohibited_countries:
                   type: string
                   enum: ['yes', 'no']
                 ownership_threshold:
                   type: integer
                   minimum: 5
-                  maximum: 25
+                  maximum: 100
+                  default: 25
+                has_material_intermediary_ownership:
+                  type: boolean
                 regulated_activity:
                   type: object
                   properties:
@@ -1609,22 +1678,42 @@ paths:
                   minItems: 1
                   items:
                     type: object
-                    required: [purpose, description]
+                    required: [purpose, description, file]
                     properties:
                       purpose:
                         type: string
-                        enum: [business_registration, tax_documents, compliance_documents, financial_statements]
+                        enum: [business_registration, proof_of_address, tax_documents, compliance_documents, financial_statements, certificate_of_good_standing, portfolio_statement, board_minutes]
                       description:
                         type: string
                       file:
                         type: string
-                identifying_information:
+                extra_documents:
                   type: array
+                  description: Must include shareholding_structure, and board_resolution when a signer isn't a director.
                   items:
                     type: object
+                    properties:
+                      type:
+                        type: string
+                        example: shareholding_structure
+                      file:
+                        type: string
+                identifying_information:
+                  type: array
+                  description: Business-level documents. image_front is required when type is tax_id.
+                  items:
+                    type: object
+                usd_virtual_account:
+                  type: boolean
+                eur_virtual_account:
+                  type: boolean
+                gbp_virtual_account:
+                  type: boolean
+                native_endorsement:
+                  type: boolean
       responses:
         '200':
-          description: KYB submission received
+          description: KYB data accepted. Verification runs afterwards.
           content:
             application/json:
               schema:
@@ -1632,28 +1721,20 @@ paths:
                 properties:
                   success:
                     type: boolean
+                    example: true
                   message:
                     type: string
+                    example: All data submitted successfully.
                   business_data:
                     type: object
-                    properties:
-                      customer_id:
-                        type: string
-                      type:
-                        type: string
-                      business_legal_name:
-                        type: string
-                      status:
-                        type: string
-                      created_at:
-                        type: string
-                        format: date-time
+        '404':
+          description: Business with the provided Customer_ID not found.
         '422':
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidationError'
+                $ref: '#/components/schemas/KycValidationError'
 
   /kyc/regenerate/{customerId}/{service}:
     get:
@@ -2347,6 +2428,18 @@ paths:
                   enum: [send, receive]
                   default: send
                   description: Ignored when quote_id is provided. Fees are added on top in both modes.
+                reference:
+                  type: string
+                  maxLength: 250
+                  description: Payment reference passed to the recipient's bank. Some payout rails shorten it or remove unsupported characters.
+                invoice:
+                  type: string
+                  format: binary
+                  description: Supporting invoice (PDF, PNG or JPEG, up to 15 MB). Send as multipart/form-data.
+                invoice_url:
+                  type: string
+                  format: uri
+                  description: Public http(s) link to the supporting invoice, as an alternative to invoice.
       responses:
         '201':
           description: Payout initiated
@@ -4029,7 +4122,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [debit_wallet, amount, beneficiary_details_id]
+              required: [debit_wallet, amount, beneficiary_details_id, customer_id]
               properties:
                 debit_wallet:
                   type: string
@@ -4042,9 +4135,29 @@ paths:
                 beneficiary_details_id:
                   type: integer
                   description: Saved beneficiary payment method ID.
+                customer_id:
+                  type: string
+                  description: The customer the payout is for. If the beneficiary belongs to a customer, it must be that customer.
+                  example: da44a3e6-eb5d-429f-8d17-357aa5a6cdf2
                 beneficiary_id:
                   type: string
-                  description: Optional beneficiary UUID for tracking.
+                  description: Optional. The beneficiary that owns the payment method.
+                quote_id:
+                  type: string
+                  format: uuid
+                  description: A payout quote from POST /exchange-rate. Supplies the amount.
+                reference:
+                  type: string
+                  maxLength: 250
+                  description: Payment reference passed to the recipient's bank. Some payout rails shorten it or remove unsupported characters.
+                invoice:
+                  type: string
+                  format: binary
+                  description: Supporting invoice (PDF, PNG or JPEG, up to 15 MB). Send as multipart/form-data.
+                invoice_url:
+                  type: string
+                  format: uri
+                  description: Public http(s) link to the supporting invoice, as an alternative to invoice.
       responses:
         '200':
           description: Payout initiated
@@ -4071,7 +4184,7 @@ paths:
                       created_at:
                         type: string
                         format: date-time
-        '402':
+        '400':
           description: Insufficient wallet balance
           content:
             application/json:
@@ -4198,155 +4311,17 @@ paths:
   # CURRENCY SWAP
   # ============================================================
 
-  /swap/init:
-    post:
-      tags: [Currency Swap]
-      summary: Initiate Swap (Preview)
-      description: |
-        Preview a currency swap. Returns the live rate and resulting amount without committing funds.
-        Use this to show a confirmation screen before calling `/swap/process`.
-        Note: the rate shown is indicative — execute promptly after previewing.
-        Requires an `Idempotency-Key` header.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [from_currency, to_currency, amount]
-              properties:
-                from_currency:
-                  type: string
-                  example: USD
-                to_currency:
-                  type: string
-                  example: BRL
-                amount:
-                  type: number
-                  example: 500
-      responses:
-        '200':
-          description: Swap preview
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  status_code:
-                    type: integer
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      from_currency:
-                        type: string
-                      to_currency:
-                        type: string
-                      from_amount:
-                        type: string
-                      to_amount:
-                        type: string
-                      exchange_rate:
-                        type: string
-                      fee:
-                        type: string
-                      fee_currency:
-                        type: string
-        '422':
-          description: Invalid currencies
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /swap/process:
-    post:
-      tags: [Currency Swap]
-      summary: Process Swap
-      description: |
-        Execute the currency conversion. Debits the `from_currency` wallet and credits the
-        `to_currency` wallet at the live rate. Use a **new, unique** `Idempotency-Key`
-        (different from any used in `/swap/init`).
-        Requires an `Idempotency-Key` header.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [from_currency, to_currency, amount]
-              properties:
-                from_currency:
-                  type: string
-                  example: USD
-                to_currency:
-                  type: string
-                  example: BRL
-                amount:
-                  type: number
-                  example: 500
-                transaction_purpose:
-                  type: string
-                  description: Optional description recorded on the transaction.
-      responses:
-        '200':
-          description: Swap executed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  status_code:
-                    type: integer
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      from_currency:
-                        type: string
-                      to_currency:
-                        type: string
-                      from_amount:
-                        type: string
-                      to_amount:
-                        type: string
-                      exchange_rate:
-                        type: string
-                      transaction_type:
-                        type: string
-                        example: currency_swap
-                      created_at:
-                        type: string
-                        format: date-time
-        '400':
-          description: Insufficient wallet balance
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # ============================================================
-  # GIFT CARDS
-  # ============================================================
-
-  /giftcards/categories:
+  /wallet/swap/pairs:
     get:
-      tags: [Gift Cards]
-      summary: List Gift Card Categories
-      description: Returns all gift card categories. Use category IDs to filter the catalog.
+      tags: [Currency Swap]
+      summary: List Swap Pairs
+      description: |
+        Every currency pair you can swap between your own wallets, with its current rate, fees and amount limits.
+
+        Team members need the **Wallets → view** permission.
       responses:
         '200':
-          description: Gift card categories
+          description: Swap pairs
           content:
             application/json:
               schema:
@@ -4354,39 +4329,115 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: success
                   status_code:
                     type: integer
+                    example: 200
                   message:
                     type: string
+                    example: Request successful
                   data:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
+                      $ref: '#/components/schemas/WalletSwapPair'
 
-  /giftcards:
-    get:
-      tags: [Gift Cards]
-      summary: List Gift Cards
-      description: Returns all purchasable gift card products, with optional filtering.
+  /wallet/swap/quote:
+    post:
+      tags: [Currency Swap]
+      summary: Quote Swap
+      description: |
+        Price a swap without moving money. The fee is charged in `from_currency` and deducted before conversion:
+        `to_amount = (amount − fee) × rate`, rounded down to the destination currency's decimal places.
+
+        A quote doesn't reserve the rate or your balance.
+
+        Team members need the **Wallets → view** permission.
       parameters:
-        - name: country
-          in: query
-          schema:
-            type: string
-          description: ISO 3166-1 alpha-2 country code (e.g. US, BR, NG).
-        - name: category_id
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletSwapRequest'
+      responses:
+        '200':
+          description: Swap quote
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      from_currency:
+                        type: string
+                        example: USD
+                      to_currency:
+                        type: string
+                        example: USDC
+                      from_amount:
+                        type: number
+                        description: Amount debited from the source wallet, including the fee.
+                        example: 1000
+                      fee:
+                        type: number
+                        description: Fee in `from_currency`.
+                        example: 5
+                      net_amount:
+                        type: number
+                        description: "`from_amount` minus `fee`. The amount converted."
+                        example: 995
+                      rate:
+                        type: number
+                        example: 1
+                      to_amount:
+                        type: number
+                        description: Amount credited to the destination wallet.
+                        example: 995
+                      available_balance:
+                        type: number
+                        description: Your current balance in the source wallet.
+                        example: 2500
+        '422':
+          description: Validation error, pair not available, amount outside the pair's limits, or no source wallet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /wallet/swap:
+    get:
+      tags: [Currency Swap]
+      summary: List Swaps
+      description: |
+        Your swaps, newest first, 10 per page by default.
+
+        Team members need the **Wallets → view** permission.
+      parameters:
+        - name: page
           in: query
           schema:
             type: integer
-          description: Category ID from GET /giftcards/categories.
+            example: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            example: 10
       responses:
         '200':
-          description: Gift card products
+          description: Paginated swaps
           content:
             application/json:
               schema:
@@ -4394,43 +4445,44 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: success
                   status_code:
                     type: integer
+                    example: 200
                   message:
                     type: string
+                    example: Request successful
                   data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
-                        brand:
-                          type: string
-                        country:
-                          type: string
-                        currency:
-                          type: string
-                        min_amount:
-                          type: number
-                        max_amount:
-                          type: number
-                        fixed_amounts:
-                          type: array
-                          items:
-                            type: number
-                        category:
-                          type: string
-
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WalletSwap'
+                      per_page:
+                        type: integer
+                        example: 10
+                      last_page:
+                        type: integer
+                        example: 1
+                      total:
+                        type: integer
+                        example: 1
     post:
-      tags: [Gift Cards]
-      summary: Purchase Gift Card
+      tags: [Currency Swap]
+      summary: Run Swap
       description: |
-        Purchase a gift card product. The face value is debited from your USD wallet.
-        Gift card purchases are **non-refundable**.
-        Requires an `Idempotency-Key` header.
+        Debit the source wallet and credit the destination wallet in one step. If the credit fails, the debit is reversed.
+        If you don't have a wallet in `to_currency`, it's created.
+
+        Retrying with the same `Idempotency-Key` returns the original swap and doesn't swap again.
+
+        Your USDC wallet can only be credited from USD, and can't be swapped out of. Those swaps fail with `Invalid wallet selected.`
+
+        Team members need the **Wallets → manage** permission.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -4438,30 +4490,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [productId, unitPrice, quantity, senderName, recipientEmail]
-              properties:
-                productId:
-                  type: integer
-                  description: Gift card product ID from GET /giftcards.
-                unitPrice:
-                  type: number
-                  minimum: 0.01
-                quantity:
-                  type: integer
-                  minimum: 1
-                senderName:
-                  type: string
-                  maxLength: 100
-                recipientEmail:
-                  type: string
-                  format: email
-                customer_id:
-                  type: string
-                  description: Optional. Link this purchase to a customer.
+              $ref: '#/components/schemas/WalletSwapRequest'
       responses:
         '200':
-          description: Gift card purchased
+          description: Swap completed
           content:
             application/json:
               schema:
@@ -4469,50 +4501,40 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: success
                   status_code:
                     type: integer
+                    example: 200
                   message:
                     type: string
+                    example: Request successful
                   data:
-                    type: object
-                    properties:
-                      transaction_id:
-                        type: string
-                      product_name:
-                        type: string
-                      amount:
-                        type: number
-                      currency:
-                        type: string
-                      status:
-                        type: string
-                      created_at:
-                        type: string
-                        format: date-time
-        '402':
-          description: Insufficient wallet balance
+                    $ref: '#/components/schemas/WalletSwap'
+        '422':
+          description: Validation error, pair not available, amount outside the pair's limits, insufficient balance, or invalid wallet
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /giftcards/redeem/{transactionId}:
+  /wallet/swap/{reference}:
     get:
-      tags: [Gift Cards]
-      summary: Get Redeem Instructions
+      tags: [Currency Swap]
+      summary: Get Swap
       description: |
-        Retrieve the gift card code and redemption instructions for a completed purchase.
-        Gift card codes are sensitive — display only to the intended recipient.
+        A single swap by the `reference` returned when you ran it.
+
+        Team members need the **Wallets → view** permission.
       parameters:
-        - name: transactionId
+        - name: reference
           in: path
           required: true
           schema:
             type: string
-          description: The transaction_id from the purchase response.
+            example: 9b1f0c52-3a8e-4f4e-b2a1-6f0e5d7c8a91
       responses:
         '200':
-          description: Redemption code and instructions
+          description: Swap
           content:
             application/json:
               schema:
@@ -4520,26 +4542,21 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: success
                   status_code:
                     type: integer
+                    example: 200
                   message:
                     type: string
+                    example: Request successful
                   data:
-                    type: object
-                    properties:
-                      transaction_id:
-                        type: string
-                      product_name:
-                        type: string
-                      redemption_code:
-                        type: string
-                      pin:
-                        type: string
-                      instructions:
-                        type: string
-                      expiry_date:
-                        type: string
-                        format: date
+                    $ref: '#/components/schemas/WalletSwap'
+        '404':
+          description: Swap not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # ============================================================
   # WEBHOOKS
@@ -4574,7 +4591,7 @@ paths:
       summary: Create Webhook
       description: |
         Register a URL to receive webhook notifications. Yativo signs every request with an
-        `X-Yativo-Signature` header (HMAC-SHA256 of raw body using your webhook secret).
+        `Signature` header (HMAC-SHA256 of raw body using your webhook secret).
 
         **Supported events:** `deposit.created`, `deposit.updated`, `deposit.completed`,
         `payout.updated`, `payout.completed`, `customer.created`, `customer.kyc.approved`,
@@ -4616,7 +4633,7 @@ paths:
                         type: string
                       secret:
                         type: string
-                        description: Store securely. Used to verify X-Yativo-Signature header.
+                        description: Store securely. Used to verify the Signature header.
                       created_at:
                         type: string
                         format: date-time
@@ -5649,8 +5666,6 @@ paths:
 
 
 tags:
-  - name: Authentication
-    description: Deprecated login with legacy API keys (Account ID and App Secret). Use API keys instead.
   - name: Customers
     description: Create and manage customer profiles.
   - name: KYC / KYB
@@ -5674,9 +5689,7 @@ tags:
   - name: Payouts
     description: Single and batch payouts to beneficiaries.
   - name: Currency Swap
-    description: Preview and execute wallet-to-wallet currency conversions.
-  - name: Gift Cards
-    description: Browse, purchase, and redeem digital gift cards.
+    description: Swap balance between your own currency wallets.
   - name: IP Whitelist
     description: Check whether your server's IP can use your API key.
   - name: Account Security

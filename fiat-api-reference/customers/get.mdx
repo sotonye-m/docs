@@ -125,10 +125,12 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-1548
 
 ```json Not Found
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 404,
-  "message": "Customer not found",
-  "data": null
+  "message": "Request failed.",
+  "data": {
+    "error": "Customer not found"
+  }
 }
 ```
 </ResponseExample>

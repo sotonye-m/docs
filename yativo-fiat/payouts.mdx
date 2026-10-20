@@ -26,6 +26,10 @@ Send one payment to a saved beneficiary payment method.
 POST https://api.yativo.com/api/v1/payout/simple
 ```
 
+<ParamField body="debit_wallet" type="string" required>
+  The wallet currency to debit, for example `"USD"`.
+</ParamField>
+
 <ParamField body="amount" type="number" required>
   Amount to send in the debit wallet currency.
 </ParamField>
@@ -34,9 +38,19 @@ POST https://api.yativo.com/api/v1/payout/simple
   The ID of the saved beneficiary payment method (from `POST /beneficiaries/payment-methods`).
 </ParamField>
 
-<ParamField body="beneficiary_id" type="string">
-  Optional beneficiary UUID. Useful for tracking but not required if `beneficiary_details_id` is provided.
+<ParamField body="customer_id" type="string" required>
+  The customer the payout is for. If the beneficiary belongs to a customer, it must be that customer.
 </ParamField>
+
+<ParamField body="beneficiary_id" type="string">
+  Optional. The beneficiary that owns the payment method.
+</ParamField>
+
+<ParamField body="reference" type="string">
+  Payment reference shown to the recipient's bank, up to 250 characters. Some payout rails shorten it or remove unsupported characters.
+</ParamField>
+
+`/payout/simple` also accepts `quote_id`, `invoice` and `invoice_url`, like [`POST /wallet/payout`](/fiat-api-reference/payments/payout).
 
 <RequestExample>
 ```bash cURL
@@ -46,8 +60,11 @@ curl -X POST 'https://api.yativo.com/api/v1/payout/simple' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: payout-simple-001' \
   -d '{
+    "debit_wallet": "USD",
     "amount": 250,
-    "beneficiary_details_id": 42
+    "beneficiary_details_id": 42,
+    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "reference": "INV-2026-0042"
   }'
 ```
 
@@ -61,8 +78,10 @@ const response = await fetch('https://api.yativo.com/api/v1/payout/simple', {
     'Idempotency-Key': `payout-simple-${Date.now()}`,
   },
   body: JSON.stringify({
+    debit_wallet: 'USD',
     amount: 250,
     beneficiary_details_id: 42,
+    customer_id: 'da44a3e6-eb5d-429f-8d17-357aa5a6cdf2',
   }),
 });
 const data = await response.json();
@@ -88,9 +107,12 @@ const data = await response.json();
 
 ```json Insufficient balance
 {
-  "status": "error",
-  "status_code": 402,
-  "message": "Insufficient wallet balance"
+  "status": "failed",
+  "status_code": 400,
+  "message": "Request failed.",
+  "data": {
+    "error": "Insufficient wallet balance"
+  }
 }
 ```
 </ResponseExample>
@@ -199,8 +221,9 @@ response = requests.post(
 
 ```json Partial failure
 {
-  "status": "error",
+  "status": "failed",
   "status_code": 400,
+  "message": "Request failed.",
   "data": {
     "errors": {
       "1": { "error": "Beneficiary not found" }

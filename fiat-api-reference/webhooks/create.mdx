@@ -3,7 +3,7 @@ title: "Create / Update Webhook"
 description: "Set or update your webhook endpoint to receive real-time event notifications"
 ---
 
-Set a URL to receive webhook notifications for events in your Yativo account. Yativo sends a `POST` request to your endpoint whenever a matching event occurs and signs every request with an `X-Yativo-Signature` header for verification.
+Set a URL to receive webhook notifications for events in your Yativo account. Yativo sends a `POST` request to your endpoint whenever a matching event occurs and signs every request with an `Signature` header for verification.
 
 ```
 POST /business/webhook
@@ -66,11 +66,11 @@ curl -X POST 'https://api.yativo.com/api/v1/business/webhook' \
 
 ## Signature Verification
 
-Every webhook delivery includes an `X-Yativo-Signature` header — an HMAC SHA256 hex digest of the raw request body signed with your webhook secret.
+Every webhook delivery includes an `Signature` header — an HMAC SHA256 hex digest of the raw request body signed with your webhook secret.
 
 **Algorithm:**
 ```
-X-Yativo-Signature = HMAC-SHA256(webhookSecret, rawRequestBody) → hex
+Signature = HMAC-SHA256(webhookSecret, rawRequestBody) → hex
 ```
 
 <Warning>
@@ -90,7 +90,7 @@ const crypto = require('crypto');
 
 app.post('/webhooks/yativo', express.raw({ type: 'application/json' }), (req, res) => {
   const secret = process.env.YATIVO_WEBHOOK_SECRET;
-  const receivedSignature = req.headers['x-yativo-signature'];
+  const receivedSignature = req.headers['signature'];
 
   const expectedSignature = crypto
     .createHmac('sha256', secret)
@@ -117,7 +117,7 @@ from flask import Flask, request, abort
 @app.route('/webhooks/yativo', methods=['POST'])
 def webhook():
     secret = os.environ['YATIVO_WEBHOOK_SECRET']
-    received = request.headers.get('X-Yativo-Signature', '')
+    received = request.headers.get('Signature', '')
 
     expected = hmac.new(
         secret.encode(),
@@ -134,7 +134,7 @@ def webhook():
 
 ```php PHP
 $secret = getenv('YATIVO_WEBHOOK_SECRET');
-$received = $_SERVER['HTTP_X_YATIVO_SIGNATURE'] ?? '';
+$received = $_SERVER['HTTP_SIGNATURE'] ?? '';
 $payload  = file_get_contents('php://input');
 $expected = hash_hmac('sha256', $payload, $secret);
 
@@ -149,7 +149,7 @@ $event = json_decode($payload, true);
 ```go Go
 func webhookHandler(w http.ResponseWriter, r *http.Request) {
     secret := []byte(os.Getenv("YATIVO_WEBHOOK_SECRET"))
-    received := r.Header.Get("X-Yativo-Signature")
+    received := r.Header.Get("Signature")
     body, _ := io.ReadAll(r.Body)
 
     mac := hmac.New(sha256.New, secret)

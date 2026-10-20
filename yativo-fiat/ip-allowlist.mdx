@@ -6,7 +6,7 @@ description: "Limit each API key to the servers allowed to use it"
 Every API key has an **IP whitelist**: the public IP addresses of the servers allowed to use it. Requests made with the key must come from one of those IPs, or they're rejected with `403`.
 
 <Warning>
-  IP whitelists are enforced from **midnight on 14 October 2026**. Before then, run the [check](#check-your-ip) from every server that uses a key.
+  IP whitelists have been enforced since **14 October 2026**. A key with no IPs on it is refused. Run the [check](#check-your-ip) from every new server before it uses a key.
 </Warning>
 
 ---
@@ -110,7 +110,7 @@ To check a server you haven't deployed yet, add `?ip=<address>`. `result` then d
 |---|---|---|
 | 403 | `This IP address is not allowed to use this API key.` | Check your server's public IP and add it to the key. |
 | 403 | `This API key has no whitelisted IP addresses. ...` | Add at least one IP to the key. |
-| 403 | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | From 15 October 2026, make the change in the dashboard. |
+| 403 | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | Make the change in the dashboard. |
 
 ---
 
