@@ -1,6 +1,7 @@
 ---
 title: "List Beneficiaries"
 description: "Retrieve all saved beneficiaries in your account"
+openapi: "openapi-fiat.yaml GET /beneficiaries/list"
 ---
 
 Returns a paginated list of all beneficiaries associated with your account.
@@ -8,12 +9,6 @@ Returns a paginated list of all beneficiaries associated with your account.
 ```
 GET /v1/beneficiaries/list
 ```
-
-## Query parameters
-
-<ParamField query="per_page" type="number">
-  Number of records per page (default: 20).
-</ParamField>
 
 <RequestExample>
 ```bash cURL

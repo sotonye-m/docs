@@ -1,7 +1,7 @@
 ---
 title: "Check IP Whitelist"
 description: "See the IP Yativo detects for your request and whether it can use your API key"
-openapi: "GET https://api.yativo.com/api/v1/ip-whitelist/check"
+openapi: "openapi-fiat.yaml GET /ip-whitelist/check"
 ---
 
 Call this from the server that uses your API key. It never blocks the request, so you can run it any time, including right after changing a key's allowed IPs.

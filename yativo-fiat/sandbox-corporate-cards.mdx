@@ -5,7 +5,9 @@ description: "Test employee corporate cards end to end in the sandbox before goi
 
 Corporate cards let your business issue spend cards to its employees. Each employee is a cardholder with one card balance, and every card they hold spends from it. You fund that balance from your USDC balance and can withdraw it back at any time.
 
-Corporate cards are available in sandbox now, ahead of production. Use the sandbox to build and test your integration, then switch the base URL and API key when production opens.
+Corporate cards are **available by invitation only**. Yativo enables them for invited businesses, in sandbox and in production. There's no way to request access through the API or the dashboard. Without an invitation, every corporate card request returns `403`.
+
+If you've been invited, use the sandbox to build and test your integration, then switch the base URL and API key when your production account is enabled.
 
 <Note>
   Sandbox behaves like production for corporate cards. Account approval, customer requirements, fees and the USDC reserve all apply. Fees are charged to your sandbox USDC balance, which holds test funds only.
@@ -19,7 +21,7 @@ Corporate cards are available in sandbox now, ahead of production. Use the sandb
 |---|---|
 | Sandbox API key | Create one in the sandbox dashboard under **Developers → API Keys**. See [Sandbox Environment](/yativo-fiat/sandbox) |
 | Verified sandbox account | `kyc_status` is `approved` and `is_kyc_submitted` is true. See [Sandbox KYC](/yativo-fiat/sandbox-kyc) |
-| Corporate cards enabled | Ask Yativo support to enable Business Spend Cards on your sandbox account. Until then every corporate card request returns `403` |
+| An invitation | Yativo enables corporate cards on invited accounts only. Until yours is enabled, every corporate card request returns `403` |
 | A business customer | Create it with `customer_type: "business"` and submit its KYB. Corporate cards are issued to business customers |
 | `cobo_pobo` endorsement | The customer needs an approved `cobo_pobo` [endorsement](/yativo-fiat/kyc#service-endorsements). Requests for a customer without it return `403` |
 | USDC balance | Enough to cover card funding, fees and the [reserve](#reserve) |
@@ -281,7 +283,7 @@ Errors use the standard envelope:
 | Status | Common sandbox cause |
 |---|---|
 | `402` | Your USDC balance can't cover a fee, or a debit would go below the reserve |
-| `403` | Business Spend Cards aren't enabled on your sandbox account, the customer has no approved `cobo_pobo` endorsement, the customer hasn't submitted full KYC, the customer isn't a business, the employee is suspended or terminated, or you requested a funding address more than 3 times in a minute |
+| `403` | Your account hasn't been invited to corporate cards, the customer has no approved `cobo_pobo` endorsement, the customer hasn't submitted full KYC, the customer isn't a business, the employee is suspended or terminated, or you requested a funding address more than 3 times in a minute |
 | `404` | A `customer_id`, `employee_id` or `card_id` isn't yours, or the employee has no card yet when funding |
 | `409` | The transaction has already been disputed |
 | `422` | Validation error, an unknown `state_id`, a rejected upload, or a withdrawal larger than the available balance |
@@ -292,7 +294,7 @@ Errors use the standard envelope:
 ## Going live
 
 1. Change the base URL to `https://api.yativo.com/api/v1` and use your production API key.
-2. Ask Yativo support to enable Business Spend Cards on your production account.
+2. Wait for Yativo to enable corporate cards on your production account. This is part of your invitation.
 3. Make sure each customer has an approved `cobo_pobo` endorsement in production.
 4. Fund your production USDC balance above the reserve.
 5. Point your webhook URL at your production endpoint.

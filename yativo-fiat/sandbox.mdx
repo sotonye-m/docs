@@ -41,7 +41,7 @@ curl 'https://smtp.yativo.com/api/v1/ip-whitelist/check' \
 | Your account | Approved only when `kyc_status` is `approved` and `is_kyc_submitted` is true. The sandbox dashboard collects this in a form. | The production dashboard opens a hosted verification page |
 | Customer KYC | Same submission and hosted pages as production. Creating a customer does not approve them | Same submission and hosted pages |
 | Virtual accounts | Issued after the customer is approved | Live bank accounts |
-| Corporate cards | Available now. Employee KYC is approved on submission. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards) | Coming soon |
+| Corporate cards | Invitation only. Employee KYC is approved on submission. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards) | Coming soon |
 | Exchange rates | Live rates returned | Live rates |
 | Webhooks | Fired normally | Fired normally |
 | API logs | Recorded | Recorded |
@@ -61,7 +61,7 @@ curl 'https://smtp.yativo.com/api/v1/ip-whitelist/check' \
     Complete business verification in the sandbox dashboard. Most API calls return 403 until `kyc_status` is `approved` and `is_kyc_submitted` is true. See [Sandbox KYC](/yativo-fiat/sandbox-kyc).
   </Step>
   <Step title="Create test customers">
-    Use `POST /customer` to create customers. That call does not approve the customer. Submit KYC or KYB on `https://kyc.yativo.com`, the same way you do in production.
+    Use `POST /customer` to create customers. That call does not approve the customer. Submit KYC or KYB on `https://kyc-sandbox.yativo.com`, the same way you do in production.
   </Step>
   <Step title="Create virtual accounts">
     After the customer's endorsement for the currency is `approved`, call `POST /business/virtual-account/create`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
@@ -106,7 +106,7 @@ const { data: customer } = await fetch(`${BASE}/customer`, {
 }).then(r => r.json());
 
 console.log('Customer:', customer.customer_id);
-// Submit KYC at https://kyc.yativo.com/individual/{customer_id}
+// Submit KYC at https://kyc-sandbox.yativo.com/individual/{customer_id}
 // Create a virtual account only after the customer's endorsement for the
 // currency is "approved" (endorsement.updated webhook or GET /customer/{customer_id}).
 ```
@@ -128,7 +128,7 @@ When you're ready to go live:
 
 1. Change your base URL from `https://smtp.yativo.com/api/v1` to `https://api.yativo.com/api/v1`
 2. Ensure your business KYC is approved in the dashboard
-3. Customers complete KYC on `https://kyc.yativo.com`, the same way they do in sandbox
+3. Customers complete KYC on `https://kyc.yativo.com` (sandbox uses `https://kyc-sandbox.yativo.com`), the same way they do in sandbox
 4. Update your webhook URL to point to your production endpoint
 
 <Note>

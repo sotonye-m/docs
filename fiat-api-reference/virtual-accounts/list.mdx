@@ -1,6 +1,7 @@
 ---
 title: "List Virtual Accounts"
 description: "Retrieve all virtual accounts associated with your business"
+openapi: "openapi-fiat.yaml GET /business/virtual-account"
 ---
 
 Returns all virtual accounts for your business with optional filtering.
@@ -8,32 +9,6 @@ Returns all virtual accounts for your business with optional filtering.
 ```
 GET /v1/business/virtual-account
 ```
-
-## Query Parameters
-
-<ParamField query="currency" type="string">
-  Filter by currency code (e.g. `BRL`, `USD`).
-</ParamField>
-
-<ParamField query="status" type="string">
-  Filter by account status.
-</ParamField>
-
-<ParamField query="start_date" type="string">
-  From date (ISO 8601), e.g. `2026-04-01`.
-</ParamField>
-
-<ParamField query="end_date" type="string">
-  To date (ISO 8601), e.g. `2026-04-30`.
-</ParamField>
-
-<ParamField query="search" type="string">
-  Search by account name or account number.
-</ParamField>
-
-<ParamField query="per_page" type="number">
-  Results per page.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

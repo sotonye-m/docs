@@ -1,6 +1,7 @@
 ---
 title: "Top Up Card"
 description: "Fund a virtual card from your USD wallet balance"
+openapi: "openapi-fiat.yaml POST /customer/virtual/cards/topup"
 ---
 
 Adds funds to a virtual card. The amount is always debited from your USD wallet.
@@ -12,20 +13,6 @@ POST https://api.yativo.com/api/v1/customer/virtual/cards/topup
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request Body
-
-<ParamField body="cardId" type="string">
-  The virtual card ID to fund. Either `cardId` or `card_id` must be provided.
-</ParamField>
-
-<ParamField body="card_id" type="string">
-  The virtual card ID to fund. Either `cardId` or `card_id` must be provided.
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Amount to add to the card. Minimum 1.00, maximum 10,000.00 (USD).
-</ParamField>
 
 <RequestExample>
 ```bash cURL

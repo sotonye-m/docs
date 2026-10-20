@@ -1,6 +1,7 @@
 ---
 title: "Update Payment Method"
 description: "Update a saved beneficiary payment method"
+openapi: "openapi-fiat.yaml PUT /beneficiaries/payment-methods/update/{id}"
 ---
 
 Update an existing beneficiary payment method. All required fields must be provided — this is a full replacement of the payment method record.
@@ -12,30 +13,6 @@ PUT /v1/beneficiaries/payment-methods/update/{id}
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Path parameters
-
-<ParamField path="id" type="string" required>
-  The ID of the beneficiary payment method to update.
-</ParamField>
-
-## Request body
-
-<ParamField body="gateway_id" type="integer" required>
-  The ID of the payout method (gateway).
-</ParamField>
-
-<ParamField body="currency" type="string" required>
-  Currency code for this payment method (e.g. `CLP`, `MXN`, `BRL`).
-</ParamField>
-
-<ParamField body="payment_data" type="object" required>
-  Updated key/value pairs of account details. Must include all fields required by the selected gateway.
-</ParamField>
-
-<ParamField body="nickname" type="string" required>
-  A label to identify this payment method.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

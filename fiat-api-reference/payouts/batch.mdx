@@ -1,7 +1,7 @@
 ---
 title: "Batch Payout"
 description: "Send multiple payments to different beneficiaries in a single request"
-openapi: "POST https://api.yativo.com/api/v1/payout/batch"
+openapi: "openapi-fiat.yaml POST /payout/batch"
 ---
 
 Submit an array of payouts in one request. Each item is processed independently — partial failures return in an `errors` object without rolling back successful items.
@@ -13,22 +13,6 @@ POST https://api.yativo.com/api/v1/payout/batch
 <Note>
   Requires `Idempotency-Key` header. If your wallet balance is insufficient for the total amount, the entire batch is rejected before any item is processed.
 </Note>
-
-<ParamField body="payouts" type="array" required>
-  Array of payout objects.
-
-  <Expandable title="payouts item fields">
-    <ParamField body="amount" type="number" required>
-      Amount to send for this payout.
-    </ParamField>
-    <ParamField body="beneficiary_details_id" type="number" required>
-      The saved beneficiary payment method ID.
-    </ParamField>
-    <ParamField body="beneficiary_id" type="number">
-      Optional beneficiary UUID for tracking.
-    </ParamField>
-  </Expandable>
-</ParamField>
 
 <RequestExample>
 ```bash cURL

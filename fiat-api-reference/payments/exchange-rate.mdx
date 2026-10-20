@@ -1,6 +1,7 @@
 ---
 title: "Get Exchange Rate / Quote"
 description: "Generate a quote with locked rate and fee breakdown for a payout or deposit"
+openapi: "openapi-fiat.yaml POST /exchange-rate"
 ---
 
 Returns a real-time exchange rate, fee breakdown, and a `quote_id` valid for **5 minutes**. Pass the `quote_id` to `POST /wallet/payout` or `POST /wallet/deposits/new` to execute the transaction at the quoted rate.
@@ -13,34 +14,8 @@ POST https://api.yativo.com/api/v1/exchange-rate
   Requires an `Idempotency-Key` header. Rate-limited to **30 requests per minute**. This endpoint both prices the transaction AND generates a binding `quote_id` — treat it as quote creation, not just a rate lookup.
 </Note>
 
-## Request body
-
-<ParamField body="from_currency" type="string" required>
-  Source currency code (ISO 4217), e.g. `"USD"`, `"EUR"`.
-</ParamField>
-
-<ParamField body="to_currency" type="string" required>
-  Target currency code (ISO 4217), e.g. `"USD"`, `"CLP"`, `"BRL"`, `"MXN"`.
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Amount in the source currency to convert. With `amount_type: "receive"`, the amount the customer receives in `to_currency`.
-</ParamField>
-
-<ParamField body="method_id" type="integer">
-  The payment method ID (from `GET /payment-methods/payout` or `GET /payment-methods/payin`). When provided, the quote is scoped to that specific payment rail and its exact fee structure is applied.
-</ParamField>
-
-<ParamField body="method_type" type="string">
-  Transaction direction: `"payout"` (for sends/withdrawals) or `"payin"` (for deposits). Required when `method_id` is provided.
-</ParamField>
-
-<ParamField body="amount_type" type="string" default="send">
-  Payout quotes only. `send` (default): `amount` is what leaves your wallet. `receive`: `amount` is what the customer receives, and the quote works out the send amount and fees. Using `receive` with `method_type: "payin"` returns `422`. See [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount).
-</ParamField>
-
 <RequestExample>
-```bash cURL — payout quote (USD → USD via PayPal, method 21)
+```bash cURL — payout quote (USD → USD, method 21)
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
@@ -162,7 +137,7 @@ const { data } = await response.json();
       },
       "PayoutMethod": {
         "id": 21,
-        "method_name": "PayPal",
+        "method_name": "Bank Transfer",
         "country": "PER",
         "currency": "USD",
         "base_currency": "USD",

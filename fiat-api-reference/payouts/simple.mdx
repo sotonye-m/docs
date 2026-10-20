@@ -1,7 +1,7 @@
 ---
 title: "Single Payout"
 description: "Send one payment to a saved beneficiary payment method"
-openapi: "POST https://api.yativo.com/api/v1/payout/simple"
+openapi: "openapi-fiat.yaml POST /payout/simple"
 ---
 
 Send a single payment to a saved beneficiary. Debits your wallet at the time of submission.
@@ -13,42 +13,6 @@ POST https://api.yativo.com/api/v1/payout/simple
 <Note>
   Requires `Idempotency-Key` header. Your wallet is charged immediately on submission.
 </Note>
-
-<ParamField body="debit_wallet" type="string" required>
-  The source wallet currency to debit (e.g. `"USD"`, `"EUR"`).
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Amount to send in the debit wallet currency.
-</ParamField>
-
-<ParamField body="beneficiary_details_id" type="number" required>
-  The saved beneficiary payment method ID (from `POST /beneficiaries/payment-methods`).
-</ParamField>
-
-<ParamField body="customer_id" type="string" required>
-  The customer the payout is for. If the beneficiary belongs to a customer, it must be that customer.
-</ParamField>
-
-<ParamField body="beneficiary_id" type="string">
-  Optional. The beneficiary that owns the payment method.
-</ParamField>
-
-<ParamField body="quote_id" type="string">
-  A payout quote from `POST /exchange-rate`. Locks the rate and fees for 5 minutes and supplies the amount.
-</ParamField>
-
-<ParamField body="reference" type="string">
-  Payment reference passed to the recipient's bank, up to 250 characters. Depending on the payout rail, it may be shortened or have unsupported characters removed. For example, ACH allows only 10 letters, numbers or spaces.
-</ParamField>
-
-<ParamField body="invoice" type="file">
-  Supporting invoice: PDF, PNG or JPEG, up to 15 MB. Send the request as `multipart/form-data` to attach it.
-</ParamField>
-
-<ParamField body="invoice_url" type="string">
-  Public `http` or `https` link to the supporting invoice, as an alternative to `invoice`.
-</ParamField>
 
 `/payout/simple` works like [`POST /wallet/payout`](/fiat-api-reference/payments/payout) with `beneficiary_details_id` in place of `payment_method_id`. To fix the amount the customer receives (`amount_type: "receive"`), use `/wallet/payout`.
 

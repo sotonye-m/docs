@@ -1,6 +1,7 @@
 ---
 title: "Get Virtual Account"
 description: "Retrieve details for a specific virtual account"
+openapi: "openapi-fiat.yaml GET /business/virtual-account/show/{externalId}"
 ---
 
 Returns full details for a specific virtual account by its external ID.
@@ -8,12 +9,6 @@ Returns full details for a specific virtual account by its external ID.
 ```
 GET /v1/business/virtual-account/show/{externalId}
 ```
-
-## Path Parameters
-
-<ParamField path="externalId" type="string" required>
-  The external ID of the virtual account.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

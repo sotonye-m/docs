@@ -1,6 +1,7 @@
 ---
 title: "Unarchive Beneficiary"
 description: "Restore an archived beneficiary to active status"
+openapi: "openapi-fiat.yaml PUT /beneficiaries/{id}/unarchive"
 ---
 
 Restore an archived beneficiary, making them active again. After unarchiving, the beneficiary will appear in list responses and can be used for payouts.
@@ -12,12 +13,6 @@ PUT /v1/beneficiaries/{id}/unarchive
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Path parameters
-
-<ParamField path="id" type="string" required>
-  The ID of the beneficiary to unarchive.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

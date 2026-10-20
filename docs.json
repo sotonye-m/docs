@@ -163,10 +163,32 @@
             "pages": [
               "fiat-api-reference/kyc/submit-individual",
               "fiat-api-reference/kyc/submit-business",
+              "fiat-api-reference/kyc/update-individual",
+              "fiat-api-reference/kyc/update-business",
               "fiat-api-reference/kyc/update",
+              "fiat-api-reference/kyc/resubmit-endorsement",
+              "fiat-api-reference/kyc/resubmit-endorsement-platform",
+              "fiat-api-reference/kyc/endorsement-regenerate",
               "fiat-api-reference/kyc/occupation-codes",
-              "fiat-api-reference/kyc/verification-locations",
-              "fiat-api-reference/kyc/endorsement-regenerate"
+              "fiat-api-reference/kyc/verification-locations"
+            ]
+          },
+          {
+            "group": "KYC Lookups",
+            "pages": [
+              "fiat-api-reference/kyc-lookups/countries",
+              "fiat-api-reference/kyc-lookups/subdivisions",
+              "fiat-api-reference/kyc-lookups/postal-codes",
+              "fiat-api-reference/kyc-lookups/identification-types",
+              "fiat-api-reference/kyc-lookups/occupations",
+              "fiat-api-reference/kyc-lookups/business-industries",
+              "fiat-api-reference/kyc-lookups/individual-account-purposes",
+              "fiat-api-reference/kyc-lookups/individual-source-of-funds",
+              "fiat-api-reference/kyc-lookups/business-account-purposes",
+              "fiat-api-reference/kyc-lookups/business-source-of-funds",
+              "fiat-api-reference/kyc-lookups/expected-monthly-payments",
+              "fiat-api-reference/kyc-lookups/transaction-currencies",
+              "fiat-api-reference/kyc-lookups/transaction-countries"
             ]
           },
           {
@@ -178,6 +200,7 @@
               "fiat-api-reference/payments/send-money-quote",
               "fiat-api-reference/payments/send-money",
               "fiat-api-reference/payments/methods",
+              "fiat-api-reference/payments/payin-methods",
               "fiat-api-reference/payments/methods-form",
               "fiat-api-reference/payments/countries",
               "fiat-api-reference/payments/payout"
@@ -194,6 +217,7 @@
             "group": "Virtual Accounts",
             "pages": [
               "fiat-api-reference/virtual-accounts/create",
+              "fiat-api-reference/virtual-accounts/currencies",
               "fiat-api-reference/virtual-accounts/list",
               "fiat-api-reference/virtual-accounts/get",
               "fiat-api-reference/virtual-accounts/delete",
@@ -206,6 +230,7 @@
             "group": "Wallets",
             "pages": [
               "fiat-api-reference/wallets/balance",
+              "fiat-api-reference/wallets/balance-total",
               "fiat-api-reference/wallets/create",
               "fiat-api-reference/wallets/payouts"
             ]
@@ -222,6 +247,7 @@
               "fiat-api-reference/beneficiaries/unarchive",
               "fiat-api-reference/beneficiaries/payment-methods-create",
               "fiat-api-reference/beneficiaries/payment-methods-list",
+              "fiat-api-reference/beneficiaries/payment-methods-get",
               "fiat-api-reference/beneficiaries/payment-methods-update",
               "fiat-api-reference/beneficiaries/payment-methods-delete"
             ]
@@ -297,6 +323,7 @@
             "pages": [
               "fiat-api-reference/webhooks/create",
               "fiat-api-reference/webhooks/list",
+              "fiat-api-reference/webhooks/update",
               "fiat-api-reference/webhooks/delete",
               "fiat-api-reference/webhooks/regenerate-secret"
             ]
@@ -517,7 +544,9 @@
               "api-reference/cards/kyc-link",
               "api-reference/cards/verify-otp",
               "api-reference/cards/source-of-funds",
+              "api-reference/cards/source-of-funds-submit",
               "api-reference/cards/phone-verification",
+              "api-reference/cards/phone-verify",
               "api-reference/cards/customer-cards",
               "api-reference/cards/customer-reset"
             ]

@@ -1,0 +1,7 @@
+---
+title: "Resubmit Endorsement (KYC Platform)"
+description: "Re-run verification for one endorsement of an individual or business customer"
+openapi: "openapi-fiat.yaml POST /kyc/endorsements/{customerId}/{service}/resubmit"
+---
+
+Use it after fixing what held an endorsement back. Other endorsements aren't affected. Watch [`endorsement.updated`](/yativo-fiat/webhooks#customers) for the result. See [Resubmit one endorsement](/yativo-fiat/kyc#resubmit-one-endorsement).

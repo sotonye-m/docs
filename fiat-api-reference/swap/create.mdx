@@ -1,7 +1,7 @@
 ---
 title: "Run Swap"
 description: "Move balance from one of your wallets to another"
-openapi: "POST https://api.yativo.com/api/v1/wallet/swap"
+openapi: "openapi-fiat.yaml POST /wallet/swap"
 ---
 
 Debits the source wallet and credits the destination wallet in one step. Keep the `reference` from the response to look the swap up later.

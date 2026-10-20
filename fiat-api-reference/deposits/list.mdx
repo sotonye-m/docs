@@ -1,6 +1,7 @@
 ---
 title: "List Deposits"
 description: "Retrieve all deposit records for your account"
+openapi: "openapi-fiat.yaml GET /wallet/deposits"
 ---
 
 Returns a list of all payin deposits received into your wallets and virtual accounts.
@@ -8,36 +9,6 @@ Returns a list of all payin deposits received into your wallets and virtual acco
 ```
 GET https://api.yativo.com/api/v1/wallet/deposits
 ```
-
-## Query parameters
-
-<ParamField query="page" type="number">
-  Page number for pagination (default: 1).
-</ParamField>
-
-<ParamField query="per_page" type="number">
-  Records per page (default: 15).
-</ParamField>
-
-<ParamField query="gateway" type="string">
-  Filter by payment gateway ID.
-</ParamField>
-
-<ParamField query="currency" type="string">
-  Filter by currency code, e.g. `"PEN"`, `"BRL"`.
-</ParamField>
-
-<ParamField query="customer_id" type="string">
-  Filter by customer ID.
-</ParamField>
-
-<ParamField query="start_date" type="string">
-  Filter by start date (`YYYY-MM-DD`).
-</ParamField>
-
-<ParamField query="end_date" type="string">
-  Filter by end date (`YYYY-MM-DD`).
-</ParamField>
 
 <RequestExample>
 ```bash cURL

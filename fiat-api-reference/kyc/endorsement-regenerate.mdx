@@ -1,6 +1,7 @@
 ---
 title: "Regenerate Endorsement Link"
 description: "Generate a fresh verification link for an expired service endorsement"
+openapi: "openapi-fiat.yaml GET /kyc/regenerate/{customerId}/{service}"
 ---
 
 When a customer's endorsement verification link has expired, use this endpoint to generate a new one. Share the new link with the customer to complete verification for the specific payment service.
@@ -8,16 +9,6 @@ When a customer's endorsement verification link has expired, use this endpoint t
 ```
 GET https://kyc.yativo.com/api/kyc/regenerate/{customerId}/{service}
 ```
-
-## Path parameters
-
-<ParamField path="customerId" type="string" required>
-  The UUID of the customer.
-</ParamField>
-
-<ParamField path="service" type="string" required>
-  The service endorsement to regenerate. One of: `base`, `sepa`, `spei`, `brazil`, `eurde`, `usd_latam`, `eur_latam`, `virtual_card`, `asian`, `native`, `cobo_pobo`.
-</ParamField>
 
 ## Service reference
 
@@ -38,8 +29,6 @@ GET https://kyc.yativo.com/api/kyc/regenerate/{customerId}/{service}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://kyc.yativo.com/api/kyc/regenerate/c586066b-0f29-468f-b775-15483871a202/sepa' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 

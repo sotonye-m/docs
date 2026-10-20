@@ -1,6 +1,7 @@
 ---
 title: "Add Payment Method"
 description: "Add a payment method (bank account, wallet) to a beneficiary"
+openapi: "openapi-fiat.yaml POST /beneficiaries/payment-methods"
 ---
 
 Add a payment method to a beneficiary. The structure of the `payment_data` object varies by payment method type — retrieve the required fields for a specific payout method from the payout methods endpoint.
@@ -12,28 +13,6 @@ POST /v1/beneficiaries/payment-methods
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request body
-
-<ParamField body="gateway_id" type="integer" required>
-  The ID of the payout method (gateway) to use. Obtain available IDs from the payout methods endpoint.
-</ParamField>
-
-<ParamField body="payment_data" type="object" required>
-  Key/value pairs of account details required for this payment method. The fields vary depending on the selected `gateway_id`.
-</ParamField>
-
-<ParamField body="currency" type="string" required>
-  Currency code for this payment method (e.g. `CLP`, `MXN`, `BRL`).
-</ParamField>
-
-<ParamField body="nickname" type="string" required>
-  A label to identify this payment method.
-</ParamField>
-
-<ParamField body="beneficiary_id" type="string">
-  The ID of the beneficiary to link this payment method to.
-</ParamField>
 
 ## Payment data examples
 

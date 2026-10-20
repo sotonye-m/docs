@@ -1,6 +1,7 @@
 ---
 title: "Events"
 description: "Retrieve all webhook events sent by Yativo"
+openapi: "openapi-fiat.yaml GET /business/events/all"
 ---
 
 Returns a log of all events sent to your configured webhook endpoint.
@@ -8,12 +9,6 @@ Returns a log of all events sent to your configured webhook endpoint.
 ```
 GET /business/events/all
 ```
-
-## Query Parameters
-
-<ParamField query="per_page" type="number">
-  Results per page.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

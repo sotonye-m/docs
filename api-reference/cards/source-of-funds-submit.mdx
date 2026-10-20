@@ -1,0 +1,41 @@
+---
+title: "Submit Source of Funds"
+description: "Submit the customer's source of funds answers"
+api: "POST /v1/yativo-card/customers/{yativoCardId}/source-of-funds"
+authMethod: "bearer"
+---
+
+<APIEndpoint method="POST" path="/v1/yativo-card/customers/{yativoCardId}/source-of-funds" />
+
+<ParamField body="answers" type="array" required>
+  Array of answer objects. Each must have `question` (the question ID from GET) and `answer` (selected option).
+</ParamField>
+
+<RequestExample>
+```bash Submit answers
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/source-of-funds' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "answers": [
+      {"question": "EMPLOYMENT_STATUS", "answer": "EMPLOYED"},
+      {"question": "SOURCE_OF_INCOME", "answer": "SALARY"}
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Submitted
+{
+  "success": true,
+  "message": "Source of Funds submitted successfully",
+  "data": {
+    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "status": "completed",
+    "submitted_at": "2026-04-01T12:15:00.000Z",
+    "next_step": "Verify phone number using POST /phone/request-verification"
+  }
+}
+```
+</ResponseExample>

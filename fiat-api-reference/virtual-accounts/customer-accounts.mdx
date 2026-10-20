@@ -1,6 +1,7 @@
 ---
 title: "Customer Virtual Accounts"
 description: "Retrieve all virtual accounts associated with a specific customer"
+openapi: "openapi-fiat.yaml GET /business/virtual-account/customer/accounts/{customerId}"
 ---
 
 Returns all virtual accounts associated with a specific customer, identified by their customer ID.
@@ -8,12 +9,6 @@ Returns all virtual accounts associated with a specific customer, identified by 
 ```
 GET /v1/business/virtual-account/customer/accounts/{customerId}
 ```
-
-## Path Parameters
-
-<ParamField path="customerId" type="string" required>
-  The unique ID of the customer whose virtual accounts you want to retrieve.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

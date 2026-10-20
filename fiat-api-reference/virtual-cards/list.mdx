@@ -1,6 +1,7 @@
 ---
 title: "List Virtual Cards"
 description: "Retrieve all virtual cards issued to customers"
+openapi: "openapi-fiat.yaml GET /customer/virtual/cards/list"
 ---
 
 Returns all virtual cards issued under your business account.
@@ -8,16 +9,6 @@ Returns all virtual cards issued under your business account.
 ```
 GET https://api.yativo.com/api/v1/customer/virtual/cards/list
 ```
-
-## Query Parameters
-
-<ParamField query="page" type="number">
-  Page number.
-</ParamField>
-
-<ParamField query="per_page" type="number">
-  Results per page.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

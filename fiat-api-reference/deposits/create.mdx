@@ -1,6 +1,7 @@
 ---
 title: "Create Deposit (Payin)"
 description: "Initiate an incoming payment using a payin gateway"
+openapi: "openapi-fiat.yaml POST /wallet/deposits/new"
 ---
 
 Initiate a customer deposit via a supported payin gateway. Optionally pass a `quote_id` from `POST /exchange-rate` to lock the rate and amount before redirecting the customer.
@@ -12,28 +13,6 @@ POST https://api.yativo.com/api/v1/wallet/deposits/new
 <Note>
   Requires `Idempotency-Key` header. Retrieve available gateways and their IDs with `GET /payment-methods/payin?country={iso2}`.
 </Note>
-
-## Request body
-
-<ParamField body="gateway" type="integer" required>
-  The payin gateway ID. Get valid IDs from `GET /payment-methods/payin?country={iso2}`.
-</ParamField>
-
-<ParamField body="currency" type="string" required>
-  The wallet currency to credit (e.g. `"USD"`, `"BRL"`). Must match one of the gateway's supported base currencies.
-</ParamField>
-
-<ParamField body="amount" type="number">
-  Amount to deposit in the local (payin) currency. Required if `quote_id` is not provided. If `quote_id` is present, the amount is taken from the quote.
-</ParamField>
-
-<ParamField body="quote_id" type="string">
-  A quote ID from `POST /exchange-rate` (created with `method_type: "payin"`). When supplied, the locked amount and rate from the quote are used — `amount` is ignored.
-</ParamField>
-
-<ParamField body="redirect_url" type="string">
-  URL to redirect the customer to after completing the payment on the gateway's hosted page.
-</ParamField>
 
 <RequestExample>
 ```bash cURL — with quote_id

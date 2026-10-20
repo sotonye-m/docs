@@ -148,12 +148,33 @@ Submitting the form records the business details. It does not set `kyc_status` t
 
 `POST /customer` creates a customer record. That request does not submit identity documents and does not set the customer to approved.
 
-Customer verification uses the same hosted pages and the same submission API in sandbox and production:
+Customer verification uses the same hosted pages and submission API in sandbox and production, on a separate sandbox host:
 
-- Individual: `https://kyc.yativo.com/individual/{customer_id}`
-- Business: `https://kyc.yativo.com/business/{customer_id}`
-- Submit: `POST https://kyc.yativo.com/api/individual-kyc/submit` or `POST https://kyc.yativo.com/api/business-kyc/submit`
+- Individual: `https://kyc-sandbox.yativo.com/individual/{customer_id}`
+- Business: `https://kyc-sandbox.yativo.com/business/{customer_id}`
+- Submit: `POST https://kyc-sandbox.yativo.com/api/individual-kyc/submit` or `POST https://kyc-sandbox.yativo.com/api/business-kyc/submit`
+- Lookups: the same paths as production, on `https://kyc-sandbox.yativo.com/api`
+
+Production uses `https://kyc.yativo.com` with the same paths.
 
 The sandbox dashboard links to those same hosted pages. Track the result through the customer's endorsements: the `endorsement.updated` webhook, or the `endorsement` list on `GET /customer/{customer_id}` on the sandbox base URL. Each service is available when its endorsement is `approved`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
 
 `GET /customer/{customer_id}` is behind the account check above, so it returns the account 403 until your own account is approved.
+
+### Sandbox test values
+
+On sandbox, identity numbers always pass, so you don't need real Nigerian details. After your request passes validation, these values are stored and verified in place of what you sent. A malformed BVN, NIN or phone is still rejected, exactly as in production.
+
+| Check | Sandbox value | Replaces |
+|---|---|---|
+| NIN | `70123456789` | `nin`, and any `identifying_information` entry of type `nin` |
+| BVN | `22222222222` | `bvn`, and any `identifying_information` entry of type `bvn`, including on KYB associated persons |
+| Phone | `09011111111` (calling code `+234`) | Individual `phone`, business `phone_number` and associated persons' `phone` |
+
+Sandbox also differs in these ways:
+
+- Every BVN validates, and `spei` is always approved.
+- The duplicate-person check is off, so you can submit the same person under any number of customers without a `409`.
+- Placeholder names are still blocked. A name containing `test`, `yativo` or `admin` permanently blocks the `customer_id`, so use realistic names.
+
+Never use these values in production. See the [go-live checklist](/yativo-fiat/kyc#go-live-checklist).

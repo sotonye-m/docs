@@ -1,6 +1,7 @@
 ---
 title: "Delete Beneficiary"
 description: "Permanently delete a beneficiary record"
+openapi: "openapi-fiat.yaml DELETE /beneficiaries/{id}"
 ---
 
 Delete a beneficiary and all their associated payment methods. This action is irreversible.
@@ -10,10 +11,6 @@ DELETE /v1/beneficiaries/{id}
 ```
 
 ## Path parameters
-
-<ParamField path="id" type="string" required>
-  The ID of the beneficiary to delete.
-</ParamField>
 
 <Warning>
   Deleting a beneficiary is permanent and cannot be undone. All associated payment methods will also be deleted. Consider archiving instead if you may need to reference this beneficiary later.

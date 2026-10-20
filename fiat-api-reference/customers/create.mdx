@@ -1,6 +1,7 @@
 ---
 title: "Create Customer"
 description: "Create a new customer profile for an individual or business"
+openapi: "openapi-fiat.yaml POST /customer"
 ---
 
 Create a customer record before initiating any KYC verification or payments for that customer.
@@ -12,28 +13,6 @@ POST /customer
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request body
-
-<ParamField body="customer_name" type="string" required>
-  Full name of the customer (individual) or legal business name (business).
-</ParamField>
-
-<ParamField body="customer_email" type="string" required>
-  Customer's email address. Must be unique per account.
-</ParamField>
-
-<ParamField body="customer_phone" type="string" required>
-  Customer's phone number in E.164 format (e.g. `+15551234567`).
-</ParamField>
-
-<ParamField body="customer_country" type="string" required>
-  Customer's country of residence in ISO 3166-1 alpha-3 format (e.g. `USA`, `BRA`, `MEX`).
-</ParamField>
-
-<ParamField body="customer_type" type="string" required>
-  Customer type: `"individual"` or `"business"`.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

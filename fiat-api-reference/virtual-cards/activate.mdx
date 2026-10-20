@@ -1,6 +1,7 @@
 ---
 title: "Activate Customer for Virtual Cards"
 description: "Enroll a customer in the virtual card program"
+openapi: "openapi-fiat.yaml POST /customer/virtual/cards/activate"
 ---
 
 Registers a customer for virtual card creation. This enrollment step is required before issuing any virtual cards to the customer. Fields that are already stored on the customer's profile may be omitted.
@@ -12,53 +13,6 @@ POST https://api.yativo.com/api/v1/customer/virtual/cards/activate
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request Body
-
-<ParamField body="customer_id" type="string" required>
-  The ID of the customer to activate. Must exist in your customers table.
-</ParamField>
-
-<ParamField body="user_photo" type="string">
-  Customer photo (base64 or URL). Required if not already on the customer's profile.
-</ParamField>
-
-<ParamField body="idType" type="string">
-  Government ID type (e.g. `"passport"`, `"drivers_license"`, `"national_id"`). Required for Nigerian customers.
-</ParamField>
-
-<ParamField body="customer_idFront" type="string">
-  Front image of the customer's government-issued ID. Required if not already on the customer's profile.
-</ParamField>
-
-<ParamField body="customer_idNumber" type="string">
-  Government-issued ID number. Required if not already on the customer's profile.
-</ParamField>
-
-<ParamField body="customer_address" type="object">
-  Customer address. Each sub-field is required if not already on the customer's profile.
-
-  <Expandable title="customer_address fields">
-    <ParamField body="customer_address.country" type="string">
-      ISO 3166-1 alpha-2 country code (e.g. `"US"`).
-    </ParamField>
-    <ParamField body="customer_address.city" type="string">
-      City name.
-    </ParamField>
-    <ParamField body="customer_address.state" type="string">
-      State or region.
-    </ParamField>
-    <ParamField body="customer_address.zipcode" type="string">
-      Postal / ZIP code.
-    </ParamField>
-    <ParamField body="customer_address.street" type="string">
-      Street name.
-    </ParamField>
-    <ParamField body="customer_address.number" type="string">
-      Street number.
-    </ParamField>
-  </Expandable>
-</ParamField>
 
 <RequestExample>
 ```bash cURL

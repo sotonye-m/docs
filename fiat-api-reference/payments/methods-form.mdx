@@ -1,6 +1,7 @@
 ---
 title: "Get Payout Form Fields"
 description: "Retrieve the required form fields for a specific payout method"
+openapi: "openapi-fiat.yaml GET /beneficiary/form/show/{payment_method_id}"
 ---
 
 Returns the dynamic form fields required to add a beneficiary payment method or execute a payout. Fields vary by country and payment method.
@@ -8,12 +9,6 @@ Returns the dynamic form fields required to add a beneficiary payment method or 
 ```
 GET /beneficiary/form/show/{payment_method_id}
 ```
-
-## Path parameters
-
-<ParamField path="payment_method_id" type="number" required>
-  The ID of the payment method, obtained from `GET /payment-methods/payout`.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

@@ -99,7 +99,7 @@ POST /exchange-rate
 </ParamField>
 
 <RequestExample>
-```bash Payout quote (USD → USD via PayPal, method 21)
+```bash Payout quote (USD → USD, method 21)
 curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
@@ -172,7 +172,7 @@ const { data } = await res.json();
       },
       "PayoutMethod": {
         "id": 21,
-        "method_name": "PayPal",
+        "method_name": "Bank Transfer",
         "country": "PER",
         "currency": "USD",
         "base_currency": "USD"

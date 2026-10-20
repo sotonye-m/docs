@@ -1,6 +1,7 @@
 ---
 title: "Withdraw from Card"
 description: "Move funds from a virtual card back to your wallet"
+openapi: "openapi-fiat.yaml POST /customer/virtual/cards/withdraw"
 ---
 
 Withdraws funds from a virtual card back to your USD wallet balance.
@@ -12,16 +13,6 @@ POST https://api.yativo.com/api/v1/customer/virtual/cards/withdraw
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request Body
-
-<ParamField body="cardId" type="string" required>
-  The virtual card ID to withdraw from.
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Amount to withdraw from the card. Minimum 1.00.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

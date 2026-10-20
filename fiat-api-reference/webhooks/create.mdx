@@ -1,6 +1,7 @@
 ---
 title: "Create / Update Webhook"
 description: "Set or update your webhook endpoint to receive real-time event notifications"
+openapi: "openapi-fiat.yaml POST /business/webhook"
 ---
 
 Set a URL to receive webhook notifications for events in your Yativo account. Yativo sends a `POST` request to your endpoint whenever a matching event occurs and signs every request with an `Signature` header for verification.
@@ -12,12 +13,6 @@ POST /business/webhook
 <Note>
   Requires an `Idempotency-Key` header. To update an existing webhook, send `PUT /business/webhook/{webhook}` with the webhook ID returned from this endpoint.
 </Note>
-
-## Request Body
-
-<ParamField body="url" type="string" required>
-  The HTTPS URL of your webhook endpoint. Must be publicly accessible.
-</ParamField>
 
 ## Supported Events
 

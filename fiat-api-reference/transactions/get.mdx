@@ -1,6 +1,7 @@
 ---
 title: "Get Transaction"
 description: "Retrieve full details for a specific transaction"
+openapi: "openapi-fiat.yaml GET /business/transaction/show/{id}"
 ---
 
 Returns complete details for a single transaction by its internal numeric ID.
@@ -8,12 +9,6 @@ Returns complete details for a single transaction by its internal numeric ID.
 ```
 GET /business/transaction/show/{id}
 ```
-
-## Path Parameters
-
-<ParamField path="id" type="number" required>
-  The internal numeric transaction ID (the `id` field, not the `transaction_id` UUID).
-</ParamField>
 
 <RequestExample>
 ```bash cURL

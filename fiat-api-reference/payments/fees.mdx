@@ -1,7 +1,7 @@
 ---
 title: "Get Fee Schedule"
 description: "The fees your account is charged for every payin, payout, virtual account and card service"
-openapi: "GET https://api.yativo.com/api/v1/fees"
+openapi: "openapi-fiat.yaml GET /fees"
 ---
 
 Returns your account's fees for every service it can use. Each line has a fixed fee, a percentage fee and an optional minimum and maximum charge. Where your account has custom pricing, the line shows it with `source: "custom"`. Otherwise it shows your plan's default rate with `source: "default"`.

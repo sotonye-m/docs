@@ -1,6 +1,7 @@
 ---
 title: "Get Customer"
 description: "Retrieve a customer's profile, optionally embedding related data with the include parameter"
+openapi: "openapi-fiat.yaml GET /customer/{customer_id}"
 ---
 
 Returns a customer's profile, including their `endorsement` list. Use the `include` query parameter to embed related data — deposits, payouts, virtual accounts, virtual cards, and/or crypto wallets — in the same response.
@@ -10,29 +11,6 @@ The `endorsement` list is where the customer's KYC or KYB result appears. Each e
 ```
 GET /customer/{customer_id}
 ```
-
-## Path parameters
-
-<ParamField path="customer_id" type="string" required>
-  The UUID of the customer to retrieve.
-</ParamField>
-
-## Query parameters
-
-<ParamField query="include" type="string">
-  Comma-separated list of relations to embed in the response.
-
-  | Value | Embeds |
-  |---|---|
-  | `deposits` | `customer_deposit` array |
-  | `payouts` | `customer_payouts` array |
-  | `virtualaccounts` | `customer_virtualaccounts` array |
-  | `virtual_cards` | `customer_virtual_cards` array |
-  | `crypto_wallets` | `customer_crypto_wallets` array |
-  | `all` | All of the above |
-
-  Multiple values can be combined: `?include=deposits,payouts`
-</ParamField>
 
 <RequestExample>
 ```bash All relations

@@ -122,7 +122,7 @@ components:
         max_fee:
           type: number
           nullable: true
-          example: null
+          example:
         min_amount:
           type: number
           nullable: true
@@ -291,14 +291,14 @@ components:
           type: object
           description: Any of these keys as `#RRGGBB`. Missing colours use Yativo's defaults.
           properties:
-            primary: { type: string, example: '#0A7C4B' }
-            primary_text: { type: string, example: '#FFFFFF' }
-            background: { type: string, example: '#F6F8F7' }
-            surface: { type: string, example: '#FFFFFF' }
-            text: { type: string, example: '#10231A' }
-            muted: { type: string, example: '#5B6B63' }
-            border: { type: string, example: '#DDE5E0' }
-            error: { type: string, example: '#C62828' }
+            primary: {type: string, example: '#0A7C4B'}
+            primary_text: {type: string, example: '#FFFFFF'}
+            background: {type: string, example: '#F6F8F7'}
+            surface: {type: string, example: '#FFFFFF'}
+            text: {type: string, example: '#10231A'}
+            muted: {type: string, example: '#5B6B63'}
+            border: {type: string, example: '#DDE5E0'}
+            error: {type: string, example: '#C62828'}
         email:
           type: object
           properties:
@@ -501,21 +501,26 @@ components:
         street_line_1:
           type: string
           maxLength: 256
+          description: Street address line 1. Max 256 characters.
         street_line_2:
           type: string
+          description: Street address line 2. Optional.
         city:
           type: string
           maxLength: 256
+          description: City. Max 256 characters.
         state:
           type: string
+          description: State or province. Accepts full ISO 3166-2 codes like `"US-CA"` or the subdivision segment `"CA"` — both are normalised.
         postal_code:
           type: string
+          description: Postal or ZIP code. Validated per country.
         country:
           type: string
-          description: ISO 3166-1 alpha-2
+          description: ISO 3166-1 alpha-2 country code.
         proof_of_address_file:
           type: string
-          description: Hosted URL, base64 data URI or multipart file. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB.
+          description: Proof of address document (utility bill, bank statement, etc.). Hosted URL or base64. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB.
 
     IdentifyingInformationItem:
       type: object
@@ -524,22 +529,28 @@ components:
         type:
           type: string
           example: passport
+          description: 'Document type. Common values: `"passport"`, `"national_id"`, `"other"`. Country-specific types also apply (e.g. `"ssn"` for US, `"bvn"` for NG).'
         issuing_country:
           type: string
-          description: ISO 3166-1 alpha-2
+          description: ISO 3166-1 alpha-2 country code of the issuing authority.
         number:
           type: string
+          description: Document number.
         date_issued:
           type: string
           format: date
+          description: Issue date in `YYYY-MM-DD` format. Must be before today.
         expiration_date:
           type: string
           format: date
+          description: Expiration date in `YYYY-MM-DD` format. Must be after today.
         image_front_file:
           type: string
+          description: Front image of the document. Hosted URL or base64. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
         image_back_file:
           type: string
 
+          description: Back image of the document. Required for documents that have a reverse side (e.g. national ID cards). Hosted URL or base64. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
     KybAddress:
       type: object
       required: [street_line_1, city, state, postal_code, country, proof_of_address_file]
@@ -547,15 +558,18 @@ components:
         street_line_1:
           type: string
           maxLength: 255
+          description: Max 255 characters.
         street_line_2:
           type: string
           maxLength: 255
+          description: Max 255 characters.
         city:
           type: string
           maxLength: 100
+          description: Max 100 characters.
         state:
           type: string
-          description: Subdivision code, e.g. FL.
+          description: Subdivision code from `GET /business-kyc/subdivisions/{countryCode}`, for example `"FL"`.
         postal_code:
           type: string
           description: Must match the country's format.
@@ -598,10 +612,12 @@ components:
         type:
           type: string
           example: bank_statement
+          description: A label identifying the document type, e.g. `"bank_statement"`, `"tax_return"`.
         file:
           type: string
 
     # ── Beneficiary ───────────────────────────────────────────────────────────
+          description: Hosted URL or base64-encoded file. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
     Beneficiary:
       type: object
       properties:
@@ -891,6 +907,7 @@ paths:
           schema:
             type: integer
             default: 20
+          description: 'Number of records per page (default: 20).'
         - name: email
           in: query
           schema:
@@ -900,7 +917,7 @@ paths:
           in: query
           schema:
             type: string
-          description: Filter by ISO 3166-1 alpha-3 country code (e.g. USA, BRA).
+          description: Filter by ISO 3166-1 alpha-3 country code (e.g. `"USA"`, `"BRA"`).
         - name: kyc_status
           in: query
           schema:
@@ -910,7 +927,7 @@ paths:
           in: query
           schema:
             type: boolean
-          description: Filter by KYC approval status.
+          description: Filter by KYC approval status. Pass `"true"` or `"false"`.
       responses:
         '200':
           description: Paginated customer list
@@ -952,24 +969,25 @@ paths:
               properties:
                 customer_name:
                   type: string
-                  description: Full name (individual) or legal business name.
+                  description: Full name of the customer (individual) or legal business name (business).
                   example: Alex Smith
                 customer_email:
                   type: string
                   format: email
-                  description: Must be unique per account.
+                  description: Customer's email address. Must be unique per account.
                   example: alex.smith@example.com
                 customer_phone:
                   type: string
-                  description: Phone in E.164 format (e.g. +15551234567).
+                  description: Customer's phone number in E.164 format (e.g. `+15551234567`).
                   example: '+15551234567'
                 customer_country:
                   type: string
-                  description: ISO 3166-1 alpha-3 (e.g. USA, BRA, MEX).
+                  description: Customer's country of residence in ISO 3166-1 alpha-3 format (e.g. `USA`, `BRA`, `MEX`).
                   example: USA
                 customer_type:
                   type: string
                   enum: [individual, business]
+                  description: 'Customer type: `"individual"` or `"business"`.'
       responses:
         '201':
           description: Customer created
@@ -1013,9 +1031,19 @@ paths:
           in: query
           schema:
             type: string
-          description: |
-            Comma-separated list of relations to embed. Values: `deposits`, `payouts`,
-            `virtualaccounts`, `virtual_cards`, `crypto_wallets`, `all`.
+          description: |-
+            Comma-separated list of relations to embed in the response.
+
+              | Value | Embeds |
+              |---|---|
+              | `deposits` | `customer_deposit` array |
+              | `payouts` | `customer_payouts` array |
+              | `virtualaccounts` | `customer_virtualaccounts` array |
+              | `virtual_cards` | `customer_virtual_cards` array |
+              | `crypto_wallets` | `customer_crypto_wallets` array |
+              | `all` | All of the above |
+
+              Multiple values can be combined: `?include=deposits,payouts`
           example: deposits,virtualaccounts
       responses:
         '200':
@@ -1053,6 +1081,7 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The UUID of the customer to update.
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1065,17 +1094,20 @@ paths:
                 customer_id:
                   type: string
                   format: uuid
-                  description: Must match the path parameter.
+                  description: The customer ID. Must match an existing customer record.
                 customer_name:
                   type: string
+                  description: Full name of the customer (individual) or legal business name (business).
                 customer_email:
                   type: string
                   format: email
+                  description: Customer's email address.
                 customer_phone:
                   type: string
+                  description: Customer's phone number.
                 customer_country:
                   type: string
-                  description: ISO 3166-1 alpha-3.
+                  description: Customer's country in ISO 3166-1 alpha-3 format (e.g. `USA`, `BRA`, `MEX`).
                 customer_address:
                   type: object
                   properties:
@@ -1087,6 +1119,7 @@ paths:
                       type: string
                     postal_code:
                       type: string
+                  description: Customer's address details.
       responses:
         '200':
           description: Customer updated
@@ -1135,10 +1168,11 @@ paths:
                 customer_id:
                   type: string
                   format: uuid
+                  description: The UUID of the customer whose KYC you are updating.
                 type:
                   type: string
                   enum: [individual, business]
-                  description: Must match the original submission type.
+                  description: '`"individual"` or `"business"` — must match the original submission type.'
       responses:
         '200':
           description: KYC submission updated
@@ -1187,7 +1221,10 @@ paths:
         Requires an `Idempotency-Key` header.
       servers:
         - url: https://kyc.yativo.com/api
-          description: KYC Platform
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -1219,119 +1256,110 @@ paths:
                 customer_id:
                   type: string
                   format: uuid
+                  description: The customer UUID returned by `POST /customer`.
                 first_name:
                   type: string
                   maxLength: 1024
+                  description: Customer's first name. Max 1024 characters.
                 last_name:
                   type: string
                   maxLength: 1024
+                  description: Customer's last name. Max 1024 characters.
                 middle_name:
                   type: string
+                  description: Customer's middle name. Optional.
                 email:
                   type: string
                   format: email
+                  description: Customer's email address.
                 calling_code:
                   type: string
                   pattern: '^\+\d{1,4}$'
                   example: '+1'
+                  description: Country dial code. Must match `^\+\d{1,4}$`, e.g. `"+1"`, `"+44"`, `"+234"`.
                 phone:
                   type: string
-                  description: Digits only, 8–15 characters. Do not include country code.
+                  description: Phone number digits only, 8–15 characters. Do not include the country code.
                   minLength: 8
                   maxLength: 15
                 birth_date:
                   type: string
                   format: date
-                  description: The customer must be at least 18.
+                  description: Date of birth in `YYYY-MM-DD` format. The customer must be at least 18.
                 nationality:
                   type: string
-                  description: ISO 3166-1 alpha-2 (e.g. US, NG, BR).
+                  description: ISO 3166-1 alpha-2 country code, e.g. `"US"`, `"NG"`, `"BR"`.
                   minLength: 2
                   maxLength: 2
                 gender:
                   type: string
                   enum: [male, female]
+                  description: '`"male"` or `"female"`.'
                 taxId:
                   type: string
                   maxLength: 255
                   pattern: '^[A-Za-z0-9]+$'
-                  description: Letters and digits only.
+                  description: Tax identification number. Letters and digits only, up to 255 characters. Send `"123456789"`, not `"123-45-6789"`.
                 selfie_image:
                   type: string
-                  description: Hosted URL, base64 data URI or multipart file. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB.
+                  description: 'Selfie photo of the customer. Provide as a hosted URL (from `POST /storage/upload`) or a base64-encoded string. Accepted formats: PDF, JPG, JPEG, PNG, HEIC, TIF, between 5 KB and 30 MB.'
                 bvn:
                   type: string
-                  description: Required when nationality or residential_address.country is NG. Exactly 11 digits.
+                  description: Bank Verification Number. **Required when `nationality` or `residential_address.country` is `"NG"`**. Exactly 11 digits.
                   minLength: 11
                   maxLength: 11
                 nin:
                   type: string
-                  description: Required when nationality or residential_address.country is NG. Exactly 11 digits.
+                  description: National Identification Number. **Required when `nationality` or `residential_address.country` is `"NG"`**. Exactly 11 digits.
                   minLength: 11
                   maxLength: 11
                 residential_address:
                   $ref: '#/components/schemas/ResidentialAddress'
+                  description: Customer's current residential address.
                 identifying_information:
                   type: array
                   minItems: 1
                   items:
                     $ref: '#/components/schemas/IdentifyingInformationItem'
+                  description: At least one government-issued ID document. Accepted document types depend on `issuing_country` — see the [ID types reference](/yativo-fiat/kyc#id-types-by-country).
                 employment_status:
                   type: string
-                  enum: [employed, exempt, homemaker, retired, self_employed, student, unemployed]
+                  description: Lookup key such as `SelfEmployed`, or its snake_case form `self_employed`.
                 most_recent_occupation_code:
                   type: string
-                  description: 6-digit code from GET /auth/occupation-codes.
+                  description: '6-digit occupation code. Retrieve the full list from `GET /auth/occupation-codes`. Example: `"151252"` (Software developer).'
                   example: '151252'
                 expected_monthly_payments_usd:
                   type: string
-                  enum: ['0_4999', '5000_9999', '10000_49999', '50000_plus']
+                  description: Lookup key such as `LessThan5K`, or its value `0_4999`.
                 source_of_funds:
                   type: string
-                  enum:
-                    - salary
-                    - company_funds
-                    - savings
-                    - investments_loans
-                    - inheritance
-                    - gifts
-                    - government_benefits
-                    - pension_retirement
-                    - sale_of_assets_real_estate
-                    - ecommerce_reseller
-                    - gambling_proceeds
-                    - someone_elses_funds
+                  description: Lookup key from GET /individual-kyc/source-of-funds, or its snake_case form.
                 account_purpose:
                   type: string
-                  enum:
-                    - receive_salary
-                    - purchase_goods_and_services
-                    - personal_or_living_expenses
-                    - payments_to_friends_or_family_abroad
-                    - receive_payment_for_freelancing
-                    - investment_purposes
-                    - protect_wealth
-                    - ecommerce_retail_payments
-                    - operating_a_company
-                    - charitable_donations
-                    - other
+                  description: Lookup key from GET /individual-kyc/account-purposes, or its snake_case form.
                 account_purpose_other:
                   type: string
-                  description: Required when account_purpose is "other".
+                  description: Required when `account_purpose` is `"other"`. Provide a plain-text description.
                 acting_as_intermediary:
                   type: boolean
                   default: false
+                  description: Set to `true` if the customer is acting on behalf of third parties. Defaults to `false`.
                 annual_salary:
                   type: string
                   maxLength: 20
+                  description: Optional. Up to 20 characters.
                 current_employer:
                   type: string
                   maxLength: 512
+                  description: Optional. Up to 512 characters.
                 immigration_status:
                   type: string
                   enum: [Permanent U.S. Resident, Non-Permanent U.S. Resident, Non-Resident of U.S.]
+                  description: Optional. `"Permanent U.S. Resident"`, `"Non-Permanent U.S. Resident"` or `"Non-Resident of U.S."`
                 usd_virtual_account:
                   type: boolean
+                  description: 'Also `eur_virtual_account`, `gbp_virtual_account` and `native_endorsement`: the services to verify the customer for. See [Virtual account flags](/yativo-fiat/kyc#virtual-account-flags).'
                 eur_virtual_account:
                   type: boolean
                 gbp_virtual_account:
@@ -1342,6 +1370,7 @@ paths:
                   type: array
                   items:
                     $ref: '#/components/schemas/UploadedDocumentItem'
+                  description: At least one supporting document is required.
       responses:
         '201':
           description: KYC submitted. Verification runs afterwards.
@@ -1400,7 +1429,10 @@ paths:
         meet it, and the combined ownership of persons with `has_ownership: true` can't exceed 100.
       servers:
         - url: https://kyc.yativo.com/api
-          description: KYC Platform
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -1433,57 +1465,72 @@ paths:
               properties:
                 customer_id:
                   type: string
+                  description: The customer ID returned by `POST /customer`.
                 business_legal_name:
                   type: string
                   maxLength: 255
+                  description: Registered legal name. Max 255 characters.
                 business_trade_name:
                   type: string
                   maxLength: 255
+                  description: Trade or DBA name. Max 255 characters.
                 business_description:
                   type: string
                   minLength: 140
                   maxLength: 5000
+                  description: What the business does. 140–5000 characters.
                 email:
                   type: string
                   format: email
+                  description: Business contact email.
                 business_type:
                   type: string
                   enum: [cooperative, corporation, llc, partnership, sole_prop, trust, other]
+                  description: '`cooperative`, `corporation`, `llc`, `partnership`, `sole_prop`, `trust` or `other`.'
                 registration_number:
                   type: string
                   maxLength: 100
+                  description: Government registration or incorporation number. Max 100 characters.
                 incorporation_date:
                   type: string
                   format: date
-                  description: Before today.
+                  description: '`YYYY-MM-DD`, before today.'
                 incorporation_country:
                   type: string
-                  description: ISO 3166-1 alpha-2.
+                  description: ISO 3166-1 alpha-2 country code.
                 tax_id:
                   type: string
                   maxLength: 255
                   pattern: '^[A-Za-z0-9]+$'
-                  description: Required unless identifying_information is sent. Letters and digits only.
+                  description: Business tax ID. Required unless you send `identifying_information`. Letters and digits only, up to 255 characters.
                 phone_calling_code:
                   type: string
                   pattern: '^\+[1-9]\d{0,3}$'
+                  description: Must match `^\+[1-9]\d{0,3}$`, for example `"+1"`.
                 phone_number:
                   type: string
                   pattern: '^\d{7,15}$'
+                  description: Digits only, 7–15 characters.
                 business_industry:
                   type: string
+                  description: Industry, from `GET /business-industries`.
                 primary_website:
                   type: string
                   format: uri
+                  description: Website URL including the scheme, for example `https://acme.com`.
                 is_dao:
                   type: boolean
+                  description: Whether the business is a decentralized autonomous organization.
                 statement_descriptor:
                   type: string
                   maxLength: 22
+                  description: How the name appears on statements. Max 22 characters.
                 registered_address:
                   $ref: '#/components/schemas/KybAddress'
+                  description: The registered address. `physical_address` has the same fields and is also required.
                 physical_address:
                   $ref: '#/components/schemas/KybAddress'
+                  description: The operating address. Same fields as `registered_address`.
                 associated_persons:
                   type: array
                   minItems: 1
@@ -1494,38 +1541,49 @@ paths:
                       first_name:
                         type: string
                         maxLength: 100
+                        description: Max 100 characters.
                       last_name:
                         type: string
                         maxLength: 100
+                        description: Max 100 characters.
                       birth_date:
                         type: string
                         format: date
-                        description: The person must be at least 18.
+                        description: '`YYYY-MM-DD`. The person must be at least 18.'
                       nationality:
                         type: string
+                        description: ISO 3166-1 alpha-2.
                       email:
                         type: string
                         format: email
+                        description: Personal email.
                       phone:
                         type: string
                         pattern: '^\d{7,15}$'
+                        description: Digits only, 7–15 characters.
                       title:
                         type: string
+                        description: For example `"CEO"`.
                       ownership_percentage:
                         type: number
                         minimum: 0
                         maximum: 100
+                        description: 0–100.
                       tax_id:
                         type: string
                         pattern: '^[A-Za-z0-9]+$'
+                        description: Personal tax ID. Letters and digits only.
                       annual_salary:
                         type: string
                         maxLength: 20
+                        description: Up to 20 characters.
                       relationship_established_at:
                         type: string
                         format: date
+                        description: '`YYYY-MM-DD`, not in the future.'
                       residential_address:
                         $ref: '#/components/schemas/KybAddress'
+                        description: Same fields as `registered_address`, including `proof_of_address_file`.
                       identifying_information:
                         type: array
                         minItems: 1
@@ -1537,69 +1595,90 @@ paths:
                             type:
                               type: string
                               example: passport
+                              description: For example `passport`, `national_id`, `drivers_license` or `tax_id`.
                             number:
                               type: string
+                              description: Document number. For `tax_id`, letters and digits only.
                             issuing_country:
                               type: string
+                              description: ISO 3166-1 alpha-2.
                             expiration:
                               type: string
                               format: date
+                              description: '`YYYY-MM-DD`, after today.'
                             image_front:
                               type: string
                               description: File. Not required for tax_id.
                             image_back:
                               type: string
-                              description: File. Required except for passport and tax_id.
+                              description: Back of the document. Required except for `passport` and `tax_id`.
                       has_ownership:
                         type: boolean
+                        description: Has an ownership stake.
                       has_control:
                         type: boolean
+                        description: Has operational control.
                       is_signer:
                         type: boolean
+                        description: Authorized signer. A signer who isn't a director requires a `board_resolution` in `extra_documents`.
                       is_director:
                         type: boolean
+                        description: Director.
+                  description: "Owners, directors and authorized signers. At least one person must own at least `ownership_threshold` percent (default 25). People below the threshold are dropped from the submission. The combined `ownership_percentage` of people with `has_ownership: true` can't exceed 100."
                 account_purpose:
                   type: string
                   enum: [charitable_donations, ecommerce_retail_payments, investment_purposes, other, payments_to_friends_or_family_abroad, payroll, personal_or_living_expenses, protect_wealth, purchase_goods_and_services, receive_payments_for_goods_and_services, tax_optimization, third_party_money_transmission, treasury_management]
+                  description: One of `charitable_donations`, `ecommerce_retail_payments`, `investment_purposes`, `other`, `payments_to_friends_or_family_abroad`, `payroll`, `personal_or_living_expenses`, `protect_wealth`, `purchase_goods_and_services`, `receive_payments_for_goods_and_services`, `tax_optimization`, `third_party_money_transmission` or `treasury_management`.
                 account_purpose_other:
                   type: string
-                  description: Required when account_purpose is other.
+                  description: Required when `account_purpose` is `other`.
                 source_of_funds:
                   type: string
                   enum: [BusinessLoans, Grants, InterCompanyFunds, InvestmentProceeds, LegalSettlement, OwnersCapital, PensionRetirement, SaleOfAssets, SalesOfGoodsAndServices, ThirdPartyFunds, TreasuryReserves]
+                  description: PascalCase. One of `BusinessLoans`, `Grants`, `InterCompanyFunds`, `InvestmentProceeds`, `LegalSettlement`, `OwnersCapital`, `PensionRetirement`, `SaleOfAssets`, `SalesOfGoodsAndServices`, `ThirdPartyFunds` or `TreasuryReserves`.
                 expected_monthly_payments_usd:
                   type: integer
                   minimum: 1
+                  description: Expected monthly volume in USD. At least 1.
                 high_risk_activities:
                   type: array
                   items:
                     type: string
                     enum: [adult_entertainment, gambling, hold_client_funds, investment_services, lending_banking, marijuana_or_related_services, money_services, nicotine_tobacco_or_related_services, operate_foreign_exchange_virtual_currencies_brokerage_otc, pharmaceuticals, precious_metals_precious_stones_jewelry, safe_deposit_box_rentals, third_party_payment_processing, weapons_firearms_and_explosives, none_of_the_above]
+                  description: Any of `adult_entertainment`, `gambling`, `hold_client_funds`, `investment_services`, `lending_banking`, `marijuana_or_related_services`, `money_services`, `nicotine_tobacco_or_related_services`, `operate_foreign_exchange_virtual_currencies_brokerage_otc`, `pharmaceuticals`, `precious_metals_precious_stones_jewelry`, `safe_deposit_box_rentals`, `third_party_payment_processing`, `weapons_firearms_and_explosives`. Send `["none_of_the_above"]` if none apply.
                 high_risk_activities_explanation:
                   type: string
                   maxLength: 5000
+                  description: Required if any high-risk activity is listed. Max 5000 characters.
                 pep_status:
                   type: boolean
+                  description: Whether any associated person is a politically exposed person.
                 third_party_msb_payments:
                   type: boolean
+                  description: Whether the business makes payments for third-party money services businesses.
                 conducts_money_services:
                   type: boolean
+                  description: When `true`, `conducts_money_services_description` and `compliance_screening_explanation` are required.
                 conducts_money_services_description:
                   type: string
                 compliance_screening_explanation:
                   type: string
                 estimated_annual_revenue_usd:
                   type: string
+                  description: Estimated annual revenue in USD.
                 operates_in_prohibited_countries:
                   type: string
                   enum: ['yes', 'no']
+                  description: '`yes` or `no`.'
                 ownership_threshold:
                   type: integer
                   minimum: 5
                   maximum: 100
                   default: 25
+                  description: 5–100. Default 25.
                 has_material_intermediary_ownership:
                   type: boolean
+                  description: Whether the ownership includes material intermediary entities.
                 regulated_activity:
                   type: object
                   properties:
@@ -1611,6 +1690,7 @@ paths:
                       type: string
                     license_number:
                       type: string
+                  description: '`regulated_activities_description`, `primary_regulatory_authority_country`, `primary_regulatory_authority_name` and `license_number`, if the business is regulated.'
                 documents:
                   type: array
                   minItems: 1
@@ -1621,13 +1701,17 @@ paths:
                       purpose:
                         type: string
                         enum: [business_registration, proof_of_address, tax_documents, compliance_documents, financial_statements, certificate_of_good_standing, portfolio_statement, board_minutes]
+                        description: '`business_registration`, `proof_of_address`, `tax_documents`, `compliance_documents`, `financial_statements`, `certificate_of_good_standing`, `portfolio_statement` or `board_minutes`.'
                       description:
                         type: string
+                        description: For example `"Certificate of Incorporation"`.
                       file:
                         type: string
+                        description: The document.
+                  description: At least one document.
                 extra_documents:
                   type: array
-                  description: Must include shareholding_structure, and board_resolution when a signer isn't a director.
+                  description: "Items of `{ \"type\": \"...\", \"file\": ... }`. Must include `shareholding_structure`, and `board_resolution` when an authorized signer isn't a director."
                   items:
                     type: object
                     properties:
@@ -1638,17 +1722,61 @@ paths:
                         type: string
                 identifying_information:
                   type: array
-                  description: Business-level documents. image_front is required when type is tax_id.
+                  description: Business-level documents with `type`, `issuing_country`, `number`, `description`, `expiration`, `image_front` and `image_back`. `image_front` is required when `type` is `tax_id`.
                   items:
                     type: object
                 usd_virtual_account:
                   type: boolean
+                  description: Also `eur_virtual_account`, `gbp_virtual_account` and `native_endorsement`. See [Virtual account flags](/yativo-fiat/kyc#virtual-account-flags).
                 eur_virtual_account:
                   type: boolean
                 gbp_virtual_account:
                   type: boolean
                 native_endorsement:
                   type: boolean
+                extra_business_info:
+                  type: object
+                  description: Optional business profile. Values outside the allowed lists come back in warnings.
+                  properties:
+                    meeting_mode: {type: string, maxLength: 255}
+                    industry_vertical: {type: string, maxLength: 255, example: Ecommerce - Consumer Electronics}
+                    business_description: {type: string, minLength: 140, maxLength: 5000}
+                    obo_usage: {type: string, enum: ['yes', 'no']}
+                    monthly_volume_usd: {type: number}
+                    avg_transaction_usd: {type: number}
+                    max_transaction_usd: {type: number}
+                    primary_account_purpose: {type: string, maxLength: 255}
+                    sender_geographies:
+                      type: array
+                      items: {type: string, enum: [Africa, Europe, North America, South America, Asia]}
+                collections_data:
+                  type: object
+                  properties:
+                    sender_industries:
+                      type: array
+                      items: {type: string, enum: [E-commerce, Wholesale, Retail, Logistics, Manufacturing, Consulting, Others]}
+                    sender_types: {type: string, enum: [individuals, business, businesses, both]}
+                    top_5_senders: {type: array, maxItems: 5, items: {type: string}}
+                    incoming_from_fintech_wallets: {type: boolean}
+                    incoming_fintech_wallet_details: {type: string, maxLength: 1000}
+                    collection_currencies: {type: array, items: {type: string}, description: Codes from GET /transaction-currencies.}
+                    current_collection_provider: {type: string}
+                    reason_for_switching_collection: {type: string}
+                    expected_monthly_disbursement_usd: {type: number}
+                    avg_transaction_amount_collection: {type: number}
+                    max_transaction_amount_collection: {type: number}
+                payouts_data:
+                  type: object
+                  properties:
+                    payout_primary_purpose: {type: string, maxLength: 255}
+                    beneficiary_geographies: {type: array, items: {type: string}, description: Enabled codes from GET /transaction-countries.}
+                    beneficiary_industries: {type: array, items: {type: string}}
+                    beneficiary_types: {type: string, enum: [individual, individuals, business, both]}
+                    top_5_beneficiaries: {type: array, maxItems: 5, items: {type: string}}
+                    primary_payout_method: {type: string, enum: [ach, wire, sepa, swift, local_transfer, mobile_money, crypto]}
+                    payout_currencies: {type: array, items: {type: string}}
+                    current_payout_provider: {type: string}
+                    reason_for_switching_payout: {type: string}
       responses:
         '200':
           description: KYB data accepted. Verification runs afterwards.
@@ -1674,6 +1802,644 @@ paths:
               schema:
                 $ref: '#/components/schemas/KycValidationError'
 
+  # ============================================================
+  # KYC LOOKUPS (KYC platform)
+  # ============================================================
+
+  /countries:
+    get:
+      tags: [KYC Lookups]
+      summary: List Countries
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Every country you can send in KYC and KYB fields such as `nationality`, `country` and
+        `issuing_country`. Send the two-letter `code`. Sorted by name.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Countries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    code: {type: string, example: US, description: ISO 3166-1 alpha-2. Send this value.}
+                    iso3: {type: string, example: USA}
+                    name: {type: string, example: United States}
+              example:
+                - {code: AF, iso3: AFG, name: Afghanistan}
+                - {code: AL, iso3: ALB, name: Albania}
+
+  /subdivisions/{countryCode}:
+    get:
+      tags: [KYC Lookups]
+      summary: List Subdivisions
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        States, provinces or regions for a country. Send `code` as the `state` of an address.
+        Returns an empty array for an unknown country. Also available as
+        `GET /subdivisions/states/{countryCode}`, `GET /individual-kyc/subdivisions/{countryCode}`
+        and `GET /business-kyc/subdivisions/{countryCode}`.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          description: ISO 3166-1 alpha-2 country code.
+          schema: {type: string, example: US}
+      responses:
+        '200':
+          description: Subdivisions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    code: {type: string, example: CA, description: Send this value as `state`.}
+                    name: {type: string, example: California}
+                    subdivision_code: {type: string, example: CA}
+              example:
+                - {code: AL, name: Alabama, subdivision_code: AL}
+                - {code: AK, name: Alaska, subdivision_code: AK}
+
+  /postal-codes/{countryCode}:
+    get:
+      tags: [KYC Lookups]
+      summary: Get Postal Code Format
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Whether a country uses postal codes, and the pattern and sample values to validate
+        `postal_code` before you submit.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          description: ISO 3166-1 alpha-2 country code.
+          schema: {type: string, example: US}
+      responses:
+        '200':
+          description: Postal code format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  country_code: {type: string, example: US}
+                  country_name: {type: string, example: United States}
+                  uses_postal_codes: {type: boolean, example: true}
+                  validation:
+                    type: object
+                    properties:
+                      rule_regex: {type: string, nullable: true, example: '/^\d{5}(?:-\d{4})?$/'}
+                      rule_samples:
+                        type: array
+                        items: {type: string}
+                        example: ['12345', '12345-6789']
+                      addressing_pattern: {type: string, nullable: true}
+
+  /identification-types/{countryCode}:
+    get:
+      tags: [KYC Lookups]
+      summary: List ID Types
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        The ID document `type` values accepted for a country, including tax ID types. Use them for
+        `identifying_information[].type`. A country without a list returns only `other`.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          description: ISO 3166-1 alpha-2 country code of the issuing country.
+          schema: {type: string, example: NG}
+      responses:
+        '200':
+          description: ID types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type: {type: string, example: passport, description: Send this value as `type`.}
+                    description: {type: string, example: Passport}
+              example:
+                - {type: bvn, description: Bank Verification Number}
+                - {type: national_id, description: National ID}
+                - {type: nin, description: National Identification Number}
+                - {type: other, description: Other Government Issued ID}
+                - {type: passport, description: Passport}
+                - {type: tin, description: Tax Identification Number}
+
+  /occupations:
+    get:
+      tags: [KYC Lookups]
+      summary: List Occupations
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Occupation codes for `most_recent_occupation_code` in individual KYC. Send `code`.
+        Sorted by name. The list is long, so offer a searchable field.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Occupations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    occupation: {type: string, example: Accountant and auditor}
+                    code: {type: string, example: '132011', description: Send this value.}
+              example:
+                - {occupation: Accountant and auditor, code: '132011'}
+                - {occupation: Actor, code: '272011'}
+
+  /business-industries:
+    get:
+      tags: [KYC Lookups]
+      summary: List Business Industries
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Industries for `business_industry` in KYB. Send `code`. Sorted by name.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Industries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    occupation: {type: string, example: Soybean Farming, description: The industry name.}
+                    code: {type: string, example: '111110'}
+
+  /individual-kyc/account-purposes:
+    get:
+      tags: [KYC Lookups]
+      summary: List Account Purposes (Individual)
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Values for `account_purpose` in individual KYC, as a map of key to label. Send the key, such as
+        `ReceiveSalary`. Its snake_case form, `receive_salary`, also works.
+        Also available as `GET /account-purposes`.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Account purposes
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {type: string}
+              example:
+                CharitableDonations: Charitable Donations
+                ReceiveSalary: Receive Salary
+
+  /individual-kyc/source-of-funds:
+    get:
+      tags: [KYC Lookups]
+      summary: List Sources of Funds (Individual)
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Values for `source_of_funds` in individual KYC, as a map of key to label. Send the key, such as
+        `Salary`. Its snake_case form, `salary`, also works.
+        Also available as `GET /source-of-funds`.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Sources of funds
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {type: string}
+              example:
+                CompanyFunds: Company Funds
+                Salary: Salary
+
+  /business-kyc/account-purposes:
+    get:
+      tags: [KYC Lookups]
+      summary: List Account Purposes (Business)
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Values for `account_purpose` in KYB. The keys are the values to send. This list differs from
+        the individual one.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Account purposes
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {type: string}
+              example:
+                charitable_donations: Charitable Donations
+                receive_payments_for_goods_and_services: Receive Payments For Goods And Services
+
+  /business-kyc/source-of-funds:
+    get:
+      tags: [KYC Lookups]
+      summary: List Sources of Funds (Business)
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Values for `source_of_funds` in KYB. The keys are the PascalCase values to send. This list
+        differs from the individual one.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Sources of funds
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {type: string}
+              example:
+                BusinessLoans: Business Loans
+                SalesOfGoodsAndServices: Sales Of Goods And Services
+
+  /individual-kyc/expected-monthly-payments-usd:
+    get:
+      tags: [KYC Lookups]
+      summary: List Expected Monthly Payment Ranges
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Ranges for `expected_monthly_payments_usd` in individual KYC. Send the key, such as `LessThan5K`.
+        The value, such as `0_4999`, also works.
+        Returned in ascending order. Also available as `GET /expected-monthly-payments-usd`.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Ranges
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {type: string}
+              example:
+                LessThan5K: 0_4999
+                From5KTo10K: 5000_9999
+                From10KTo50K: 10000_49999
+                GreaterThan50K: 50000_plus
+
+  /transaction-currencies:
+    get:
+      tags: [KYC Lookups]
+      summary: List Transaction Currencies
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Currencies for the KYB `collection_currencies` field. Send `code`.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Currencies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    code: {type: string, example: AED}
+                    name: {type: string, example: United Arab Emirates Dirham}
+
+  /transaction-countries:
+    get:
+      tags: [KYC Lookups]
+      summary: List Transaction Countries
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Countries for the KYB `beneficiary_geographies` field. Only countries with `status: enabled`
+        are accepted. Send `code`.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      responses:
+        '200':
+          description: Countries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    code: {type: string, example: AF}
+                    iso3: {type: string, example: AFG}
+                    name: {type: string, example: Afghanistan}
+                    status: {type: string, enum: [enabled, disabled], example: enabled}
+
+  /individual-kyc/{customerId}:
+    patch:
+      tags: [KYC / KYB]
+      summary: Update Individual KYC (Partial)
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Change some fields of an individual KYC submission. Send only the fields you're changing,
+        with the same names and rules as Submit Individual KYC. `state` and `postal_code` are checked
+        against the country's subdivision and postal code formats.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Any fields from Submit Individual KYC.
+              additionalProperties: true
+            example:
+              residential_address:
+                street_line_1: 742 Evergreen Terrace
+                city: Springfield
+                state: IL
+                postal_code: '62704'
+                country: US
+      responses:
+        '200':
+          description: Updated
+        '400':
+          description: No fields provided.
+        '404':
+          description: Customer submission not found.
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycValidationError'
+
+  /business-kyc/{customerId}:
+    patch:
+      tags: [KYC / KYB]
+      summary: Update Business KYB (Partial)
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Change some fields of a KYB submission. Send only the fields you're changing, with the same
+        names and rules as Submit Business KYB.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Any fields from Submit Business KYB.
+              additionalProperties: true
+            example:
+              primary_website: https://acmepay.com
+      responses:
+        '200':
+          description: Updated
+        '404':
+          description: Business not found.
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycValidationError'
+
+  /customer/kyc/resubmit/{customerId}/{endorsement}:
+    post:
+      tags: [KYC / KYB]
+      summary: Resubmit Endorsement
+      description: |
+        Re-run verification for one endorsement of an individual customer, for example after they
+        update their ID document or selfie. Other endorsements aren't affected. A `200` means the
+        resubmission was queued. Watch `endorsement.updated` for the result.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: customerId
+          in: path
+          required: true
+          schema: {type: string}
+        - name: endorsement
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [base, sepa, spei, faster_payments, naira, virtual_card, asian, brazil]
+      responses:
+        '200':
+          description: Resubmission queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, example: success}
+                  status_code: {type: integer, example: 200}
+                  message: {type: string, example: Request successful}
+                  data:
+                    type: object
+                    properties:
+                      message: {type: string, example: 'KYC resubmission for "faster_payments" queued.'}
+        '404':
+          description: Customer not found, or no KYC submission yet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Business customer, or unsupported endorsement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /business/virtual-account/currencies-and-endorsements:
+    get:
+      tags: [Virtual Accounts]
+      summary: List Currencies and Endorsements
+      description: |
+        Every virtual account currency code your account can use, and the endorsement a customer
+        needs approved before you can issue that currency.
+      responses:
+        '200':
+          description: Currencies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, example: success}
+                  status_code: {type: integer, example: 200}
+                  message: {type: string, example: Request successful}
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        currency: {type: string, example: USDBASE}
+                        endorsement: {type: string, nullable: true, example: base}
+
+  /kyc/endorsements/{customerId}/{service}/resubmit:
+    post:
+      tags: [KYC / KYB]
+      summary: Resubmit Endorsement (KYC Platform)
+      description: |
+        **Base URL: `https://kyc.yativo.com/api`**
+
+        Resubmit a customer's stored KYC or KYB for one endorsement. Works for individual and business
+        customers. The endorsement moves to `under_review` and its `errors` are cleared. If the data can't be
+        submitted, it returns to its previous status and `errors.resubmission_failed` says why.
+        Limited to 30 requests a minute.
+      servers:
+        - url: https://kyc.yativo.com/api
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema: {type: string}
+        - name: service
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [base, sepa, eurde, spei, asian, virtual_card, naira, cobo_pobo, faster_payments, native, brazil, usd_latam, eur_latam]
+        - name: X-Resubmit-Token
+          in: header
+          required: false
+          description: Only when resubmit protection is enabled on your account.
+          schema: {type: string}
+      responses:
+        '202':
+          description: Queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string}
+                  data:
+                    type: object
+                    properties:
+                      customer_id: {type: string}
+                      service: {type: string, example: cobo_pobo}
+                      status: {type: string, example: under_review}
+        '403':
+          description: Resubmit token missing or wrong
+        '404':
+          description: No stored submission for this customer
+        '409':
+          description: The endorsement is already approved
+        '422':
+          description: Unknown endorsement
+
   /kyc/regenerate/{customerId}/{service}:
     get:
       tags: [KYC / KYB]
@@ -1688,7 +2454,10 @@ paths:
         `virtual_card`, `asian`, `native`, `cobo_pobo`
       servers:
         - url: https://kyc.yativo.com/api
-          description: KYC Platform
+          description: KYC Platform (production)
+        - url: https://kyc-sandbox.yativo.com/api
+          description: KYC Platform (sandbox)
+      security: []
       parameters:
         - name: customerId
           in: path
@@ -1696,12 +2465,14 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The UUID of the customer.
         - name: service
           in: path
           required: true
           schema:
             type: string
             enum: [base, sepa, spei, brazil, eurde, usd_latam, eur_latam, virtual_card, asian, native, cobo_pobo]
+          description: 'The service endorsement to regenerate. One of: `base`, `sepa`, `spei`, `brazil`, `eurde`, `usd_latam`, `eur_latam`, `virtual_card`, `asian`, `native`, `cobo_pobo`.'
       responses:
         '200':
           description: Endorsement link regenerated
@@ -1752,31 +2523,29 @@ paths:
               properties:
                 from_currency:
                   type: string
-                  description: Source currency code (ISO 4217).
+                  description: Source currency code (ISO 4217), e.g. `"USD"`, `"EUR"`.
                   example: USD
                 to_currency:
                   type: string
-                  description: Target currency code (ISO 4217).
+                  description: Target currency code (ISO 4217), e.g. `"USD"`, `"CLP"`, `"BRL"`, `"MXN"`.
                   example: CLP
                 amount:
                   type: number
-                  description: Amount in the source currency to convert.
+                  description: 'Amount in the source currency to convert. With `amount_type: "receive"`, the amount the customer receives in `to_currency`.'
                   example: 500
                 method_id:
                   type: integer
-                  description: Payment method ID. When provided, scopes the quote to that rail and applies its exact fee structure.
+                  description: The payment method ID (from `GET /payment-methods/payout` or `GET /payment-methods/payin`). When provided, the quote is scoped to that specific payment rail and its exact fee structure is applied.
                 method_type:
                   type: string
                   enum: [payout, payin]
-                  description: Required when method_id is provided.
+                  description: 'Transaction direction: `"payout"` (for sends/withdrawals) or `"payin"` (for deposits). Required when `method_id` is provided.'
                 amount_type:
                   type: string
                   enum: [send, receive]
                   default: send
-                  description: |
-                    Payout quotes only. `send`: `amount` is what leaves your wallet, in `from_currency`.
-                    `receive`: `amount` is what the customer receives, in `to_currency`; the quote works
-                    out the send amount and fees. `receive` with `method_type: payin` returns 422.
+                  description: |-
+                    Payout quotes only. `send` (default): `amount` is what leaves your wallet. `receive`: `amount` is what the customer receives, and the quote works out the send amount and fees. Using `receive` with `method_type: "payin"` returns `422`. See [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount).
       responses:
         '200':
           description: Quote created
@@ -2069,12 +2838,15 @@ paths:
                 from_currency:
                   type: string
                   example: USD
+                  description: Source currency code (e.g. `"USD"`, `"EUR"`).
                 to_currency:
                   type: string
                   example: MXN
+                  description: Destination currency code (e.g. `"CLP"`, `"MXN"`, `"BRL"`).
                 amount:
                   type: number
                   example: 200
+                  description: Amount in the source currency to send.
       responses:
         '200':
           description: Quote created
@@ -2127,7 +2899,19 @@ paths:
                 quote_id:
                   type: string
                   format: uuid
-                  description: Quote ID from POST /sendmoney/quote. Valid for 5 minutes.
+                  description: The quote ID from `POST /sendmoney/quote`. Valid for 5 minutes.
+                debit_wallet:
+                  type: string
+                  description: Currency to debit from your wallet (e.g. `"USD"`).
+                payment_method_id:
+                  type: number
+                  description: Saved beneficiary payment method ID.
+                customer_id:
+                  type: string
+                  description: The customer the payment method belongs to.
+                amount:
+                  type: number
+                  description: Amount to send. Required if `quote_id` is not provided.
       responses:
         '200':
           description: Payment initiated
@@ -2181,7 +2965,7 @@ paths:
           required: true
           schema:
             type: string
-          description: Destination country in ISO 3166-1 alpha-3 (e.g. CHL, MEX, PER).
+          description: The destination country in ISO 3166-1 alpha-3 format (e.g. `CHL` for Chile, `MEX` for Mexico, `PER` for Peru).
           example: CHL
       responses:
         '200':
@@ -2286,7 +3070,7 @@ paths:
           required: true
           schema:
             type: integer
-          description: Payment method ID from GET /payment-methods/payout.
+          description: The ID of the payment method, obtained from `GET /payment-methods/payout`.
           example: 42
       responses:
         '200':
@@ -2344,11 +3128,11 @@ paths:
               properties:
                 debit_wallet:
                   type: string
-                  description: Wallet currency to debit (e.g. USD, EUR).
+                  description: The wallet currency to debit (e.g. `"USD"`, `"EUR"`).
                   example: USD
                 payment_method_id:
                   type: integer
-                  description: The customer's saved payout method ID, from POST /beneficiaries/payment-methods.
+                  description: The customer's saved payout method ID, from `POST /beneficiaries/payment-methods`.
                   example: 555
                 customer_id:
                   type: string
@@ -2357,27 +3141,27 @@ paths:
                 quote_id:
                   type: string
                   format: uuid
-                  description: Recommended. A payout quote from POST /exchange-rate. Supplies the amount, so amount and amount_type are ignored.
+                  description: "A payout quote from `POST /exchange-rate` (`method_type: \"payout\"`). Recommended. The quote supplies the amount, so `amount` and `amount_type` are ignored. The quote's `method_id` must be the payout method behind `payment_method_id`."
                 amount:
                   type: number
-                  description: Required if quote_id is not provided. With amount_type send, the amount to send in debit_wallet. With amount_type receive, the amount the customer receives in the payout currency.
+                  description: 'Required if `quote_id` is not provided. With `amount_type: "send"` (the default), the amount to send in the `debit_wallet` currency. With `amount_type: "receive"`, the amount the customer receives in the payout currency.'
                 amount_type:
                   type: string
                   enum: [send, receive]
                   default: send
-                  description: Ignored when quote_id is provided. Fees are added on top in both modes.
+                  description: '`send` or `receive`. Ignored when `quote_id` is provided. In both modes fees are added on top and charged to your wallet.'
                 reference:
                   type: string
                   maxLength: 250
-                  description: Payment reference passed to the recipient's bank. Some payout rails shorten it or remove unsupported characters.
+                  description: Payment reference passed to the recipient's bank, up to 250 characters. Depending on the payout rail, it may be shortened or have unsupported characters removed. For example, ACH allows only 10 letters, numbers or spaces.
                 invoice:
                   type: string
                   format: binary
-                  description: Supporting invoice (PDF, PNG or JPEG, up to 15 MB). Send as multipart/form-data.
+                  description: 'Supporting invoice: PDF, PNG or JPEG, up to 15 MB. Send the request as `multipart/form-data` to attach it.'
                 invoice_url:
                   type: string
                   format: uri
-                  description: Public http(s) link to the supporting invoice, as an alternative to invoice.
+                  description: Public `http` or `https` link to the supporting invoice, as an alternative to `invoice`.
       responses:
         '201':
           description: Payout initiated
@@ -2463,22 +3247,22 @@ paths:
               properties:
                 gateway:
                   type: integer
-                  description: Payin gateway ID from GET /payment-methods/payin.
+                  description: The payin gateway ID. Get valid IDs from `GET /payment-methods/payin?country={iso2}`.
                 currency:
                   type: string
-                  description: Wallet currency to credit (e.g. USD, BRL).
+                  description: The wallet currency to credit (e.g. `"USD"`, `"BRL"`). Must match one of the gateway's supported base currencies.
                   example: USD
                 amount:
                   type: number
-                  description: Amount in local payin currency. Required if quote_id is not provided.
+                  description: Amount to deposit in the local (payin) currency. Required if `quote_id` is not provided. If `quote_id` is present, the amount is taken from the quote.
                 quote_id:
                   type: string
                   format: uuid
-                  description: From POST /exchange-rate with method_type payin. Overrides amount.
+                  description: 'A quote ID from `POST /exchange-rate` (created with `method_type: "payin"`). When supplied, the locked amount and rate from the quote are used — `amount` is ignored.'
                 redirect_url:
                   type: string
                   format: uri
-                  description: URL to redirect customer after payment completes.
+                  description: URL to redirect the customer to after completing the payment on the gateway's hosted page.
       responses:
         '200':
           description: Deposit initiated
@@ -2548,34 +3332,41 @@ paths:
           schema:
             type: integer
             default: 1
+          description: 'Page number for pagination (default: 1).'
         - name: per_page
           in: query
           schema:
             type: integer
             default: 15
+          description: 'Records per page (default: 15).'
         - name: gateway
           in: query
           schema:
             type: string
+          description: Filter by payment gateway ID.
         - name: currency
           in: query
           schema:
             type: string
           example: BRL
+          description: Filter by currency code, e.g. `"PEN"`, `"BRL"`.
         - name: customer_id
           in: query
           schema:
             type: string
+          description: Filter by customer ID.
         - name: start_date
           in: query
           schema:
             type: string
             format: date
+          description: Filter by start date (`YYYY-MM-DD`).
         - name: end_date
           in: query
           schema:
             type: string
             format: date
+          description: Filter by end date (`YYYY-MM-DD`).
       responses:
         '200':
           description: Paginated deposit list
@@ -2645,15 +3436,13 @@ paths:
               properties:
                 currency:
                   type: string
-                  description: |
-                    Currency for the virtual account. Supported: MXN, BRL, USD, EUR, MXN_USD,
-                    MXN_BASE, MXNBASE, EURBASE, USDBASE, EUR_BASE, USD_BASE, EURDE, USDDE, GBP,
-                    USD_KIRA, USDKIRA.
+                  description: |-
+                    Currency code for the virtual account, for example `USDBASE`, `EURBASE`, `MXN` or `BRL`. `GET /business/virtual-account/currencies-and-endorsements` returns every code your account can use and the endorsement each one needs.
                   example: BRL
                 customer_id:
                   type: string
                   format: uuid
-                  description: Required when currency is USD.
+                  description: The UUID of the KYC-approved customer. **Required when currency is `USD`**; optional for other currencies.
       responses:
         '201':
           description: Virtual account creation in progress
@@ -2682,28 +3471,34 @@ paths:
           schema:
             type: string
           example: BRL
+          description: Filter by currency code (e.g. `BRL`, `USD`).
         - name: status
           in: query
           schema:
             type: string
+          description: Filter by account status.
         - name: start_date
           in: query
           schema:
             type: string
             format: date
+          description: From date (ISO 8601), e.g. `2026-04-01`.
         - name: end_date
           in: query
           schema:
             type: string
             format: date
+          description: To date (ISO 8601), e.g. `2026-04-30`.
         - name: search
           in: query
           schema:
             type: string
+          description: Search by account name or account number.
         - name: per_page
           in: query
           schema:
             type: integer
+          description: Results per page.
       responses:
         '200':
           description: List of virtual accounts
@@ -2771,6 +3566,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the virtual account to delete.
       responses:
         '200':
           description: Deleted successfully
@@ -2799,7 +3595,7 @@ paths:
           required: true
           schema:
             type: string
-          description: The account number (not account ID).
+          description: The account number (not the account ID).
       responses:
         '200':
           description: Payment history
@@ -2859,6 +3655,7 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The unique ID of the customer whose virtual accounts you want to retrieve.
       responses:
         '200':
           description: Customer virtual accounts
@@ -2959,7 +3756,7 @@ paths:
               properties:
                 currency:
                   type: string
-                  description: Currency code for the new wallet (e.g. COP, PEN, ARS, CLP).
+                  description: The currency code for the new wallet (e.g. `COP`, `PEN`, `ARS`, `CLP`).
                   example: COP
       responses:
         '201':
@@ -3042,6 +3839,7 @@ paths:
           schema:
             type: integer
             default: 20
+          description: 'Number of records per page (default: 20).'
       responses:
         '200':
           description: Paginated beneficiary list
@@ -3080,18 +3878,23 @@ paths:
                 recipient_type:
                   type: string
                   enum: [individual, business]
+                  description: 'Beneficiary type: `"individual"` or `"business"`.'
                 customer_name:
                   type: string
+                  description: Full name of the beneficiary (individual) or legal business name.
                 customer_email:
                   type: string
                   format: email
+                  description: Beneficiary's email address.
                 customer_address:
                   type: string
+                  description: Beneficiary's physical address.
                 country:
                   type: string
-                  description: ISO 3166-1 alpha-3 (e.g. CHL, MEX, BRA).
+                  description: Beneficiary's country code (e.g. `CHL`, `MEX`, `BRA`).
                 customer_nickname:
                   type: string
+                  description: A short label for this beneficiary. Defaults to `customer_name` if omitted.
       responses:
         '200':
           description: Beneficiary created
@@ -3116,6 +3919,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the beneficiary to retrieve.
       responses:
         '200':
           description: Beneficiary details
@@ -3141,6 +3945,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the beneficiary to update.
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -3153,17 +3958,23 @@ paths:
                 recipient_type:
                   type: string
                   enum: [individual, business]
+                  description: 'Beneficiary type: `"individual"` or `"business"`.'
                 customer_name:
                   type: string
+                  description: Full name of the beneficiary (individual) or legal business name.
                 customer_email:
                   type: string
                   format: email
+                  description: Beneficiary's email address.
                 customer_address:
                   type: string
+                  description: Beneficiary's physical address.
                 country:
                   type: string
+                  description: Beneficiary's country code (e.g. `CHL`, `MEX`, `BRA`).
                 customer_nickname:
                   type: string
+                  description: A short label for this beneficiary. Defaults to `customer_name` if omitted.
       responses:
         '200':
           description: Beneficiary updated
@@ -3185,6 +3996,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the beneficiary to delete.
       responses:
         '200':
           description: Deleted
@@ -3207,6 +4019,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the beneficiary to archive.
       responses:
         '200':
           description: Archived
@@ -3226,6 +4039,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the beneficiary to unarchive.
       responses:
         '200':
           description: Unarchived
@@ -3275,18 +4089,21 @@ paths:
               properties:
                 gateway_id:
                   type: integer
-                  description: Payout method ID from GET /payment-methods/payout.
+                  description: The ID of the payout method (gateway) to use. Obtain available IDs from the payout methods endpoint.
                 payment_data:
                   type: object
-                  description: Account details. Fields vary by gateway_id.
+                  description: Key/value pairs of account details required for this payment method. The fields vary depending on the selected `gateway_id`.
                   additionalProperties: true
                 currency:
                   type: string
                   example: CLP
+                  description: Currency code for this payment method (e.g. `CLP`, `MXN`, `BRL`).
                 nickname:
                   type: string
+                  description: A label to identify this payment method.
                 beneficiary_id:
                   type: string
+                  description: The ID of the beneficiary to link this payment method to.
       responses:
         '200':
           description: Payment method added
@@ -3342,6 +4159,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the beneficiary payment method to update.
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -3353,13 +4171,17 @@ paths:
               properties:
                 gateway_id:
                   type: integer
+                  description: The ID of the payout method (gateway).
                 currency:
                   type: string
+                  description: Currency code for this payment method (e.g. `CLP`, `MXN`, `BRL`).
                 payment_data:
                   type: object
                   additionalProperties: true
+                  description: Updated key/value pairs of account details. Must include all fields required by the selected gateway.
                 nickname:
                   type: string
+                  description: A label to identify this payment method.
       responses:
         '200':
           description: Payment method updated
@@ -3384,6 +4206,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the beneficiary payment method to delete.
       responses:
         '200':
           description: Deleted
@@ -3412,39 +4235,47 @@ paths:
           schema:
             type: string
             enum: [success, complete, detected, pending, 'In Progress', failed]
+          description: 'Filter by status: `success`, `complete`, `detected`, `pending`, `In Progress`, `failed`.'
         - name: start_date
           in: query
           schema:
             type: string
             format: date
+          description: From date (inclusive), e.g. `2026-04-01`.
         - name: end_date
           in: query
           schema:
             type: string
             format: date
+          description: To date (inclusive), e.g. `2026-04-30`.
         - name: amount
           in: query
           schema:
             type: number
+          description: Filter by exact transaction amount.
         - name: customer_id
           in: query
           schema:
             type: string
+          description: Filter by customer ID.
         - name: transaction_type
           in: query
           schema:
             type: string
             enum: [deposit, payout, virtual_account, transfer, card_transaction, crypto_deposit]
+          description: 'Filter by type: `deposit`, `payout`, `virtual_account`, `transfer`, `card_transaction`, `crypto_deposit`.'
         - name: page
           in: query
           schema:
             type: integer
             default: 1
+          description: 'Page number. Default: `1`.'
         - name: per_page
           in: query
           schema:
             type: integer
             default: 10
+          description: 'Results per page. Default: `10`.'
       responses:
         '200':
           description: Paginated transaction list
@@ -3477,7 +4308,7 @@ paths:
           required: true
           schema:
             type: integer
-          description: Internal numeric transaction ID (the `id` field, not the UUID).
+          description: The internal numeric transaction ID (the `id` field, not the `transaction_id` UUID).
       responses:
         '200':
           description: Transaction details
@@ -3513,7 +4344,7 @@ paths:
           schema:
             type: string
             format: uuid
-          description: The quote_id associated with the transaction.
+          description: The `quote_id` associated with the transaction. This is the quote ID returned when the transaction or quote was created — not a generic transaction ID.
       responses:
         '200':
           description: Transaction timeline
@@ -3561,6 +4392,7 @@ paths:
           schema:
             type: string
             enum: [payout, payin, swap]
+          description: 'The type of the transaction. Common values: `"payout"`, `"payin"`, `"swap"`.'
       responses:
         '200':
           description: Transaction record
@@ -3617,12 +4449,14 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The UUID of the transaction.
         - name: type
           in: path
           required: true
           schema:
             type: string
             enum: [pdf, json]
+          description: Receipt format. Use `"pdf"` to receive a base64-encoded PDF document.
       responses:
         '200':
           description: Receipt (base64 PDF when type=pdf)
@@ -3672,17 +4506,20 @@ paths:
                 customer_id:
                   type: string
                   format: uuid
+                  description: The ID of the customer to activate. Must exist in your customers table.
                 user_photo:
                   type: string
-                  description: Base64 or URL. Required if not on customer profile.
+                  description: Customer photo (base64 or URL). Required if not already on the customer's profile.
                 idType:
                   type: string
                   enum: [passport, drivers_license, national_id]
-                  description: Required for Nigerian customers.
+                  description: Government ID type (e.g. `"passport"`, `"drivers_license"`, `"national_id"`). Required for Nigerian customers.
                 customer_idFront:
                   type: string
+                  description: Front image of the customer's government-issued ID. Required if not already on the customer's profile.
                 customer_idNumber:
                   type: string
+                  description: Government-issued ID number. Required if not already on the customer's profile.
                 customer_address:
                   type: object
                   properties:
@@ -3699,6 +4536,25 @@ paths:
                       type: string
                     number:
                       type: string
+                    customer_address.country:
+                      type: string
+                      description: ISO 3166-1 alpha-2 country code (e.g. `"US"`).
+                    customer_address.city:
+                      type: string
+                      description: City name.
+                    customer_address.state:
+                      type: string
+                      description: State or region.
+                    customer_address.zipcode:
+                      type: string
+                      description: Postal / ZIP code.
+                    customer_address.street:
+                      type: string
+                      description: Street name.
+                    customer_address.number:
+                      type: string
+                      description: Street number.
+                  description: Customer address. Each sub-field is required if not already on the customer's profile.
       responses:
         '200':
           description: Customer registered for virtual cards
@@ -3732,11 +4588,12 @@ paths:
                 customer_id:
                   type: string
                   format: uuid
+                  description: The ID of the activated customer. Must exist in your customers table.
                 amount:
                   type: number
                   minimum: 3
                   maximum: 10000
-                  description: Initial funding amount in USD.
+                  description: Initial funding amount in USD. Minimum $3.00, maximum $10,000.00.
       responses:
         '201':
           description: Virtual card created
@@ -3764,10 +4621,12 @@ paths:
           in: query
           schema:
             type: integer
+          description: Page number.
         - name: per_page
           in: query
           schema:
             type: integer
+          description: Results per page.
       responses:
         '200':
           description: List of virtual cards
@@ -3800,6 +4659,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The virtual card ID.
       responses:
         '200':
           description: Virtual card details
@@ -3837,14 +4697,15 @@ paths:
               properties:
                 cardId:
                   type: string
-                  description: Virtual card ID. Either cardId or card_id required.
+                  description: The virtual card ID to fund. Either `cardId` or `card_id` must be provided.
                 card_id:
                   type: string
-                  description: Virtual card ID. Either cardId or card_id required.
+                  description: The virtual card ID to fund. Either `cardId` or `card_id` must be provided.
                 amount:
                   type: number
                   minimum: 1
                   maximum: 10000
+                  description: Amount to add to the card. Minimum 1.00, maximum 10,000.00 (USD).
       responses:
         '200':
           description: Card topped up
@@ -3884,6 +4745,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The virtual card ID.
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -3896,6 +4758,7 @@ paths:
                 action:
                   type: string
                   enum: [freeze, unfreeze]
+                  description: '`"freeze"` to block the card, or `"unfreeze"` to re-enable it.'
       responses:
         '200':
           description: Card status updated
@@ -3915,6 +4778,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The virtual card ID.
       responses:
         '200':
           description: Card transaction history
@@ -3970,9 +4834,11 @@ paths:
               properties:
                 cardId:
                   type: string
+                  description: The virtual card ID to withdraw from.
                 amount:
                   type: number
                   minimum: 1
+                  description: Amount to withdraw from the card. Minimum 1.00.
       responses:
         '200':
           description: Withdrawal successful
@@ -4019,6 +4885,7 @@ paths:
               properties:
                 cardId:
                   type: string
+                  description: The virtual card ID to terminate.
       responses:
         '200':
           description: Card terminated
@@ -4065,15 +4932,15 @@ paths:
               properties:
                 debit_wallet:
                   type: string
-                  description: Source wallet currency (e.g. USD, EUR).
+                  description: The source wallet currency to debit (e.g. `"USD"`, `"EUR"`).
                   example: USD
                 amount:
                   type: number
-                  description: Amount to send in debit wallet currency.
+                  description: Amount to send in the debit wallet currency.
                   example: 250
                 beneficiary_details_id:
                   type: integer
-                  description: Saved beneficiary payment method ID.
+                  description: The saved beneficiary payment method ID (from `POST /beneficiaries/payment-methods`).
                 customer_id:
                   type: string
                   description: The customer the payout is for. If the beneficiary belongs to a customer, it must be that customer.
@@ -4084,19 +4951,19 @@ paths:
                 quote_id:
                   type: string
                   format: uuid
-                  description: A payout quote from POST /exchange-rate. Supplies the amount.
+                  description: A payout quote from `POST /exchange-rate`. Locks the rate and fees for 5 minutes and supplies the amount.
                 reference:
                   type: string
                   maxLength: 250
-                  description: Payment reference passed to the recipient's bank. Some payout rails shorten it or remove unsupported characters.
+                  description: Payment reference passed to the recipient's bank, up to 250 characters. Depending on the payout rail, it may be shortened or have unsupported characters removed. For example, ACH allows only 10 letters, numbers or spaces.
                 invoice:
                   type: string
                   format: binary
-                  description: Supporting invoice (PDF, PNG or JPEG, up to 15 MB). Send as multipart/form-data.
+                  description: 'Supporting invoice: PDF, PNG or JPEG, up to 15 MB. Send the request as `multipart/form-data` to attach it.'
                 invoice_url:
                   type: string
                   format: uri
-                  description: Public http(s) link to the supporting invoice, as an alternative to invoice.
+                  description: Public `http` or `https` link to the supporting invoice, as an alternative to `invoice`.
       responses:
         '200':
           description: Payout initiated
@@ -4157,10 +5024,14 @@ paths:
                     properties:
                       amount:
                         type: number
+                        description: Amount to send for this payout.
                       beneficiary_details_id:
                         type: integer
+                        description: The saved beneficiary payment method ID.
                       beneficiary_id:
                         type: integer
+                        description: Optional beneficiary UUID for tracking.
+                  description: Array of payout objects.
       responses:
         '200':
           description: Batch submitted (may include partial failures)
@@ -4223,6 +5094,7 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The UUID of the payout to retrieve.
       responses:
         '200':
           description: Payout details
@@ -4550,7 +5422,7 @@ paths:
                 url:
                   type: string
                   format: uri
-                  description: HTTPS URL of your webhook endpoint. Must be publicly accessible.
+                  description: The HTTPS URL of your webhook endpoint. Must be publicly accessible.
       responses:
         '201':
           description: Webhook created
@@ -4618,6 +5490,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the webhook to delete. Returned when the webhook was created.
       responses:
         '200':
           description: Deleted
@@ -4654,6 +5527,7 @@ paths:
           required: true
           schema:
             type: string
+          description: The ID of the webhook whose secret you want to regenerate.
         - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
@@ -5002,20 +5876,23 @@ paths:
           in: query
           schema:
             type: string
-          description: Filter by HTTP status code (e.g. 200, 400, 422, 500).
+          description: Filter by HTTP status code (e.g. `200`, `400`, `422`, `500`).
         - name: method
           in: query
           schema:
             type: string
             enum: [GET, POST, PUT, DELETE]
+          description: 'Filter by HTTP method: `GET`, `POST`, `PUT`, `DELETE`.'
         - name: page
           in: query
           schema:
             type: integer
+          description: Page number.
         - name: per_page
           in: query
           schema:
             type: integer
+          description: Results per page.
       responses:
         '200':
           description: Paginated request log
@@ -5061,6 +5938,7 @@ paths:
           in: query
           schema:
             type: integer
+          description: Results per page.
       responses:
         '200':
           description: Webhook event log
@@ -5355,7 +6233,7 @@ paths:
                       pending_email:
                         type: string
                         nullable: true
-                        example: null
+                        example:
         '404':
           description: The employee isn't yours
           content:
@@ -5611,6 +6489,10 @@ tags:
     description: |
       Identity verification for individual customers (KYC) and business customers (KYB).
       Submission endpoints are on `https://kyc.yativo.com/api`.
+  - name: KYC Lookups
+    description: |
+      Lists your KYC and KYB forms need: countries, subdivisions, postal code formats, ID types,
+      occupations, industries and allowed values. Served from `https://kyc.yativo.com/api`.
   - name: Payments & Transfers
     description: Exchange rates, quotes, send money, payout methods, and wallet payouts.
   - name: Deposits

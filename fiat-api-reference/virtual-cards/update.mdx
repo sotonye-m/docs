@@ -1,6 +1,7 @@
 ---
 title: "Freeze / Unfreeze Card"
 description: "Temporarily freeze or unfreeze a virtual card"
+openapi: "openapi-fiat.yaml PUT /customer/virtual/cards/update/{card_id}"
 ---
 
 Freeze or unfreeze a virtual card. A frozen card declines all transactions until it is unfrozen.
@@ -12,18 +13,6 @@ PUT https://api.yativo.com/api/v1/customer/virtual/cards/update/{card_id}
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Path Parameters
-
-<ParamField path="card_id" type="string" required>
-  The virtual card ID.
-</ParamField>
-
-## Request Body
-
-<ParamField body="action" type="string" required>
-  `"freeze"` to block the card, or `"unfreeze"` to re-enable it.
-</ParamField>
 
 <RequestExample>
 ```bash Freeze

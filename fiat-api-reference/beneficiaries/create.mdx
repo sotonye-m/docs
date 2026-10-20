@@ -1,6 +1,7 @@
 ---
 title: "Create Beneficiary"
 description: "Create a new beneficiary for sending payments"
+openapi: "openapi-fiat.yaml POST /beneficiaries"
 ---
 
 Create a beneficiary record to store recipient information for future payouts. After creating a beneficiary, add their payment method details using the payment methods endpoint.
@@ -12,32 +13,6 @@ POST /v1/beneficiaries
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request body
-
-<ParamField body="recipient_type" type="string" required>
-  Beneficiary type: `"individual"` or `"business"`.
-</ParamField>
-
-<ParamField body="customer_name" type="string" required>
-  Full name of the beneficiary (individual) or legal business name.
-</ParamField>
-
-<ParamField body="customer_email" type="string" required>
-  Beneficiary's email address.
-</ParamField>
-
-<ParamField body="customer_address" type="string" required>
-  Beneficiary's physical address.
-</ParamField>
-
-<ParamField body="country" type="string" required>
-  Beneficiary's country code (e.g. `CHL`, `MEX`, `BRA`).
-</ParamField>
-
-<ParamField body="customer_nickname" type="string">
-  A short label for this beneficiary. Defaults to `customer_name` if omitted.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

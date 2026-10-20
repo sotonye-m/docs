@@ -1,6 +1,7 @@
 ---
 title: "Archive Beneficiary"
 description: "Archive a beneficiary to hide them from active lists without deleting"
+openapi: "openapi-fiat.yaml PUT /beneficiaries/{id}/archive"
 ---
 
 Archive a beneficiary. Archived beneficiaries are retained in the system and can be restored at any time using the unarchive endpoint. Use this instead of deleting when you may need to reference the beneficiary again in the future.
@@ -12,12 +13,6 @@ PUT /v1/beneficiaries/{id}/archive
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Path parameters
-
-<ParamField path="id" type="string" required>
-  The ID of the beneficiary to archive.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

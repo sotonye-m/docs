@@ -1,7 +1,7 @@
 ---
 title: "Submit Individual KYC"
 description: "Submit identity verification data for an individual customer"
-openapi: "POST https://kyc.yativo.com/api/individual-kyc/submit"
+openapi: "openapi-fiat.yaml POST /individual-kyc/submit"
 ---
 
 Submit KYC data for an individual customer. The customer must already exist in your account (created via `POST /customer`). After submission the status will be `"submitted"` and will move to `"approved"` once review is complete.
@@ -14,190 +14,9 @@ Submit KYC data for an individual customer. The customer must already exist in y
 POST https://kyc.yativo.com/api/individual-kyc/submit
 ```
 
-## Identity fields
-
-<ParamField body="customer_id" type="string" required>
-  The customer UUID returned by `POST /customer`.
-</ParamField>
-
-<ParamField body="first_name" type="string" required>
-  Customer's first name. Max 1024 characters.
-</ParamField>
-
-<ParamField body="last_name" type="string" required>
-  Customer's last name. Max 1024 characters.
-</ParamField>
-
-<ParamField body="middle_name" type="string">
-  Customer's middle name. Optional.
-</ParamField>
-
-<ParamField body="email" type="string" required>
-  Customer's email address.
-</ParamField>
-
-<ParamField body="calling_code" type="string" required>
-  Country dial code. Must match `^\+\d{1,4}$`, e.g. `"+1"`, `"+44"`, `"+234"`.
-</ParamField>
-
-<ParamField body="phone" type="string" required>
-  Phone number digits only, 8–15 characters. Do not include the country code.
-</ParamField>
-
-<ParamField body="birth_date" type="string" required>
-  Date of birth in `YYYY-MM-DD` format. The customer must be at least 18.
-</ParamField>
-
-<ParamField body="nationality" type="string" required>
-  ISO 3166-1 alpha-2 country code, e.g. `"US"`, `"NG"`, `"BR"`.
-</ParamField>
-
-<ParamField body="gender" type="string" required>
-  `"male"` or `"female"`.
-</ParamField>
-
-<ParamField body="taxId" type="string" required>
-  Tax identification number. Letters and digits only, up to 255 characters. Send `"123456789"`, not `"123-45-6789"`.
-</ParamField>
-
-<ParamField body="selfie_image" type="string" required>
-  Selfie photo of the customer. Provide as a hosted URL (from `POST /storage/upload`) or a base64-encoded string. Accepted formats: PDF, JPG, JPEG, PNG, HEIC, TIF, between 5 KB and 30 MB.
-</ParamField>
-
-<ParamField body="bvn" type="string">
-  Bank Verification Number. **Required when `nationality` or `residential_address.country` is `"NG"`**. Exactly 11 digits.
-</ParamField>
-
-<ParamField body="nin" type="string">
-  National Identification Number. **Required when `nationality` or `residential_address.country` is `"NG"`**. Exactly 11 digits.
-</ParamField>
-
-## Residential address
-
-<ParamField body="residential_address" type="object" required>
-  Customer's current residential address.
-
-  <Expandable title="residential_address fields">
-    <ParamField body="street_line_1" type="string" required>
-      Street address line 1. Max 256 characters.
-    </ParamField>
-    <ParamField body="street_line_2" type="string">
-      Street address line 2. Optional.
-    </ParamField>
-    <ParamField body="city" type="string" required>
-      City. Max 256 characters.
-    </ParamField>
-    <ParamField body="state" type="string" required>
-      State or province. Accepts full ISO 3166-2 codes like `"US-CA"` or the subdivision segment `"CA"` — both are normalised.
-    </ParamField>
-    <ParamField body="postal_code" type="string" required>
-      Postal or ZIP code. Validated per country.
-    </ParamField>
-    <ParamField body="country" type="string" required>
-      ISO 3166-1 alpha-2 country code.
-    </ParamField>
-    <ParamField body="proof_of_address_file" type="string" required>
-      Proof of address document (utility bill, bank statement, etc.). Hosted URL or base64. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB.
-    </ParamField>
-  </Expandable>
-</ParamField>
-
-## Identifying information
-
-<ParamField body="identifying_information" type="array" required>
-  At least one government-issued ID document. Accepted document types depend on `issuing_country` — see the [ID types reference](/yativo-fiat/kyc#id-types-by-country).
-
-  <Expandable title="identifying_information item fields">
-    <ParamField body="type" type="string" required>
-      Document type. Common values: `"passport"`, `"national_id"`, `"other"`. Country-specific types also apply (e.g. `"ssn"` for US, `"bvn"` for NG).
-    </ParamField>
-    <ParamField body="issuing_country" type="string" required>
-      ISO 3166-1 alpha-2 country code of the issuing authority.
-    </ParamField>
-    <ParamField body="number" type="string" required>
-      Document number.
-    </ParamField>
-    <ParamField body="date_issued" type="string" required>
-      Issue date in `YYYY-MM-DD` format. Must be before today.
-    </ParamField>
-    <ParamField body="expiration_date" type="string" required>
-      Expiration date in `YYYY-MM-DD` format. Must be after today.
-    </ParamField>
-    <ParamField body="image_front_file" type="string" required>
-      Front image of the document. Hosted URL or base64. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
-    </ParamField>
-    <ParamField body="image_back_file" type="string">
-      Back image of the document. Required for documents that have a reverse side (e.g. national ID cards). Hosted URL or base64. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
-    </ParamField>
-  </Expandable>
-</ParamField>
-
-## Risk and purpose
-
-<ParamField body="employment_status" type="string" required>
-  Customer's employment status. One of: `"employed"`, `"exempt"`, `"homemaker"`, `"retired"`, `"self_employed"`, `"student"`, `"unemployed"`.
-</ParamField>
-
-<ParamField body="most_recent_occupation_code" type="string" required>
-  6-digit occupation code. Retrieve the full list from `GET /auth/occupation-codes`. Example: `"151252"` (Software developer).
-</ParamField>
-
-<ParamField body="expected_monthly_payments_usd" type="string" required>
-  Expected monthly transaction volume. One of: `"0_4999"`, `"5000_9999"`, `"10000_49999"`, `"50000_plus"`.
-</ParamField>
-
-<ParamField body="source_of_funds" type="string" required>
-  Primary source of funds. One of: `"salary"`, `"company_funds"`, `"savings"`, `"investments_loans"`, `"inheritance"`, `"gifts"`, `"government_benefits"`, `"pension_retirement"`, `"sale_of_assets_real_estate"`, `"ecommerce_reseller"`, `"gambling_proceeds"`, `"someone_elses_funds"`.
-</ParamField>
-
-<ParamField body="account_purpose" type="string" required>
-  Intended use of the account. One of: `"receive_salary"`, `"purchase_goods_and_services"`, `"personal_or_living_expenses"`, `"payments_to_friends_or_family_abroad"`, `"receive_payment_for_freelancing"`, `"investment_purposes"`, `"protect_wealth"`, `"ecommerce_retail_payments"`, `"operating_a_company"`, `"charitable_donations"`, `"other"`.
-</ParamField>
-
-<ParamField body="account_purpose_other" type="string">
-  Required when `account_purpose` is `"other"`. Provide a plain-text description.
-</ParamField>
-
-<ParamField body="annual_salary" type="string">
-  Optional. Up to 20 characters.
-</ParamField>
-
-<ParamField body="current_employer" type="string">
-  Optional. Up to 512 characters.
-</ParamField>
-
-<ParamField body="immigration_status" type="string">
-  Optional. `"Permanent U.S. Resident"`, `"Non-Permanent U.S. Resident"` or `"Non-Resident of U.S."`
-</ParamField>
-
-<ParamField body="usd_virtual_account" type="boolean">
-  Also `eur_virtual_account`, `gbp_virtual_account` and `native_endorsement`: the services to verify the customer for. See [Virtual account flags](/yativo-fiat/kyc#virtual-account-flags).
-</ParamField>
-
-<ParamField body="acting_as_intermediary" type="boolean">
-  Set to `true` if the customer is acting on behalf of third parties. Defaults to `false`.
-</ParamField>
-
-## Supporting documents
-
-<ParamField body="uploaded_documents" type="array" required>
-  At least one supporting document is required.
-
-  <Expandable title="uploaded_documents item fields">
-    <ParamField body="type" type="string" required>
-      A label identifying the document type, e.g. `"bank_statement"`, `"tax_return"`.
-    </ParamField>
-    <ParamField body="file" type="string" required>
-      Hosted URL or base64-encoded file. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
-    </ParamField>
-  </Expandable>
-</ParamField>
-
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: kyc-ind-2026-001' \
   -d '{
@@ -249,8 +68,6 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
 const response = await fetch('https://kyc.yativo.com/api/individual-kyc/submit', {
   method: 'POST',
   headers: {
-    'X-Api-Key': process.env.YATIVO_API_KEY,
-    'X-Api-Secret': process.env.YATIVO_API_SECRET,
     'Content-Type': 'application/json',
     'Idempotency-Key': `kyc-${customerId}-${Date.now()}`,
   },
@@ -300,8 +117,6 @@ import requests
 response = requests.post(
     'https://kyc.yativo.com/api/individual-kyc/submit',
     headers={
-        'X-Api-Key': os.environ['YATIVO_API_KEY'],
-        'X-Api-Secret': os.environ['YATIVO_API_SECRET'],
         'Content-Type': 'application/json',
         'Idempotency-Key': f'kyc-{customer_id}-001',
     },

@@ -1,6 +1,7 @@
 ---
 title: "List Customers"
 description: "Retrieve a paginated list of all customers in your account"
+openapi: "openapi-fiat.yaml GET /customer"
 ---
 
 Returns all customers associated with your account, with support for filtering and pagination.
@@ -8,28 +9,6 @@ Returns all customers associated with your account, with support for filtering a
 ```
 GET https://api.yativo.com/api/v1/customer
 ```
-
-## Query parameters
-
-<ParamField query="per_page" type="integer">
-  Number of records per page (default: 20).
-</ParamField>
-
-<ParamField query="email" type="string">
-  Filter by email (partial match).
-</ParamField>
-
-<ParamField query="country" type="string">
-  Filter by ISO 3166-1 alpha-3 country code (e.g. `"USA"`, `"BRA"`).
-</ParamField>
-
-<ParamField query="kyc_status" type="string">
-  Filter by KYC status.
-</ParamField>
-
-<ParamField query="is_kyc_approved" type="boolean">
-  Filter by KYC approval status. Pass `"true"` or `"false"`.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

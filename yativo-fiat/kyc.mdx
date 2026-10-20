@@ -11,11 +11,16 @@ Yativo requires identity verification before customers can access payment servic
 |---|---|
 | Production API | `https://api.yativo.com/api/v1` |
 | Sandbox API | `https://smtp.yativo.com/api/v1` |
-| KYC Platform | `https://kyc.yativo.com` |
+| KYC platform (production) | `https://kyc.yativo.com` |
+| KYC platform (sandbox) | `https://kyc-sandbox.yativo.com` |
 
 <Note>
-  KYC and KYB submissions are sent to **`https://kyc.yativo.com`**, not the main API base URL. All other endpoints (status check, update) use the standard base URL. Send your `X-Api-Key` and `X-Api-Secret` headers on every request. Sandbox uses this same KYC platform. See [Sandbox KYC](/yativo-fiat/sandbox-kyc).
+  KYC and KYB submissions, partial updates and lookups go to the **KYC platform**, not the main API. Use `https://kyc-sandbox.yativo.com` with sandbox customers and `https://kyc.yativo.com` in production. Read the host from config so you can switch. The KYC platform endpoints don't need your API key. Endpoints on the main API, such as `GET /customer/{customer_id}`, do. See [Sandbox KYC](/yativo-fiat/sandbox-kyc).
 </Note>
+
+<Tip>
+  Coding assistants can read the KYC lookup data and the KYC platform guide through its MCP server at `https://kyc.yativo.com/api/mcp` (read-only).
+</Tip>
 
 ---
 
@@ -29,6 +34,33 @@ Yativo requires identity verification before customers can access payment servic
 **Hosted URLs:**
 - Individual: `https://kyc.yativo.com/individual/{customer_id}`
 - Business: `https://kyc.yativo.com/business/{customer_id}`
+
+---
+
+## Build your form with the lookup endpoints
+
+If you collect KYC or KYB data in your own UI, fill every dropdown from the KYC platform's lookup endpoints instead of hardcoding values. They live on `https://kyc.yativo.com/api`, and you can try each one from the API reference.
+
+<Steps>
+  <Step title="Country">
+    Load [List Countries](/fiat-api-reference/kyc-lookups/countries) once. Send the two-letter `code` for `nationality`, every address `country` and `issuing_country`.
+  </Step>
+  <Step title="Address">
+    When the customer picks a country, load [List Subdivisions](/fiat-api-reference/kyc-lookups/subdivisions) for the `state` dropdown, and [Get Postal Code Format](/fiat-api-reference/kyc-lookups/postal-codes) to validate `postal_code` as they type.
+  </Step>
+  <Step title="ID documents">
+    Load [List ID Types](/fiat-api-reference/kyc-lookups/identification-types) for the issuing country to fill `identifying_information[].type`.
+  </Step>
+  <Step title="Occupation or industry">
+    Individuals: [List Occupations](/fiat-api-reference/kyc-lookups/occupations) for `most_recent_occupation_code`. Businesses: [List Business Industries](/fiat-api-reference/kyc-lookups/business-industries) for `business_industry`. Both lists are long, so use a searchable field.
+  </Step>
+  <Step title="Purpose, funds and volume">
+    Individuals: [account purposes](/fiat-api-reference/kyc-lookups/individual-account-purposes), [sources of funds](/fiat-api-reference/kyc-lookups/individual-source-of-funds) and [expected monthly payments](/fiat-api-reference/kyc-lookups/expected-monthly-payments). Businesses: [account purposes](/fiat-api-reference/kyc-lookups/business-account-purposes) and [sources of funds](/fiat-api-reference/kyc-lookups/business-source-of-funds). The business lists are different from the individual ones.
+  </Step>
+  <Step title="Business activity (KYB only)">
+    [List Transaction Currencies](/fiat-api-reference/kyc-lookups/transaction-currencies) for `collection_currencies` and [List Transaction Countries](/fiat-api-reference/kyc-lookups/transaction-countries) for `beneficiary_geographies`.
+  </Step>
+</Steps>
 
 ---
 
@@ -111,12 +143,12 @@ A successful response means the submission passed validation and was accepted. I
 | `customer_id` | string | ✓ | UUID from `POST /customer` |
 | `first_name` | string | ✓ | Max 1024 chars |
 | `last_name` | string | ✓ | Max 1024 chars |
-| `middle_name` | string | | Optional |
+| `middle_name` | string | | Optional. Omit it, or send `null` or `""` if the customer has none |
 | `email` | string | ✓ | Valid email address |
 | `calling_code` | string | ✓ | Dial code, e.g. `"+1"`, `"+234"`. Must match `^\+\d{1,4}$` |
 | `phone` | string | ✓ | Digits only, 8–15 characters |
 | `birth_date` | string | ✓ | `YYYY-MM-DD`. The customer must be at least 18 |
-| `nationality` | string | ✓ | ISO 3166-1 alpha-2, e.g. `"US"`, `"NG"`, `"BR"` |
+| `nationality` | string | ✓ | ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries), e.g. `"US"`, `"NG"`, `"BR"` |
 | `gender` | string | ✓ | `"male"` or `"female"` |
 | `taxId` | string | ✓ | Tax identification number. Letters and digits only, up to 255 characters. `"123-45-6789"` is rejected; send `"123456789"` |
 | `selfie_image` | file | ✓ | Selfie photo. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB |
@@ -131,9 +163,9 @@ A successful response means the submission passed validation and was accepted. I
 | `residential_address.street_line_1` | string | ✓ | Max 256 chars |
 | `residential_address.street_line_2` | string | | Optional |
 | `residential_address.city` | string | ✓ | Max 256 chars |
-| `residential_address.state` | string | ✓ | Subdivision code, e.g. `"CA"`. `"US-CA"` is also accepted |
-| `residential_address.postal_code` | string | ✓ | Max 256 chars. Use `GET /postal-codes/{countryCode}` to check the format |
-| `residential_address.country` | string | ✓ | ISO 3166-1 alpha-2 |
+| `residential_address.state` | string | ✓ | `code` from [List Subdivisions](/fiat-api-reference/kyc-lookups/subdivisions), e.g. `"CA"`. `"US-CA"` is also accepted |
+| `residential_address.postal_code` | string | ✓ | Max 256 chars. Check the format with [Get Postal Code Format](/fiat-api-reference/kyc-lookups/postal-codes) |
+| `residential_address.country` | string | ✓ | ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries) |
 | `residential_address.proof_of_address_file` | file | ✓ | Utility bill, bank statement, etc. PDF/JPG/JPEG/PNG/HEIC/TIF |
 
 #### Step 3 — Identifying information
@@ -142,8 +174,8 @@ At least one government-issued ID document is required.
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `identifying_information[*].type` | string | ✓ | See [ID types by country](#id-types-by-country) |
-| `identifying_information[*].issuing_country` | string | ✓ | ISO 3166-1 alpha-2 |
+| `identifying_information[*].type` | string | ✓ | `type` from [List ID Types](/fiat-api-reference/kyc-lookups/identification-types) for the issuing country |
+| `identifying_information[*].issuing_country` | string | ✓ | ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries) |
 | `identifying_information[*].number` | string | ✓ | Document number |
 | `identifying_information[*].date_issued` | string | ✓ | `YYYY-MM-DD`, must be before today |
 | `identifying_information[*].expiration_date` | string | ✓ | `YYYY-MM-DD`, must be after today |
@@ -155,23 +187,23 @@ At least one government-issued ID document is required.
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `employment_status` | string | ✓ | See [enum values](#employment_status) |
-| `most_recent_occupation_code` | string | ✓ | Code from `GET /auth/occupation-codes`. Must be a listed code |
-| `expected_monthly_payments_usd` | string | ✓ | See [enum values](#expected_monthly_payments_usd) |
-| `source_of_funds` | string | ✓ | See [enum values](#source_of_funds) |
-| `account_purpose` | string | ✓ | See [enum values](#account_purpose) |
+| `most_recent_occupation_code` | string | ✓ | `code` from [List Occupations](/fiat-api-reference/kyc-lookups/occupations). Must be a listed code |
+| `expected_monthly_payments_usd` | string | ✓ | A value from [List Expected Monthly Payment Ranges](/fiat-api-reference/kyc-lookups/expected-monthly-payments) |
+| `source_of_funds` | string | ✓ | See [enum values](#source_of_funds) and [List Sources of Funds (Individual)](/fiat-api-reference/kyc-lookups/individual-source-of-funds) |
+| `account_purpose` | string | ✓ | See [enum values](#account_purpose) and [List Account Purposes (Individual)](/fiat-api-reference/kyc-lookups/individual-account-purposes) |
 | `account_purpose_other` | string | If `account_purpose` is `"other"` | Description of the purpose |
 | `acting_as_intermediary` | boolean | | Whether the customer acts as intermediary for third parties |
-| `annual_salary` | string | | Up to 20 characters |
+| `annual_salary` | string | | Declared annual income in whole currency units, digits only, up to 20 characters, e.g. `"9600000"` |
 | `current_employer` | string | | Up to 512 characters |
 | `immigration_status` | string | | `"Permanent U.S. Resident"`, `"Non-Permanent U.S. Resident"` or `"Non-Resident of U.S."` |
 
-The API accepts unknown values for `employment_status`, `expected_monthly_payments_usd`, `source_of_funds` and `account_purpose`, but verification fails later if they aren't on the lists below. The `201` response lists them under `warnings`, along with other values verification is likely to reject. Check `warnings` and fix those fields with a [partial update](#partial-update-on-the-kyc-platform). Use the lookup endpoints in [Reference lookups](#reference-lookups).
+The API accepts unknown values for `employment_status`, `expected_monthly_payments_usd`, `source_of_funds` and `account_purpose`, but verification fails later if they aren't on the lists below. The `201` response lists them under `warnings`, along with other values verification is likely to reject. Check `warnings` and fix those fields with a [partial update](#partial-update-on-the-kyc-platform). KYB responses can include `warnings` too, for example when a country isn't covered by one service. For these four fields, send the lookup **key** (PascalCase, such as `ReceiveSalary`, `SelfEmployed` or `LessThan5K`). The snake_case form (`receive_salary`, `self_employed`, `0_4999`) is accepted too. Use the lookup endpoints in [Reference lookups](#reference-lookups).
 
 #### Step 5 — Supporting documents
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `uploaded_documents[*].type` | string | ✓ | Document type identifier |
+| `uploaded_documents[*].type` | string | ✓ | Free-form, for example `proof_of_bank_account_ownership`, `proof_of_address` or `proof_of_funds` |
 | `uploaded_documents[*].file` | file | ✓ | PDF/JPG/JPEG/PNG |
 
 #### Virtual account flags
@@ -183,7 +215,23 @@ The API accepts unknown values for `employment_status`, `expected_monthly_paymen
 | `native_endorsement` | Can be combined with any other flag |
 | `eurde_virtual_account` | Not available to customers created on or after 2 September 2026. When `true`, `usd_virtual_account` and `eur_virtual_account` must be `false` |
 
-If the same person is already verified under another of your customers, the submission is refused. Use the existing customer instead.
+#### Rejections to handle
+
+**Duplicate person (`409`).** An individual submission is rejected if it matches a different customer on your account by `bvn` or `nin`; by the same ID document (same `type`, `issuing_country` and `number`); or by the same email, or phone with the same `calling_code`, when the first name, last name and date of birth (where both have one) also match. Nothing is saved, and the response names the existing customer:
+
+```json
+{
+  "success": false,
+  "message": "KYC rejected: these details already belong to another customer on your account (c586066b-...). Use the existing customer instead of creating a new one.",
+  "data": { "duplicate_of": ["c586066b-0f29-468f-b775-15483871a202"] }
+}
+```
+
+Use the customer in `duplicate_of`. Resubmitting under the same `customer_id` isn't a duplicate. Customers on other Yativo accounts are never matched. If two different people really share a detail, contact Yativo support to clear the match. Sandbox doesn't run this check.
+
+**Placeholder names (`403`).** A submission is refused with `403 {"message": "Access denied."}` if any name field contains `test`, `yativo` or `admin` (any case, anywhere in the value, so `"Tester"` matches), or an email contains `test`. This covers individual names, `business_legal_name`, `business_trade_name` and every associated person. **The `customer_id` is then blocked permanently**, even with corrected data. Use realistic names when testing.
+
+**Country values.** Send ISO alpha-2 codes. Common variants such as `UK`, `usa` or a full English name are converted automatically, but alpha-2 is the supported format.
 
 ---
 
@@ -192,8 +240,6 @@ If the same person is already verified under another of your customers, the subm
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: kyc-ind-2026-001' \
   -d '{
@@ -245,8 +291,6 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
 const response = await fetch('https://kyc.yativo.com/api/individual-kyc/submit', {
   method: 'POST',
   headers: {
-    'X-Api-Key': process.env.YATIVO_API_KEY,
-    'X-Api-Secret': process.env.YATIVO_API_SECRET,
     'Content-Type': 'application/json',
     'Idempotency-Key': `kyc-${customerId}-${Date.now()}`,
   },
@@ -334,10 +378,10 @@ POST https://kyc.yativo.com/api/business-kyc/submit
 | `registration_number` | string | ✓ | Government registration / incorporation number, max 100 chars |
 | `incorporation_date` | string | ✓ | `YYYY-MM-DD`, must be before today |
 | `tax_id` | string | If no `identifying_information` | Business tax ID. Letters and digits only, up to 255 characters |
-| `incorporation_country` | string | | ISO 3166-1 alpha-2 |
+| `incorporation_country` | string | | ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries) |
 | `phone_calling_code` | string | | Must match `^\+[1-9]\d{0,3}$` |
 | `phone_number` | string | | Digits only, 7–15 characters |
-| `business_industry` | string | | Industry category |
+| `business_industry` | string | | `code` from [List Business Industries](/fiat-api-reference/kyc-lookups/business-industries) |
 | `primary_website` | string | ✓ | Full URL |
 | `is_dao` | boolean | | Whether the business is a DAO |
 | `statement_descriptor` | string | | How the name appears on statements, max 22 chars |
@@ -351,9 +395,9 @@ Both `registered_address` and `physical_address` use the same structure:
 | `street_line_1` | string | ✓ | Max 255 chars |
 | `street_line_2` | string | | Optional |
 | `city` | string | ✓ | Max 100 chars |
-| `state` | string | ✓ | Subdivision code from `GET /business-kyc/subdivisions/{countryCode}`, e.g. `"CA"`. `"US-CA"` is also accepted |
-| `postal_code` | string | ✓ | Must match the country's format. See `GET /postal-codes/{countryCode}` |
-| `country` | string | ✓ | ISO 3166-1 alpha-2 |
+| `state` | string | ✓ | `code` from [List Subdivisions](/fiat-api-reference/kyc-lookups/subdivisions), e.g. `"CA"`. `"US-CA"` is also accepted |
+| `postal_code` | string | ✓ | Must match the country's format. See [Get Postal Code Format](/fiat-api-reference/kyc-lookups/postal-codes) |
+| `country` | string | ✓ | ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries) |
 | `proof_of_address_file` | file | ✓ | Required for both addresses |
 
 #### Step 3 — Associated persons
@@ -367,11 +411,11 @@ People who own less than the ownership threshold are dropped from the submission
 | `first_name` | string | ✓ | Max 100 chars |
 | `last_name` | string | ✓ | Max 100 chars |
 | `birth_date` | string | ✓ | `YYYY-MM-DD`. The person must be at least 18 |
-| `nationality` | string | ✓ | ISO 3166-1 alpha-2 |
+| `nationality` | string | ✓ | ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries) |
 | `email` | string | ✓ | Personal email |
 | `phone` | string | | Digits only, 7–15 characters |
 | `tax_id` | string | | Personal tax ID. Letters and digits only, up to 255 characters |
-| `annual_salary` | string | | Up to 20 characters |
+| `annual_salary` | string | | Digits only, up to 20 characters |
 | `title` | string | | E.g. `"CEO"`, `"Director"` |
 | `ownership_percentage` | number | ✓ | 0–100 |
 | `relationship_established_at` | string | | `YYYY-MM-DD`, must not be in the future |
@@ -380,7 +424,7 @@ People who own less than the ownership threshold are dropped from the submission
 | `has_ownership` | boolean | | Has ownership stake |
 | `has_control` | boolean | | Has operational control |
 | `is_signer` | boolean | | Authorized signer |
-| `is_director` | boolean | | Director |
+| `is_director` | boolean | | Director. Send all four flags for every person. If `has_ownership` is left out and `ownership_percentage` is above 0, the person is treated as an owner |
 
 Each person's `identifying_information` needs at least one ID that isn't a tax ID, such as a passport or national ID. Associated persons use `image_front` and `image_back`, not the `_file` names used in individual KYC:
 
@@ -388,20 +432,23 @@ Each person's `identifying_information` needs at least one ID that isn't a tax I
 |---|---|---|
 | `type` | ✓ | ID type, e.g. `passport`, `national_id`, `drivers_license` or `tax_id` |
 | `number` | ✓ | For `tax_id`, letters and digits only |
-| `issuing_country` | | ISO 3166-1 alpha-2 |
-| `expiration` | | `YYYY-MM-DD`, after today |
+| `issuing_country` | Send on every photo ID | Missing values come back in `warnings`. ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries) |
+| `expiration` | | `YYYY-MM-DD`. An expired document is rejected with `422` |
+| `date_issued` | | `YYYY-MM-DD` |
 | `image_front` | ✓ | File |
 | `image_back` | Except `passport` and `tax_id` | File |
+
+For a Naira account in the business's name, add a `bvn` entry (11-digit `number`, no image) for a Nigerian associated person. See `naira` in [What each endorsement needs](#what-each-endorsement-needs).
 
 #### Step 4 — Risk and purpose
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `account_purpose` | string | ✓ | Business values only. See [KYB enum values](#kyb-account_purpose) |
+| `account_purpose` | string | ✓ | Business values only. See [List Account Purposes (Business)](/fiat-api-reference/kyc-lookups/business-account-purposes) |
 | `account_purpose_other` | string | If `account_purpose` is `"other"` | |
-| `source_of_funds` | string | ✓ | Business values only. See [KYB enum values](#kyb-source_of_funds) |
+| `source_of_funds` | string | ✓ | Business values only. See [List Sources of Funds (Business)](/fiat-api-reference/kyc-lookups/business-source-of-funds) |
 | `high_risk_activities` | array | ✓ | See [enum values](#high_risk_activities-kyb). Use `["none_of_the_above"]` if none apply |
-| `high_risk_activities_explanation` | string | If any high-risk activities listed | |
+| `high_risk_activities_explanation` | string | If anything other than `none_of_the_above` is listed | Always send one in that case |
 | `conducts_money_services` | boolean | | |
 | `conducts_money_services_description` | string | If `conducts_money_services` is `true` | |
 | `compliance_screening_explanation` | string | If `conducts_money_services` is `true` | |
@@ -418,7 +465,7 @@ Each person's `identifying_information` needs at least one ID that isn't a tax I
 | `pep_status` | boolean | **Required.** Whether any associated person is a politically exposed person |
 | `third_party_msb_payments` | boolean | **Required.** Whether the business makes payments for third-party money services businesses |
 | `regulated_activity.regulated_activities_description` | string | Optional |
-| `regulated_activity.primary_regulatory_authority_country` | string | ISO 3166-1 alpha-2 |
+| `regulated_activity.primary_regulatory_authority_country` | string | ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries) |
 | `regulated_activity.primary_regulatory_authority_name` | string | |
 | `regulated_activity.license_number` | string | |
 
@@ -439,7 +486,7 @@ Business-level ID documents (e.g. business licence).
 | Field | Type | Notes |
 |---|---|---|
 | `identifying_information[*].type` | string | |
-| `identifying_information[*].issuing_country` | string | ISO 3166-1 alpha-2 |
+| `identifying_information[*].issuing_country` | string | ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries) |
 | `identifying_information[*].number` | string | |
 | `identifying_information[*].description` | string | |
 | `identifying_information[*].expiration` | string | `YYYY-MM-DD`, after today |
@@ -457,21 +504,65 @@ Business-level ID documents (e.g. business licence).
 
 #### Optional business profile
 
-You can also send these top-level fields to describe the business's activity. All are optional.
+Describe the business's activity in three **nested objects**, not as top-level fields. All are optional. A value outside the allowed list doesn't block the submission, but it comes back in `warnings`.
+
+**`extra_business_info`**
 
 | Field | Notes |
 |---|---|
-| `industry_vertical`, `meeting_mode`, `primary_account_purpose` | Strings, up to 255 characters |
+| `meeting_mode`, `primary_account_purpose` | Strings, up to 255 characters |
+| `industry_vertical` | Up to 255 characters. Send a supported vertical exactly as written, for example `"Ecommerce - Consumer Electronics"`. Other values are mapped to the closest one |
+| `business_description` | 140–5000 characters |
 | `obo_usage` | `"yes"` or `"no"`: whether the business moves money on behalf of others |
 | `monthly_volume_usd`, `avg_transaction_usd`, `max_transaction_usd` | Numbers. `avg_transaction_usd` can't exceed `max_transaction_usd` |
 | `sender_geographies` | Any of `Africa`, `Europe`, `North America`, `South America`, `Asia` |
+
+**`collections_data`**
+
+| Field | Notes |
+|---|---|
 | `sender_industries` | Any of `E-commerce`, `Wholesale`, `Retail`, `Logistics`, `Manufacturing`, `Consulting`, `Others` |
-| `sender_types` | `individuals`, `businesses` or `both` |
-| `top_5_senders`, `top_5_beneficiaries` | Up to 5 names each |
-| `collection_currencies` | Three-letter currency codes from `GET /transaction-currencies` |
-| `beneficiary_geographies` | Two-letter country codes from `GET /transaction-countries` |
-| `beneficiary_types` | `individual`, `business` or `both` |
+| `sender_types` | `individuals`, `business`, `businesses` or `both` |
+| `top_5_senders` | Up to 5 names |
+| `incoming_from_fintech_wallets`, `incoming_fintech_wallet_details` | Boolean, and details up to 1000 characters |
+| `collection_currencies` | Three-letter codes from [List Transaction Currencies](/fiat-api-reference/kyc-lookups/transaction-currencies) |
+| `current_collection_provider`, `reason_for_switching_collection` | Strings |
+| `expected_monthly_disbursement_usd`, `avg_transaction_amount_collection`, `max_transaction_amount_collection` | Numbers |
+
+**`payouts_data`**
+
+| Field | Notes |
+|---|---|
+| `payout_primary_purpose` | Up to 255 characters |
+| `beneficiary_geographies` | Two-letter codes from [List Transaction Countries](/fiat-api-reference/kyc-lookups/transaction-countries) with `status: enabled` |
+| `beneficiary_industries` | Strings |
+| `beneficiary_types` | `individual`, `individuals`, `business` or `both` |
+| `top_5_beneficiaries` | Up to 5 names |
 | `primary_payout_method` | `ach`, `wire`, `sepa`, `swift`, `local_transfer`, `mobile_money` or `crypto` |
+| `payout_currencies`, `current_payout_provider`, `reason_for_switching_payout` | Currency codes and strings |
+
+```json
+"extra_business_info": {
+  "meeting_mode": "video_call",
+  "industry_vertical": "General Industries - Trade & Wholesale of General Goods",
+  "obo_usage": "no",
+  "monthly_volume_usd": 100000,
+  "avg_transaction_usd": 10000,
+  "max_transaction_usd": 50000,
+  "sender_geographies": ["North America", "Europe"]
+},
+"collections_data": {
+  "sender_industries": ["Retail", "E-commerce"],
+  "sender_types": "business",
+  "collection_currencies": ["USD", "EUR"]
+},
+"payouts_data": {
+  "beneficiary_geographies": ["US", "GB"],
+  "beneficiary_types": "business",
+  "primary_payout_method": "swift",
+  "payout_currencies": ["USD", "EUR"]
+}
+```
 
 KYB also accepts the [virtual account flags](#virtual-account-flags).
 
@@ -482,8 +573,6 @@ KYB also accepts the [virtual account flags](#virtual-account-flags).
 <RequestExample>
 ```bash cURL
 curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: kyb-acme-2026-001' \
   -d '{
@@ -687,6 +776,38 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-1548
 | `requirements_due`, `future_requirements_due` | Information still needed now, and information that will be needed later |
 | `metadata` | Extra details, such as `last_resubmission` after a [resubmission](#resubmit-one-endorsement) |
 
+### What each endorsement needs
+
+You don't request endorsements directly. Which ones are attempted depends on your submission, mainly the [virtual account flags](#virtual-account-flags) and whether the data is complete enough. A missing field or document doesn't fail the submission. It leaves that endorsement below `approved` until you fix it.
+
+| Endorsement | Attempted when | What decides approval |
+|---|---|---|
+| `base`, `sepa` | Always | Approval happens on a hosted onboarding link sent after your submission |
+| `spei` | Always | Approved automatically: individuals once an ID front image and `selfie_image` are on file, businesses once KYB is submitted |
+| `eurde` | `eurde_virtual_account: true` | Full name, email, phone, a valid `birth_date` or `incorporation_date`, registration number or tax ID, and a complete address |
+| `faster_payments` | Individuals: always. Businesses: only with `gbp_virtual_account: true` | The fullest profile: basics, full address, occupation or industry, source of funds, account purpose, a photo ID (individual) or a `business_registration` document (business), and proof of address |
+| `cobo_pobo` | Always | A registration or incorporation document, proof of address on the registered or physical address, a phone with calling code, and an associated person with a photo ID |
+| `native` | Always | Name, tax ID, address and, for businesses, each associated person's name and `ownership_percentage` |
+| `asian` | Individuals: only with an ID front image and a selfie | The customer's country (or the business's incorporation country) must be supported. Then email, name and address (individual), or legal name, registration number, incorporation date, phone and address (business) |
+| `brazil` | Always | Individuals: tax ID, full residential address, ID front image and selfie. Businesses: an associated person with a photo ID, plus an incorporation document and a tax ID document in `documents` or `extra_documents` |
+| `usd_latam`, `eur_latam` | Once `brazil` is approved | Nothing extra |
+| `virtual_card` | With an ID front image (not needed for tax-ID types such as `bvn` or `nin`) | Cardholder name, date of birth, ID number, email, phone and address. For a business, the associated person with the highest `ownership_percentage` is the cardholder |
+| `naira` | A Nigerian person with a BVN: individuals with `bvn`, businesses registered in Nigeria or with a Nigerian associated person who has a `bvn` entry in `identifying_information` | The BVN must match a real record. The person also needs an email, a phone and a date of birth showing they're 18 or older. For a business, the account opens in the company's name |
+
+Three endorsements reject outright instead of waiting in `under_review`:
+
+- **`cobo_pobo`**: no identifiable registration document, or a representative with no ID document
+- **`brazil`**: any of the items listed above is missing
+- **`asian`**: the country isn't supported. This can also decline an endorsement that was approved before
+
+**BVN.** Any BVN you submit, for an individual or an associated person, must be 11 digits and match a real record. If it doesn't, every endorsement is declined, `spei` included, with `errors: ["Unable to verify customer information"]`.
+
+#### Endorsements that failed to start
+
+If an endorsement can't be submitted at all, because a required document or field is missing or invalid, it stays at `not_started` (`declined` for `virtual_card` and `naira`) and `errors` says why, for example `["Missing required documents: ID document front image, selfie"]`. Fix the data with a [partial update](#partial-update-on-the-kyc-platform) or a full resubmission, and the endorsement is submitted again automatically.
+
+`errors`, `requirements_due` and `future_requirements_due` are always arrays of readable messages, and empty when there are none.
+
 ### Which endorsement a service needs
 
 | To use | The customer needs an approved |
@@ -762,10 +883,10 @@ PATCH https://kyc.yativo.com/api/business-kyc/{customer_id}
 
 Fields use the same names and rules as the submit endpoints. On these endpoints, `state` and `postal_code` are checked against the country's subdivision and postal code formats. An empty body returns `400 No fields provided.`, and a customer with no submission returns `404`.
 
+Endorsements that [failed to start](#endorsements-that-failed-to-start) are submitted again automatically once the update is saved. The response lists them in `resubmitted_endorsements`, for example `["asian"]`, and each shows `under_review` while it runs.
+
 ```bash cURL
 curl -X PATCH 'https://kyc.yativo.com/api/individual-kyc/c586066b-0f29-468f-b775-15483871a202' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -d '{
     "residential_address": {
@@ -786,7 +907,7 @@ After a customer updates their ID document or selfie, re-run verification for on
 POST https://api.yativo.com/api/v1/customer/kyc/resubmit/{customer_id}/{endorsement}
 ```
 
-`endorsement` is one of `base`, `sepa`, `spei`, `faster_payments`, `naira`, `virtual_card`, `asian` or `brazil`. This works for individual customers only.
+`endorsement` is one of `base`, `sepa`, `spei`, `faster_payments`, `naira`, `virtual_card`, `asian` or `brazil`. This works for individual customers only. For a business, or for `cobo_pobo`, `native`, `eurde`, `usd_latam` or `eur_latam`, use the KYC platform endpoint below.
 
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer/kyc/resubmit/c586066b-0f29-468f-b775-15483871a202/faster_payments' \
@@ -820,6 +941,24 @@ A `200` means the resubmission was queued, not that verification finished. Watch
 | `422` | `Unknown endorsement "...". Valid endorsements: ...` | `endorsement` isn't supported |
 
 `service` in the customer's `endorsement` list is title-cased, for example `"Faster payments"`. Compare it with the lowercase form you sent.
+
+#### On the KYC platform (individual or business)
+
+```
+POST https://kyc.yativo.com/api/kyc/endorsements/{customer_id}/{service}/resubmit
+```
+
+Works for individual and business customers, for any endorsement: `base`, `sepa`, `eurde`, `spei`, `asian`, `virtual_card`, `naira`, `cobo_pobo`, `faster_payments`, `native`, `brazil`, `usd_latam` or `eur_latam`. The endorsement moves to `under_review` right away and its `errors` are cleared. If the stored data can't be submitted, it returns to its previous status and `errors.resubmission_failed` says why.
+
+| Status | Meaning |
+|---|---|
+| `202` | Queued. `data.status` is `under_review` |
+| `403` | Resubmit protection is on for your account and the `X-Resubmit-Token` header (or `token` body field) is missing or wrong |
+| `404` | No stored submission for this customer |
+| `409` | The endorsement is already approved |
+| `422` | Unknown endorsement |
+
+You can call it 30 times a minute.
 
 ---
 
@@ -868,8 +1007,6 @@ GET https://kyc.yativo.com/api/kyc/regenerate/{customer_id}/{service}
 <RequestExample>
 ```bash cURL
 curl -X GET 'https://kyc.yativo.com/api/kyc/regenerate/c586066b-0f29-468f-b775-15483871a202/sepa' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
@@ -895,16 +1032,16 @@ The KYC platform serves the lists your form needs. Prefix each path with `https:
 
 | Endpoint | Returns |
 |---|---|
-| `GET /countries` | Supported countries |
-| `GET /subdivisions/{countryCode}` | States or provinces, with the `code` to send as `state` |
-| `GET /postal-codes/{countryCode}` | The country's postal code format |
-| `GET /identification-types/{countryCode}` | ID `type` values accepted for that country |
-| `GET /occupations` | Occupation codes |
-| `GET /business-industries` | Business industries |
-| `GET /transaction-currencies`, `GET /transaction-countries` | Values for `collection_currencies` and `beneficiary_geographies` |
-| `GET /individual-kyc/account-purposes`, `GET /individual-kyc/source-of-funds` | Individual KYC values |
-| `GET /business-kyc/account-purposes`, `GET /business-kyc/source-of-funds` | KYB values. These differ from the individual lists |
-| `GET /individual-kyc/expected-monthly-payments-usd` | `expected_monthly_payments_usd` values |
+| [`GET /countries`](/fiat-api-reference/kyc-lookups/countries) | Supported countries |
+| [`GET /subdivisions/{countryCode}`](/fiat-api-reference/kyc-lookups/subdivisions) | States or provinces, with the `code` to send as `state` |
+| [`GET /postal-codes/{countryCode}`](/fiat-api-reference/kyc-lookups/postal-codes) | The country's postal code format |
+| [`GET /identification-types/{countryCode}`](/fiat-api-reference/kyc-lookups/identification-types) | ID `type` values accepted for that country |
+| [`GET /occupations`](/fiat-api-reference/kyc-lookups/occupations) | Occupation codes |
+| [`GET /business-industries`](/fiat-api-reference/kyc-lookups/business-industries) | Business industries |
+| [`GET /transaction-currencies`](/fiat-api-reference/kyc-lookups/transaction-currencies), [`GET /transaction-countries`](/fiat-api-reference/kyc-lookups/transaction-countries) | Values for `collection_currencies` and `beneficiary_geographies` |
+| [`GET /individual-kyc/account-purposes`](/fiat-api-reference/kyc-lookups/individual-account-purposes), [`GET /individual-kyc/source-of-funds`](/fiat-api-reference/kyc-lookups/individual-source-of-funds) | Individual KYC values |
+| [`GET /business-kyc/account-purposes`](/fiat-api-reference/kyc-lookups/business-account-purposes), [`GET /business-kyc/source-of-funds`](/fiat-api-reference/kyc-lookups/business-source-of-funds) | KYB values. These differ from the individual lists |
+| [`GET /individual-kyc/expected-monthly-payments-usd`](/fiat-api-reference/kyc-lookups/expected-monthly-payments) | `expected_monthly_payments_usd` values |
 
 The same occupation and country data is also available on the main API:
 
@@ -1069,7 +1206,7 @@ KYB `source_of_funds` values are PascalCase:
 
 ## ID types by country
 
-The accepted `type` values under `identifying_information` depend on the issuing country. Common types available globally:
+The accepted `type` values under `identifying_information` depend on the issuing country. Get the full list for a country from [List ID Types](/fiat-api-reference/kyc-lookups/identification-types). Common types available globally:
 
 | Type | Description |
 |---|---|
@@ -1096,30 +1233,7 @@ Use `GET /auth/verification-locations` to check which countries are supported, a
 
 ## Webhooks
 
-Configure your webhook endpoint in the Yativo dashboard to receive status updates automatically.
-
-### Events
-
-| Event | Description |
-|---|---|
-| `kyc.status_updated` | KYC/KYB verification status changed |
-| `kyc.endorsement_updated` | A specific service endorsement status changed |
-
-### Payload example
-
-```json
-{
-  "event": "kyc.status_updated",
-  "data": {
-    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
-    "status": "approved",
-    "type": "individual",
-    "endorsements": ["base", "sepa"],
-    "rejection_reasons": [],
-    "updated_at": "2026-06-01T15:00:00.000000Z"
-  }
-}
-```
+KYC and KYB results arrive as [`endorsement.updated`](/yativo-fiat/webhooks#customers) events. There's no separate KYC status event. See [Track verification with endorsements](#track-verification-with-endorsements).
 
 ---
 
@@ -1163,6 +1277,21 @@ The KYC platform returns validation errors in its own shape, with `422`:
 | `calling_code is invalid` | Must be `+` followed by 1–4 digits, e.g. `"+1"`, `"+234"` |
 | `identifying_information is required` | At least one ID document must be included |
 | `documents is required` | KYB requires at least one business document |
+
+---
+
+## Go-live checklist
+
+Sandbox is forgiving. Production isn't. Before switching:
+
+- Every request, lookups included, goes to the production host, read from config rather than hardcoded.
+- Lookup values cached from sandbox are fetched again from production, or fetched live.
+- No sandbox test values are hardcoded. See [Sandbox KYC](/yativo-fiat/sandbox-kyc).
+- Nigerian customers send their own `bvn` and `nin`, and their name and date of birth match their BVN record.
+- No real customer has a placeholder name or email.
+- You handle `409` duplicates by reusing `duplicate_of`, show `422` errors field by field, and treat `403 Access denied.` as final for that `customer_id`.
+- A `200` or `201` is shown as "submitted, pending review", never "approved".
+- You've submitted one real individual (and one real business, if you onboard businesses) on production and seen the endorsement results end to end.
 
 ---
 

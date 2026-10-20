@@ -1,6 +1,7 @@
 ---
 title: "Delete Webhook"
 description: "Remove a registered webhook endpoint"
+openapi: "openapi-fiat.yaml DELETE /business/webhook/{webhook_id}"
 ---
 
 Delete a webhook endpoint. Yativo will stop delivering events to this URL immediately.
@@ -8,12 +9,6 @@ Delete a webhook endpoint. Yativo will stop delivering events to this URL immedi
 ```
 DELETE https://api.yativo.com/api/v1/business/webhook/{webhook_id}
 ```
-
-## Path parameters
-
-<ParamField path="webhook_id" type="string" required>
-  The ID of the webhook to delete. Returned when the webhook was created.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

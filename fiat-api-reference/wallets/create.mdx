@@ -1,6 +1,7 @@
 ---
 title: "Create Wallet"
 description: "Create a new currency wallet for your account"
+openapi: "openapi-fiat.yaml POST /wallet/create"
 ---
 
 Create a new wallet to hold a specific currency. Once created, the wallet appears in your balance list with a zero balance.
@@ -12,12 +13,6 @@ POST /wallet/create
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request Body
-
-<ParamField body="currency" type="string" required>
-  The currency code for the new wallet (e.g. `COP`, `PEN`, `ARS`, `CLP`).
-</ParamField>
 
 <RequestExample>
 ```bash cURL

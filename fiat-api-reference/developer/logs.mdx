@@ -1,6 +1,7 @@
 ---
 title: "API Request Logs"
 description: "Retrieve a log of all API requests made against your account"
+openapi: "openapi-fiat.yaml GET /business/logs/all"
 ---
 
 Returns an audit log of all API calls made against your business account. Useful for debugging, monitoring, and compliance.
@@ -8,24 +9,6 @@ Returns an audit log of all API calls made against your business account. Useful
 ```
 GET /business/logs/all
 ```
-
-## Query Parameters
-
-<ParamField query="status" type="string">
-  Filter by HTTP status code (e.g. `200`, `400`, `422`, `500`).
-</ParamField>
-
-<ParamField query="method" type="string">
-  Filter by HTTP method: `GET`, `POST`, `PUT`, `DELETE`.
-</ParamField>
-
-<ParamField query="page" type="number">
-  Page number.
-</ParamField>
-
-<ParamField query="per_page" type="number">
-  Results per page.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

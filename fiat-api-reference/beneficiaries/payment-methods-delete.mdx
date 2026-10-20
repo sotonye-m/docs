@@ -1,6 +1,7 @@
 ---
 title: "Delete Payment Method"
 description: "Remove a saved payment method from a beneficiary"
+openapi: "openapi-fiat.yaml DELETE /beneficiaries/payment-methods/delete/{id}"
 ---
 
 Permanently delete a saved payment method. This action is irreversible.
@@ -10,10 +11,6 @@ DELETE /v1/beneficiaries/payment-methods/delete/{id}
 ```
 
 ## Path parameters
-
-<ParamField path="id" type="string" required>
-  The ID of the beneficiary payment method to delete.
-</ParamField>
 
 <Warning>
   Deleting a payment method is permanent and cannot be undone.

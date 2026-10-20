@@ -1,6 +1,7 @@
 ---
 title: "Get Virtual Card"
 description: "Retrieve details for a specific virtual card"
+openapi: "openapi-fiat.yaml GET /customer/virtual/cards/get/{card_id}"
 ---
 
 Returns full details for a specific virtual card by its ID.
@@ -8,12 +9,6 @@ Returns full details for a specific virtual card by its ID.
 ```
 GET https://api.yativo.com/api/v1/customer/virtual/cards/get/{card_id}
 ```
-
-## Path Parameters
-
-<ParamField path="card_id" type="string" required>
-  The virtual card ID.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

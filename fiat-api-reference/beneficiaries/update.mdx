@@ -1,6 +1,7 @@
 ---
 title: "Update Beneficiary"
 description: "Replace all profile fields on an existing beneficiary"
+openapi: "openapi-fiat.yaml PUT /beneficiaries/{id}"
 ---
 
 Fully replace a beneficiary's profile information. This is a **full replacement** — all required fields must be included in every request. Omitting a required field will overwrite it with an empty or default value.
@@ -13,37 +14,7 @@ PUT /v1/beneficiaries/{id}
   Requires an `Idempotency-Key` header.
 </Note>
 
-## Path parameters
-
-<ParamField path="id" type="string" required>
-  The ID of the beneficiary to update.
-</ParamField>
-
 ## Request body
-
-<ParamField body="recipient_type" type="string" required>
-  Beneficiary type: `"individual"` or `"business"`.
-</ParamField>
-
-<ParamField body="customer_name" type="string" required>
-  Full name of the beneficiary (individual) or legal business name.
-</ParamField>
-
-<ParamField body="customer_email" type="string" required>
-  Beneficiary's email address.
-</ParamField>
-
-<ParamField body="customer_address" type="string" required>
-  Beneficiary's physical address.
-</ParamField>
-
-<ParamField body="country" type="string" required>
-  Beneficiary's country code (e.g. `CHL`, `MEX`, `BRA`).
-</ParamField>
-
-<ParamField body="customer_nickname" type="string">
-  A short label for this beneficiary. Defaults to `customer_name` if omitted.
-</ParamField>
 
 <Warning>
   This endpoint performs a **full replacement**. You must send all required fields on every call, not just the fields you want to change.

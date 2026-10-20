@@ -1,6 +1,7 @@
 ---
 title: "Track Transaction by ID"
 description: "Look up a transaction by its transaction ID and type"
+openapi: "openapi-fiat.yaml GET /transaction/track"
 ---
 
 Returns a single transaction record by providing the transaction ID and transaction type. This is distinct from the timeline tracking endpoint (`GET /transaction/tracking/{id}`) which tracks by quote ID — this endpoint performs a direct lookup by the transaction's own ID.
@@ -8,16 +9,6 @@ Returns a single transaction record by providing the transaction ID and transact
 ```
 GET /v1/transaction/track
 ```
-
-## Query Parameters
-
-<ParamField query="txn_id" type="string" required>
-  The transaction ID to look up.
-</ParamField>
-
-<ParamField query="txn_type" type="string" required>
-  The type of the transaction. Common values: `"payout"`, `"payin"`, `"swap"`.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

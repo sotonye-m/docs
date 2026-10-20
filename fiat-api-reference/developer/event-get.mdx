@@ -1,6 +1,7 @@
 ---
 title: "Get Event"
 description: "Retrieve the full payload of a specific webhook event"
+openapi: "openapi-fiat.yaml GET /business/events/show/{id}"
 ---
 
 Returns complete details and payload for a specific event.
@@ -8,12 +9,6 @@ Returns complete details and payload for a specific event.
 ```
 GET /business/events/show/{id}
 ```
-
-## Path Parameters
-
-<ParamField path="id" type="string" required>
-  The event ID.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

@@ -1,6 +1,7 @@
 ---
 title: "Get Send Money Quote"
 description: "Get a locked exchange rate quote for a send money transaction"
+openapi: "openapi-fiat.yaml POST /sendmoney/quote"
 ---
 
 Generates a rate-locked quote for a cross-border payment. The quote guarantees the displayed rate and fee for **5 minutes**. Use the returned `quote_id` when executing the payment with `POST /sendmoney`.
@@ -12,20 +13,6 @@ POST /sendmoney/quote
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request Body
-
-<ParamField body="from_currency" type="string" required>
-  Source currency code (e.g. `"USD"`, `"EUR"`).
-</ParamField>
-
-<ParamField body="to_currency" type="string" required>
-  Destination currency code (e.g. `"CLP"`, `"MXN"`, `"BRL"`).
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Amount in the source currency to send.
-</ParamField>
 
 <RequestExample>
 ```bash USD → CLP

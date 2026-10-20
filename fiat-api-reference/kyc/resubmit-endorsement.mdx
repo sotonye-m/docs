@@ -1,0 +1,7 @@
+---
+title: "Resubmit Endorsement"
+description: "Re-run verification for one endorsement"
+openapi: "openapi-fiat.yaml POST /customer/kyc/resubmit/{customerId}/{endorsement}"
+---
+
+Use it after the customer fixes what the endorsement's `errors` or `requirements_due` describe. Watch [`endorsement.updated`](/yativo-fiat/webhooks#customers) for the result. See [Resubmit one endorsement](/yativo-fiat/kyc#resubmit-one-endorsement).

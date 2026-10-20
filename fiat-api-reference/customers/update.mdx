@@ -1,6 +1,7 @@
 ---
 title: "Update Customer"
 description: "Update an existing customer's profile information"
+openapi: "openapi-fiat.yaml PUT /customer/{customer_id}"
 ---
 
 Update a customer record. This is a **full replacement** — all required fields must be provided, even if you are only changing one of them.
@@ -12,38 +13,6 @@ PUT https://api.yativo.com/api/v1/customer/{customer_id}
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Path parameters
-
-<ParamField path="customer_id" type="string" required>
-  The UUID of the customer to update.
-</ParamField>
-
-## Request body
-
-<ParamField body="customer_name" type="string" required>
-  Full name of the customer (individual) or legal business name (business).
-</ParamField>
-
-<ParamField body="customer_email" type="string" required>
-  Customer's email address.
-</ParamField>
-
-<ParamField body="customer_phone" type="string" required>
-  Customer's phone number.
-</ParamField>
-
-<ParamField body="customer_country" type="string" required>
-  Customer's country in ISO 3166-1 alpha-3 format (e.g. `USA`, `BRA`, `MEX`).
-</ParamField>
-
-<ParamField body="customer_address" type="object" required>
-  Customer's address details.
-</ParamField>
-
-<ParamField body="customer_id" type="string" required>
-  The customer ID. Must match an existing customer record.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

@@ -1,6 +1,7 @@
 ---
 title: "Get Beneficiary"
 description: "Retrieve details for a specific beneficiary"
+openapi: "openapi-fiat.yaml GET /beneficiaries/{id}"
 ---
 
 Returns full details for a specific beneficiary.
@@ -8,12 +9,6 @@ Returns full details for a specific beneficiary.
 ```
 GET /v1/beneficiaries/{id}
 ```
-
-## Path parameters
-
-<ParamField path="id" type="string" required>
-  The ID of the beneficiary to retrieve.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

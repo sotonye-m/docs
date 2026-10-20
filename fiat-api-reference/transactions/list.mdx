@@ -1,6 +1,7 @@
 ---
 title: "List Transactions"
 description: "Retrieve a paginated list of all transactions in your account"
+openapi: "openapi-fiat.yaml GET /business/transactions/index"
 ---
 
 Returns all transactions (deposits, payouts, virtual account receipts, card transactions) for your business account with support for filtering and pagination.
@@ -8,40 +9,6 @@ Returns all transactions (deposits, payouts, virtual account receipts, card tran
 ```
 GET /business/transactions/index
 ```
-
-## Query Parameters
-
-<ParamField query="status" type="string">
-  Filter by status: `success`, `complete`, `detected`, `pending`, `In Progress`, `failed`.
-</ParamField>
-
-<ParamField query="start_date" type="string">
-  From date (inclusive), e.g. `2026-04-01`.
-</ParamField>
-
-<ParamField query="end_date" type="string">
-  To date (inclusive), e.g. `2026-04-30`.
-</ParamField>
-
-<ParamField query="amount" type="number">
-  Filter by exact transaction amount.
-</ParamField>
-
-<ParamField query="customer_id" type="string">
-  Filter by customer ID.
-</ParamField>
-
-<ParamField query="transaction_type" type="string">
-  Filter by type: `deposit`, `payout`, `virtual_account`, `transfer`, `card_transaction`, `crypto_deposit`.
-</ParamField>
-
-<ParamField query="page" type="number">
-  Page number. Default: `1`.
-</ParamField>
-
-<ParamField query="per_page" type="number">
-  Results per page. Default: `10`.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

@@ -1,6 +1,7 @@
 ---
 title: "Track Transaction"
 description: "Get a live status timeline for a transaction"
+openapi: "openapi-fiat.yaml GET /transaction/tracking/{quote_id}"
 ---
 
 Returns a step-by-step timeline of a transaction's progress from initiation through completion.
@@ -8,12 +9,6 @@ Returns a step-by-step timeline of a transaction's progress from initiation thro
 ```
 GET /v1/transaction/tracking/{quote_id}
 ```
-
-## Path Parameters
-
-<ParamField path="quote_id" type="string" required>
-  The `quote_id` associated with the transaction. This is the quote ID returned when the transaction or quote was created — not a generic transaction ID.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

@@ -1,6 +1,7 @@
 ---
 title: "Download Receipt"
 description: "Download a receipt for a completed transaction"
+openapi: "openapi-fiat.yaml GET /business/transaction/{transactionId}/{type}/receipt"
 ---
 
 Returns a receipt for any completed transaction. Pass `pdf` as the `type` parameter to receive a base64-encoded PDF, or `json` for a structured data response.
@@ -8,16 +9,6 @@ Returns a receipt for any completed transaction. Pass `pdf` as the `type` parame
 ```
 GET https://api.yativo.com/api/v1/business/transaction/{transactionId}/{type}/receipt
 ```
-
-## Path parameters
-
-<ParamField path="transactionId" type="string" required>
-  The UUID of the transaction.
-</ParamField>
-
-<ParamField path="type" type="string" required>
-  Receipt format. Use `"pdf"` to receive a base64-encoded PDF document.
-</ParamField>
 
 <RequestExample>
 ```bash cURL — PDF receipt

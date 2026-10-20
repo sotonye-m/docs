@@ -1,7 +1,7 @@
 ---
 title: "Reset Employee Card Sign-in"
 description: "Let an employee set up their card sign-in again after losing their phone or passkey"
-openapi: "POST https://api.yativo.com/api/v1/corporate-card/employees/{employee_id}/card-access/reset"
+openapi: "openapi-fiat.yaml POST /corporate-card/employees/{employee_id}/card-access/reset"
 ---
 
 Removes the employee's passkeys and authenticator app and unlocks their card links. They confirm their email and set up sign-in again the next time they open a card link. The employee gets an email telling them their sign-in was reset.

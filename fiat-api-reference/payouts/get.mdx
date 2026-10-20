@@ -1,6 +1,7 @@
 ---
 title: "Get Payout"
 description: "Retrieve a single payout by ID"
+openapi: "openapi-fiat.yaml GET /payout/fetch/{payout_id}"
 ---
 
 Returns details for a specific payout.
@@ -8,10 +9,6 @@ Returns details for a specific payout.
 ```
 GET https://api.yativo.com/api/v1/payout/fetch/{payout_id}
 ```
-
-<ParamField path="payout_id" type="string" required>
-  The UUID of the payout to retrieve.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

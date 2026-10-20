@@ -1,6 +1,7 @@
 ---
 title: "Terminate Card"
 description: "Permanently cancel a virtual card"
+openapi: "openapi-fiat.yaml POST /customer/virtual/cards/terminate"
 ---
 
 Permanently terminates a virtual card. This action is irreversible. Withdraw any remaining balance before terminating.
@@ -12,12 +13,6 @@ POST https://api.yativo.com/api/v1/customer/virtual/cards/terminate
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request Body
-
-<ParamField body="cardId" type="string" required>
-  The virtual card ID to terminate.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

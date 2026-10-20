@@ -1,6 +1,7 @@
 ---
 title: "Create Virtual Card"
 description: "Issue a virtual prepaid card to an activated customer"
+openapi: "openapi-fiat.yaml POST /customer/virtual/cards/create"
 ---
 
 Creates a virtual card for a customer who has been activated for the virtual card program. The initial funding amount is debited from your USD wallet.
@@ -12,16 +13,6 @@ POST https://api.yativo.com/api/v1/customer/virtual/cards/create
 <Note>
   Requires an `Idempotency-Key` header.
 </Note>
-
-## Request Body
-
-<ParamField body="customer_id" type="string" required>
-  The ID of the activated customer. Must exist in your customers table.
-</ParamField>
-
-<ParamField body="amount" type="number" required>
-  Initial funding amount in USD. Minimum $3.00, maximum $10,000.00.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

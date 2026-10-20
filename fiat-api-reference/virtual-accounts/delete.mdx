@@ -1,6 +1,7 @@
 ---
 title: "Delete Virtual Account"
 description: "Permanently delete a virtual account"
+openapi: "openapi-fiat.yaml DELETE /business/virtual-account/delete-virtual-account/{account_id}"
 ---
 
 Permanently deletes a virtual account. This action is irreversible.
@@ -8,12 +9,6 @@ Permanently deletes a virtual account. This action is irreversible.
 ```
 DELETE /v1/business/virtual-account/delete-virtual-account/{account_id}
 ```
-
-## Path Parameters
-
-<ParamField path="account_id" type="string" required>
-  The ID of the virtual account to delete.
-</ParamField>
 
 <RequestExample>
 ```bash cURL

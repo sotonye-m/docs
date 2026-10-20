@@ -1,6 +1,7 @@
 ---
 title: "Virtual Account Transaction History"
 description: "Retrieve payment history for a specific virtual account"
+openapi: "openapi-fiat.yaml GET /business/virtual-account/history/{accountNumber}"
 ---
 
 Returns all payments received into a specific virtual account.
@@ -12,12 +13,6 @@ GET /v1/business/virtual-account/history/{accountNumber}
 <Note>
   Both GET and POST methods are accepted, but GET is recommended.
 </Note>
-
-## Path Parameters
-
-<ParamField path="accountNumber" type="string" required>
-  The account number (not the account ID).
-</ParamField>
 
 <RequestExample>
 ```bash cURL

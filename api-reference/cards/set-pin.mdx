@@ -1,6 +1,8 @@
 ---
 title: "Set Card PIN"
 description: "Let a cardholder set their PIN through Yativo's secure hosted page — no PIN ever touches your server."
+api: "POST /v1/yativo-card/{yativoCardId}/cards/{cardId}/view-token"
+authMethod: "bearer"
 ---
 
 Card PINs are set — and changed — through Yativo's **hosted secure page**, powered by the card network's Partner Secure Elements (PSE) service. The cardholder types their PIN directly inside a sandboxed iframe. Your backend never receives or processes the PIN value.

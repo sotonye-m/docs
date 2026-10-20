@@ -1,6 +1,7 @@
 ---
 title: "Initiate Payout"
 description: "Send money from your wallet to a customer's saved payout method"
+openapi: "openapi-fiat.yaml POST /wallet/payout"
 ---
 
 Send money from one of your wallets to a customer's saved payout method. Pass a `quote_id` to lock the rate and fees for 5 minutes, or send `amount` to pay at the current rate.
@@ -16,42 +17,6 @@ POST /wallet/payout
 </Note>
 
 ## Request body
-
-<ParamField body="debit_wallet" type="string" required>
-  The wallet currency to debit (e.g. `"USD"`, `"EUR"`).
-</ParamField>
-
-<ParamField body="payment_method_id" type="integer" required>
-  The customer's saved payout method ID, from `POST /beneficiaries/payment-methods`.
-</ParamField>
-
-<ParamField body="customer_id" type="string" required>
-  The customer the payout method belongs to.
-</ParamField>
-
-<ParamField body="quote_id" type="string">
-  A payout quote from `POST /exchange-rate` (`method_type: "payout"`). Recommended. The quote supplies the amount, so `amount` and `amount_type` are ignored. The quote's `method_id` must be the payout method behind `payment_method_id`.
-</ParamField>
-
-<ParamField body="amount" type="number">
-  Required if `quote_id` is not provided. With `amount_type: "send"` (the default), the amount to send in the `debit_wallet` currency. With `amount_type: "receive"`, the amount the customer receives in the payout currency.
-</ParamField>
-
-<ParamField body="amount_type" type="string" default="send">
-  `send` or `receive`. Ignored when `quote_id` is provided. In both modes fees are added on top and charged to your wallet.
-</ParamField>
-
-<ParamField body="reference" type="string">
-  Payment reference passed to the recipient's bank, up to 250 characters. Depending on the payout rail, it may be shortened or have unsupported characters removed. For example, ACH allows only 10 letters, numbers or spaces.
-</ParamField>
-
-<ParamField body="invoice" type="file">
-  Supporting invoice: PDF, PNG or JPEG, up to 15 MB. Send the request as `multipart/form-data` to attach it.
-</ParamField>
-
-<ParamField body="invoice_url" type="string">
-  Public `http` or `https` link to the supporting invoice, as an alternative to `invoice`.
-</ParamField>
 
 Every payout goes through compliance checks before it's sent. If you include an invoice, it's reviewed with the payout, so make sure its total and beneficiary match. A payout that needs a closer look stays `pending` until the review is finished.
 

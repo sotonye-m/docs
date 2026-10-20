@@ -1,6 +1,7 @@
 ---
 title: "Update KYC Submission"
 description: "Update an existing KYC or KYB submission with corrected or additional information"
+openapi: "openapi-fiat.yaml PUT /customer/kyc/update"
 ---
 
 Update a previously submitted KYC or KYB record. Use this endpoint when a customer needs to correct information or provide additional documents — typically after a rejection. Only include fields you want to change.
@@ -14,14 +15,6 @@ PUT https://api.yativo.com/api/v1/customer/kyc/update
 </Note>
 
 ## Request body
-
-<ParamField body="customer_id" type="string" required>
-  The UUID of the customer whose KYC you are updating.
-</ParamField>
-
-<ParamField body="type" type="string" required>
-  `"individual"` or `"business"` — must match the original submission type.
-</ParamField>
 
 All other fields from the original submission schema can be included to update their values. See [Submit Individual KYC](/fiat-api-reference/kyc/submit-individual) or [Submit Business KYC](/fiat-api-reference/kyc/submit-business) for the full field reference.
 
