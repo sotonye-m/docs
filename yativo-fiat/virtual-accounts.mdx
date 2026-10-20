@@ -6,7 +6,7 @@ description: "Issue local virtual accounts to collect payments in multiple curre
 Virtual accounts give each customer a unique local bank account number. When a payment arrives at that number, it is automatically matched and credited to the right customer — no manual reconciliation needed.
 
 <Note>
-  Each customer can hold **one virtual account per currency**. KYC approval (`is_va_approved: true`) is required before a virtual account can be issued.
+  Each customer can hold **one virtual account per currency**. The customer needs an approved endorsement for that currency before you can issue the account. See [KYC Requirement](#kyc-requirement).
 </Note>
 
 ## Supported Rails
@@ -274,7 +274,7 @@ POST https://api.yativo.com/api/v1/business/virtual-account/bulk-account-creatio
 ```
 
 <Note>
-  Requires `Idempotency-Key` header. All customers must have `is_va_approved: true` before bulk creation.
+  Requires `Idempotency-Key` header. Every customer needs an approved endorsement for the currency before bulk creation.
 </Note>
 
 <ParamField body="accounts" type="array" required>
@@ -415,12 +415,12 @@ curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/customer/acc
 
 ## KYC Requirement
 
-Before issuing a virtual account, the customer's KYC must be approved. Check the `is_va_approved` flag on the customer object:
+Each currency needs a specific endorsement. Find it with:
 
 ```bash
-curl -X GET 'https://api.yativo.com/api/v1/customer/da44a3e6-eb5d-429f-8d17-357aa5a6cdf2' \
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/currencies-and-endorsements' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
-If `is_va_approved` is `false`, submit KYC first. See the [Customers & KYC](/yativo-fiat/kyc) guide.
+Then check that the customer's endorsement for it is `approved`, either from the `endorsement.updated` webhook or from the `endorsement` list on `GET /customer/{customer_id}`. If it isn't, submit or fix KYC first. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).

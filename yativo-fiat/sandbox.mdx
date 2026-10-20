@@ -64,7 +64,7 @@ curl 'https://smtp.yativo.com/api/v1/ip-whitelist/check' \
     Use `POST /customer` to create customers. That call does not approve the customer. Submit KYC or KYB on `https://kyc.yativo.com`, the same way you do in production.
   </Step>
   <Step title="Create virtual accounts">
-    After the customer is approved (`is_va_approved` is true), call `POST /business/virtual-account/create`.
+    After the customer's endorsement for the currency is `approved`, call `POST /business/virtual-account/create`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
   </Step>
   <Step title="Simulate deposits">
     Use the sandbox dashboard or API to trigger test deposits to your virtual accounts.
@@ -107,8 +107,8 @@ const { data: customer } = await fetch(`${BASE}/customer`, {
 
 console.log('Customer:', customer.customer_id);
 // Submit KYC at https://kyc.yativo.com/individual/{customer_id}
-// Create a virtual account only after GET /customer/kyc/{customer_id}
-// returns status "approved" and is_va_approved true.
+// Create a virtual account only after the customer's endorsement for the
+// currency is "approved" (endorsement.updated webhook or GET /customer/{customer_id}).
 ```
 
 ---

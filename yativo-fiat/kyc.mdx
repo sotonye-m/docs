@@ -44,11 +44,11 @@ Yativo requires identity verification before customers can access payment servic
   <Step title="Submit KYC or KYB">
     POST to `https://kyc.yativo.com/api/individual-kyc/submit` or `https://kyc.yativo.com/api/business-kyc/submit`.
   </Step>
-  <Step title="Poll or receive webhook">
-    Check `GET /customer/kyc/{customer_id}`, or listen for the `customer.updated` and `endorsement.updated` [webhook events](/yativo-fiat/webhooks).
+  <Step title="Watch the endorsements">
+    Listen for the [`endorsement.updated`](/yativo-fiat/webhooks#customers) webhook, or read the customer's `endorsement` list with `GET /customer/{customer_id}`. This is the only place verification results appear. See [Track verification with endorsements](#track-verification-with-endorsements).
   </Step>
-  <Step title="Customer approved">
-    When `status` is `"approved"` and `is_va_approved` is `true`, service endorsements are activated and payment rails become available.
+  <Step title="Use each approved service">
+    Each service becomes available when its endorsement's `status` is `approved`. For example, a USD virtual account needs the endorsement that `GET /business/virtual-account/currencies-and-endorsements` lists for USD.
   </Step>
 </Steps>
 
@@ -102,7 +102,7 @@ POST https://kyc.yativo.com/api/individual-kyc/submit
 
 This is a five-step data model submitted in one payload. All required fields must be present in a single request.
 
-A successful response means the submission passed validation and was accepted. It doesn't mean the customer is approved. Verification runs afterwards, so treat the customer as pending until [their status](#check-kyc--kyb-status) changes.
+A successful response means the submission passed validation and was accepted. It doesn't mean the customer is approved. Verification runs afterwards, so treat the customer as pending until [their status](#track-verification-with-endorsements) changes.
 
 #### Step 1 — Personal details
 
@@ -600,83 +600,120 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
 
 ---
 
-## Check KYC / KYB status
+## Track verification with endorsements
+
+A customer's KYC or KYB result is only available through their **endorsements**. Each endorsement is one service, such as `base`, `sepa` or `cobo_pobo`, with its own status. A customer can be approved for one service and still be under review for another, so there's no single overall status to check.
+
+Don't rely on `customer_kyc_status` or `is_va_approved` to decide what a customer can use. Check the endorsement for the service you need.
+
+### Listen for `endorsement.updated`
+
+Yativo sends [`endorsement.updated`](/yativo-fiat/webhooks#customers) whenever any of a customer's endorsements changes. `endorsements` is the customer's full current list:
+
+```json
+{
+  "event.type": "endorsement.updated",
+  "payload": {
+    "endorsements": [
+      { "service": "base", "status": "approved" },
+      { "service": "sepa", "status": "under_review" }
+    ],
+    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer": { "customer_id": "c586066b-0f29-468f-b775-15483871a202", "...": "..." }
+  }
+}
+```
+
+Store the list and compare it with your copy to see what changed.
+
+### Read the current endorsements
+
+To check on demand, for example when your server starts up or you missed a webhook, read the customer's `endorsement` list:
 
 ```
-GET /customer/kyc/{customer_id}
+GET https://api.yativo.com/api/v1/customer/{customer_id}
 ```
-
-<ParamField path="customer_id" type="string" required>
-  The customer UUID.
-</ParamField>
-
-### Status values
-
-| Status | Description |
-|---|---|
-| `not_started` | No submission has been made |
-| `submitted` | Received, awaiting review |
-| `manual_review` | Under manual compliance review |
-| `approved` | Customer is fully verified |
-| `rejected` | Rejected — see `kyc_rejection_reasons` |
-| `under_review` | Additional review in progress |
-
-<Note>
-  Check both `status === "approved"` **and** `is_va_approved === true` before enabling payment features for a customer.
-</Note>
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/customer/kyc/c586066b-0f29-468f-b775-15483871a202' \
+curl -X GET 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-15483871a202' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json Approved
+```json Success
 {
   "status": "success",
   "status_code": 200,
+  "message": "Request successful",
   "data": {
-    "first_name": "Alex",
-    "last_name": "Smith",
-    "status": "approved",
-    "kyc_rejection_reasons": [],
-    "kyc_requirements_due": [],
-    "bio_data": {
-      "customer_kyc_status": "approved",
-      "kyc_verified_date": "2026-06-01T12:00:00.000000Z"
-    },
-    "kyc_link": "https://kyc.yativo.com/individual/c586066b-0f29-468f-b775-15483871a202",
-    "is_va_approved": true
-  }
-}
-```
-
-```json Rejected
-{
-  "status": "success",
-  "status_code": 200,
-  "data": {
-    "first_name": "Alex",
-    "last_name": "Smith",
-    "status": "rejected",
-    "kyc_rejection_reasons": [
-      "Selfie image does not clearly show the customer's face",
-      "Document expiration date is invalid"
-    ],
-    "kyc_requirements_due": ["selfie_image", "identifying_information"],
-    "bio_data": {
-      "customer_kyc_status": "rejected",
-      "kyc_verified_date": null
-    },
-    "kyc_link": "https://kyc.yativo.com/individual/c586066b-0f29-468f-b775-15483871a202",
-    "is_va_approved": false
+    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_name": "Alex Smith",
+    "endorsement": [
+      {
+        "service": "Base",
+        "status": "approved",
+        "hosted_kyc_url": null,
+        "errors": null,
+        "requirements_due": null,
+        "future_requirements_due": null,
+        "metadata": null,
+        "updated": "Oct 20, 2026 10:15"
+      },
+      {
+        "service": "Sepa",
+        "status": "rejected",
+        "hosted_kyc_url": "https://kyc.yativo.com/endorsement/sepa/c586066b-0f29-468f-b775-15483871a202",
+        "errors": ["The document or its details could not be read clearly."],
+        "requirements_due": ["proof_of_address"],
+        "future_requirements_due": null,
+        "metadata": null,
+        "updated": "Oct 20, 2026 10:20"
+      }
+    ]
   }
 }
 ```
 </ResponseExample>
+
+| Field | Description |
+|---|---|
+| `service` | The endorsement, title-cased with spaces, such as `"Faster payments"`. Compare it with the lowercase, underscored name, such as `faster_payments` |
+| `status` | See [Endorsement statuses](#endorsement-statuses) |
+| `hosted_kyc_url` | A page where the customer can complete or fix verification for this service, when one is needed |
+| `errors` | Why verification failed, when it has |
+| `requirements_due`, `future_requirements_due` | Information still needed now, and information that will be needed later |
+| `metadata` | Extra details, such as `last_resubmission` after a [resubmission](#resubmit-one-endorsement) |
+
+### Which endorsement a service needs
+
+| To use | The customer needs an approved |
+|---|---|
+| A virtual account | The endorsement for that currency. `GET /business/virtual-account/currencies-and-endorsements` returns the endorsement each currency needs |
+| A payout method | The endorsement for that method. A payout without it fails with `This customer isn't enabled for this payout method yet.` |
+| Corporate cards | `cobo_pobo` |
+| Virtual cards | `virtual_card` |
+
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/currencies-and-endorsements' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    { "currency": "USD", "endorsement": "base" },
+    { "currency": "EUR", "endorsement": "sepa" },
+    { "currency": "MXN", "endorsement": "spei" }
+  ]
+}
+```
 
 ---
 
@@ -767,7 +804,7 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/kyc/resubmit/c586066b-0f29-
 }
 ```
 
-A `200` means the resubmission was queued, not that verification finished. Check the endorsement's `status` with `GET /customer/{customer_id}`. Its `metadata.last_resubmission` shows whether the resubmission itself could be processed:
+A `200` means the resubmission was queued, not that verification finished. Watch for `endorsement.updated`, or check the endorsement's `status` with `GET /customer/{customer_id}`. Its `metadata.last_resubmission` shows whether the resubmission itself could be processed:
 
 | `last_resubmission.message` when `success` is `false` | Meaning |
 |---|---|
@@ -788,7 +825,7 @@ A `200` means the resubmission was queued, not that verification finished. Check
 
 ## Service endorsements
 
-After approval, customers receive service endorsements that unlock specific payment rails.
+Each endorsement unlocks one service. Its status is the verification result for that service.
 
 | Service | Description |
 |---|---|
@@ -800,21 +837,25 @@ After approval, customers receive service endorsements that unlock specific paym
 | `usd_latam` | USD Latin America transfers |
 | `eur_latam` | EUR Latin America transfers |
 | `virtual_card` | Virtual card issuance |
-| `faster_payments` | UK Faster Payments. Also required for [corporate cards](/yativo-fiat/sandbox-corporate-cards) |
+| `faster_payments` | UK Faster Payments |
+| `naira` | Nigerian naira accounts |
 | `asian` | Asian region payments |
 | `native` | Native payment rails |
-| `cobo_pobo` | Collection / payment-on-behalf-of |
+| `cobo_pobo` | Collection / payment-on-behalf-of. Also required for [corporate cards](/yativo-fiat/sandbox-corporate-cards) |
 
 ### Endorsement statuses
 
 | Status | Description |
 |---|---|
 | `not_started` | Not yet initiated |
+| `submitted` | Received, not yet reviewed |
 | `pending` | Awaiting review |
-| `approved` | Active for this customer |
-| `rejected` | Rejected |
-| `declined` | Customer declined |
-| `under_review` | Additional review in progress |
+| `under_review` | Review in progress |
+| `approved` | The customer can use this service |
+| `rejected` | Rejected. Check `errors` and `requirements_due`, fix them, then [resubmit](#resubmit-one-endorsement) |
+| `declined` | Declined |
+
+Only `approved` means the service is available. Treat every other status as not yet usable.
 
 ### Regenerate an endorsement link
 

@@ -154,6 +154,6 @@ Customer verification uses the same hosted pages and the same submission API in 
 - Business: `https://kyc.yativo.com/business/{customer_id}`
 - Submit: `POST https://kyc.yativo.com/api/individual-kyc/submit` or `POST https://kyc.yativo.com/api/business-kyc/submit`
 
-The sandbox dashboard links to those same hosted pages. Read status with `GET /customer/kyc/{customer_id}` on the sandbox base URL. Payment features for that customer still wait on `status` of `approved` and `is_va_approved` of `true`. Field reference: [KYC / KYB](/yativo-fiat/kyc).
+The sandbox dashboard links to those same hosted pages. Track the result through the customer's endorsements: the `endorsement.updated` webhook, or the `endorsement` list on `GET /customer/{customer_id}` on the sandbox base URL. Each service is available when its endorsement is `approved`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
 
-`GET /customer/kyc/{customer_id}` is behind the account check above, so it returns the account 403 until your own account is approved.
+`GET /customer/{customer_id}` is behind the account check above, so it returns the account 403 until your own account is approved.

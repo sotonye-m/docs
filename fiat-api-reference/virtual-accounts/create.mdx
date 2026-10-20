@@ -3,7 +3,7 @@ title: "Create Virtual Account"
 description: "Issue a virtual bank account to a customer to receive funds"
 ---
 
-Create a virtual bank account for a customer. The customer must have KYC approved (`is_va_approved: true`) before a virtual account can be issued.
+Create a virtual bank account for a customer. The customer must have an approved endorsement for the currency (see `GET /business/virtual-account/currencies-and-endorsements`) before a virtual account can be issued.
 
 ```
 POST /v1/business/virtual-account/create

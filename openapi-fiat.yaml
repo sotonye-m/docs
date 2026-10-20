@@ -1114,68 +1114,6 @@ paths:
   # KYC / KYB
   # ============================================================
 
-  /customer/kyc/{customer_id}:
-    get:
-      tags: [KYC / KYB]
-      summary: Check KYC Status
-      description: |
-        Poll this endpoint after a KYC/KYB submission to check verification status.
-        When `status` is `approved` and `is_va_approved` is `true`, the customer can use payment services.
-
-        **Status values:**
-        - `not_started` — no submission yet
-        - `submitted` — awaiting review
-        - `manual_review` — under manual review
-        - `approved` — fully verified
-        - `rejected` — rejected (see `kyc_rejection_reasons`)
-        - `under_review` — additional review in progress
-      parameters:
-        - name: customer_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: The UUID of the customer.
-      responses:
-        '200':
-          description: KYC status
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  status_code:
-                    type: integer
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      first_name:
-                        type: string
-                      last_name:
-                        type: string
-                      status:
-                        type: string
-                        enum: [not_started, submitted, manual_review, approved, rejected, under_review]
-                      kyc_rejection_reasons:
-                        type: array
-                        items:
-                          type: string
-                      kyc_requirements_due:
-                        type: array
-                        items:
-                          type: string
-                      bio_data:
-                        type: object
-                      kyc_link:
-                        type: string
-                      is_va_approved:
-                        type: boolean
-
   /customer/kyc/update:
     put:
       tags: [KYC / KYB]
@@ -2691,8 +2629,9 @@ paths:
       tags: [Virtual Accounts]
       summary: Create Virtual Account
       description: |
-        Create a virtual bank account for a customer. The customer must have KYC approved
-        (`is_va_approved: true`). Each customer can hold one virtual account per currency.
+        Create a virtual bank account for a customer. The customer must have an approved endorsement for the
+        currency, as listed by GET /business/virtual-account/currencies-and-endorsements. Each customer can hold
+        one virtual account per currency.
         Requires an `Idempotency-Key` header.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'

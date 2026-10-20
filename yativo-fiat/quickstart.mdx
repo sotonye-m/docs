@@ -162,7 +162,7 @@ Sandbox uses the same customer KYC submission as production. Creating a customer
 
 ## Step 7: Create a Virtual Account
 
-Once the customer's KYC is approved (`is_va_approved: true`), issue a virtual account:
+Once the customer's endorsement for the currency is `approved` (watch the `endorsement.updated` webhook), issue a virtual account. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
 
 ```
 POST /business/virtual-account/create

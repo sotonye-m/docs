@@ -163,7 +163,6 @@
             "pages": [
               "fiat-api-reference/kyc/submit-individual",
               "fiat-api-reference/kyc/submit-business",
-              "fiat-api-reference/kyc/status",
               "fiat-api-reference/kyc/update",
               "fiat-api-reference/kyc/occupation-codes",
               "fiat-api-reference/kyc/verification-locations",
@@ -697,6 +696,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/fiat-api-reference/kyc/status",
+      "destination": "/yativo-fiat/kyc"
+    },
     {
       "source": "/fiat-api-reference/auth/token",
       "destination": "/yativo-fiat/authentication"

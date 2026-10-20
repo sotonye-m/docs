@@ -261,8 +261,8 @@ Every payload includes `customer_id` and a `customer` object, so you know whose 
 |---|---|
 | `deposit.created`, `deposit.updated` | A deposit is created, or its status changes |
 | `payout.updated` | A payout changes status |
-| `customer.created`, `customer.updated` | A customer is created or updated, for example when their KYC status changes |
-| `endorsement.updated` | A customer's endorsement status changes |
+| `customer.created`, `customer.updated` | A customer is created or their profile is updated |
+| `endorsement.updated` | A customer's endorsement status changes. This is how you learn KYC and KYB results |
 | `virtual_account.created`, `virtual_account.updated` | A virtual account is provisioned or updated |
 | `virtual_account.deposit` | Funds land in a virtual account |
 | `metadata.created`, `metadata.updated` | Metadata is attached to, or changed on, a transaction |
@@ -475,7 +475,7 @@ Sent whenever a payout changes status. There's no `payout.created` event. The fi
 }
 ```
 
-`endorsements` is the customer's full current list, not only the one that changed. Compare it with your stored copy.
+`endorsements` is the customer's full current list, not only the one that changed. Compare it with your stored copy. This is the only event that reports KYC and KYB results. A service is available when its endorsement is `approved`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
 
 ---
 

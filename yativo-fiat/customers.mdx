@@ -325,45 +325,8 @@ curl -X DELETE 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xx
 
 ---
 
-## Check KYC status
+## Check verification
 
-```
-GET /customer/kyc/{customer_id}
-```
+A customer's KYC or KYB result is only available through their endorsements: the `endorsement` list on `GET /customer/{customer_id}`, and the `endorsement.updated` webhook. Each endorsement covers one service and has its own `status`. A service is available when its endorsement is `approved`.
 
-<RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/customer/kyc/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "status_code": 200,
-  "message": "Request successful",
-  "data": {
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "status": "approved",
-    "kyc_rejection_reasons": [],
-    "kyc_requirements_due": [],
-    "bio_data": {
-      "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
-      "customer_name": "Jane Doe",
-      "customer_kyc_status": "approved",
-      "kyc_verified_date": "2026-03-26T12:00:00.000000Z"
-    },
-    "kyc_link": "https://checkout.yativo.com/kyc/update-biodata/xxxxx-xxxxx-xxx-xxxx-xxxx",
-    "is_va_approved": true
-  }
-}
-```
-</ResponseExample>
-
-<Note>
-  Once `is_va_approved` is `true`, the customer can be issued virtual accounts. See the [KYC/KYB](/yativo-fiat/kyc) page for submitting identity verification.
-</Note>
+`customer_kyc_status` and `is_va_approved` don't tell you which services a customer can use. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).

@@ -85,55 +85,11 @@ If you prefer to embed verification within your application instead of a full re
   The `allow="camera; microphone"` attribute is required for document capture and selfie steps to work correctly in the iframe.
 </Warning>
 
-### Step 4: Poll for verification status
+### Step 4: Wait for the endorsement result
 
-After the customer completes the hosted flow, poll the status endpoint to detect when verification is complete.
+Verification results arrive only through the customer's **endorsements**. Each endorsement covers one service, such as `base` or `sepa`, and has its own `status`. Listen for the [`endorsement.updated`](/yativo-fiat/webhooks#customers) webhook on your backend, then tell your frontend. See [Handle endorsement updates](#handle-endorsement-updates).
 
-```javascript
-function pollKycStatus(customerId, onComplete) {
-  const intervalId = setInterval(async () => {
-    try {
-      const response = await fetch(
-        `https://api.yativo.com/api/v1/customer/kyc/${customerId}`,
-        { headers: { 'X-Api-Key': process.env.YATIVO_API_KEY, 'X-Api-Secret': process.env.YATIVO_API_SECRET } }
-      );
-
-      const data = await response.json();
-      const status = data.data?.status;
-
-      if (status === 'approved') {
-        clearInterval(intervalId);
-        onComplete({ success: true, status, isVaApproved: data.data.is_va_approved });
-      } else if (status === 'rejected') {
-        clearInterval(intervalId);
-        onComplete({
-          success: false,
-          status,
-          reasons: data.data.kyc_rejection_reasons,
-        });
-      }
-    } catch (err) {
-      console.error('Error polling KYC status:', err);
-    }
-  }, 5000); // Poll every 5 seconds
-
-  // Return cleanup function
-  return () => clearInterval(intervalId);
-}
-
-// Usage
-const stopPolling = pollKycStatus(customerId, (result) => {
-  if (result.success) {
-    console.log('Customer verified! VA approved:', result.isVaApproved);
-  } else {
-    console.log('Verification rejected. Reasons:', result.reasons);
-  }
-});
-```
-
-<Note>
-  Instead of polling, consider using [webhooks](/yativo-fiat/webhooks) to receive real-time notifications when KYC status changes.
-</Note>
+While you wait, show the customer that verification is in progress. Don't show an approval until the endorsement for the service they need is `approved`.
 
 ---
 
@@ -589,96 +545,43 @@ async function submitKYC(customerId, formData) {
 
 ---
 
-## Status polling (TypeScript)
+## Handle endorsement updates
+
+Register your webhook once with `POST /business/webhook` (see [Webhooks](/yativo-fiat/webhooks)). Yativo sends `endorsement.updated` with the customer's full list of endorsements each time one changes:
 
 ```typescript
-type KycStatus = 'not_started' | 'submitted' | 'manual_review' | 'approved' | 'rejected' | 'under_review';
+type EndorsementStatus =
+  | 'not_started' | 'submitted' | 'pending' | 'under_review'
+  | 'approved' | 'rejected' | 'declined';
 
-interface KycStatusResult {
-  status: KycStatus;
-  isVaApproved: boolean;
-  rejectionReasons: string[];
-  kycLink: string;
+interface Endorsement {
+  service: string;          // e.g. "base", "sepa", "faster_payments"
+  status: EndorsementStatus;
 }
 
-function pollKycStatus(
-  customerId: string,
-  onStatusChange: (result: KycStatusResult) => void,
-  intervalMs = 5000
-): () => void {
-  const intervalId = setInterval(async () => {
-    const response = await fetch(
-      `https://api.yativo.com/api/v1/customer/kyc/${customerId}`,
-      { headers: { 'X-Api-Key': process.env.YATIVO_API_KEY, 'X-Api-Secret': process.env.YATIVO_API_SECRET } }
-    );
-
-    const { data } = await response.json();
-    const result: KycStatusResult = {
-      status: data.status,
-      isVaApproved: data.is_va_approved,
-      rejectionReasons: data.kyc_rejection_reasons ?? [],
-      kycLink: data.kyc_link,
-    };
-
-    onStatusChange(result);
-
-    if (data.status === 'approved' || data.status === 'rejected') {
-      clearInterval(intervalId);
-    }
-  }, intervalMs);
-
-  return () => clearInterval(intervalId);
-}
-```
-
----
-
-## Webhooks (recommended over polling)
-
-Instead of polling, register a webhook to receive real-time notifications:
-
-```javascript
-// Register webhook
-await fetch('https://api.yativo.com/api/v1/webhook', {
-  method: 'POST',
-  headers: {
-    'X-Api-Key': process.env.YATIVO_API_KEY,
-    'X-Api-Secret': process.env.YATIVO_API_SECRET,
-    'Content-Type': 'application/json',
-    'Idempotency-Key': 'webhook-kyc-events',
-  },
-  body: JSON.stringify({
-    url: 'https://your-app.com/webhooks/yativo',
-    events: [
-      'customer.kyc.approved',
-      'customer.kyc.rejected',
-    ],
-  }),
-});
-```
-
-Then in your webhook handler:
-
-```javascript
-// Express.js example
-app.post('/webhooks/yativo', (req, res) => {
-  const { event, data } = req.body;
-
-  if (event === 'customer.kyc.approved') {
-    const { customer_id } = data;
-    // Activate customer account, send welcome email, etc.
-    activateCustomer(customer_id);
-  }
-
-  if (event === 'customer.kyc.rejected') {
-    const { customer_id, rejection_reasons } = data;
-    // Notify customer, share kyc_link for re-submission
-    notifyCustomerRejection(customer_id, rejection_reasons);
-  }
-
+// Express.js. Verify the `Signature` header first (see Webhooks).
+app.post('/webhooks/yativo', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!verifySignature(req)) return res.status(401).end();
   res.sendStatus(200);
+
+  const event = JSON.parse(req.body);
+  if (event['event.type'] !== 'endorsement.updated') return;
+
+  const { customer_id, endorsements } = event.payload as {
+    customer_id: string;
+    endorsements: Endorsement[];
+  };
+
+  await saveEndorsements(customer_id, endorsements);
+
+  for (const e of endorsements) {
+    if (e.status === 'approved') await enableService(customer_id, e.service);
+    if (e.status === 'rejected') await askCustomerToFix(customer_id, e.service);
+  }
 });
 ```
+
+To refresh your stored copy, for example after downtime, read the `endorsement` list from `GET /customer/{customer_id}` on your backend. There, `service` is title-cased (`"Faster payments"`), and each entry also has `hosted_kyc_url`, `errors` and `requirements_due` to show the customer what to fix. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
 
 ---
 

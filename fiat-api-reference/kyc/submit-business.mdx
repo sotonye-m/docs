@@ -6,7 +6,7 @@ openapi: "POST https://kyc.yativo.com/api/business-kyc/submit"
 
 Submit KYB data for a business customer. The customer must already exist with `customer_type: "business"` (created with `POST /customer`), or the request returns `404 Business with the provided Customer_ID not found.`
 
-A successful response means the data passed validation and was accepted. Verification runs afterwards, so the customer stays pending until [their status](/yativo-fiat/kyc#check-kyc--kyb-status) changes. Every problem is reported in one `422` response. See [KYC / KYB Verification](/yativo-fiat/kyc#error-handling) for the error shape.
+A successful response means the data passed validation and was accepted. Verification runs afterwards, so the customer stays pending until [their status](/yativo-fiat/kyc#track-verification-with-endorsements) changes. Every problem is reported in one `422` response. See [KYC / KYB Verification](/yativo-fiat/kyc#error-handling) for the error shape.
 
 <Note>
   This endpoint is on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Every file field accepts a hosted URL, a base64 data URI or a `multipart/form-data` upload. Files must be PDF, JPG, JPEG, PNG, HEIC or TIF, between 5 KB and 30 MB.

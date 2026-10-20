@@ -3,7 +3,9 @@ title: "Get Customer"
 description: "Retrieve a customer's profile, optionally embedding related data with the include parameter"
 ---
 
-Returns a customer's profile. By default only core profile fields are returned. Use the `include` query parameter to embed related data — deposits, payouts, virtual accounts, virtual cards, and/or crypto wallets — in the same response.
+Returns a customer's profile, including their `endorsement` list. Use the `include` query parameter to embed related data — deposits, payouts, virtual accounts, virtual cards, and/or crypto wallets — in the same response.
+
+The `endorsement` list is where the customer's KYC or KYB result appears. Each entry is one service with its own `status`; a service is available when its endorsement is `approved`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
 
 ```
 GET /customer/{customer_id}
