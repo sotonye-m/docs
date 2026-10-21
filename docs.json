@@ -155,12 +155,14 @@
               "fiat-api-reference/customers/create",
               "fiat-api-reference/customers/list",
               "fiat-api-reference/customers/get",
-              "fiat-api-reference/customers/update"
+              "fiat-api-reference/customers/update",
+              "fiat-api-reference/customers/delete"
             ]
           },
           {
             "group": "KYC / KYB",
             "pages": [
+              "fiat-api-reference/kyc/upload",
               "fiat-api-reference/kyc/submit-individual",
               "fiat-api-reference/kyc/submit-business",
               "fiat-api-reference/kyc/update-individual",
@@ -199,10 +201,12 @@
               "fiat-api-reference/payments/fees",
               "fiat-api-reference/payments/send-money-quote",
               "fiat-api-reference/payments/send-money",
+              "fiat-api-reference/payments/send-money-purpose",
               "fiat-api-reference/payments/methods",
               "fiat-api-reference/payments/payin-methods",
               "fiat-api-reference/payments/methods-form",
               "fiat-api-reference/payments/countries",
+              "fiat-api-reference/payments/currencies",
               "fiat-api-reference/payments/payout"
             ]
           },
@@ -210,7 +214,13 @@
             "group": "Deposits",
             "pages": [
               "fiat-api-reference/deposits/create",
-              "fiat-api-reference/deposits/list"
+              "fiat-api-reference/deposits/list",
+              "fiat-api-reference/deposits/payin-countries",
+              "fiat-api-reference/deposits/payin-currencies",
+              "fiat-api-reference/deposits/crypto-create-wallet",
+              "fiat-api-reference/deposits/crypto-wallets",
+              "fiat-api-reference/deposits/crypto-deposit-history",
+              "fiat-api-reference/deposits/crypto-wallet-history"
             ]
           },
           {
@@ -256,6 +266,7 @@
             "group": "Transactions",
             "pages": [
               "fiat-api-reference/transactions/list",
+              "fiat-api-reference/transactions/by-currency",
               "fiat-api-reference/transactions/get",
               "fiat-api-reference/transactions/track",
               "fiat-api-reference/transactions/track-by-id",
@@ -300,6 +311,43 @@
             "pages": [
               "fiat-api-reference/ip/check",
               "fiat-api-reference/security/login-history"
+            ]
+          },
+          {
+            "group": "Corporate Cards",
+            "pages": [
+              "fiat-api-reference/corporate-cards/wallet-provision",
+              "fiat-api-reference/corporate-cards/wallet-get",
+              "fiat-api-reference/corporate-cards/employees-create",
+              "fiat-api-reference/corporate-cards/employees-list",
+              "fiat-api-reference/corporate-cards/employees-get",
+              "fiat-api-reference/corporate-cards/employees-update",
+              "fiat-api-reference/corporate-cards/employees-terminate",
+              "fiat-api-reference/corporate-cards/kyc-submit",
+              "fiat-api-reference/corporate-cards/kyc-get",
+              "fiat-api-reference/corporate-cards/locations-countries",
+              "fiat-api-reference/corporate-cards/locations-states",
+              "fiat-api-reference/corporate-cards/cards-create",
+              "fiat-api-reference/corporate-cards/cards-list",
+              "fiat-api-reference/corporate-cards/cards-get",
+              "fiat-api-reference/corporate-cards/cards-status",
+              "fiat-api-reference/corporate-cards/cards-limits",
+              "fiat-api-reference/corporate-cards/balance-update",
+              "fiat-api-reference/corporate-cards/balance-get",
+              "fiat-api-reference/corporate-cards/memos-create",
+              "fiat-api-reference/corporate-cards/memos-list",
+              "fiat-api-reference/corporate-cards/memos-approve",
+              "fiat-api-reference/corporate-cards/memos-reject"
+            ]
+          },
+          {
+            "group": "Corporate Card Transactions",
+            "pages": [
+              "fiat-api-reference/corporate-card-transactions/list",
+              "fiat-api-reference/corporate-card-transactions/get",
+              "fiat-api-reference/corporate-card-transactions/dispute",
+              "fiat-api-reference/corporate-card-transactions/notes",
+              "fiat-api-reference/corporate-card-transactions/invoices"
             ]
           },
           {

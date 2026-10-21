@@ -35,6 +35,8 @@ Yativo requires identity verification before customers can access payment servic
 - Individual: `https://kyc.yativo.com/individual/{customer_id}`
 - Business: `https://kyc.yativo.com/business/{customer_id}`
 
+On the hosted business form, the customer can click **Save draft** on any section to keep unfinished answers and come back later. Drafts aren't checked or sent for verification. The customer can't submit until each drafted section is saved with **Next**.
+
 ---
 
 ## Build your form with the lookup endpoints
@@ -404,7 +406,7 @@ Both `registered_address` and `physical_address` use the same structure:
 
 At least one person is required. Include all UBOs, directors, and authorized signers.
 
-People who own less than the ownership threshold are dropped from the submission, and the response tells you who was dropped. The threshold is `ownership_threshold` (5–100, default 25). At least one person must meet it. The combined `ownership_percentage` of everyone with `has_ownership: true` can't exceed 100.
+People who own less than the ownership threshold are dropped from the submission, and the response's `warnings` tell you who was dropped. Directors, signers and controllers (`is_director`, `is_signer` or `has_control` true) are always kept, whatever they own. The threshold is `ownership_threshold` (5–100, default 25). At least one person must meet it. A director, signer or controller doesn't count towards this unless they own enough. The combined `ownership_percentage` of everyone with `has_ownership: true` can't exceed 100.
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
@@ -424,7 +426,7 @@ People who own less than the ownership threshold are dropped from the submission
 | `has_ownership` | boolean | | Has ownership stake |
 | `has_control` | boolean | | Has operational control |
 | `is_signer` | boolean | | Authorized signer |
-| `is_director` | boolean | | Director. Send all four flags for every person. If `has_ownership` is left out and `ownership_percentage` is above 0, the person is treated as an owner |
+| `is_director` | boolean | | Director. Send all four flags for every person. Each accepts `true`/`false`, `1`/`0` or `"1"`/`"0"`. If `has_ownership` is left out and `ownership_percentage` is above 0, the person is treated as an owner |
 
 Each person's `identifying_information` needs at least one ID that isn't a tax ID, such as a passport or national ID. Associated persons use `image_front` and `image_back`, not the `_file` names used in individual KYC:
 

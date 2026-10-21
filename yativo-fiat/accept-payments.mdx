@@ -31,10 +31,11 @@ curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/countries' \
 ```json Success
 {
   "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
   "data": [
-    { "country": "Brazil", "iso3": "BRA", "iso2": "BR" },
-    { "country": "Mexico", "iso3": "MEX", "iso2": "MX" },
-    { "country": "Chile", "iso3": "CHL", "iso2": "CL" }
+    { "country": "BRA", "name": "Brazil", "flag": "https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/BR.svg", "currencies": [] },
+    { "country": "MEX", "name": "Mexico", "flag": "https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/MX.svg", "currencies": [] }
   ]
 }
 ```
@@ -51,12 +52,12 @@ GET /payment-methods/payin/currency?country={countryCode}
 ```
 
 <ParamField query="country" type="string" required>
-  ISO 3166-1 alpha-2 country code (e.g. `BR`, `MX`, `CL`).
+  ISO 3166-1 alpha-3 country code (e.g. `BRA`, `MEX`, `CHL`), the `country` value from the previous step.
 </ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/currency?country=BR' \
+curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/currency?country=BRA' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```

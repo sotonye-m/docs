@@ -454,18 +454,30 @@ DELETE /beneficiaries/payment-methods/delete/{id}
 
 ## Transaction Purpose
 
-For compliance, submit the purpose of a transaction after initiating it:
+For compliance, record the purpose of a transfer against its quote, before you send it:
 
 ```
 POST /sendmoney/purpose
 ```
 
-<ParamField body="transaction_id" type="string" required>
-  The transaction ID returned from `POST /sendmoney`.
+<ParamField body="quote_id" type="string" required>
+  The `quote_id` from `POST /sendmoney/quote`.
 </ParamField>
 
-<ParamField body="purpose" type="string" required>
-  A short description of the payment purpose, e.g. `"family_support"`, `"business_payment"`, `"invoice"`.
+<ParamField body="transfer_purpose" type="string" required>
+  The payment purpose, e.g. `"family_support"`, `"business_payment"`, `"invoice"`.
+</ParamField>
+
+<ParamField body="transfer_memo" type="string">
+  An optional memo.
+</ParamField>
+
+<ParamField body="attachment" type="string">
+  Optional URL of a supporting document, for example from [Upload File](/fiat-api-reference/kyc/upload).
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional key-value data.
 </ParamField>
 
 <RequestExample>
@@ -476,8 +488,9 @@ curl -X POST 'https://api.yativo.com/api/v1/sendmoney/purpose' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: purpose-001' \
   -d '{
-    "transaction_id": "a0e9e50e-81be-4bd0-9941-0151e68b9e97",
-    "purpose": "family_support"
+    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "transfer_purpose": "family_support",
+    "transfer_memo": "Rent for October"
   }'
 ```
 </RequestExample>

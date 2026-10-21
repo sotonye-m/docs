@@ -36,6 +36,8 @@ curl "$BASE/corporate-card/employees" \
   -H "X-Api-Secret: $YATIVO_API_SECRET"
 ```
 
+Every request below has a reference page with a "Try it" playground under [Corporate Cards](/fiat-api-reference/corporate-cards/employees-create) and [Corporate Card Transactions](/fiat-api-reference/corporate-card-transactions/list).
+
 `customer_id` and `employee_id` are never part of a `POST` path. Send them in the request body, or in the query string on `GET`. Every `customer_id` must be one of your customers and every `employee_id` must belong to that customer, or the request returns `404`.
 
 ---
@@ -78,14 +80,14 @@ The sandbox dashboard has the same Corporate Card screens as production. Open **
           "wallet_currency": "USDC_SOL",
           "wallet_status": "active"
         },
-        "usdc_balance": 350000,
-        "usdc_reserved_balance": 200000,
-        "usdc_available_balance": 150000
+        "usdc_balance": 3500.00,
+        "usdc_reserved_balance": 2000.00,
+        "usdc_available_balance": 1500.00
       }
     }
     ```
 
-    The three balances are in cents: `350000` is 3,500.00 USD. Spend only from `usdc_available_balance`.
+    The three balances are in USD. Spend only from `usdc_available_balance`. If the customer has no funding address yet, the `GET` creates one and returns `wallet: null`, so call it again to read the address.
 
     <Warning>
       Never send real USDC to a sandbox funding address. If your sandbox USDC balance is empty, [swap from your USD balance](/yativo-fiat/swap) or contact Yativo support.

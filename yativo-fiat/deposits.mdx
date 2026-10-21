@@ -65,11 +65,8 @@ curl -X GET 'https://api.yativo.com/api/v1/payment-methods/payin/countries' \
   "status_code": 200,
   "message": "Request successful",
   "data": [
-    { "iso3": "BRA", "name": "brazil" },
-    { "iso3": "CHL", "name": "chile" },
-    { "iso3": "MEX", "name": "mexico" },
-    { "iso3": "COL", "name": "colombia" },
-    { "iso3": "PER", "name": "peru" }
+    { "country": "BRA", "name": "Brazil", "flag": "https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/BR.svg", "currencies": [] },
+    { "country": "MEX", "name": "Mexico", "flag": "https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/svg/MX.svg", "currencies": [] }
   ]
 }
 ```
@@ -345,8 +342,7 @@ curl -X POST 'https://api.yativo.com/api/v1/crypto/create-wallet' \
     "wallet_address": "7TzXXXXXXXXXXXXX",
     "wallet_currency": "USDC_SOL",
     "wallet_network": "SOL",
-    "coin_name": "USDC",
-    "wallet_balance": 0
+    "coin_name": "USDC"
   }
 }
 ```

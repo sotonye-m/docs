@@ -339,6 +339,355 @@ components:
               format: date-time
         - $ref: '#/components/schemas/CardLinkThemeInput'
     # ── Generic wrappers ──────────────────────────────────────────────────────
+    CorporateCardWallet:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          example: cus_123
+        wallet_address:
+          type: string
+          description: USDC funding address for this customer.
+          example: 7xKX...9fQe
+        wallet_currency:
+          type: string
+          example: USDC_SOL
+        wallet_status:
+          type: string
+          example: active
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Employee:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          example: emp_456
+        customer_id:
+          type: string
+          example: cus_123
+        full_name:
+          type: string
+          example: Jane Doe
+        email:
+          type: string
+          nullable: true
+          example: jane@example.com
+        dob:
+          type: string
+          nullable: true
+          format: date
+          example: '1990-04-12'
+        occupation:
+          type: string
+          nullable: true
+          example: Operations Manager
+        status:
+          type: string
+          description: '`active`, `suspended` or `terminated`.'
+          enum:
+          - active
+          - suspended
+          - terminated
+        kyc_status:
+          type: string
+          description: '`not_started`, `submitted`, `approved` or `rejected`.'
+          enum:
+          - not_started
+          - submitted
+          - approved
+          - rejected
+        kyc_reject_reason:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          example:
+            department: Finance
+        selfie_image:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    EmployeeKyc:
+      type: object
+      properties:
+        employee_id:
+          type: string
+        full_name:
+          type: string
+        id_type:
+          type: string
+        id_number:
+          type: string
+        dob:
+          type: string
+          format: date
+        street:
+          type: string
+        city:
+          type: string
+        state_id:
+          type: integer
+          nullable: true
+        postal_code:
+          type: string
+        country_id:
+          type: string
+        nationality:
+          type: string
+        occupation:
+          type: string
+          nullable: true
+        gov_id_type:
+          type: string
+        gov_id_number:
+          type: string
+        gov_id_image_url:
+          type: string
+          nullable: true
+        payslip_url:
+          type: string
+          nullable: true
+        proof_of_address_url:
+          type: string
+          nullable: true
+        status:
+          type: string
+          description: '`pending`, `approved` or `rejected`.'
+          enum:
+          - pending
+          - approved
+          - rejected
+        reject_reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CorporateCard:
+      type: object
+      properties:
+        card_id:
+          type: string
+          description: Use this ID in every card request.
+          example: 9b1f6a52-3c1e-4d0b-a8c4-2f6f0d1e7a11
+        customer_id:
+          type: string
+          example: cus_123
+        issuance_type:
+          type: string
+          description: '`Virtual` or `Physical`.'
+          example: Virtual
+        status:
+          type: string
+          example: ACTIVE
+        masked_pan:
+          type: string
+          example: '**** **** **** 4242'
+        expiration_date:
+          type: string
+          example: 2029-10
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    EmployeeBalance:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          example: emp_456
+        currency:
+          type: string
+          example: USD
+        has_cardholder:
+          type: boolean
+          description: '`false` until the employee''s first card is issued.'
+          example: true
+        available_balance:
+          type: number
+          description: USD.
+          example: 500.0
+        ledger_balance:
+          type: number
+          description: USD.
+          example: 500.0
+        balance_unavailable:
+          type: boolean
+          description: '`true` when a balance couldn''t be read, so the totals are incomplete.'
+          example: false
+        accounts:
+          type: array
+          items:
+            type: object
+            properties:
+              account_id:
+                type: string
+              primary:
+                type: boolean
+              available_balance:
+                type: number
+                nullable: true
+              ledger_balance:
+                type: number
+                nullable: true
+              card_count:
+                type: integer
+    EmployeeMemo:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        employee_id:
+          type: string
+          example: emp_456
+        card_id:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+          example: Client lunch
+        invoice_url:
+          type: string
+          nullable: true
+        status:
+          type: string
+          description: '`pending`, `approved` or `rejected`.'
+          enum:
+          - pending
+          - approved
+          - rejected
+        reject_reason:
+          type: string
+          nullable: true
+        reviewed_at:
+          type: string
+          nullable: true
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SpendCardTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The `transaction_id` in `business_spend_card.transaction.*` webhooks.
+          example: 1042
+        card_id:
+          type: string
+        employee_id:
+          type: string
+          nullable: true
+        customer_id:
+          type: string
+          nullable: true
+        event_type:
+          type: string
+        status:
+          type: string
+        category:
+          type: string
+          nullable: true
+        txn_status:
+          type: string
+          nullable: true
+        txn_description:
+          type: string
+          nullable: true
+          example: COFFEE SHOP MIAMI FL
+        amount:
+          type: string
+          example: '12.50'
+        currency:
+          type: string
+          example: USD
+        occurred_at:
+          type: string
+          format: date-time
+        disputed_at:
+          type: string
+          nullable: true
+          format: date-time
+        dispute_reason:
+          type: string
+          nullable: true
+        notes_count:
+          type: integer
+        invoices_count:
+          type: integer
+    CryptoWallet:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          nullable: true
+        is_customer:
+          type: boolean
+        wallet_address:
+          type: string
+          example: 7TzXXXXXXXXXXXXX
+        wallet_currency:
+          type: string
+          example: USDC_SOL
+        wallet_network:
+          type: string
+          example: SOL
+        coin_name:
+          type: string
+          example: USDC
+        wallet_status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    CryptoDeposit:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          nullable: true
+        currency:
+          type: string
+          example: USDC_SOL
+        amount:
+          type: string
+          example: '250.00'
+        address:
+          type: string
+          description: The wallet address that received the deposit.
+        transaction_id:
+          type: string
+        transaction_hash:
+          type: string
+          nullable: true
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
     SuccessEnvelope:
       type: object
       properties:
@@ -1143,10 +1492,53 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
 
+    delete:
+      tags:
+      - Customers
+      description: Deletes the customer. A customer that isn't yours returns `Customer with provided ID does not exists`.
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The customer's `customer_id`.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Customer deleted successfully
+        '400':
+          description: The customer doesn't exist or isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Delete Customer
+
+
+
   # ============================================================
   # KYC / KYB
   # ============================================================
-
   /customer/kyc/update:
     put:
       tags: [KYC / KYB]
@@ -1425,8 +1817,9 @@ paths:
         `customer_type: "business"`, or the request returns `404`. A successful response means the data
         was accepted. Verification runs afterwards.
 
-        Associated persons below `ownership_threshold` (default 25) are dropped. At least one person must
-        meet it, and the combined ownership of persons with `has_ownership: true` can't exceed 100.
+        Associated persons below `ownership_threshold` (default 25) are dropped, unless they're a director,
+        signer or controller (`is_director`, `is_signer` or `has_control` true). At least one person must
+        meet the threshold, and the combined ownership of persons with `has_ownership: true` can't exceed 100.
       servers:
         - url: https://kyc.yativo.com/api
           description: KYC Platform (production)
@@ -1624,7 +2017,7 @@ paths:
                       is_director:
                         type: boolean
                         description: Director.
-                  description: "Owners, directors and authorized signers. At least one person must own at least `ownership_threshold` percent (default 25). People below the threshold are dropped from the submission. The combined `ownership_percentage` of people with `has_ownership: true` can't exceed 100."
+                  description: "Owners, directors and authorized signers. At least one person must own at least `ownership_threshold` percent (default 25). People below the threshold are dropped from the submission, unless `is_director`, `is_signer` or `has_control` is true. The role flags accept `true`/`false`, `1`/`0` and `\"1\"`/`\"0\"`. The combined `ownership_percentage` of people with `has_ownership: true` can't exceed 100."
                 account_purpose:
                   type: string
                   enum: [charitable_donations, ecommerce_retail_payments, investment_purposes, other, payments_to_friends_or_family_abroad, payroll, personal_or_living_expenses, protect_wealth, purchase_goods_and_services, receive_payments_for_goods_and_services, tax_optimization, third_party_money_transmission, treasury_management]
@@ -2325,6 +2718,7 @@ paths:
         - name: endorsement
           in: path
           required: true
+          description: The endorsement to re-run. Case doesn't matter, so `SEPA` and `sepa` both work.
           schema:
             type: string
             enum: [base, sepa, spei, faster_payments, naira, virtual_card, asian, brazil]
@@ -4676,6 +5070,12 @@ paths:
                     type: string
                   data:
                     $ref: '#/components/schemas/VirtualCard'
+        '404':
+          description: Card not found. The card doesn't exist or isn't one of yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /customer/virtual/cards/topup:
     post:
@@ -4731,6 +5131,12 @@ paths:
                         type: string
                       currency:
                         type: string
+        '404':
+          description: Card not found. The card doesn't exist or isn't one of yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /customer/virtual/cards/update/{card_id}:
     put:
@@ -4766,6 +5172,12 @@ paths:
             application/json:
               schema:
                 type: object
+        '404':
+          description: Card not found. The card doesn't exist or isn't one of yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /customer/virtual/cards/transactions/{card_id}:
     get:
@@ -4813,6 +5225,12 @@ paths:
                         created_at:
                           type: string
                           format: date-time
+        '404':
+          description: Card not found. The card doesn't exist or isn't one of yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /customer/virtual/cards/withdraw:
     post:
@@ -4864,6 +5282,12 @@ paths:
                         type: string
                       currency:
                         type: string
+        '404':
+          description: Card not found. The card doesn't exist or isn't one of yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /customer/virtual/cards/terminate:
     post:
@@ -6482,6 +6906,2146 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 
+  /corporate-card/wallet:
+    post:
+      tags:
+      - Corporate Cards
+      description: 'Creates the customer''s USDC funding address, or returns the existing one. You can call it at most 3 times a minute per customer. Going over blocks address requests for that customer for 24 hours. See [wallet address limits](/yativo-fiat/deposits#wallet-address-limits).
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: string
+                  description: One of your business customers.
+                  example: cus_123
+              required:
+              - customer_id
+      responses:
+        '201':
+          description: Address created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CorporateCardWallet'
+        '200':
+          description: Existing address
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CorporateCardWallet'
+        '403': &id001
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404': &id002
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422': &id003
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Provision Funding Address
+    get:
+      tags:
+      - Corporate Cards
+      description: 'Returns the customer''s funding address and your USDC balance in USD. Spend only from `usdc_available_balance`: the rest is the [reserve](/yativo-fiat/sandbox-corporate-cards#reserve).
+
+
+        If the customer has no address yet, this request creates one and returns `wallet: null`. Call it again to read the address.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: customer_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: One of your business customers.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      wallet:
+                        allOf:
+                        - $ref: '#/components/schemas/CorporateCardWallet'
+                        nullable: true
+                      usdc_balance:
+                        type: number
+                        description: Your USDC balance, in USD.
+                        example: 3500.0
+                      usdc_reserved_balance:
+                        type: number
+                        description: The part of the balance held as the reserve, in USD.
+                        example: 2000.0
+                      usdc_available_balance:
+                        type: number
+                        description: What you can spend on card funding, in USD.
+                        example: 1500.0
+        '403': *id001
+        '404': *id002
+        '422': *id003
+      summary: Get Funding Address and Balance
+  /corporate-card/employees:
+    get:
+      tags:
+      - Corporate Cards
+      description: 'Lists employees across your customers, newest first. Filter by customer, status or KYC status. Each employee includes `customer` and `cards_count`. With `with_balance=true`, each also includes `card_balance`.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: customer_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Only this customer's employees.
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - active
+          - suspended
+          - terminated
+        description: '`active`, `suspended` or `terminated`.'
+      - name: kyc_status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - not_started
+          - submitted
+          - approved
+          - rejected
+        description: '`not_started`, `submitted`, `approved` or `rejected`.'
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Matches name or email.
+      - name: has_cards
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: '`true` for employees with at least one card, `false` for those without.'
+      - name: with_balance
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: Add each employee's `card_balance`. Slower.
+      - &id007
+        name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+        description: Page number.
+      - &id008
+        name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+        description: Records per page.
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Employee'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '403': *id001
+        '404': *id002
+        '422': *id003
+      summary: List Employees
+    post:
+      tags:
+      - Corporate Cards
+      description: 'Creates an employee under one of your business customers. Only `customer_id` and `full_name` are required. Send `selfie_image` as a file or base64 data URI (jpeg, png or webp, up to 10 MB), or `selfie_image_url`.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: &id004
+              type: object
+              properties:
+                customer_id:
+                  type: string
+                  example: cus_123
+                full_name:
+                  type: string
+                  maxLength: 191
+                  example: Jane Doe
+                email:
+                  type: string
+                  format: email
+                  example: jane@example.com
+                dob:
+                  type: string
+                  description: '`YYYY-MM-DD`.'
+                  format: date
+                  example: '1990-04-12'
+                occupation:
+                  type: string
+                  maxLength: 191
+                  example: Operations Manager
+                metadata:
+                  type: object
+                  additionalProperties: true
+                  example:
+                    department: Finance
+                    employee_number: EMP-0042
+                selfie_image:
+                  type: string
+                  description: File or base64 data URI. jpeg, png or webp, up to 10 MB.
+                  format: binary
+                selfie_image_url:
+                  type: string
+                  description: Hosted image URL, instead of `selfie_image`.
+              required:
+              - customer_id
+              - full_name
+          multipart/form-data:
+            schema: *id004
+      responses:
+        '201':
+          description: Employee created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/Employee'
+        '403': *id001
+        '404': *id002
+        '422': *id003
+        '502':
+          description: The selfie upload failed. Nothing was saved, so retry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Create Employee
+  /corporate-card/employees/{employee_id}:
+    get:
+      tags:
+      - Corporate Cards
+      description: 'Returns the employee, with their KYC submission under `kyc` (`null` before the first submission).
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The employee's `employee_id`.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/Employee'
+                    - type: object
+                      properties:
+                        kyc:
+                          allOf:
+                          - $ref: '#/components/schemas/EmployeeKyc'
+                          nullable: true
+        '403': *id001
+        '404': *id002
+      summary: Get Employee
+    put:
+      tags:
+      - Corporate Cards
+      description: 'Updates the fields you send. Set `status` to `suspended` to block every corporate card request for the employee with `403`, and back to `active` to restore access.
+
+
+        Once an employee has confirmed their email on a [card link](/yativo-fiat/corporate-card-links), a new `email` isn''t applied straight away. The employee gets a code at their current address and confirms the change on their card link. The response then includes `email_change` with `status: "pending_confirmation"`. That email can''t be removed, only changed.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The employee's `employee_id`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: &id005
+              type: object
+              properties:
+                full_name:
+                  type: string
+                  maxLength: 191
+                email:
+                  type: string
+                  format: email
+                dob:
+                  type: string
+                  format: date
+                occupation:
+                  type: string
+                  maxLength: 191
+                status:
+                  type: string
+                  description: '`active`, `suspended` or `terminated`.'
+                  enum:
+                  - active
+                  - suspended
+                  - terminated
+                metadata:
+                  type: object
+                  additionalProperties: true
+                selfie_image:
+                  type: string
+                  description: File or base64 data URI. jpeg, png or webp, up to 10 MB.
+                  format: binary
+                selfie_image_url:
+                  type: string
+          multipart/form-data:
+            schema: *id005
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/Employee'
+                    - type: object
+                      properties:
+                        email_change:
+                          type: object
+                          description: Only when an email change is waiting for the employee to confirm it.
+                          properties:
+                            status:
+                              type: string
+                              example: pending_confirmation
+                            pending_email:
+                              type: string
+        '403': *id001
+        '404': *id002
+        '422': *id003
+        '429':
+          description: Too many email change codes requested. Wait and retry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: The selfie upload failed. Nothing was saved, so retry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Update Employee
+    delete:
+      tags:
+      - Corporate Cards
+      description: 'Terminates the employee and suspends all of their cards. This can''t be undone.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The employee's `employee_id`.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Employee terminated.
+        '403': *id001
+        '404': *id002
+      summary: Terminate Employee
+  /corporate-card/employees/kyc:
+    post:
+      tags:
+      - Corporate Cards
+      description: 'Submits the employee''s KYC. Submitting again replaces the previous submission. The first submission for each employee charges the `employee_kyc` fee. Resubmissions are free.
+
+
+        `country_id` and `nationality` are ISO 3166-1 alpha-2 codes. `state_id` is the numeric `id` from [List States](/fiat-api-reference/corporate-cards/locations-states). Each document accepts a file, a base64 data URI or a `*_url` field, up to 10 MB.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: &id006
+              type: object
+              properties:
+                employee_id:
+                  type: string
+                  example: emp_456
+                full_name:
+                  type: string
+                  maxLength: 191
+                  example: Jane Doe
+                id_type:
+                  type: string
+                  maxLength: 64
+                  example: passport
+                id_number:
+                  type: string
+                  maxLength: 191
+                  example: X1234567
+                dob:
+                  type: string
+                  format: date
+                  example: '1990-04-12'
+                street:
+                  type: string
+                  maxLength: 255
+                  example: 100 Main St
+                city:
+                  type: string
+                  maxLength: 191
+                  example: Miami
+                state_id:
+                  type: integer
+                  description: Numeric `id` from [List States](/fiat-api-reference/corporate-cards/locations-states). An unknown id returns `422`.
+                postal_code:
+                  type: string
+                  maxLength: 32
+                  example: '33101'
+                country_id:
+                  type: string
+                  description: ISO 3166-1 alpha-2.
+                  example: US
+                nationality:
+                  type: string
+                  description: ISO 3166-1 alpha-2.
+                  example: US
+                occupation:
+                  type: string
+                  maxLength: 191
+                gov_id_type:
+                  type: string
+                  maxLength: 64
+                  example: passport
+                gov_id_number:
+                  type: string
+                  maxLength: 191
+                  example: X1234567
+                gov_id_image:
+                  type: string
+                  format: binary
+                gov_id_image_url:
+                  type: string
+                  format: uri
+                  example: https://example.com/id.jpg
+                payslip:
+                  type: string
+                  format: binary
+                payslip_url:
+                  type: string
+                  format: uri
+                proof_of_address:
+                  type: string
+                  format: binary
+                proof_of_address_url:
+                  type: string
+                  format: uri
+              required:
+              - employee_id
+              - full_name
+              - id_type
+              - id_number
+              - dob
+              - street
+              - city
+              - postal_code
+              - gov_id_type
+              - gov_id_number
+          multipart/form-data:
+            schema: *id006
+      responses:
+        '200':
+          description: KYC submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/EmployeeKyc'
+        '402':
+          description: Your USDC balance can't cover the `employee_kyc` fee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403': *id001
+        '404': *id002
+        '422': *id003
+      summary: Submit Employee KYC
+  /corporate-card/employees/{employee_id}/kyc:
+    get:
+      tags:
+      - Corporate Cards
+      description: 'Returns the employee''s KYC submission, or `null` if they haven''t submitted one. In sandbox, submissions are approved straight away.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The employee's `employee_id`.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/EmployeeKyc'
+                    nullable: true
+        '403': *id001
+        '404': *id002
+      summary: Get Employee KYC
+  /corporate-card/employees/cards:
+    post:
+      tags:
+      - Corporate Cards
+      description: 'Issues a card to an employee. Omit `employee_id` and the card goes to the customer''s employee, created the first time. An employee can hold any number of cards, and they all spend from the employee''s card balance.
+
+
+        An employee''s first virtual card is free. Further virtual cards and physical cards are charged as listed in [Fees](/yativo-fiat/sandbox-corporate-cards#fees). If a fee can''t be charged, the request returns `402` and no card is issued.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - &id009
+        $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: string
+                  example: cus_123
+                employee_id:
+                  type: string
+                  example: emp_456
+                card_type:
+                  type: string
+                  description: '`Virtual` (default) or `Physical`.'
+                  enum:
+                  - Virtual
+                  - Physical
+                  default: Virtual
+              required:
+              - customer_id
+      responses:
+        '200':
+          description: Card issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      card:
+                        $ref: '#/components/schemas/CorporateCard'
+        '402':
+          description: Your USDC balance can't cover the card fee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403': *id001
+        '404': *id002
+        '422': *id003
+      summary: Issue Card
+    get:
+      tags:
+      - Corporate Cards
+      description: 'Lists corporate cards across your customers, newest first.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: customer_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Only this customer's cards.
+      - name: employee_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Only this employee's cards.
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Card status, e.g. `ACTIVE`.
+      - *id007
+      - *id008
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CorporateCard'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '403': *id001
+        '422': *id003
+      summary: List Cards
+  /corporate-card/employees/cards/{card_id}:
+    get:
+      tags:
+      - Corporate Cards
+      description: 'Returns the card. The full card number, expiry, CVV and PIN are only on the employee''s [card link](/fiat-api-reference/corporate-card-links/get-link).
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: card_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The card's `card_id`.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CorporateCard'
+        '403': *id001
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Card
+  /corporate-card/employees/cards/status:
+    post:
+      tags:
+      - Corporate Cards
+      description: '`activate`, `suspend` or `terminate` a card. Terminating can''t be undone. `card_id` can be left out only when the customer has exactly one card. Status changes are charged to your USDC balance as set in your pricing.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: string
+                  example: cus_123
+                card_id:
+                  type: string
+                  description: Required when the customer has more than one card.
+                action:
+                  type: string
+                  enum:
+                  - activate
+                  - suspend
+                  - terminate
+                  example: suspend
+              required:
+              - customer_id
+              - action
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CorporateCard'
+        '402':
+          description: Your USDC balance can't cover the fee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403': *id001
+        '404':
+          description: Card not found for this customer, or the customer has more than one card and no `card_id` was sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422': *id003
+      summary: Change Card Status
+  /corporate-card/employees/cards/limits:
+    put:
+      tags:
+      - Corporate Cards
+      description: 'Sets limits on a card. Each limit is an amount, a period and the operation it applies to. Limit changes are charged to your USDC balance as set in your pricing.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: string
+                  example: cus_123
+                card_id:
+                  type: string
+                limits:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - amountLimit
+                    - timeUnit
+                    - operationName
+                    properties:
+                      amountLimit:
+                        type: number
+                        description: USD, 1–10,000.
+                        minimum: 1
+                        maximum: 10000
+                        example: 1000
+                      timeUnit:
+                        type: string
+                        enum:
+                        - TranAmount
+                        - Daily
+                        - Weekly
+                        - Monthly
+                        - Quarterly
+                        - Yearly
+                        - Lifetime
+                        example: Monthly
+                      operationName:
+                        type: string
+                        enum:
+                        - SPENDINGLIMIT
+                        - CASHLIMIT
+                        - LOADLIMIT
+                        example: SPENDINGLIMIT
+              required:
+              - customer_id
+              - card_id
+              - limits
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CorporateCard'
+        '402':
+          description: Your USDC balance can't cover the fee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403': *id001
+        '404':
+          description: Card not found for this customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422': *id003
+      summary: Set Card Limits
+  /corporate-card/employees/balance:
+    post:
+      tags:
+      - Corporate Cards
+      description: '`fund` debits your USDC balance and can''t use the reserve. `withdraw` returns money to your USDC balance and charges the `card_withdrawal` fee. A withdrawal larger than the employee''s available balance returns `422`. An employee with no card yet returns `404`.
+
+
+        `amount` is in USD. Send `account_id` from [Get Card Balance](/fiat-api-reference/corporate-cards/balance-get) to target a specific account; otherwise the primary account is used.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - *id009
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employee_id:
+                  type: string
+                  example: emp_456
+                action:
+                  type: string
+                  enum:
+                  - fund
+                  - withdraw
+                  example: fund
+                amount:
+                  type: number
+                  description: USD, at least 0.01.
+                  minimum: 0.01
+                  example: 500.0
+                account_id:
+                  type: string
+                  description: One of the employee's `accounts[].account_id`.
+                  nullable: true
+              required:
+              - employee_id
+              - action
+              - amount
+      responses:
+        '200':
+          description: The updated balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/EmployeeBalance'
+        '402':
+          description: Your USDC balance can't cover the amount or fee, or funding would go below the reserve
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403': *id001
+        '404':
+          description: Employee not found, or the employee has no card yet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error, or the withdrawal exceeds the available balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Fund or Withdraw Card Balance
+  /corporate-card/employees/{employee_id}/balance:
+    get:
+      tags:
+      - Corporate Cards
+      description: 'Returns the employee''s card balance in USD. Every card the employee holds spends from it.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The employee's `employee_id`.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/EmployeeBalance'
+        '403': *id001
+        '404': *id002
+      summary: Get Card Balance
+  /corporate-card/employees/{employee_id}/memos:
+    get:
+      tags:
+      - Corporate Cards
+      description: 'Lists the notes and invoices an employee attached to card activity, newest first.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: employee_id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The employee's `employee_id`.
+      - *id007
+      - *id008
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EmployeeMemo'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '403': *id001
+        '404': *id002
+      summary: List Memos
+  /corporate-card/employees/memos:
+    post:
+      tags:
+      - Corporate Cards
+      description: 'Creates a memo for an employee, optionally for one card. Send a `note`, an `invoice` (file or base64, up to 10 MB) or an `invoice_url`. New memos are `pending` until you approve or reject them.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: &id010
+              type: object
+              properties:
+                employee_id:
+                  type: string
+                  example: emp_456
+                card_id:
+                  type: string
+                note:
+                  type: string
+                  maxLength: 5000
+                  example: Client lunch
+                invoice:
+                  type: string
+                  format: binary
+                invoice_url:
+                  type: string
+                  format: uri
+              required:
+              - employee_id
+          multipart/form-data:
+            schema: *id010
+      responses:
+        '201':
+          description: Memo created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/EmployeeMemo'
+        '403': *id001
+        '404': *id002
+        '422': *id003
+        '502':
+          description: The invoice upload failed. Nothing was saved, so retry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Create Memo
+  /corporate-card/employees/memos/{memo_id}/approve:
+    post:
+      tags:
+      - Corporate Cards
+      description: 'Marks the memo `approved`.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: memo_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: The memo's `id`.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/EmployeeMemo'
+        '403': *id001
+        '404':
+          description: Memo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Approve Memo
+  /corporate-card/employees/memos/{memo_id}/reject:
+    post:
+      tags:
+      - Corporate Cards
+      description: 'Marks the memo `rejected` and stores your reason.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: memo_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: The memo's `id`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reject_reason:
+                  type: string
+                  maxLength: 1000
+                  example: Receipt missing
+              required:
+              - reject_reason
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/EmployeeMemo'
+        '403': *id001
+        '404':
+          description: Memo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422': *id003
+      summary: Reject Memo
+  /locations/countries:
+    get:
+      security: &id011 []
+      tags:
+      - Corporate Cards
+      description: Returns every country with its numeric `id`. Use the `id` with [List States](/fiat-api-reference/corporate-cards/locations-states). No API key needed.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        id:
+                          type: integer
+                          example: 233
+                        name:
+                          type: string
+                          example: United States
+      summary: List Location Countries
+  /locations/states/{country_id}:
+    get:
+      security: *id011
+      tags:
+      - Corporate Cards
+      description: Returns a country's states. Send a state's `id` as `state_id` in [Submit Employee KYC](/fiat-api-reference/corporate-cards/kyc-submit). No API key needed.
+      parameters:
+      - name: country_id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Numeric country `id` from [List Location Countries](/fiat-api-reference/corporate-cards/locations-countries).
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                      properties:
+                        id:
+                          type: integer
+                          example: 1456
+                        name:
+                          type: string
+                          example: Florida
+                        country_id:
+                          type: integer
+                          example: 233
+      summary: List States
+  /business/spend-card/transactions:
+    get:
+      tags:
+      - Corporate Card Transactions
+      description: 'Lists card activity on your corporate cards, newest first. Yativo also sends `business_spend_card.transaction.*` webhooks for it.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Filter by status.
+      - name: card_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Only this card.
+      - name: employee_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Only this employee.
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Filter by category.
+      - name: event_type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Filter by event type.
+      - *id007
+      - *id008
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SpendCardTransaction'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '403':
+          description: Corporate cards aren't enabled on your account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: List Card Transactions
+  /business/spend-card/transactions/{id}:
+    get:
+      tags:
+      - Corporate Card Transactions
+      description: 'Returns the transaction.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters: &id012
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The transaction `id`, or the `transaction_id` from a `business_spend_card.transaction.*` webhook.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/SpendCardTransaction'
+        '404': &id013
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Card Transaction
+  /business/spend-card/transactions/{id}/dispute:
+    post:
+      tags:
+      - Corporate Card Transactions
+      description: 'Opens a dispute and charges the `dispute` fee to your USDC balance. A second dispute on the same transaction returns `409`.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters: *id012
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                  example: Charged twice for the same order
+              required:
+              - reason
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: integer
+                      disputed_at:
+                        type: string
+                        format: date-time
+                      fee:
+                        type: number
+                        description: Dispute fee charged, in USD.
+        '402':
+          description: Your USDC balance can't cover the dispute fee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404': *id013
+        '409':
+          description: The transaction has already been disputed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422': *id003
+      summary: Dispute Card Transaction
+  /business/spend-card/transactions/{id}/notes:
+    post:
+      tags:
+      - Corporate Card Transactions
+      description: 'Adds a note to the transaction.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters: *id012
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+                  maxLength: 2000
+                  example: Team offsite lunch
+              required:
+              - note
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: integer
+                      note:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+        '404': *id013
+        '422': *id003
+      summary: Add Transaction Note
+  /business/spend-card/transactions/{id}/invoices:
+    post:
+      tags:
+      - Corporate Card Transactions
+      description: 'Uploads an invoice for the transaction as `multipart/form-data`. jpg, jpeg, png or pdf, up to 10 MB. Every file is virus-scanned. A file that fails the scan returns `422`.
+
+
+        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
+      parameters: *id012
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - invoice
+              properties:
+                invoice:
+                  type: string
+                  description: jpg, jpeg, png or pdf, up to 10 MB.
+                  format: binary
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      id:
+                        type: integer
+                      created_at:
+                        type: string
+                        format: date-time
+        '404': *id013
+        '422':
+          description: Validation error, or the file failed the virus scan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Upload Transaction Invoice
+  /crypto/create-wallet:
+    post:
+      tags:
+      - Deposits
+      description: 'Returns a deposit address for one stablecoin. Pass `customer_id` for a customer''s address. Asking again for the same currency and customer returns the existing address with the message `Wallet already exists`.
+
+
+        You can request at most 3 addresses a minute per customer, or for your own account. Going over blocks address requests for 24 hours. See [wallet address limits](/yativo-fiat/deposits#wallet-address-limits).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currency:
+                  type: string
+                  description: '`{COIN}_{NETWORK}`.'
+                  enum:
+                  - USDC_SOL
+                  - EURC_SOL
+                  - USDT_SOL
+                  - USDG_SOL
+                  - PYUSD_SOL
+                  - USDC_POL
+                  - USDT_POL
+                  example: USDC_SOL
+                customer_id:
+                  type: string
+                  description: One of your customers. Leave it out for your own account.
+                  nullable: true
+              required:
+              - currency
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    $ref: '#/components/schemas/CryptoWallet'
+        '403':
+          description: Too many address requests. Address requests are blocked for 24 hours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: A request for this currency is already in progress. Retry shortly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Validation error or unsupported currency
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Create Deposit Wallet
+  /crypto/get-wallets:
+    get:
+      tags:
+      - Deposits
+      description: Lists every deposit address on your account and your customers, newest first. Store addresses and look them up here instead of requesting new ones.
+      parameters: &id014
+      - *id007
+      - *id008
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CryptoWallet'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '404':
+          description: No wallet found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: List Deposit Wallets
+  /crypto/deposit-histories:
+    get:
+      tags:
+      - Deposits
+      description: Lists stablecoin deposits to every address on your account and your customers.
+      parameters: *id014
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CryptoDeposit'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+      summary: List Stablecoin Deposits
+  /crypto/wallet/deposit/histories/{wallet_address}:
+    get:
+      tags:
+      - Deposits
+      description: Lists deposits to one of your addresses. An address with no deposits returns `No deposit history found for the given wallet address`.
+      parameters:
+      - name: wallet_address
+        in: path
+        required: true
+        schema:
+          type: string
+        description: One of your deposit addresses.
+      - *id007
+      - *id008
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CryptoDeposit'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          description: No deposits to this address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: List Deposits to an Address
+  /payment-methods/payin/countries:
+    get:
+      tags:
+      - Deposits
+      description: Returns each country you can accept deposits from, with its currencies. `country` is the ISO 3166-1 alpha-3 code to pass to [List Pay-in Currencies](/fiat-api-reference/deposits/payin-currencies).
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        country:
+                          type: string
+                          description: ISO 3166-1 alpha-3.
+                          example: BRA
+                        name:
+                          type: string
+                          example: Brazil
+                        flag:
+                          type: string
+                          description: Flag image URL.
+                        currencies:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: true
+      summary: List Pay-in Countries
+  /payment-methods/payin/currency:
+    get:
+      tags:
+      - Deposits
+      description: Returns the deposit currencies for one country.
+      parameters:
+      - name: country
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: BRA
+        description: ISO 3166-1 alpha-3, e.g. `BRA`, `MEX`, `CHL`.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        currency_code:
+                          type: string
+                          example: BRL
+                        currency_name:
+                          type: string
+                          example: Brazilian Real
+                        currency_symbol:
+                          type: string
+                          example: R$
+        '400':
+          description: '`country` is missing or isn''t 3 letters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: List Pay-in Currencies
+  /currencies/all:
+    get:
+      tags:
+      - Payments & Transfers
+      description: Returns every currency available on Yativo.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+      summary: List Currencies
+  /sendmoney/purpose:
+    post:
+      tags:
+      - Payments & Transfers
+      description: Records the purpose of a transfer against its quote, for compliance. Call it after [Create Send Money Quote](/fiat-api-reference/payments/send-money-quote) and before [Send Money](/fiat-api-reference/payments/send-money).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quote_id:
+                  type: string
+                  description: The `quote_id` from Create Send Money Quote.
+                transfer_purpose:
+                  type: string
+                  example: family_support
+                transfer_memo:
+                  type: string
+                  example: Rent for October
+                attachment:
+                  type: string
+                  description: URL of a supporting document, e.g. from [Upload File](/fiat-api-reference/kyc/upload).
+                metadata:
+                  type: object
+                  additionalProperties: true
+              required:
+              - quote_id
+              - transfer_purpose
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    additionalProperties: true
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Add Transfer Purpose
+  /business/transaction/by-currency:
+    get:
+      tags:
+      - Transactions
+      description: Lists your transactions in one currency.
+      parameters:
+      - name: currency
+        in: query
+        required: false
+        schema:
+          type: string
+          example: BRL
+        description: Currency code, e.g. `BRL`. Defaults to `usd`.
+      - *id007
+      - *id008
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+      summary: List Transactions by Currency
+  /storage/upload:
+    post:
+      tags:
+      - KYC / KYB
+      description: 'Stores a file and returns its URL. Send it as `document`, or several as `documents[]`. Use the URL in KYC file fields such as `selfie_image` or `proof_of_address_file`.
+
+
+        Files must be PDF, JPG, JPEG, PNG, HEIC or TIF. See [file rules](/yativo-fiat/kyc#upload-documents) for size limits.'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                document:
+                  type: string
+                  description: One file.
+                  format: binary
+                documents:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Several files. Each URL comes back under the same key.
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    properties:
+                      document:
+                        type: string
+                        description: URL of the uploaded `document`.
+                        example: https://storage.yativo.com/documents/abc123/passport_front.jpg
+        '400':
+          description: The file type isn't allowed or the file couldn't be stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Upload File
+
 tags:
   - name: Customers
     description: Create and manage customer profiles.
@@ -6506,7 +9070,7 @@ tags:
   - name: Transactions
     description: List, retrieve, track, and download receipts for all transaction types.
   - name: Virtual Cards
-    description: Activate, issue, manage, and terminate prepaid virtual cards.
+    description: Activate, issue, manage, and terminate prepaid virtual cards. Every card request works only on your own cards. Any other card ID returns `404` with `Card not found`.
   - name: Payouts
     description: Single and batch payouts to beneficiaries.
   - name: Currency Swap
@@ -6515,6 +9079,10 @@ tags:
     description: Check whether your server's IP can use your API key.
   - name: Account Security
     description: Review sign-in activity on your account.
+  - name: Corporate Cards
+    description: Employees, their KYC, cards, card balances, memos and the USDC funding address. By invitation only.
+  - name: Corporate Card Transactions
+    description: Card activity on your corporate cards, with disputes, notes and invoices.
   - name: Corporate Card Links
     description: Each corporate card's employee-only page for card details and PIN, employee card sign-in, and branding.
   - name: Webhooks
