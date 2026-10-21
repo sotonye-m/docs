@@ -3894,7 +3894,7 @@ paths:
     delete:
       tags: [Virtual Accounts]
       summary: Delete Virtual Account
-      description: Permanently deletes a virtual account. This action is irreversible.
+      description: Permanently deletes a virtual account. This action is irreversible. The account stops accepting funds and a `virtual_account.deleted` webhook is sent.
       parameters:
         - name: account_id
           in: path
@@ -3912,12 +3912,66 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: success
                   status_code:
                     type: integer
+                    example: 200
                   message:
                     type: string
+                    example: Request successful
                   data:
-                    nullable: true
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Virtual account deleted successfully
+                      account_id:
+                        type: string
+                        example: acct_xxxxxx
+        '400':
+          description: The account couldn't be closed. Retry later.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: Request failed.
+                  data:
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        example: Unable to delete virtual account, please try again later
+        '404':
+          description: The account doesn't exist or isn't yours.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  status_code:
+                    type: integer
+                    example: 404
+                  message:
+                    type: string
+                    example: Request failed.
+                  data:
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        example: Account with the provided ID does not exists
 
   /business/virtual-account/history/{accountNumber}:
     get:
@@ -6092,13 +6146,35 @@ paths:
                         type: string
                       payload:
                         type: object
-                        description: The full event payload delivered to your endpoint.
+                        description: The event payload delivered to your endpoint, shown with the fields events carry today.
                       delivered_at:
                         type: string
                         format: date-time
                       created_at:
                         type: string
                         format: date-time
+        '404':
+          description: The event ID isn't in your delivery log.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  status_code:
+                    type: integer
+                    example: 404
+                  message:
+                    type: string
+                    example: Request failed.
+                  data:
+                    type: object
+                    properties:
+                      error:
+                        type: string
+                        example: Webhook event not found
 
   # ── Corporate Card Links ────────────────────────────────────────────────────
   /corporate-card/employees/cards/{card_id}/link:

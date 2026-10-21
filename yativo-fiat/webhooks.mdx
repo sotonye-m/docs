@@ -261,9 +261,10 @@ Every payload includes `customer_id` and a `customer` object, so you know whose 
 |---|---|
 | `deposit.created`, `deposit.updated` | A deposit is created, or its status changes |
 | `payout.updated` | A payout changes status |
-| `customer.created`, `customer.updated` | A customer is created or their profile is updated |
+| `customer.created`, `customer.updated` | A customer is created, or their profile or KYC status changes |
 | `endorsement.updated` | A customer's endorsement status changes. This is how you learn KYC and KYB results |
 | `virtual_account.created`, `virtual_account.updated` | A virtual account is provisioned or updated |
+| `virtual_account.deleted` | You delete a virtual account |
 | `virtual_account.deposit` | Funds land in a virtual account |
 | `metadata.created`, `metadata.updated` | Metadata is attached to, or changed on, a transaction |
 | `tracking.created` | A tracking update is posted on a transaction |
@@ -273,7 +274,7 @@ Every payload includes `customer_id` and a `customer` object, so you know whose 
 | `wallet.deleted` | A stablecoin deposit address is deleted |
 | `virtualcard.*` | Virtual card KYC, lifecycle, funding, transactions and declines |
 | `business_spend_card.*` | Corporate card issuance, funding, transactions, disputes and status changes |
-| `user.updated` | Your account profile is updated |
+| `user.updated` | Your account name, email, membership ID or KYC status changes |
 | `webhook_updated` | You create or replace your webhook |
 | `payin_method.enabled`, `payin_method.disabled` | A payin method is turned on or off for everyone |
 | `payout_method.enabled`, `payout_method.disabled` | A payout method is turned on or off for everyone |
@@ -307,6 +308,8 @@ New event types are added over time. Ignore ones you don't recognize.
 ```
 
 `status` is `pending`, `processing`, `success`, `failed`, `cancelled` or `expired`.
+
+Deposits with a currency conversion also include `currency_from`, `currency_to`, `amount_from`, `amount_to` and `deposit_currency`. Only these fields and the ones above are sent.
 
 ### `payout.updated`
 
@@ -393,6 +396,26 @@ Sent whenever a payout changes status. There's no `payout.created` event. The fi
 
 `customer` is `null` when the account belongs to your business.
 
+### `virtual_account.deleted`
+
+Sent when you [delete a virtual account](/fiat-api-reference/virtual-accounts/delete). The account no longer accepts funds. The payload has the same fields as `virtual_account.created`.
+
+```json
+{
+  "event.type": "virtual_account.deleted",
+  "payload": {
+    "account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "account_number": "2343554353454",
+    "currency": "USD",
+    "account_info": { "bank_name": "Example Bank" },
+    "created_at": "2026-09-07T11:00:00.000000Z",
+    "updated_at": "2026-09-08T09:30:00.000000Z",
+    "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90",
+    "customer": { "customer_id": "b8d1c6b0-2f3a-4b8e-9d1a-3c5f6e7a8b90", "...": "..." }
+  }
+}
+```
+
 ### `metadata.created`, `metadata.updated` and `tracking.created`
 
 ```json
@@ -430,6 +453,8 @@ Sent whenever a payout changes status. There's no `payout.created` event. The fi
 }
 ```
 
+Only metadata and tracking updates meant for you are sent.
+
 ---
 
 ## Customers
@@ -458,6 +483,8 @@ Sent whenever a payout changes status. There's no `payout.created` event. The fi
   }
 }
 ```
+
+Only the fields above are sent. KYC documents and identity numbers are never included. `customer.updated` is sent when one of these fields or the customer's KYC status changes.
 
 ### `endorsement.updated`
 
@@ -714,12 +741,14 @@ After 2 failed charges, the card is frozen and you receive `virtualcard.deactiva
 
 | Event | Sent when | Payload |
 |---|---|---|
-| `user.updated` | Your account or business profile is updated | `id`, `name`, `email`, `membership_id`, `kyc_status`, `business` |
+| `user.updated` | Your account name, email, membership ID or KYC status changes | `id`, `name`, `email`, `membership_id`, `kyc_status`, `business` |
 | `webhook_updated` | Once, right after you create or replace your webhook | The webhook object, including `secret`. Don't log it |
 | `payin_method.enabled`, `payin_method.disabled` | A payin method is turned on or off for everyone | `method_id`, `method_name`, `country`, `currency`, `active` |
 | `payout_method.enabled`, `payout_method.disabled` | A payout method is turned on or off for everyone | `method_id`, `method_name`, `country`, `currency`, `active` |
 
 Use `webhook_updated` to confirm your endpoint receives events and your signature check works.
+
+In `user.updated`, `business` has only `business_legal_name`, `business_operating_name`, `business_type` and `country`, each when it's set. Documents, directors, shareholders and verification results are never included. Signing in or changing security settings doesn't send `user.updated`.
 
 ---
 
@@ -799,6 +828,8 @@ GET https://api.yativo.com/api/v1/business/events/show/{eventId}
 }
 ```
 
+Logged payloads are shown with the fields events carry today. Older entries may show fewer fields than were sent at the time. `GET /business/events/show/{eventId}` returns `404 Webhook event not found` when the ID isn't in your log.
+
 ### Resend an event
 
 ```
@@ -823,7 +854,7 @@ curl -X POST 'https://api.yativo.com/api/v1/business/events/resend/981' \
 }
 ```
 
-- The original payload is resent, signed with your current secret, to the URL you have registered now.
+- The original payload is resent, signed with your current secret, to the URL you have registered now. Fields that events no longer carry are left out.
 - The resend appears as a new entry in the delivery log.
 - `404 Webhook event not found` means the ID isn't in your log. `400 No webhook endpoint is configured for your account` means you have no webhook.
 

@@ -280,7 +280,9 @@ Errors use the standard envelope:
 | `404` | A `customer_id`, `employee_id` or `card_id` isn't yours, or the employee has no card yet when funding |
 | `409` | The transaction has already been disputed |
 | `422` | Validation error, an unknown `state_id`, a rejected upload, or a withdrawal larger than the available balance |
-| `502` | A file upload failed. Nothing was saved, so retry the request |
+| `502` | A file upload failed, or the card service couldn't complete the request. Retry the request |
+
+When the card service rejects a request, `data.error` explains why, for example an invalid date of birth. When it can't complete the request at all, you get `502` with `The card service could not complete this request right now. Please try again later.`
 
 ---
 

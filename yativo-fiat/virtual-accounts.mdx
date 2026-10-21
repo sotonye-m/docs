@@ -263,6 +263,8 @@ curl -X DELETE 'https://api.yativo.com/api/v1/business/virtual-account/delete-vi
 ```
 </RequestExample>
 
+The account stops accepting funds and you receive a [`virtual_account.deleted`](/yativo-fiat/webhooks#virtual_accountdeleted) webhook. An ID that doesn't exist or isn't yours returns `404`.
+
 ---
 
 ## Bulk Account Creation
