@@ -352,7 +352,7 @@ Each address belongs to one currency, and to one customer when you pass `custome
 
 ### Wallet address limits
 
-You can request at most 3 wallet addresses a minute for each `customer_id`, or 3 a minute for your own account when you don't pass one. This applies to `POST /crypto/create-wallet` and `POST /corporate-card/wallet`.
+You can request at most 3 wallet addresses a minute for each `customer_id`, or 3 a minute for your own account when you don't pass one. This applies to `POST /crypto/create-wallet` and to the corporate card funding addresses created by `GET /corporate-card/wallet`.
 
 The request that goes over the limit returns `403`. Both endpoints then stay blocked for that customer for 24 hours:
 

@@ -3,7 +3,7 @@ title: "Corporate Cards in Sandbox"
 description: "Test employee corporate cards end to end in the sandbox before going live"
 ---
 
-Corporate cards let your business issue spend cards to its employees. Each employee is a cardholder with one card balance, and every card they hold spends from it. You fund that balance from your USDC balance and can withdraw it back at any time.
+Corporate cards let your business issue spend cards to its employees. Each employee is the cardholder: they have one balance, and every card they hold is denominated in it and spends from it. You fund the employee's balance from your USDC balance and can withdraw it back at any time.
 
 Corporate cards are **available by invitation only**. Yativo enables them for invited businesses, in sandbox and in production. There's no way to request access through the API or the dashboard. Without an invitation, every corporate card request returns `403`.
 
@@ -52,16 +52,7 @@ The sandbox dashboard has the same Corporate Card screens as production. Open **
 
 <Steps>
   <Step title="Check your USDC balance">
-    Provision the customer's funding address once with `POST /corporate-card/wallet`. Calling it again returns the same address. You can call it at most 3 times a minute per customer. See [wallet address limits](/yativo-fiat/deposits#wallet-address-limits).
-
-    ```bash
-    curl -X POST "$BASE/corporate-card/wallet" \
-      -H "X-Api-Key: $YATIVO_API_KEY" -H "X-Api-Secret: $YATIVO_API_SECRET" \
-      -H "Content-Type: application/json" \
-      -d '{ "customer_id": "cus_123" }'
-    ```
-
-    Then `GET /corporate-card/wallet?customer_id=...` returns the address and your USDC balance:
+    `GET /corporate-card/wallet?customer_id=...` returns the customer's funding address and your USDC balance:
 
     ```bash
     curl "$BASE/corporate-card/wallet?customer_id=cus_123" \
@@ -87,7 +78,7 @@ The sandbox dashboard has the same Corporate Card screens as production. Open **
     }
     ```
 
-    The three balances are in USD. Spend only from `usdc_available_balance`. If the customer has no funding address yet, the `GET` creates one and returns `wallet: null`, so call it again to read the address.
+    The three balances are in USD. Spend only from `usdc_available_balance`. The first request for a customer creates its funding address and returns `wallet: null`, so call it again to read the address. Address creation counts towards the [wallet address limits](/yativo-fiat/deposits#wallet-address-limits).
 
     <Warning>
       Never send real USDC to a sandbox funding address. If your sandbox USDC balance is empty, [swap from your USD balance](/yativo-fiat/swap) or contact Yativo support.
@@ -136,7 +127,7 @@ The sandbox dashboard has the same Corporate Card screens as production. Open **
 
     `country_id` and `nationality` are ISO2 codes. `state_id` is optional and is the numeric `id` from `GET /locations/states/{country_id}`, where `{country_id}` is the numeric id from `GET /locations/countries`. Documents (`gov_id_image`, `payslip`, `proof_of_address`) are optional and accept a file or a `*_url` field.
 
-    In sandbox, a KYC submission is approved straight away. `GET /corporate-card/employees/{employee_id}/kyc` returns `status: "approved"`. The first submission for each employee charges the `employee_kyc` fee. Resubmissions are free.
+    You can submit an employee's KYC but not read it back. Follow `kyc_status` on `GET /corporate-card/employees/{employee_id}` instead. In sandbox, a submission is approved straight away and `kyc_status` becomes `approved`. The first submission for each employee charges the `employee_kyc` fee. Resubmissions are free.
   </Step>
 
   <Step title="Issue a card">
@@ -148,12 +139,12 @@ The sandbox dashboard has the same Corporate Card screens as production. Open **
       -d '{ "customer_id": "cus_123", "employee_id": "emp_456", "card_type": "Virtual" }'
     ```
 
-    `card_type` is `Virtual` (default) or `Physical`. Omit `employee_id` and the card goes to the customer's employee, created automatically the first time. An employee can hold any number of cards. The response contains the card under `data.card`, including its `card_id`, `status`, `masked_pan` and `expiration_date`.
+    `card_type` is `Virtual` (default) or `Physical`. Omit `employee_id` and the card goes to the customer's employee, created automatically the first time. The employee is the cardholder: every card they hold is denominated in, and spends from, the employee's balance. An employee can hold any number of cards. The response contains the card under `data.card`, including its `card_id`, `status`, `masked_pan` and `expiration_date`.
 
     An employee's first virtual card is free. Further virtual cards and physical cards are charged as listed in [Fees](#fees). If a fee can't be charged the request returns `402` and no card is issued.
   </Step>
 
-  <Step title="Fund the employee's card balance">
+  <Step title="Fund the employee">
     ```bash
     curl -X POST "$BASE/corporate-card/employees/balance" \
       -H "X-Api-Key: $YATIVO_API_KEY" -H "X-Api-Secret: $YATIVO_API_SECRET" \
@@ -164,7 +155,7 @@ The sandbox dashboard has the same Corporate Card screens as production. Open **
 
     `action` is `fund` or `withdraw`, and `amount` is in USD (minimum `0.01`). Funding debits your USDC balance and can't use the reserve. Withdrawing returns money to your USDC balance, charges the `card_withdrawal` fee, and fails with `422` if it exceeds the employee's available balance. An employee with no card yet returns `404`.
 
-    Check the balance with `GET /corporate-card/employees/{employee_id}/balance`:
+    Check the employee's balance with `GET /corporate-card/employees/{employee_id}/balance`:
 
     ```json
     {
@@ -265,7 +256,7 @@ Every corporate card fee is charged to your USDC balance, in sandbox as in produ
 | `cross_border_transaction` | A percentage of each approved cross-border authorization |
 | `reversal` | Each reversed authorization |
 | `dispute` | Each dispute you raise |
-| `card_withdrawal` | Each withdrawal from an employee's card balance |
+| `card_withdrawal` | Each withdrawal from an employee's balance |
 
 ---
 

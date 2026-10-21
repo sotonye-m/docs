@@ -56,40 +56,6 @@ Configure and manage webhook endpoints for real-time event notifications. See th
 
 ---
 
-## API Request Logs
-
-Audit every API call made against your account:
-
-```
-GET /business/logs/all
-```
-
-<ParamField query="status" type="string">
-  Filter by HTTP status code (e.g. `200`, `400`, `500`).
-</ParamField>
-
-<ParamField query="method" type="string">
-  Filter by HTTP method: `GET`, `POST`, `PUT`, `DELETE`.
-</ParamField>
-
-<ParamField query="page" type="number">
-  Page number.
-</ParamField>
-
-<ParamField query="per_page" type="number">
-  Results per page.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/business/logs/all?method=POST&status=400&per_page=20' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
-```
-</RequestExample>
-
----
-
 ## Events
 
 View all events sent to your webhook endpoint and inspect individual event payloads.

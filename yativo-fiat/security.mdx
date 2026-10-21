@@ -14,30 +14,6 @@ Turn on two-factor authentication and passkeys for everyone on your team.
 
 ---
 
-## Review sign-in activity
-
-[`GET /auth/login-history`](/fiat-api-reference/security/login-history) lists sign-ins to your account with the IP, device, approximate location and method. Entries that may need a second look have `suspicious: true`, a `risk_level` of `medium` or `high`, and `flags` explaining why:
-
-| Flag | Meaning |
-|---|---|
-| `new_ip` | First sign-in from this IP |
-| `new_device` | First sign-in from this browser or device |
-| `new_country` | First sign-in from this country |
-| `preceded_by_failed_attempts` | Several failed attempts shortly before this sign-in |
-| `failed_login` | The attempt failed |
-| `automated_client` | Made by a script or API tool rather than a browser or app |
-| `flagged_by_system` | Marked suspicious by Yativo |
-
-```bash
-curl 'https://api.yativo.com/api/v1/auth/login-history?flagged=true' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
-```
-
-Failed requests with a wrong API secret or a revoked API key also appear, with `auth_method` set to `api_key`. If you see ones you don't recognise, revoke the key and create a new one.
-
----
-
 ## API key hygiene
 
 - **One key per system and environment** — use separate API keys so you can rotate or revoke one without affecting the others.
@@ -110,7 +86,7 @@ A retry with the same key and body within 60 minutes returns the original respon
 
 Some plans set their own limit. Enterprise plans have no general limit.
 
-Some endpoints have their own lower limits, such as 30 requests a minute for `POST /exchange-rate`, `GET /ip-whitelist/check` and `GET /auth/login-history`, and 1 a minute for `GET /exchange-rates`. When a limit is hit, the API returns `429 Too Many Requests` with a `Retry-After` header indicating when to retry.
+Some endpoints have their own lower limits, such as 30 requests a minute for `POST /exchange-rate` and `GET /ip-whitelist/check`, and 1 a minute for `GET /exchange-rates`. When a limit is hit, the API returns `429 Too Many Requests` with a `Retry-After` header indicating when to retry.
 
 ---
 

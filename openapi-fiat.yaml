@@ -419,65 +419,6 @@ components:
         updated_at:
           type: string
           format: date-time
-    EmployeeKyc:
-      type: object
-      properties:
-        employee_id:
-          type: string
-        full_name:
-          type: string
-        id_type:
-          type: string
-        id_number:
-          type: string
-        dob:
-          type: string
-          format: date
-        street:
-          type: string
-        city:
-          type: string
-        state_id:
-          type: integer
-          nullable: true
-        postal_code:
-          type: string
-        country_id:
-          type: string
-        nationality:
-          type: string
-        occupation:
-          type: string
-          nullable: true
-        gov_id_type:
-          type: string
-        gov_id_number:
-          type: string
-        gov_id_image_url:
-          type: string
-          nullable: true
-        payslip_url:
-          type: string
-          nullable: true
-        proof_of_address_url:
-          type: string
-          nullable: true
-        status:
-          type: string
-          description: '`pending`, `approved` or `rejected`.'
-          enum:
-          - pending
-          - approved
-          - rejected
-        reject_reason:
-          type: string
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
     CorporateCard:
       type: object
       properties:
@@ -4445,8 +4386,8 @@ paths:
   /beneficiaries/payment-methods/all:
     get:
       tags: [Beneficiaries]
-      summary: List Payment Methods
-      description: Returns all saved payment methods across all beneficiaries in your account.
+      summary: List Beneficiaries
+      description: Returns every beneficiary saved on your account.
       responses:
         '200':
           description: All payment methods
@@ -4465,9 +4406,9 @@ paths:
   /beneficiaries/payment-methods:
     post:
       tags: [Beneficiaries]
-      summary: Add Payment Method
+      summary: Add Beneficiary
       description: |
-        Add a payment method (bank account, wallet) to a beneficiary.
+        Save a recipient's account details (bank account, wallet) as a beneficiary. Use the returned `id` in payouts and quotes.
         The structure of `payment_data` varies by payment method — retrieve required fields
         from `GET /beneficiary/form/show/{payment_method_id}`.
         Requires an `Idempotency-Key` header.
@@ -4495,9 +4436,6 @@ paths:
                 nickname:
                   type: string
                   description: A label to identify this payment method.
-                beneficiary_id:
-                  type: string
-                  description: The ID of the beneficiary to link this payment method to.
       responses:
         '200':
           description: Payment method added
@@ -4514,8 +4452,8 @@ paths:
   /beneficiaries/payment-methods/{id}:
     post:
       tags: [Beneficiaries]
-      summary: Get Payment Method
-      description: Retrieve a specific beneficiary payment method by ID.
+      summary: Get Beneficiary
+      description: Retrieve one saved beneficiary by its `id`.
       parameters:
         - name: id
           in: path
@@ -4543,9 +4481,9 @@ paths:
   /beneficiaries/payment-methods/update/{id}:
     put:
       tags: [Beneficiaries]
-      summary: Update Payment Method
+      summary: Update Beneficiary
       description: |
-        Full replacement of a beneficiary payment method. All required fields must be provided.
+        Full replacement of a saved beneficiary. All required fields must be provided.
         Requires an `Idempotency-Key` header.
       parameters:
         - name: id
@@ -4592,8 +4530,8 @@ paths:
   /beneficiaries/payment-methods/delete/{id}:
     delete:
       tags: [Beneficiaries]
-      summary: Delete Payment Method
-      description: Permanently delete a saved beneficiary payment method.
+      summary: Delete Beneficiary
+      description: Permanently delete a saved beneficiary.
       parameters:
         - name: id
           in: path
@@ -5421,65 +5359,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /payout/batch:
-    post:
-      tags: [Payouts]
-      summary: Batch Payout
-      description: |
-        Submit an array of payouts in one request. Each item is processed independently —
-        partial failures appear in an `errors` object without rolling back successful items.
-        If wallet balance is insufficient for the total, the entire batch is rejected before
-        any item is processed. Requires an `Idempotency-Key` header.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [payouts]
-              properties:
-                payouts:
-                  type: array
-                  items:
-                    type: object
-                    required: [amount, beneficiary_details_id]
-                    properties:
-                      amount:
-                        type: number
-                        description: Amount to send for this payout.
-                      beneficiary_details_id:
-                        type: integer
-                        description: The saved beneficiary payment method ID.
-                      beneficiary_id:
-                        type: integer
-                        description: Optional beneficiary UUID for tracking.
-                  description: Array of payout objects.
-      responses:
-        '200':
-          description: Batch submitted (may include partial failures)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  status_code:
-                    type: integer
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    description: Object keyed by index with payout results.
-        '400':
-          description: Insufficient balance or partial failure
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
   /payout/get:
     get:
       tags: [Payouts]
@@ -6130,228 +6009,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /auth/login-history:
-    get:
-      tags: [Account Security]
-      summary: Login History
-      description: |
-        Sign-in history for the account, newest first, with signals that make a sign-in worth a second look
-        (new IP, new device, new country, failed attempts beforehand). Failed requests with a wrong API secret
-        or a revoked API key also appear here, with `auth_method` set to `api_key`.
-
-        Called with an API key, this returns the business account owner's history. Limited to 30 requests a minute.
-      parameters:
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [successful, failed, active]
-          description: '`active` returns sessions that are still signed in.'
-        - name: flagged
-          in: query
-          schema:
-            type: boolean
-          description: Only return sign-ins flagged as suspicious.
-        - name: ip
-          in: query
-          schema:
-            type: string
-          description: Only return sign-ins from this IP.
-        - name: from
-          in: query
-          schema:
-            type: string
-            format: date
-          example: '2026-10-01'
-        - name: to
-          in: query
-          schema:
-            type: string
-            format: date
-          example: '2026-10-31'
-        - name: per_page
-          in: query
-          schema:
-            type: integer
-            default: 20
-            maximum: 100
-        - name: page
-          in: query
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Paginated login history
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  status_code:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Records retrieved successfully
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                          example: 4182
-                        ip_address:
-                          type: string
-                          example: 203.0.113.10
-                        user_agent:
-                          type: string
-                        auth_method:
-                          type: string
-                          nullable: true
-                          enum: [magic_link, passkey, password, social, api_key]
-                          description: '`password` is the legacy Account ID and App Secret login.'
-                        device:
-                          type: object
-                          properties:
-                            name:
-                              type: string
-                              example: Chrome on macOS
-                            browser:
-                              type: string
-                              nullable: true
-                              example: Chrome
-                            platform:
-                              type: string
-                              nullable: true
-                              example: macOS
-                            type:
-                              type: string
-                              nullable: true
-                              enum: [desktop, mobile, tablet, automated]
-                        location:
-                          type: object
-                          nullable: true
-                          description: Approximate location from the IP address.
-                        login_successful:
-                          type: boolean
-                        is_active:
-                          type: boolean
-                          description: Whether this session is still signed in.
-                        is_trusted:
-                          type: boolean
-                        login_at:
-                          type: string
-                          format: date-time
-                        logout_at:
-                          type: string
-                          format: date-time
-                          nullable: true
-                        last_activity_at:
-                          type: string
-                          format: date-time
-                          nullable: true
-                        suspicious:
-                          type: boolean
-                          description: '`true` when `risk_level` is `medium` or `high`.'
-                        risk_level:
-                          type: string
-                          enum: [low, medium, high]
-                        risk_score:
-                          type: integer
-                          minimum: 0
-                          maximum: 100
-                        flags:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              code:
-                                type: string
-                                enum: [failed_login, flagged_by_system, new_ip, new_device, new_country, automated_client, preceded_by_failed_attempts]
-                              message:
-                                type: string
-                                example: First login from IP 203.0.113.10.
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
-        '401':
-          description: Missing or invalid API credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # ============================================================
-  # DEVELOPER
-  # ============================================================
-
-  /business/logs/all:
-    get:
-      tags: [Developer]
-      summary: API Request Logs
-      description: |
-        Returns an audit log of all API calls made against your business account.
-        Useful for debugging, monitoring, and compliance.
-      parameters:
-        - name: status
-          in: query
-          schema:
-            type: string
-          description: Filter by HTTP status code (e.g. `200`, `400`, `422`, `500`).
-        - name: method
-          in: query
-          schema:
-            type: string
-            enum: [GET, POST, PUT, DELETE]
-          description: 'Filter by HTTP method: `GET`, `POST`, `PUT`, `DELETE`.'
-        - name: page
-          in: query
-          schema:
-            type: integer
-          description: Page number.
-        - name: per_page
-          in: query
-          schema:
-            type: integer
-          description: Results per page.
-      responses:
-        '200':
-          description: Paginated request log
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  status_code:
-                    type: integer
-                  message:
-                    type: string
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        method:
-                          type: string
-                        endpoint:
-                          type: string
-                        status_code:
-                          type: integer
-                        ip_address:
-                          type: string
-                        created_at:
-                          type: string
-                          format: date-time
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
-
   /business/events/all:
     get:
       tags: [Developer]
@@ -6907,89 +6564,13 @@ paths:
 
 
   /corporate-card/wallet:
-    post:
-      tags:
-      - Corporate Cards
-      description: 'Creates the customer''s USDC funding address, or returns the existing one. You can call it at most 3 times a minute per customer. Going over blocks address requests for that customer for 24 hours. See [wallet address limits](/yativo-fiat/deposits#wallet-address-limits).
-
-
-        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                customer_id:
-                  type: string
-                  description: One of your business customers.
-                  example: cus_123
-              required:
-              - customer_id
-      responses:
-        '201':
-          description: Address created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  status_code:
-                    type: integer
-                    example: 201
-                  message:
-                    type: string
-                    example: Request successful
-                  data:
-                    $ref: '#/components/schemas/CorporateCardWallet'
-        '200':
-          description: Existing address
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  status_code:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Request successful
-                  data:
-                    $ref: '#/components/schemas/CorporateCardWallet'
-        '403': &id001
-          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404': &id002
-          description: The `customer_id`, `employee_id` or `card_id` isn't yours
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422': &id003
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      summary: Provision Funding Address
     get:
       tags:
       - Corporate Cards
       description: 'Returns the customer''s funding address and your USDC balance in USD. Spend only from `usdc_available_balance`: the rest is the [reserve](/yativo-fiat/sandbox-corporate-cards#reserve).
 
 
-        If the customer has no address yet, this request creates one and returns `wallet: null`. Call it again to read the address.
+        The first request for a customer creates its address and returns `wallet: null`. Call it again to read the address. Address creation counts towards the [wallet address limits](/yativo-fiat/deposits#wallet-address-limits).
 
 
         Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
@@ -7036,9 +6617,24 @@ paths:
                         type: number
                         description: What you can spend on card funding, in USD.
                         example: 1500.0
-        '403': *id001
-        '404': *id002
-        '422': *id003
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Get Funding Address and Balance
   /corporate-card/employees:
     get:
@@ -7093,17 +6689,15 @@ paths:
         required: false
         schema:
           type: boolean
-        description: Add each employee's `card_balance`. Slower.
-      - &id007
-        name: page
+        description: Add each employee's balance as `card_balance`. Slower.
+      - name: page
         in: query
         required: false
         schema:
           type: integer
           default: 1
         description: Page number.
-      - &id008
-        name: per_page
+      - name: per_page
         in: query
         required: false
         schema:
@@ -7133,9 +6727,24 @@ paths:
                       $ref: '#/components/schemas/Employee'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
-        '403': *id001
-        '404': *id002
-        '422': *id003
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: List Employees
     post:
       tags:
@@ -7148,7 +6757,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: &id004
+            schema:
               type: object
               properties:
                 customer_id:
@@ -7188,7 +6797,45 @@ paths:
               - customer_id
               - full_name
           multipart/form-data:
-            schema: *id004
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: string
+                  example: cus_123
+                full_name:
+                  type: string
+                  maxLength: 191
+                  example: Jane Doe
+                email:
+                  type: string
+                  format: email
+                  example: jane@example.com
+                dob:
+                  type: string
+                  description: '`YYYY-MM-DD`.'
+                  format: date
+                  example: '1990-04-12'
+                occupation:
+                  type: string
+                  maxLength: 191
+                  example: Operations Manager
+                metadata:
+                  type: object
+                  additionalProperties: true
+                  example:
+                    department: Finance
+                    employee_number: EMP-0042
+                selfie_image:
+                  type: string
+                  description: File or base64 data URI. jpeg, png or webp, up to 10 MB.
+                  format: binary
+                selfie_image_url:
+                  type: string
+                  description: Hosted image URL, instead of `selfie_image`.
+              required:
+              - customer_id
+              - full_name
       responses:
         '201':
           description: Employee created
@@ -7208,9 +6855,24 @@ paths:
                     example: Request successful
                   data:
                     $ref: '#/components/schemas/Employee'
-        '403': *id001
-        '404': *id002
-        '422': *id003
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '502':
           description: The selfie upload failed. Nothing was saved, so retry
           content:
@@ -7222,7 +6884,7 @@ paths:
     get:
       tags:
       - Corporate Cards
-      description: 'Returns the employee, with their KYC submission under `kyc` (`null` before the first submission).
+      description: 'Returns the employee. `kyc_status` tells you where their KYC stands.
 
 
         Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
@@ -7251,16 +6913,19 @@ paths:
                     type: string
                     example: Request successful
                   data:
-                    allOf:
-                    - $ref: '#/components/schemas/Employee'
-                    - type: object
-                      properties:
-                        kyc:
-                          allOf:
-                          - $ref: '#/components/schemas/EmployeeKyc'
-                          nullable: true
-        '403': *id001
-        '404': *id002
+                    $ref: '#/components/schemas/Employee'
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Get Employee
     put:
       tags:
@@ -7283,7 +6948,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: &id005
+            schema:
               type: object
               properties:
                 full_name:
@@ -7315,7 +6980,37 @@ paths:
                 selfie_image_url:
                   type: string
           multipart/form-data:
-            schema: *id005
+            schema:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                  maxLength: 191
+                email:
+                  type: string
+                  format: email
+                dob:
+                  type: string
+                  format: date
+                occupation:
+                  type: string
+                  maxLength: 191
+                status:
+                  type: string
+                  description: '`active`, `suspended` or `terminated`.'
+                  enum:
+                  - active
+                  - suspended
+                  - terminated
+                metadata:
+                  type: object
+                  additionalProperties: true
+                selfie_image:
+                  type: string
+                  description: File or base64 data URI. jpeg, png or webp, up to 10 MB.
+                  format: binary
+                selfie_image_url:
+                  type: string
       responses:
         '200':
           description: Request successful
@@ -7347,9 +7042,24 @@ paths:
                               example: pending_confirmation
                             pending_email:
                               type: string
-        '403': *id001
-        '404': *id002
-        '422': *id003
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '429':
           description: Too many email change codes requested. Wait and retry
           content:
@@ -7400,14 +7110,24 @@ paths:
                       message:
                         type: string
                         example: Employee terminated.
-        '403': *id001
-        '404': *id002
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Terminate Employee
   /corporate-card/employees/kyc:
     post:
       tags:
       - Corporate Cards
-      description: 'Submits the employee''s KYC. Submitting again replaces the previous submission. The first submission for each employee charges the `employee_kyc` fee. Resubmissions are free.
+      description: 'Submits the employee''s KYC. Submitting again replaces the previous submission. You can submit KYC but not read it back: follow the employee''s `kyc_status` on [Get Employee](/fiat-api-reference/corporate-cards/employees-get). The first submission for each employee charges the `employee_kyc` fee. Resubmissions are free.
 
 
         `country_id` and `nationality` are ISO 3166-1 alpha-2 codes. `state_id` is the numeric `id` from [List States](/fiat-api-reference/corporate-cards/locations-states). Each document accepts a file, a base64 data URI or a `*_url` field, up to 10 MB.
@@ -7418,7 +7138,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: &id006
+            schema:
               type: object
               properties:
                 employee_id:
@@ -7505,7 +7225,92 @@ paths:
               - gov_id_type
               - gov_id_number
           multipart/form-data:
-            schema: *id006
+            schema:
+              type: object
+              properties:
+                employee_id:
+                  type: string
+                  example: emp_456
+                full_name:
+                  type: string
+                  maxLength: 191
+                  example: Jane Doe
+                id_type:
+                  type: string
+                  maxLength: 64
+                  example: passport
+                id_number:
+                  type: string
+                  maxLength: 191
+                  example: X1234567
+                dob:
+                  type: string
+                  format: date
+                  example: '1990-04-12'
+                street:
+                  type: string
+                  maxLength: 255
+                  example: 100 Main St
+                city:
+                  type: string
+                  maxLength: 191
+                  example: Miami
+                state_id:
+                  type: integer
+                  description: Numeric `id` from [List States](/fiat-api-reference/corporate-cards/locations-states). An unknown id returns `422`.
+                postal_code:
+                  type: string
+                  maxLength: 32
+                  example: '33101'
+                country_id:
+                  type: string
+                  description: ISO 3166-1 alpha-2.
+                  example: US
+                nationality:
+                  type: string
+                  description: ISO 3166-1 alpha-2.
+                  example: US
+                occupation:
+                  type: string
+                  maxLength: 191
+                gov_id_type:
+                  type: string
+                  maxLength: 64
+                  example: passport
+                gov_id_number:
+                  type: string
+                  maxLength: 191
+                  example: X1234567
+                gov_id_image:
+                  type: string
+                  format: binary
+                gov_id_image_url:
+                  type: string
+                  format: uri
+                  example: https://example.com/id.jpg
+                payslip:
+                  type: string
+                  format: binary
+                payslip_url:
+                  type: string
+                  format: uri
+                proof_of_address:
+                  type: string
+                  format: binary
+                proof_of_address_url:
+                  type: string
+                  format: uri
+              required:
+              - employee_id
+              - full_name
+              - id_type
+              - id_number
+              - dob
+              - street
+              - city
+              - postal_code
+              - gov_id_type
+              - gov_id_number
       responses:
         '200':
           description: KYC submitted
@@ -7524,61 +7329,52 @@ paths:
                     type: string
                     example: Request successful
                   data:
-                    $ref: '#/components/schemas/EmployeeKyc'
+                    type: object
+                    properties:
+                      employee_id:
+                        type: string
+                        example: emp_456
+                      status:
+                        type: string
+                        description: '`pending`, `approved` or `rejected`.'
+                        enum:
+                        - pending
+                        - approved
+                        - rejected
+                        example: approved
+                      reject_reason:
+                        type: string
+                        nullable: true
         '402':
           description: Your USDC balance can't cover the `employee_kyc` fee
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403': *id001
-        '404': *id002
-        '422': *id003
-      summary: Submit Employee KYC
-  /corporate-card/employees/{employee_id}/kyc:
-    get:
-      tags:
-      - Corporate Cards
-      description: 'Returns the employee''s KYC submission, or `null` if they haven''t submitted one. In sandbox, submissions are approved straight away.
-
-
-        Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
-      parameters:
-      - name: employee_id
-        in: path
-        required: true
-        schema:
-          type: string
-        description: The employee's `employee_id`.
-      responses:
-        '200':
-          description: Request successful
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  status_code:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Request successful
-                  data:
-                    allOf:
-                    - $ref: '#/components/schemas/EmployeeKyc'
-                    nullable: true
-        '403': *id001
-        '404': *id002
-      summary: Get Employee KYC
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Submit Employee KYC
   /corporate-card/employees/cards:
     post:
       tags:
       - Corporate Cards
-      description: 'Issues a card to an employee. Omit `employee_id` and the card goes to the customer''s employee, created the first time. An employee can hold any number of cards, and they all spend from the employee''s card balance.
+      description: 'Issues a card to an employee. Omit `employee_id` and the card goes to the customer''s employee, created the first time. The employee is the cardholder. Cards are denominated in the employee''s balance: an employee can hold any number of cards, and they all spend from that one balance.
 
 
         An employee''s first virtual card is free. Further virtual cards and physical cards are charged as listed in [Fees](/yativo-fiat/sandbox-corporate-cards#fees). If a fee can''t be charged, the request returns `402` and no card is issued.
@@ -7586,8 +7382,7 @@ paths:
 
         Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
       parameters:
-      - &id009
-        $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7638,9 +7433,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403': *id001
-        '404': *id002
-        '422': *id003
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Issue Card
     get:
       tags:
@@ -7668,8 +7478,20 @@ paths:
         schema:
           type: string
         description: Card status, e.g. `ACTIVE`.
-      - *id007
-      - *id008
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+        description: Page number.
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+        description: Records per page.
       responses:
         '200':
           description: Paginated list
@@ -7693,8 +7515,18 @@ paths:
                       $ref: '#/components/schemas/CorporateCard'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
-        '403': *id001
-        '422': *id003
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: List Cards
   /corporate-card/employees/cards/{card_id}:
     get:
@@ -7730,7 +7562,12 @@ paths:
                     example: Request successful
                   data:
                     $ref: '#/components/schemas/CorporateCard'
-        '403': *id001
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Card not found
           content:
@@ -7794,14 +7631,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403': *id001
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Card not found for this customer, or the customer has more than one card and no `card_id` was sent
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '422': *id003
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Change Card Status
   /corporate-card/employees/cards/limits:
     put:
@@ -7885,28 +7732,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403': *id001
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Card not found for this customer
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '422': *id003
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Set Card Limits
   /corporate-card/employees/balance:
     post:
       tags:
       - Corporate Cards
-      description: '`fund` debits your USDC balance and can''t use the reserve. `withdraw` returns money to your USDC balance and charges the `card_withdrawal` fee. A withdrawal larger than the employee''s available balance returns `422`. An employee with no card yet returns `404`.
+      description: 'Moves money between your USDC balance and the employee''s balance. The employee is the cardholder, and every card they hold spends from this balance.
 
 
-        `amount` is in USD. Send `account_id` from [Get Card Balance](/fiat-api-reference/corporate-cards/balance-get) to target a specific account; otherwise the primary account is used.
+        `fund` debits your USDC balance and can''t use the reserve. `withdraw` returns money to your USDC balance and charges the `card_withdrawal` fee. A withdrawal larger than the employee''s available balance returns `422`. An employee with no card yet returns `404`.
+
+
+        `amount` is in USD. Send `account_id` from [Get Employee Balance](/fiat-api-reference/corporate-cards/employees-balance) to target a specific account; otherwise the primary account is used.
 
 
         Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
       parameters:
-      - *id009
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7961,7 +7821,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403': *id001
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Employee not found, or the employee has no card yet
           content:
@@ -7974,12 +7839,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-      summary: Fund or Withdraw Card Balance
+      summary: Fund Employee
   /corporate-card/employees/{employee_id}/balance:
     get:
       tags:
       - Corporate Cards
-      description: 'Returns the employee''s card balance in USD. Every card the employee holds spends from it.
+      description: 'Returns the employee''s balance in USD. The employee is the cardholder, and every card they hold spends from this balance.
 
 
         Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
@@ -8009,9 +7874,19 @@ paths:
                     example: Request successful
                   data:
                     $ref: '#/components/schemas/EmployeeBalance'
-        '403': *id001
-        '404': *id002
-      summary: Get Card Balance
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Employee Balance
   /corporate-card/employees/{employee_id}/memos:
     get:
       tags:
@@ -8027,8 +7902,20 @@ paths:
         schema:
           type: string
         description: The employee's `employee_id`.
-      - *id007
-      - *id008
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+        description: Page number.
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+        description: Records per page.
       responses:
         '200':
           description: Paginated list
@@ -8052,8 +7939,18 @@ paths:
                       $ref: '#/components/schemas/EmployeeMemo'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
-        '403': *id001
-        '404': *id002
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: List Memos
   /corporate-card/employees/memos:
     post:
@@ -8067,7 +7964,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: &id010
+            schema:
               type: object
               properties:
                 employee_id:
@@ -8088,7 +7985,26 @@ paths:
               required:
               - employee_id
           multipart/form-data:
-            schema: *id010
+            schema:
+              type: object
+              properties:
+                employee_id:
+                  type: string
+                  example: emp_456
+                card_id:
+                  type: string
+                note:
+                  type: string
+                  maxLength: 5000
+                  example: Client lunch
+                invoice:
+                  type: string
+                  format: binary
+                invoice_url:
+                  type: string
+                  format: uri
+              required:
+              - employee_id
       responses:
         '201':
           description: Memo created
@@ -8108,9 +8024,24 @@ paths:
                     example: Request successful
                   data:
                     $ref: '#/components/schemas/EmployeeMemo'
-        '403': *id001
-        '404': *id002
-        '422': *id003
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: The `customer_id`, `employee_id` or `card_id` isn't yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '502':
           description: The invoice upload failed. Nothing was saved, so retry
           content:
@@ -8152,7 +8083,12 @@ paths:
                     example: Request successful
                   data:
                     $ref: '#/components/schemas/EmployeeMemo'
-        '403': *id001
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Memo not found
           content:
@@ -8207,18 +8143,28 @@ paths:
                     example: Request successful
                   data:
                     $ref: '#/components/schemas/EmployeeMemo'
-        '403': *id001
+        '403':
+          description: Corporate cards aren't enabled on your account, the customer has no approved `cobo_pobo` endorsement or full KYC, or the employee is suspended or terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Memo not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '422': *id003
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Reject Memo
   /locations/countries:
     get:
-      security: &id011 []
+      security: []
       tags:
       - Corporate Cards
       description: Returns every country with its numeric `id`. Use the `id` with [List States](/fiat-api-reference/corporate-cards/locations-states). No API key needed.
@@ -8254,7 +8200,7 @@ paths:
       summary: List Location Countries
   /locations/states/{country_id}:
     get:
-      security: *id011
+      security: []
       tags:
       - Corporate Cards
       description: Returns a country's states. Send a state's `id` as `state_id` in [Submit Employee KYC](/fiat-api-reference/corporate-cards/kyc-submit). No API key needed.
@@ -8337,8 +8283,20 @@ paths:
         schema:
           type: string
         description: Filter by event type.
-      - *id007
-      - *id008
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+        description: Page number.
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+        description: Records per page.
       responses:
         '200':
           description: Paginated list
@@ -8377,7 +8335,7 @@ paths:
 
 
         Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
-      parameters: &id012
+      parameters:
       - name: id
         in: path
         required: true
@@ -8403,7 +8361,7 @@ paths:
                     example: Request successful
                   data:
                     $ref: '#/components/schemas/SpendCardTransaction'
-        '404': &id013
+        '404':
           description: Transaction not found
           content:
             application/json:
@@ -8418,7 +8376,13 @@ paths:
 
 
         Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
-      parameters: *id012
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The transaction `id`, or the `transaction_id` from a `business_spend_card.transaction.*` webhook.
       requestBody:
         required: true
         content:
@@ -8466,14 +8430,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404': *id013
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: The transaction has already been disputed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '422': *id003
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Dispute Card Transaction
   /business/spend-card/transactions/{id}/notes:
     post:
@@ -8483,7 +8457,13 @@ paths:
 
 
         Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
-      parameters: *id012
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The transaction `id`, or the `transaction_id` from a `business_spend_card.transaction.*` webhook.
       requestBody:
         required: true
         content:
@@ -8525,8 +8505,18 @@ paths:
                       created_at:
                         type: string
                         format: date-time
-        '404': *id013
-        '422': *id003
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Add Transaction Note
   /business/spend-card/transactions/{id}/invoices:
     post:
@@ -8536,7 +8526,13 @@ paths:
 
 
         Corporate cards are available by invitation only. Without one, this request returns `403`. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards).'
-      parameters: *id012
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The transaction `id`, or the `transaction_id` from a `business_spend_card.transaction.*` webhook.
       requestBody:
         required: true
         content:
@@ -8576,7 +8572,12 @@ paths:
                       created_at:
                         type: string
                         format: date-time
-        '404': *id013
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '422':
           description: Validation error, or the file failed the virus scan
           content:
@@ -8660,9 +8661,21 @@ paths:
       tags:
       - Deposits
       description: Lists every deposit address on your account and your customers, newest first. Store addresses and look them up here instead of requesting new ones.
-      parameters: &id014
-      - *id007
-      - *id008
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+        description: Page number.
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+        description: Records per page.
       responses:
         '200':
           description: Paginated list
@@ -8698,7 +8711,21 @@ paths:
       tags:
       - Deposits
       description: Lists stablecoin deposits to every address on your account and your customers.
-      parameters: *id014
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+        description: Page number.
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+        description: Records per page.
       responses:
         '200':
           description: Paginated list
@@ -8735,8 +8762,20 @@ paths:
         schema:
           type: string
         description: One of your deposit addresses.
-      - *id007
-      - *id008
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+        description: Page number.
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+        description: Records per page.
       responses:
         '200':
           description: Paginated list
@@ -8961,8 +9000,20 @@ paths:
           type: string
           example: BRL
         description: Currency code, e.g. `BRL`. Defaults to `usd`.
-      - *id007
-      - *id008
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+        description: Page number.
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+        description: Records per page.
       responses:
         '200':
           description: Paginated list
@@ -9066,19 +9117,17 @@ tags:
   - name: Wallets
     description: View balances, create wallets, and list wallet payouts.
   - name: Beneficiaries
-    description: Manage saved recipients and their payment methods.
+    description: Save recipients' account details as beneficiaries and reuse them in payouts.
   - name: Transactions
     description: List, retrieve, track, and download receipts for all transaction types.
   - name: Virtual Cards
     description: Activate, issue, manage, and terminate prepaid virtual cards. Every card request works only on your own cards. Any other card ID returns `404` with `Card not found`.
   - name: Payouts
-    description: Single and batch payouts to beneficiaries.
+    description: Single payouts to beneficiaries.
   - name: Currency Swap
     description: Swap balance between your own currency wallets.
   - name: IP Whitelist
     description: Check whether your server's IP can use your API key.
-  - name: Account Security
-    description: Review sign-in activity on your account.
   - name: Corporate Cards
     description: Employees, their KYC, cards, card balances, memos and the USDC funding address. By invitation only.
   - name: Corporate Card Transactions
@@ -9088,4 +9137,4 @@ tags:
   - name: Webhooks
     description: Register and manage webhook endpoints for real-time event notifications.
   - name: Developer
-    description: Request logs and webhook event inspection.
+    description: Webhook event inspection.

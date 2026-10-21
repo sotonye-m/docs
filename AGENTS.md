@@ -22,6 +22,13 @@ npx -y mint@latest validate
 - Add integrator-visible changes to `yativo/changelog.mdx` under the current month
 - Don't escape code fences or backticks in MDX (`` \`\`\` `` breaks parsing)
 
+## Hidden and removed menus
+
+- `nav-records/NAV-CHANGES.md` lists menus, pages and endpoints that were hidden, removed or renamed on purpose. Read it before editing `docs.json`, `openapi-fiat.yaml` or the guides
+- Don't bring back anything listed there unless the docs owner explicitly asks for that item. This holds even when the endpoint still exists in the API
+- Hide pages by removing them from `docs.json` navigation. Don't delete the files
+- When you hide, remove or rename something, add it to `NAV-CHANGES.md` and put the removed `docs.json` block in `nav-records/disabled-nav.json`
+
 ## Terminology
 
 - **API key**: the `X-Api-Key` + `X-Api-Secret` pair fiat servers send on every request. Use "an API key"

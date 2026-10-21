@@ -1,10 +1,10 @@
 ---
-title: "Update Payment Method"
-description: "Update a saved beneficiary payment method"
+title: "Update Beneficiary"
+description: "Update a saved beneficiary's account details"
 openapi: "openapi-fiat.yaml PUT /beneficiaries/payment-methods/update/{id}"
 ---
 
-Update an existing beneficiary payment method. All required fields must be provided — this is a full replacement of the payment method record.
+Update a saved beneficiary. All required fields must be provided. This replaces the whole record.
 
 ```
 PUT /v1/beneficiaries/payment-methods/update/{id}
@@ -51,7 +51,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/beneficiaries/payment-methods/update/
       "account_type": "savings",
       "rut": "12.345.678-9"
     },
-    "beneficiary_id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "beneficiary_id": null,
     "created_at": "2026-04-02T10:30:00.000000Z",
     "updated_at": "2026-04-02T15:00:00.000000Z"
   }

@@ -162,35 +162,65 @@
           {
             "group": "KYC / KYB",
             "pages": [
-              "fiat-api-reference/kyc/upload",
-              "fiat-api-reference/kyc/submit-individual",
-              "fiat-api-reference/kyc/submit-business",
-              "fiat-api-reference/kyc/update-individual",
-              "fiat-api-reference/kyc/update-business",
-              "fiat-api-reference/kyc/update",
-              "fiat-api-reference/kyc/resubmit-endorsement",
-              "fiat-api-reference/kyc/resubmit-endorsement-platform",
-              "fiat-api-reference/kyc/endorsement-regenerate",
-              "fiat-api-reference/kyc/occupation-codes",
-              "fiat-api-reference/kyc/verification-locations"
+              {
+                "group": "Individual",
+                "pages": [
+                  "fiat-api-reference/kyc/submit-individual",
+                  "fiat-api-reference/kyc/update-individual",
+                  "fiat-api-reference/kyc/occupation-codes"
+                ]
+              },
+              {
+                "group": "Business",
+                "pages": [
+                  "fiat-api-reference/kyc/submit-business",
+                  "fiat-api-reference/kyc/update-business"
+                ]
+              },
+              {
+                "group": "Shared",
+                "pages": [
+                  "fiat-api-reference/kyc/upload",
+                  "fiat-api-reference/kyc/update",
+                  "fiat-api-reference/kyc/resubmit-endorsement",
+                  "fiat-api-reference/kyc/resubmit-endorsement-platform",
+                  "fiat-api-reference/kyc/endorsement-regenerate",
+                  "fiat-api-reference/kyc/verification-locations"
+                ]
+              }
             ]
           },
           {
             "group": "KYC Lookups",
             "pages": [
-              "fiat-api-reference/kyc-lookups/countries",
-              "fiat-api-reference/kyc-lookups/subdivisions",
-              "fiat-api-reference/kyc-lookups/postal-codes",
-              "fiat-api-reference/kyc-lookups/identification-types",
-              "fiat-api-reference/kyc-lookups/occupations",
-              "fiat-api-reference/kyc-lookups/business-industries",
-              "fiat-api-reference/kyc-lookups/individual-account-purposes",
-              "fiat-api-reference/kyc-lookups/individual-source-of-funds",
-              "fiat-api-reference/kyc-lookups/business-account-purposes",
-              "fiat-api-reference/kyc-lookups/business-source-of-funds",
-              "fiat-api-reference/kyc-lookups/expected-monthly-payments",
-              "fiat-api-reference/kyc-lookups/transaction-currencies",
-              "fiat-api-reference/kyc-lookups/transaction-countries"
+              {
+                "group": "Individual",
+                "pages": [
+                  "fiat-api-reference/kyc-lookups/occupations",
+                  "fiat-api-reference/kyc-lookups/individual-account-purposes",
+                  "fiat-api-reference/kyc-lookups/individual-source-of-funds",
+                  "fiat-api-reference/kyc-lookups/expected-monthly-payments"
+                ]
+              },
+              {
+                "group": "Business",
+                "pages": [
+                  "fiat-api-reference/kyc-lookups/business-industries",
+                  "fiat-api-reference/kyc-lookups/business-account-purposes",
+                  "fiat-api-reference/kyc-lookups/business-source-of-funds",
+                  "fiat-api-reference/kyc-lookups/transaction-currencies",
+                  "fiat-api-reference/kyc-lookups/transaction-countries"
+                ]
+              },
+              {
+                "group": "Shared",
+                "pages": [
+                  "fiat-api-reference/kyc-lookups/countries",
+                  "fiat-api-reference/kyc-lookups/subdivisions",
+                  "fiat-api-reference/kyc-lookups/postal-codes",
+                  "fiat-api-reference/kyc-lookups/identification-types"
+                ]
+              }
             ]
           },
           {
@@ -241,20 +271,12 @@
             "pages": [
               "fiat-api-reference/wallets/balance",
               "fiat-api-reference/wallets/balance-total",
-              "fiat-api-reference/wallets/create",
               "fiat-api-reference/wallets/payouts"
             ]
           },
           {
             "group": "Beneficiaries",
             "pages": [
-              "fiat-api-reference/beneficiaries/create",
-              "fiat-api-reference/beneficiaries/list",
-              "fiat-api-reference/beneficiaries/get",
-              "fiat-api-reference/beneficiaries/update",
-              "fiat-api-reference/beneficiaries/delete",
-              "fiat-api-reference/beneficiaries/archive",
-              "fiat-api-reference/beneficiaries/unarchive",
               "fiat-api-reference/beneficiaries/payment-methods-create",
               "fiat-api-reference/beneficiaries/payment-methods-list",
               "fiat-api-reference/beneficiaries/payment-methods-get",
@@ -291,7 +313,6 @@
             "group": "Payouts",
             "pages": [
               "fiat-api-reference/payouts/simple",
-              "fiat-api-reference/payouts/batch",
               "fiat-api-reference/payouts/list",
               "fiat-api-reference/payouts/get"
             ]
@@ -307,37 +328,64 @@
             ]
           },
           {
-            "group": "IP Whitelist & Security",
+            "group": "IP Whitelist",
             "pages": [
-              "fiat-api-reference/ip/check",
-              "fiat-api-reference/security/login-history"
+              "fiat-api-reference/ip/check"
             ]
           },
           {
             "group": "Corporate Cards",
             "pages": [
-              "fiat-api-reference/corporate-cards/wallet-provision",
-              "fiat-api-reference/corporate-cards/wallet-get",
-              "fiat-api-reference/corporate-cards/employees-create",
-              "fiat-api-reference/corporate-cards/employees-list",
-              "fiat-api-reference/corporate-cards/employees-get",
-              "fiat-api-reference/corporate-cards/employees-update",
-              "fiat-api-reference/corporate-cards/employees-terminate",
-              "fiat-api-reference/corporate-cards/kyc-submit",
-              "fiat-api-reference/corporate-cards/kyc-get",
-              "fiat-api-reference/corporate-cards/locations-countries",
-              "fiat-api-reference/corporate-cards/locations-states",
-              "fiat-api-reference/corporate-cards/cards-create",
-              "fiat-api-reference/corporate-cards/cards-list",
-              "fiat-api-reference/corporate-cards/cards-get",
-              "fiat-api-reference/corporate-cards/cards-status",
-              "fiat-api-reference/corporate-cards/cards-limits",
-              "fiat-api-reference/corporate-cards/balance-update",
-              "fiat-api-reference/corporate-cards/balance-get",
-              "fiat-api-reference/corporate-cards/memos-create",
-              "fiat-api-reference/corporate-cards/memos-list",
-              "fiat-api-reference/corporate-cards/memos-approve",
-              "fiat-api-reference/corporate-cards/memos-reject"
+              {
+                "group": "Funding",
+                "pages": [
+                  "fiat-api-reference/corporate-cards/wallet-get"
+                ]
+              },
+              {
+                "group": "Employees",
+                "pages": [
+                  "fiat-api-reference/corporate-cards/employees-create",
+                  "fiat-api-reference/corporate-cards/employees-list",
+                  "fiat-api-reference/corporate-cards/employees-get",
+                  "fiat-api-reference/corporate-cards/employees-update",
+                  "fiat-api-reference/corporate-cards/employees-terminate",
+                  "fiat-api-reference/corporate-cards/kyc-submit"
+                ]
+              },
+              {
+                "group": "Employee Balance",
+                "pages": [
+                  "fiat-api-reference/corporate-cards/employees-fund",
+                  "fiat-api-reference/corporate-cards/employees-balance"
+                ]
+              },
+              {
+                "group": "Cards",
+                "pages": [
+                  "fiat-api-reference/corporate-cards/cards-create",
+                  "fiat-api-reference/corporate-cards/cards-list",
+                  "fiat-api-reference/corporate-cards/cards-get",
+                  "fiat-api-reference/corporate-cards/cards-status",
+                  "fiat-api-reference/corporate-cards/cards-limits"
+                ]
+              },
+              {
+                "group": "Memos",
+                "pages": [
+                  "fiat-api-reference/corporate-cards/memos-create",
+                  "fiat-api-reference/corporate-cards/memos-list",
+                  "fiat-api-reference/corporate-cards/memos-approve",
+                  "fiat-api-reference/corporate-cards/memos-reject"
+                ]
+              },
+              {
+                "group": "Locations",
+                "pages": [
+                  "fiat-api-reference/corporate-cards/locations-countries",
+                  "fiat-api-reference/corporate-cards/locations-states"
+                ]
+              }
             ]
           },
           {
@@ -379,354 +427,8 @@
           {
             "group": "Developer",
             "pages": [
-              "fiat-api-reference/developer/logs",
               "fiat-api-reference/developer/events",
               "fiat-api-reference/developer/event-get"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Yativo Crypto",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": [
-              "yativo-crypto/introduction",
-              "yativo-crypto/quickstart",
-              "yativo-crypto/authentication",
-              "yativo-crypto/supported-chains"
-            ]
-          },
-          {
-            "group": "Wallets & Assets",
-            "pages": [
-              "yativo-crypto/accounts",
-              "yativo-crypto/assets",
-              "yativo-crypto/gas-station"
-            ]
-          },
-          {
-            "group": "Transactions",
-            "pages": [
-              "yativo-crypto/transactions",
-              "yativo-crypto/swap",
-              "yativo-crypto/unified-transactions"
-            ]
-          },
-          {
-            "group": "Yativo Card",
-            "pages": [
-              "yativo-crypto/cards/overview",
-              "yativo-crypto/cards/onboarding",
-              "yativo-crypto/cards/virtual-cards",
-              "yativo-crypto/cards/secure-display",
-              "yativo-crypto/cards/physical-cards",
-              "yativo-crypto/cards/funding",
-              "yativo-crypto/cards/withdrawal",
-              "yativo-crypto/cards/transactions",
-              "yativo-crypto/cards/disputes",
-              "yativo-crypto/cards/spending-limits",
-              "yativo-crypto/cards/issuer-program",
-              "yativo-crypto/cards/set-pin"
-            ]
-          },
-          {
-            "group": "Payment Gateway",
-            "pages": [
-              "yativo-crypto/payment-gateway"
-            ]
-          },
-          {
-            "group": "Agentic Wallets",
-            "pages": [
-              "yativo-crypto/agentic-wallets"
-            ]
-          },
-          {
-            "group": "Automation",
-            "pages": [
-              "yativo-crypto/auto-forwarding",
-              "yativo-crypto/subscriptions"
-            ]
-          },
-          {
-            "group": "Compliance",
-            "pages": [
-              "yativo-crypto/compliance-screener"
-            ]
-          },
-          {
-            "group": "B2B",
-            "pages": [
-              "yativo-crypto/customers"
-            ]
-          },
-          {
-            "group": "Developer Tools",
-            "pages": [
-              "yativo-crypto/analytics",
-              "yativo-crypto/webhooks",
-              "yativo-crypto/api-keys",
-              "yativo-crypto/errors"
-            ]
-          },
-          {
-            "group": "Tutorials",
-            "pages": [
-              "guides/overview",
-              "guides/accept-crypto-payments",
-              "guides/payment-gateway",
-              "guides/agentic-wallets",
-              "guides/send-crypto",
-              "guides/issue-crypto-cards",
-              "guides/b2b-card-issuer",
-              "guides/card-issuer-webhooks",
-              "guides/swap-tokens",
-              "guides/webhook-integration"
-            ]
-          },
-          {
-            "group": "Sandbox",
-            "pages": [
-              "sandbox/overview",
-              "sandbox/authentication",
-              "sandbox/wallets",
-              "sandbox/transactions",
-              "sandbox/swap",
-              "sandbox/cards",
-              "sandbox/payment-gateway",
-              "sandbox/agentic-wallets"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Crypto API References",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Authentication",
-            "pages": [
-              "api-reference/api-keys/token"
-            ]
-          },
-          {
-            "group": "Accounts",
-            "pages": [
-              "api-reference/accounts/create",
-              "api-reference/accounts/list",
-              "api-reference/accounts/connections-create",
-              "api-reference/accounts/connections-list"
-            ]
-          },
-          {
-            "group": "Assets",
-            "pages": [
-              "api-reference/assets/list",
-              "api-reference/assets/create",
-              "api-reference/assets/batch-create",
-              "api-reference/assets/list-supported",
-              "api-reference/assets/list-chains",
-              "api-reference/assets/balance",
-              "api-reference/assets/archive"
-            ]
-          },
-          {
-            "group": "Transactions",
-            "pages": [
-              "api-reference/transactions/send",
-              "api-reference/transactions/list",
-              "api-reference/transactions/get",
-              "api-reference/transactions/gas-fee"
-            ]
-          },
-          {
-            "group": "Swap",
-            "pages": [
-              "api-reference/swap/quote",
-              "api-reference/swap/execute",
-              "api-reference/swap/assets",
-              "api-reference/swap/routes",
-              "api-reference/swap/history"
-            ]
-          },
-          {
-            "group": "Yativo Card (Own Account)",
-            "pages": [
-              "api-reference/cards/own-onboard",
-              "api-reference/cards/kyc-status",
-              "api-reference/cards/accept-terms",
-              "api-reference/cards/deploy-wallet",
-              "api-reference/cards/create",
-              "api-reference/cards/create-virtual",
-              "api-reference/cards/create-physical",
-              "api-reference/cards/list",
-              "api-reference/cards/get",
-              "api-reference/cards/freeze",
-              "api-reference/cards/unfreeze",
-              "api-reference/cards/set-pin",
-              "api-reference/cards/ephemeral-token",
-              "api-reference/cards/get-wallet",
-              "api-reference/cards/funding-address",
-              "api-reference/cards/fund",
-              "api-reference/cards/transactions",
-              "api-reference/cards/dispute-reasons",
-              "api-reference/cards/dispute",
-              "api-reference/cards/spending-limits-get",
-              "api-reference/cards/spending-limits-set",
-              "api-reference/cards/physical-order",
-              "api-reference/cards/physical-order-status"
-            ]
-          },
-          {
-            "group": "Card Customer — Onboarding",
-            "pages": [
-              "api-reference/cards/create-customer",
-              "api-reference/cards/customer-kyc-status",
-              "api-reference/cards/kyc-link",
-              "api-reference/cards/verify-otp",
-              "api-reference/cards/source-of-funds",
-              "api-reference/cards/source-of-funds-submit",
-              "api-reference/cards/phone-verification",
-              "api-reference/cards/phone-verify",
-              "api-reference/cards/customer-cards",
-              "api-reference/cards/customer-reset"
-            ]
-          },
-          {
-            "group": "Card Customer — Card Operations",
-            "pages": [
-              "api-reference/cards/customer-wallet",
-              "api-reference/cards/customer-freeze",
-              "api-reference/cards/customer-unfreeze",
-              "api-reference/cards/customer-secure-view",
-              "api-reference/cards/customer-transactions",
-              "api-reference/cards/customer-spending-limits-get",
-              "api-reference/cards/customer-spending-limits-set",
-              "api-reference/cards/customer-card-limits",
-              "api-reference/cards/customer-terminate",
-              "api-reference/cards/customer-dispute"
-            ]
-          },
-          {
-            "group": "Card Issuer Program",
-            "pages": [
-              "api-reference/issuer/eligibility",
-              "api-reference/issuer/apply",
-              "api-reference/issuer/program",
-              "api-reference/issuer/master-wallets",
-              "api-reference/issuer/swap-token",
-              "api-reference/issuer/fund-customer",
-              "api-reference/issuer/transfers",
-              "api-reference/issuer/transfer-status",
-              "api-reference/issuer/customer-transfers",
-              "api-reference/issuer/card-transactions",
-              "api-reference/issuer/customer-card-transactions",
-              "api-reference/issuer/deposits",
-              "api-reference/issuer/customers",
-              "api-reference/issuer/customer",
-              "api-reference/issuer/aggregate-balances",
-              "api-reference/issuer/webhooks",
-              "api-reference/issuer/lookup-customer"
-            ]
-          },
-          {
-            "group": "Payment Gateway",
-            "pages": [
-              "api-reference/payment-gateway/create",
-              "api-reference/payment-gateway/list",
-              "api-reference/payment-gateway/status",
-              "api-reference/payment-gateway/overview"
-            ]
-          },
-          {
-            "group": "Agentic Wallets",
-            "pages": [
-              "api-reference/agentic-wallets/create",
-              "api-reference/agentic-wallets/list",
-              "api-reference/agentic-wallets/get",
-              "api-reference/agentic-wallets/activate",
-              "api-reference/agentic-wallets/add-connector",
-              "api-reference/agentic-wallets/transact",
-              "api-reference/agentic-wallets/balance",
-              "api-reference/agentic-wallets/x402-fetch",
-              "api-reference/agentic-wallets/capabilities",
-              "api-reference/agentic-wallets/markets-trade"
-            ]
-          },
-          {
-            "group": "Unified Transactions",
-            "pages": [
-              "api-reference/unified-transactions/list",
-              "api-reference/unified-transactions/get",
-              "api-reference/unified-transactions/analytics",
-              "api-reference/unified-transactions/export",
-              "api-reference/unified-transactions/download"
-            ]
-          },
-          {
-            "group": "Auto-Forwarding",
-            "pages": [
-              "api-reference/auto-forwarding/create",
-              "api-reference/auto-forwarding/list",
-              "api-reference/auto-forwarding/update",
-              "api-reference/auto-forwarding/delete"
-            ]
-          },
-          {
-            "group": "Compliance Screener",
-            "pages": [
-              "api-reference/screener/check",
-              "api-reference/screener/batch-check"
-            ]
-          },
-          {
-            "group": "Subscriptions",
-            "pages": [
-              "api-reference/subscriptions/plans",
-              "api-reference/subscriptions/current",
-              "api-reference/subscriptions/subscribe"
-            ]
-          },
-          {
-            "group": "Webhooks",
-            "pages": [
-              "api-reference/webhooks/create",
-              "api-reference/webhooks/list"
-            ]
-          },
-          {
-            "group": "WaaS Customers (Wallet Sub-accounts)",
-            "pages": [
-              "api-reference/customers/list",
-              "api-reference/customers/create",
-              "api-reference/customers/get",
-              "api-reference/customers/update",
-              "api-reference/customers/delete",
-              "api-reference/customers/auto-forward-set",
-              "api-reference/customers/auto-forward-get"
-            ]
-          },
-          {
-            "group": "Analytics",
-            "pages": [
-              "api-reference/analytics/overview",
-              "api-reference/analytics/transactions",
-              "api-reference/analytics/volume"
-            ]
-          },
-          {
-            "group": "API Keys",
-            "pages": [
-              "api-reference/api-keys/create",
-              "api-reference/api-keys/list",
-              "api-reference/api-keys/revoke"
             ]
           }
         ]
@@ -876,6 +578,34 @@
     {
       "source": "/guides/sdk-quickstart",
       "destination": "/yativo-crypto/quickstart"
+    },
+    {
+      "source": "/fiat-api-reference/developer/logs",
+      "destination": "/fiat-api-reference/developer/events"
+    },
+    {
+      "source": "/fiat-api-reference/corporate-cards/wallet-provision",
+      "destination": "/fiat-api-reference/corporate-cards/wallet-get"
+    },
+    {
+      "source": "/fiat-api-reference/corporate-cards/kyc-get",
+      "destination": "/fiat-api-reference/corporate-cards/employees-get"
+    },
+    {
+      "source": "/fiat-api-reference/corporate-cards/balance-update",
+      "destination": "/fiat-api-reference/corporate-cards/employees-fund"
+    },
+    {
+      "source": "/fiat-api-reference/corporate-cards/balance-get",
+      "destination": "/fiat-api-reference/corporate-cards/employees-balance"
+    },
+    {
+      "source": "/fiat-api-reference/security/login-history",
+      "destination": "/yativo-fiat/security"
+    },
+    {
+      "source": "/fiat-api-reference/payouts/batch",
+      "destination": "/fiat-api-reference/payouts/simple"
     }
   ],
   "description": "Yativo developer docs: APIs and guides for cross-border fiat payments, payouts and virtual accounts, plus multi-chain crypto wallets, cards, swaps and AI agent integrations."

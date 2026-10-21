@@ -8,3 +8,6 @@ drafts/
 
 # Internal AI knowledge base source files (not documentation pages)
 ai-knowledge-base/
+
+# Record of menus hidden from navigation (not a docs page)
+nav-records/

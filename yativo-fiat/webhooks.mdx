@@ -681,7 +681,7 @@ After 2 failed charges, the card is frozen and you receive `virtualcard.deactiva
 | Event | Sent when | Payload highlights |
 |---|---|---|
 | `business_spend_card.created` | A card is issued, through the API or by an employee | The card object: `card_id`, `issuance_type`, `status`, `masked_pan` |
-| `business_spend_card.funded`, `business_spend_card.withdrawn` | Money moves into or out of an employee's card balance or a card | `amount`. For employee balances, `card_id` is `null` and `employee_id` is set |
+| `business_spend_card.funded`, `business_spend_card.withdrawn` | Money moves into or out of an employee's balance or a card | `amount`. For employee balances, `card_id` is `null` and `employee_id` is set |
 | `business_spend_card.terminated` | A card is closed, including after a full-balance withdrawal | `card_id`, `reason` |
 | `business_spend_card.pin_updated` | A card's PIN changed | The PIN is never included |
 | `business_spend_card.limits_updated` | A card's spend limits changed | `limits` as submitted |
@@ -858,35 +858,3 @@ Sample events are signed like real ones. For example, `payin` sends `deposit.cre
 - **Ignore unknown events.** New types are added over time.
 - **Keep your secret safe**, and rotate it with `regenerate-secret` if it may have leaked.
 - **Use HTTPS.**
-
----
-
-## API request logs
-
-Audit the API calls made on your account:
-
-```
-GET https://api.yativo.com/api/v1/business/logs/all
-```
-
-<ParamField query="status" type="string">
-  Filter by HTTP status code, for example `200` or `400`.
-</ParamField>
-
-<ParamField query="method" type="string">
-  Filter by HTTP method: `GET`, `POST`, `PUT` or `DELETE`.
-</ParamField>
-
-<ParamField query="page" type="number">
-  Page number.
-</ParamField>
-
-<ParamField query="per_page" type="number">
-  Results per page.
-</ParamField>
-
-```bash
-curl -X GET 'https://api.yativo.com/api/v1/business/logs/all?method=POST&per_page=20' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
-```

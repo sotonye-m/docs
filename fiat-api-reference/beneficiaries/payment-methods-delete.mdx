@@ -1,10 +1,10 @@
 ---
-title: "Delete Payment Method"
-description: "Remove a saved payment method from a beneficiary"
+title: "Delete Beneficiary"
+description: "Delete a saved beneficiary"
 openapi: "openapi-fiat.yaml DELETE /beneficiaries/payment-methods/delete/{id}"
 ---
 
-Permanently delete a saved payment method. This action is irreversible.
+Permanently delete a saved beneficiary. This can't be undone.
 
 ```
 DELETE /v1/beneficiaries/payment-methods/delete/{id}
@@ -13,7 +13,7 @@ DELETE /v1/beneficiaries/payment-methods/delete/{id}
 ## Path parameters
 
 <Warning>
-  Deleting a payment method is permanent and cannot be undone.
+  Deleting a beneficiary is permanent and can't be undone.
 </Warning>
 
 <RequestExample>

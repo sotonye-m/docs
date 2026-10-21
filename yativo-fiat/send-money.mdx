@@ -3,7 +3,7 @@ title: "Send Money"
 description: "Send cross-border payments via local bank transfer, SPEI, SEPA, ACH, and more"
 ---
 
-Send payments follow a structured flow: discover the payment method for the destination country, collect recipient bank details, lock an exchange rate quote, then execute the transfer.
+Send payments follow a structured flow: discover the payment method for the destination country, save the recipient as a beneficiary, lock an exchange rate quote, then execute the transfer.
 
 <Accordion title="Type Definitions">
 ```typescript
@@ -15,11 +15,12 @@ interface PayoutMethod {
   base_currency: string;
 }
 
-interface BeneficiaryPaymentMethod {
-  id: string;
-  beneficiary_id: string;
-  payment_method_id: number;
-  account_details: Record<string, string>;
+interface Beneficiary {
+  id: string;                         // use as beneficiary_payment_method_id / payment_method_id
+  gateway_id: number;                 // payout method ID
+  currency: string;
+  nickname: string;
+  payment_data: Record<string, unknown>;
   created_at: string;
 }
 
@@ -150,84 +151,32 @@ curl -X GET 'https://api.yativo.com/api/v1/beneficiary/form/show/21' \
 
 ---
 
-## Step 4: Create a Beneficiary
+## Step 4: Add a Beneficiary
 
-Create a beneficiary record for the recipient. The `beneficiary_id` returned here is used to attach bank details in Step 5.
-
-```
-POST /beneficiaries
-```
-
-<ParamField body="name" type="string" required>
-  Recipient's full name (individual) or legal business name.
-</ParamField>
-
-<ParamField body="email" type="string" required>
-  Recipient's email address.
-</ParamField>
-
-<ParamField body="country" type="string" required>
-  ISO 3166-1 alpha-3 country code (e.g. `CHL`, `MEX`, `BRA`).
-</ParamField>
-
-<ParamField body="type" type="string" required>
-  `"individual"` or `"business"`.
-</ParamField>
-
-<RequestExample>
-```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/beneficiaries' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
-  -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: create-beneficiary-001' \
-  -d '{
-    "name": "Carlos Mendez",
-    "email": "carlos@example.com",
-    "country": "CHL",
-    "type": "individual"
-  }'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "status_code": 201,
-  "message": "Beneficiary created successfully",
-  "data": {
-    "beneficiary_id": "ben-7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-    "name": "Carlos Mendez",
-    "email": "carlos@example.com",
-    "type": "individual",
-    "country": "CHL",
-    "created_at": "2026-04-02T10:00:00.000000Z"
-  }
-}
-```
-</ResponseExample>
-
----
-
-## Step 5: Save Recipient Bank Details
-
-Submit the recipient's bank account details using the fields returned in Step 3:
+A beneficiary is the recipient's saved account details for one payout method. Save it once with the fields from Step 3, then reuse it for every payment.
 
 ```
 POST /beneficiaries/payment-methods
 ```
 
-<ParamField body="beneficiary_id" type="string" required>
-  The beneficiary ID from Step 4.
+<ParamField body="gateway_id" type="integer" required>
+  The payout method ID from Step 2.
 </ParamField>
 
-<ParamField body="payment_method_id" type="number" required>
-  Payment method ID from Step 2.
+<ParamField body="payment_data" type="object" required>
+  The recipient's account details, using the fields returned in Step 3 (e.g. `account_number`, `bank_code`, `clabe`, `pix_key`).
 </ParamField>
 
-<ParamField body="account_details" type="object" required>
-  Key-value pairs of the required fields (e.g. `account_number`, `bank_code`, `clabe`, `pix_key`).
+<ParamField body="currency" type="string" required>
+  Currency of the payout method, e.g. `CLP`, `MXN`, `BRL`.
+</ParamField>
+
+<ParamField body="nickname" type="string" required>
+  A label you'll recognise the beneficiary by.
+</ParamField>
+
+<ParamField body="customer_id" type="string">
+  The customer the account belongs to. Some USD bank account methods require it. When they do and it's missing, the request returns a validation error naming it.
 </ParamField>
 
 <RequestExample>
@@ -238,9 +187,10 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
-    "beneficiary_id": "benef_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "payment_method_id": 21,
-    "account_details": {
+    "gateway_id": 21,
+    "currency": "CLP",
+    "nickname": "Carlos Mendez - Banco de Chile",
+    "payment_data": {
       "account_number": "12345678",
       "bank_code": "001",
       "account_type": "checking"
@@ -255,9 +205,10 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
-    "beneficiary_id": "benef_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "payment_method_id": 30,
-    "account_details": {
+    "gateway_id": 30,
+    "currency": "MXN",
+    "nickname": "Carlos Mendez - SPEI",
+    "payment_data": {
       "clabe": "012345678901234567"
     }
   }'
@@ -270,9 +221,10 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: unique-key-here' \
   -d '{
-    "beneficiary_id": "benef_01HX9KZMB3F7VNQP8R2WDGT4E5",
-    "payment_method_id": 40,
-    "account_details": {
+    "gateway_id": 40,
+    "currency": "BRL",
+    "nickname": "Carlos Mendez - PIX",
+    "payment_data": {
       "pix_key": "carlos@example.com",
       "pix_key_type": "email"
     }
@@ -280,11 +232,11 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
 ```
 </RequestExample>
 
-The response includes a saved payment method `id` for use in Step 7.
+The response includes the beneficiary's `id`. Use it in Step 5 and Step 6.
 
 ---
 
-## Step 6: Get an Exchange Rate Quote (Recommended)
+## Step 5: Get an Exchange Rate Quote (Recommended)
 
 Lock in a rate before executing the payment. Quotes are valid for **5 minutes**:
 
@@ -305,7 +257,7 @@ POST /sendmoney/quote
 </ParamField>
 
 <ParamField body="beneficiary_payment_method_id" type="string" required>
-  The payment method ID saved in Step 5. This links the quote to the destination account so that executing `POST /sendmoney` knows where to deliver funds.
+  The beneficiary `id` from Step 4. This links the quote to the destination account so that executing `POST /sendmoney` knows where to deliver funds.
 </ParamField>
 
 <RequestExample>
@@ -351,7 +303,7 @@ curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
 
 ---
 
-## Step 7: Send Money
+## Step 6: Send Money
 
 Execute the payment using the quote ID:
 
@@ -360,7 +312,7 @@ POST /sendmoney
 ```
 
 <ParamField body="quote_id" type="string" required>
-  The quote ID from Step 6. Guarantees the locked rate.
+  The quote ID from Step 5. Guarantees the locked rate.
 </ParamField>
 
 <RequestExample>
@@ -398,7 +350,7 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
 
 ---
 
-## Step 8: Track the Payment
+## Step 7: Track the Payment
 
 Monitor the payment status in real-time:
 
@@ -430,21 +382,21 @@ curl -X GET 'https://api.yativo.com/api/v1/transaction/tracking/a0e9e50e-81be-4b
 
 ---
 
-## Manage Saved Payment Methods
+## Manage Beneficiaries
 
-### List All Saved Methods
+### List beneficiaries
 
 ```
 GET /beneficiaries/payment-methods/all
 ```
 
-### Update a Saved Method
+### Update a beneficiary
 
 ```
 PUT /beneficiaries/payment-methods/update/{id}
 ```
 
-### Delete a Saved Method
+### Delete a beneficiary
 
 ```
 DELETE /beneficiaries/payment-methods/delete/{id}
