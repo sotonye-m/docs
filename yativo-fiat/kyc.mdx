@@ -437,7 +437,7 @@ Each person's `identifying_information` needs at least one ID that isn't a tax I
 | `issuing_country` | Send on every photo ID | Missing values come back in `warnings`. ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries) |
 | `expiration` | | `YYYY-MM-DD`. An expired document is rejected with `422` |
 | `date_issued` | | `YYYY-MM-DD` |
-| `image_front` | ✓ | File |
+| `image_front` | ✓ | File. For `tax_id`, a photo of the tax ID or a tax return filing |
 | `image_back` | Except `passport` and `tax_id` | File |
 
 For a Naira account in the business's name, add a `bvn` entry (11-digit `number`, no image) for a Nigerian associated person. See `naira` in [What each endorsement needs](#what-each-endorsement-needs).

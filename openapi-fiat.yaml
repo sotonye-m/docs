@@ -1942,7 +1942,7 @@ paths:
                               description: '`YYYY-MM-DD`, after today.'
                             image_front:
                               type: string
-                              description: File. Not required for tax_id.
+                              description: File. For `tax_id`, a photo of the tax ID or a tax return filing.
                             image_back:
                               type: string
                               description: Back of the document. Required except for `passport` and `tax_id`.

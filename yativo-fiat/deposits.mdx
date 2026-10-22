@@ -251,6 +251,41 @@ The `deposit_url` page shows the IBAN, BIC (SWIFT code), account name, amount an
 
 ---
 
+## Card payments
+
+Customers can pay a deposit by card on a secure card page. Card details are entered on that page, never in your app.
+
+1. Find the gateway with `GET /payment-methods/payin?country=BOL&currency=BOB`, `country=BOL&currency=USD` or `country=USA&currency=USD`. The methods are named **Card**.
+2. Create the payin with that `gateway`, `currency: "USD"` and an `amount`. Amounts can include cents. Send a `return_url` to bring the payer back to your app.
+3. Redirect the payer to the returned link. The card page stays open for 60 minutes, and the payer can retry with another card during that time.
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "gateway": GATEWAY_ID,
+    "currency": "USD",
+    "amount": 700.50,
+    "customer_id": "xxxxxx-xxxx-xxxx-xxxxxx",
+    "return_url": "https://your-app.com/payments/return"
+  }'
+```
+
+When the payer finishes, they're sent to your `return_url` with `deposit_id` and `status` in the query string. Use the `deposit.updated` webhook as the final result.
+
+<Note>
+  Card payments are credited in USD only. A request for any other `currency` returns an error.
+</Note>
+
+### When card funds are available
+
+Card payments aren't available to spend straight away. They're held for 3 US business days, not counting weekends and US federal holidays. If your account has a reserve, that part is held for your reserve period after that. The funds then move to your card balance. Refunds and chargebacks are taken from that balance.
+
+---
+
 ## List deposits
 
 ```
