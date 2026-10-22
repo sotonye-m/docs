@@ -1,0 +1,214 @@
+---
+title: "Laravel SDK"
+description: "Use Yativo from Laravel with a facade, config, a signed webhook route and Laravel events"
+---
+
+The official Laravel package for the Yativo Fiat API. It's built on the [PHP SDK](/yativo-fiat/sdks/php) and adds Laravel config, a facade, a webhook route that checks every signature, and Laravel events for every webhook.
+
+<CardGroup cols={3}>
+  <Card title="Package" icon="box">`yativo/fiat-sdk-laravel`</Card>
+  <Card title="Requires" icon="gear">Laravel 10–13, PHP 8.1+ (8.2+ for Laravel 11 and newer)</Card>
+  <Card title="Source" icon="github" href="https://github.com/Yativo/yativo-fiat-laravel">Yativo/yativo-fiat-laravel</Card>
+</CardGroup>
+
+---
+
+## Install
+
+```bash
+composer require yativo/fiat-sdk-laravel
+php artisan vendor:publish --tag=yativo-config
+```
+
+Laravel discovers the package automatically.
+
+## Configure
+
+Add your [API key](/yativo-fiat/authentication) to `.env`. The key needs your server's IP on its [IP whitelist](/yativo-fiat/ip-allowlist).
+
+```bash .env
+YATIVO_API_KEY=yativo_pk_your_key_here
+YATIVO_API_SECRET=yativo_sk_your_secret_here
+YATIVO_ENVIRONMENT=sandbox
+YATIVO_WEBHOOK_SECRET=
+```
+
+Run `php artisan config:clear` after changing `.env` if you cache your config.
+
+## Make your first request
+
+```php
+use Yativo\Fiat\Laravel\Facades\Yativo;
+
+Yativo::ipWhitelist()->check()['result']; // "pass" means the key works from this server
+Yativo::wallets()->balance();
+```
+
+Use the facade, or inject `\Yativo\Fiat\Yativo`:
+
+```php
+public function __construct(private \Yativo\Fiat\Yativo $yativo) {}
+
+$balances = $this->yativo->wallets->balance();
+```
+
+---
+
+## Accept a payment
+
+<Steps>
+  <Step title="Find a payment method">
+    Look up the method for your customer's country and currency once, and keep its `id`.
+
+```php
+Yativo::paymentMethods()->payin(['country' => 'BRA', 'currency' => 'BRL']);
+```
+  </Step>
+  <Step title="Create the deposit and redirect">
+    `amount` is in the method's currency. `currency` is the wallet you're credited in.
+
+```php
+public function pay(Order $order)
+{
+    $created = Yativo::deposits()->create([
+        'gateway' => 22,
+        'amount' => $order->total,
+        'currency' => 'USD',
+        'redirect_url' => route('orders.return', $order),
+    ], ['idempotency_key' => "order-{$order->id}"]);
+
+    $order->update(['yativo_deposit_id' => $created['deposit_data']['id']]);
+
+    return redirect()->away($created['deposit_url']);
+}
+```
+  </Step>
+  <Step title="Confirm when the customer returns">
+    Never trust the redirect alone: read the deposit.
+
+```php
+public function return(Order $order)
+{
+    $deposit = Yativo::deposits()->retrieve($order->yativo_deposit_id);
+
+    if ($deposit['status'] === 'success') {
+        $order->markPaid();
+    }
+
+    return redirect()->route('orders.show', $order);
+}
+```
+  </Step>
+</Steps>
+
+## Webhooks become Laravel events
+
+The package serves `POST /webhooks/yativo` in the `api` middleware group and checks every signature. Register the URL once and put the returned secret in `YATIVO_WEBHOOK_SECRET`:
+
+```php
+Yativo::webhookEndpoints()->create(['url' => url('webhooks/yativo')])['secret'];
+```
+
+Every verified webhook fires `Yativo\Fiat\Laravel\Events\WebhookReceived` and `yativo.{type}`, such as `yativo.deposit.updated`:
+
+```php
+use Illuminate\Support\Facades\Event;
+use Yativo\Fiat\Laravel\Facades\Yativo;
+use Yativo\Fiat\Webhook\WebhookEvent;
+
+Event::listen('yativo.deposit.updated', function (WebhookEvent $event) {
+    $deposit = Yativo::deposits()->retrieve($event->payload['id']); // confirm with the API
+
+    if ($deposit['status'] === 'success') {
+        Order::where('yativo_deposit_id', $deposit['id'])->first()?->markPaid();
+    }
+});
+```
+
+For production, use a queued listener so the webhook is answered within 3 seconds:
+
+```php
+namespace App\Listeners;
+
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Yativo\Fiat\Laravel\Events\WebhookReceived;
+
+class HandleYativoWebhook implements ShouldQueue
+{
+    public function handle(WebhookReceived $received): void
+    {
+        match ($received->type()) {
+            'deposit.updated' => ConfirmDeposit::dispatch($received->payload()['id']),
+            default => null,
+        };
+    }
+}
+```
+
+- Duplicate deliveries are skipped using your cache. A delivery is only remembered after your listeners succeed, so a failure is retried.
+- A bad signature gets `401` and never reaches your listeners.
+- Change the path with `YATIVO_WEBHOOK_PATH`, or set `YATIVO_WEBHOOK_ROUTE=false` and add `Route::yativoWebhooks('your/path');` yourself.
+
+---
+
+## Everyday tasks
+
+Every method of the [PHP SDK](/yativo-fiat/sdks/php) is on the facade: `$yativo->cardCheckout->createOrder()` becomes `Yativo::cardCheckout()->createOrder()`.
+
+| To… | Call |
+|---|---|
+| See your balances | `Yativo::wallets()->balance()` |
+| Create a customer | `Yativo::customers()->create([...])` |
+| Collect a payment | `Yativo::deposits()->create([...])` |
+| Check a payment | `Yativo::deposits()->retrieve($depositId)` |
+| Walk every page | `Yativo::paginate(fn ($q) => Yativo::deposits()->list($q))` |
+| Card payment link | `Yativo::cardCheckout()->createOrder([...])` |
+| Pay someone | `Yativo::payouts()->create([...])` |
+| Call any endpoint | `Yativo::request('GET', '/some/path', ['query' => [...]])` |
+
+## Errors
+
+```php
+use Yativo\Fiat\Exception\ValidationException;
+use Yativo\Fiat\Exception\YativoException;
+
+try {
+    Yativo::deposits()->create([...]);
+} catch (ValidationException $e) {
+    return back()->withErrors($e->getFields());
+} catch (YativoException $e) {
+    report($e); // never contains your credentials
+    return back()->with('error', $e->getMessage());
+}
+```
+
+See [Troubleshooting](/yativo-fiat/sdks/overview#troubleshooting) for common errors.
+
+## Configuration
+
+| `.env` | Default | What it does |
+|---|---|---|
+| `YATIVO_API_KEY` | | Your API key |
+| `YATIVO_API_SECRET` | | Your API secret |
+| `YATIVO_ENVIRONMENT` | `production` | `production` or `sandbox` |
+| `YATIVO_TIMEOUT` | `30` | Seconds to wait for each request |
+| `YATIVO_MAX_RETRIES` | `2` | Retries for network errors, `429` and `5xx` |
+| `YATIVO_WEBHOOK_SECRET` | | Secret from your webhook registration |
+| `YATIVO_WEBHOOK_ROUTE` | `true` | Register `POST /webhooks/yativo` automatically |
+| `YATIVO_WEBHOOK_PATH` | `webhooks/yativo` | The webhook path |
+| `YATIVO_WEBHOOK_DEDUPLICATE` | `true` | Skip deliveries already handled |
+
+## Test your app
+
+Send a signed webhook in a feature test:
+
+```php
+$body = json_encode(['event.type' => 'deposit.updated', 'payload' => ['id' => 'dep_1']]);
+
+$this->call('POST', '/webhooks/yativo', [], [], [], [
+    'CONTENT_TYPE' => 'application/json',
+    'HTTP_SIGNATURE' => hash_hmac('sha256', $body, config('yativo.webhook.secret')),
+], $body)->assertOk();
+```
+
+Against the sandbox, send sample webhooks with `Yativo::sandbox()->simulateWebhook('payin')`.

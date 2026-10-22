@@ -5,6 +5,7 @@ description: "Latest updates, improvements, and fixes across all Yativo platform
 
 <Update label="October 2026" description="Login tokens and gift cards discontinued, currency swap, EUR SEPA deposits, market rates, fee schedule, and API key restrictions">
   ### Yativo Fiat
+  - **Official SDKs:** libraries for Node.js, Python, PHP, Laravel and Go, and a WooCommerce plugin. They handle API key authentication, idempotency keys, safe retries, typed errors and webhook verification. See [SDKs](/yativo-fiat/sdks/overview)
   - **Webhook payloads:** `user.updated`, `customer.created`, `customer.updated` and `deposit.*` now carry only their documented fields. `user.updated` is sent when your name, email, membership ID or KYC status changes, not when you sign in. `customer.updated` is sent when a profile field or the customer's KYC status changes. `endorsement.updated` no longer includes `_webhook_id`. The delivery log and resends show each payload with today's fields. See [Webhooks](/yativo-fiat/webhooks)
   - **`virtual_account.deleted` webhook:** sent when you delete a virtual account. `DELETE /business/virtual-account/delete-virtual-account/{account_id}` now returns the deleted `account_id`, and `404` for an ID that isn't yours. See [Delete Virtual Account](/fiat-api-reference/virtual-accounts/delete)
   - **Corporate card errors:** a failed card request returns only `data.error` with a readable reason. When the card service can't complete the request, you get `502`. See [Errors](/yativo-fiat/sandbox-corporate-cards#errors)

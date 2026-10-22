@@ -133,6 +133,18 @@
             ]
           },
           {
+            "group": "SDKs",
+            "pages": [
+              "yativo-fiat/sdks/overview",
+              "yativo-fiat/sdks/node",
+              "yativo-fiat/sdks/python",
+              "yativo-fiat/sdks/php",
+              "yativo-fiat/sdks/laravel",
+              "yativo-fiat/sdks/go",
+              "yativo-fiat/sdks/woocommerce"
+            ]
+          },
+          {
             "group": "Regional Guides",
             "pages": [
               "guides/regional-payouts"

@@ -1,0 +1,87 @@
+---
+title: "WooCommerce plugin"
+description: "Accept bank transfers, local payment methods and cards in your WooCommerce store with no code"
+---
+
+Yativo Payments adds two payment methods to your WooCommerce checkout:
+
+- **Local payments:** bank transfers and local methods for your country. Your customer pays on a secure Yativo page.
+- **Cards:** debit and credit cards, Apple Pay and Google Pay on Yativo's secure page, for USD stores. Card details never touch your site.
+
+An order is only marked paid after the plugin confirms the payment with the Yativo API. It works with the classic and block checkout, and with WooCommerce order storage (HPOS).
+
+<CardGroup cols={2}>
+  <Card title="Download the plugin" icon="download" href="https://github.com/Yativo/yativo-fiat-woocommerce/releases/latest">
+    `yativo-payments.zip` from the latest release
+  </Card>
+  <Card title="Requires" icon="gear">
+    WordPress 6.2+, WooCommerce 8.0+, PHP 7.4+, and https on your site
+  </Card>
+</CardGroup>
+
+---
+
+## Set up
+
+<Steps>
+  <Step title="Install">
+    In WordPress, go to **Plugins → Add New → Upload Plugin**, choose `yativo-payments.zip`, then click **Install Now** and **Activate**.
+  </Step>
+  <Step title="Connect your Yativo account">
+    Go to **WooCommerce → Settings → Yativo**. Choose **Sandbox (test)**, paste your [API key and secret](/yativo-fiat/api-keys), and click **Save changes**. Then click **Test connection**.
+
+    If it says the IP address isn't allowed, add your web server's IP to the key's [IP whitelist](/yativo-fiat/ip-allowlist).
+  </Step>
+  <Step title="Turn on webhooks">
+    Click **Register webhook URL**. The plugin registers `https://your-site.com/wp-json/yativo/v1/webhook` and saves the secret for you.
+  </Step>
+  <Step title="Choose your payment methods">
+    In **WooCommerce → Settings → Payments**, open **Yativo local payments**, tick **Enable**, enter your customers' three-letter country code (such as `BRA` or `MEX`), click **Load payment methods** and tick the ones you want.
+
+    For cards, open **Yativo cards**, tick **Enable** and enter the **seller customer ID**: the Yativo customer whose `card_checkout` endorsement is approved.
+  </Step>
+  <Step title="Make a test purchase">
+    Buy something in a private browser window. For cards in sandbox, use `4242 4242 4242 4242` with any future expiry and any CVC. The order moves to **Processing** once Yativo confirms the payment.
+  </Step>
+</Steps>
+
+<Warning>
+  A Yativo account has one webhook URL. **Register webhook URL** replaces any URL set before. If another system uses your Yativo webhooks, register that system's URL and forward events to the store instead.
+</Warning>
+
+When everything works, switch to **Production**, enter your production key and secret, and click **Register webhook URL** again.
+
+## What happens to orders
+
+| Yativo says | The order becomes |
+|---|---|
+| Payment confirmed and the amount matches | **Processing** (paid) |
+| Payment confirmed but the amount is different | **On hold**, with a note |
+| Card payment under review, or a dispute was opened | **On hold** |
+| Payment failed, cancelled or expired | **Failed**. The customer can pay again |
+| Card payment refunded in Yativo | **Refunded** |
+
+## Keep keys out of the database
+
+Define the credentials in `wp-config.php` instead of the settings page. Constants take priority:
+
+```php wp-config.php
+define( 'YATIVO_API_KEY', 'yativo_pk_...' );
+define( 'YATIVO_API_SECRET', 'yativo_sk_...' );
+define( 'YATIVO_WEBHOOK_SECRET', '...' );
+define( 'YATIVO_ENVIRONMENT', 'production' );
+```
+
+Saved secrets are never shown again on the settings page, and the debug log never contains them.
+
+## Troubleshooting
+
+| Problem | What to do |
+|---|---|
+| **Test connection** says the IP isn't allowed | Add your web server's IP to the API key in the Yativo dashboard. |
+| **Test connection** says the credentials are invalid | Copy the key and secret again. Sandbox keys only work with **Sandbox** selected. |
+| The payment method doesn't show at checkout | Check it's enabled, and that you loaded and ticked methods in your **store currency**. Cards only show in USD stores with a seller customer ID. |
+| Orders stay **Pending payment** after paying | Click **Register webhook URL** again, and make sure a security plugin or firewall isn't blocking `/wp-json/yativo/v1/webhook`. |
+| "We could not start your payment" | Turn on **Debug log** in **WooCommerce → Settings → Yativo**, try again, and read **WooCommerce → Status → Logs** (source `yativo-payments`). |
+
+Refunds are made in Yativo. Card refunds made there are reflected on the order automatically.

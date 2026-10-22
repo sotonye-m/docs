@@ -1,0 +1,301 @@
+---
+title: "Python SDK"
+description: "Install, configure and use the official Yativo Fiat SDK for Python"
+---
+
+The official Python library for the Yativo Fiat API. It sends your [API key](/yativo-fiat/authentication) on every request, adds idempotency keys to writes, retries temporary failures safely, raises typed errors and verifies [webhooks](/yativo-fiat/webhooks).
+
+<CardGroup cols={3}>
+  <Card title="Package" icon="box">`yativo-fiat-sdk` (you import it as `yativo_fiat`)</Card>
+  <Card title="Requires" icon="gear">Python 3.8 or newer</Card>
+  <Card title="Source" icon="github" href="https://github.com/Yativo/yativo-fiat-python">Yativo/yativo-fiat-python</Card>
+</CardGroup>
+
+---
+
+## Install
+
+```bash
+pip install yativo-fiat-sdk
+
+# inside a virtual environment (recommended):
+python3 -m venv .venv && . .venv/bin/activate && pip install yativo-fiat-sdk
+```
+
+## Configure
+
+You need an API key with your server's IP address on its [IP whitelist](/yativo-fiat/ip-allowlist). Put the key and secret in environment variables, never in code:
+
+```bash .env
+YATIVO_API_KEY=yativo_pk_your_key_here
+YATIVO_API_SECRET=yativo_sk_your_secret_here
+YATIVO_ENVIRONMENT=sandbox
+```
+
+Export the variables in your shell (`set -a; . ./.env; set +a`), or load the file with [python-dotenv](https://pypi.org/project/python-dotenv/) before creating the client.
+
+The client reads these variables automatically. You can also pass them yourself:
+
+```python
+yativo = Yativo(
+    api_key=os.environ["YATIVO_API_KEY"],
+    api_secret=os.environ["YATIVO_API_SECRET"],
+    environment="sandbox",  # or "production"
+)
+```
+
+<Warning>
+  Use the SDK on your server only. A browser or mobile app would expose your API secret.
+</Warning>
+
+## Make your first request
+
+```python first_request.py
+from yativo_fiat import Yativo
+
+# Reads YATIVO_API_KEY, YATIVO_API_SECRET and YATIVO_ENVIRONMENT from the environment.
+yativo = Yativo()
+
+check = yativo.ip_whitelist.check()
+print("Key check:", check["result"])  # "pass" means you're good to go
+
+print("Balances:", yativo.wallets.balance())
+```
+
+```bash
+set -a; . ./.env; set +a
+python3 first_request.py
+```
+
+You should see `Key check: pass` and your balances. `pass` means the key works from this server.
+
+---
+
+## Accept a payment
+
+A [deposit](/yativo-fiat/deposits) gives your customer a hosted page to pay with a local method. You're credited in the wallet you choose.
+
+<Steps>
+  <Step title="Find a payment method">
+    List the methods for your customer's country (three-letter code) and currency. The method's `id` is the deposit's `gateway`.
+
+```python
+methods = yativo.payment_methods.payin(country="BRA", currency="BRL")
+print(methods)  # [{"id": 22, "method_name": "Bank Transfer", "currency": "BRL", "base_currency": "USD"}, ...]
+```
+  </Step>
+  <Step title="Create the deposit">
+    `amount` is in the method's currency. `currency` is the wallet you're credited in: one of the method's `base_currency` values. Send your order ID as the idempotency key so a retry never creates a second deposit.
+
+```python
+created = yativo.deposits.create(
+    gateway=22,             # the payment method id from step 1
+    amount=250,             # how much the customer pays, in the method's currency (BRL here)
+    currency="USD",         # which of your wallets gets the money (one of base_currency)
+    redirect_url="https://your-shop.com/orders/1001",  # where the customer goes afterwards
+    idempotency_key="order-1001",  # your order id: retrying never charges twice
+)
+
+# Save created["deposit_data"]["id"] with your order, then send the customer here:
+print(created["deposit_url"])
+```
+  </Step>
+  <Step title="Confirm before you fulfil">
+    When the customer comes back, or a `deposit.updated` webhook arrives, read the deposit from the API. A redirect back to your site isn't proof of payment.
+
+```python
+deposit = yativo.deposits.retrieve(saved_deposit_id)
+
+if deposit["status"] == "success":
+    ...  # the money arrived: ship the order
+```
+  </Step>
+</Steps>
+
+A deposit's `status` is `pending`, `processing`, `success`, `failed`, `cancelled` or `expired`.
+
+## Handle webhooks
+
+Register your URL once and store the secret it returns as `YATIVO_WEBHOOK_SECRET`. Your account has one webhook URL.
+
+```python
+endpoint = yativo.webhook_endpoints.create(url="https://your-shop.com/webhooks/yativo")
+print(endpoint["secret"])  # copy this into YATIVO_WEBHOOK_SECRET. Don't share it.
+```
+
+The SDK checks the `Signature` header against the raw body and routes each event to your code. It answers `200` when your code succeeds, `401` for a bad signature and `500` when your code fails, so Yativo retries.
+
+```python
+import os
+from flask import Flask
+from yativo_fiat import Yativo, WebhookHandler
+
+yativo = Yativo()
+app = Flask(__name__)
+webhooks = WebhookHandler(os.environ["YATIVO_WEBHOOK_SECRET"])
+
+@webhooks.on("deposit.updated")
+def deposit_updated(event):
+    # Ask Yativo directly instead of trusting the message.
+    deposit = yativo.deposits.retrieve(event.payload["id"])
+    if deposit["status"] == "success":
+        ...  # mark the order paid
+
+@webhooks.on("payout.updated")
+def payout_updated(event):
+    print("Payout", event.payload["id"], "is now", event.payload["status"])
+
+app.add_url_rule("/webhooks/yativo", view_func=webhooks.flask_view(), methods=["POST"])
+```
+
+Other frameworks:
+
+```python
+# Django (urls.py)
+path("webhooks/yativo", webhooks.django_view())
+
+# FastAPI / Starlette
+app.post("/webhooks/yativo")(webhooks.fastapi_route())
+
+# Anything else: give it the raw body bytes and the headers
+status = webhooks.respond(raw_body, headers)  # 200, 401 (bad signature) or 500 (your code failed)
+```
+
+<Tip>
+  Answer within 3 seconds and do slow work in the background. The same event can arrive more than once, so skip ones you've already handled. See [Webhooks](/yativo-fiat/webhooks) for every event.
+</Tip>
+
+## Card Checkout
+
+Card Checkout gives your buyer a hosted page to pay by card, Apple Pay or Google Pay. Your account needs Card Checkout access, and the selling customer needs an approved `card_checkout` endorsement.
+
+```python
+order = yativo.card_checkout.create_order(
+    customer_id="your-selling-customer-id",  # must have an approved card_checkout endorsement
+    amount="49.99",                          # a string with 2 decimals
+    currency="USD",
+    description="Pro plan, 1 month",
+    reference="INV-10023",                   # your invoice number (must be unique)
+    customer_email="buyer@example.com",
+    success_url="https://your-shop.com/thanks",
+    cancel_url="https://your-shop.com/cart",
+    idempotency_key="INV-10023",
+)
+
+# Send the buyer to order["checkout_url"] exactly as it is (it's signed).
+```
+
+Treat the order as paid only after the `card_checkout.order.paid` webhook, confirmed by reading the order. The link works for 60 minutes.
+
+## Send a payout
+
+```python
+# 1. Which details does this payout method need? (account number, bank, ...)
+form = yativo.payment_methods.payout_form(method_id)
+
+# 2. Save the person you're paying
+beneficiary = yativo.beneficiaries.create(
+    gateway_id=method_id, currency="BRL", nickname="Supplier Ltda",
+    payment_data={...},  # the fields from the form
+)
+
+# 3. Lock a rate
+quote = yativo.rates.quote(from_currency="USD", to_currency="BRL", amount=500,
+                           method_id=method_id, method_type="payout")
+
+# 4. Send it
+payout = yativo.payouts.create(
+    debit_wallet="USD", payment_method_id=beneficiary["id"], quote_id=quote["quote_id"],
+    idempotency_key="invoice-778",
+)
+```
+
+Progress arrives through the `payout.updated` webhook. See [Payouts](/yativo-fiat/payouts).
+
+---
+
+## Everyday tasks
+
+| To… | Call |
+|---|---|
+| See your balances | `yativo.wallets.balance()` |
+| Create a customer | `yativo.customers.create(...)` |
+| Look up a customer | `yativo.customers.retrieve(customer_id)` |
+| Collect a payment | `yativo.deposits.create(gateway=..., amount=..., currency=...)` |
+| Check a payment | `yativo.deposits.retrieve(deposit_id)` |
+| List payments | `yativo.deposits.list(per_page=50)` |
+| Give a customer a bank account | `yativo.virtual_accounts.create(customer_id=..., currency=...)` |
+| Get an exchange rate | `yativo.rates.quote(from_currency=..., to_currency=..., amount=...)` |
+| Pay someone | `yativo.payouts.create(debit_wallet=..., payment_method_id=..., amount=...)` |
+| Card payment link | `yativo.card_checkout.create_order(...)` |
+| Move money between your wallets | `yativo.swaps.create(...)` |
+| See your transactions | `yativo.transactions.list()` |
+| Resend a missed webhook | `yativo.events.resend(event_id)` |
+
+Every endpoint is wrapped. The full method list is in [docs/REFERENCE.md](https://github.com/Yativo/yativo-fiat-python/blob/main/docs/REFERENCE.md). To call an endpoint the SDK doesn't wrap yet, with the same authentication and retries:
+
+```python
+response = yativo.request("GET", "/some/new/endpoint", query={"page": 1})
+```
+
+## Errors
+
+```python
+from yativo_fiat import ValidationError, YativoError
+
+try:
+    yativo.deposits.create(gateway=22, currency="USD")  # amount is missing
+except ValidationError as err:
+    print("Please fix:", err.fields)  # {"amount": ["The amount field is required."]}
+except YativoError as err:
+    print(err.status, err.code, err.message)  # e.g. 403 forbidden "This IP address is not allowed..." 
+```
+
+`BadRequestError` (400), `AuthenticationError` (401), `PermissionDeniedError` (403), `NotFoundError` (404), `ConflictError` (409), `ValidationError` (422), `RateLimitError` (429), `APIError` (5xx) and `APIConnectionError` (no answer). They all extend `YativoError` and have `status`, `code`, `message` and `fields`.
+
+Network errors, `429` and `5xx` are retried twice with backoff, using the same idempotency key. Other errors are never retried. See [Troubleshooting](/yativo-fiat/sdks/overview#troubleshooting) for what each common error means.
+
+## Pagination
+
+```python
+# One page
+page = yativo.deposits.list(currency="BRL", per_page=50)
+print(page.data, page.pagination, page.has_more)
+
+# Every page, one item at a time
+for deposit in yativo.paginate(yativo.deposits.list, per_page=100):
+    print(deposit["id"], deposit["status"])
+```
+
+## Options
+
+| Option | Default | What it does |
+|---|---|---|
+| `api_key` | `YATIVO_API_KEY` | Your API key |
+| `api_secret` | `YATIVO_API_SECRET` | Your API secret |
+| `environment` | `YATIVO_ENVIRONMENT` or `production` | `production` or `sandbox` |
+| `base_url` | `YATIVO_BASE_URL` | Use a different URL (must be `https`, except `localhost`) |
+| `timeout` | `30` | Seconds to wait for each request |
+| `max_retries` | `2` | Retries for network errors, 429 and 5xx |
+| `webhook_secret` | `YATIVO_WEBHOOK_SECRET` | Used by `yativo.webhooks` |
+| `transport` | urllib | Your own HTTP function, e.g. for a proxy |
+
+## Test in sandbox
+
+Use sandbox keys with `YATIVO_ENVIRONMENT=sandbox`. No real money moves. Card Checkout test cards: `4242 4242 4242 4242` succeeds and `4000 0000 0000 0002` is declined, with any future expiry and any CVC. Send yourself sample webhooks:
+
+```python
+yativo = Yativo(environment="sandbox")
+yativo.sandbox.simulate_webhook("payin")  # sends deposit.created and deposit.updated to your URL
+```
+
+## More
+
+<CardGroup cols={2}>
+  <Card title="Runnable examples" icon="play" href="https://github.com/Yativo/yativo-fiat-python/tree/main/examples">
+    A quick start, a complete checkout server with webhooks, and card payments.
+  </Card>
+  <Card title="Every method" icon="list" href="https://github.com/Yativo/yativo-fiat-python/blob/main/docs/REFERENCE.md">
+    All endpoints as Python calls.
+  </Card>
+</CardGroup>

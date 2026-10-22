@@ -1,0 +1,316 @@
+---
+title: "Node.js SDK"
+description: "Install, configure and use the official Yativo Fiat SDK for Node.js and TypeScript"
+---
+
+The official Node.js / TypeScript library for the Yativo Fiat API. It sends your [API key](/yativo-fiat/authentication) on every request, adds idempotency keys to writes, retries temporary failures safely, raises typed errors and verifies [webhooks](/yativo-fiat/webhooks).
+
+<CardGroup cols={3}>
+  <Card title="Package" icon="box">`@yativo/fiat-sdk`</Card>
+  <Card title="Requires" icon="gear">Node.js 18 or newer (works with TypeScript, ES modules and CommonJS)</Card>
+  <Card title="Source" icon="github" href="https://github.com/Yativo/yativo-fiat-node">Yativo/yativo-fiat-node</Card>
+</CardGroup>
+
+---
+
+## Install
+
+```bash
+npm install @yativo/fiat-sdk
+
+# or
+pnpm add @yativo/fiat-sdk
+yarn add @yativo/fiat-sdk
+```
+
+## Configure
+
+You need an API key with your server's IP address on its [IP whitelist](/yativo-fiat/ip-allowlist). Put the key and secret in environment variables, never in code:
+
+```bash .env
+YATIVO_API_KEY=yativo_pk_your_key_here
+YATIVO_API_SECRET=yativo_sk_your_secret_here
+YATIVO_ENVIRONMENT=sandbox
+```
+
+Node.js 20.6+ can load the file for you: `node --env-file=.env app.mjs`. On older versions, use the [dotenv](https://www.npmjs.com/package/dotenv) package or export the variables in your shell.
+
+The client reads these variables automatically. You can also pass them yourself:
+
+```javascript
+const yativo = new Yativo({
+  apiKey: process.env.YATIVO_API_KEY,
+  apiSecret: process.env.YATIVO_API_SECRET,
+  environment: 'sandbox', // or 'production'
+});
+```
+
+<Warning>
+  Use the SDK on your server only. A browser or mobile app would expose your API secret.
+</Warning>
+
+## Make your first request
+
+```javascript first-request.mjs
+import Yativo from '@yativo/fiat-sdk';
+
+// Reads YATIVO_API_KEY, YATIVO_API_SECRET and YATIVO_ENVIRONMENT from the environment.
+const yativo = new Yativo();
+
+const check = await yativo.ipWhitelist.check();
+console.log('Key check:', check.result); // "pass" means you're good to go
+
+const balances = await yativo.wallets.balance();
+console.log('Balances:', balances);
+```
+
+```bash
+node --env-file=.env first-request.mjs
+```
+
+You should see `Key check: pass` and your balances. `pass` means the key works from this server.
+
+---
+
+## Accept a payment
+
+A [deposit](/yativo-fiat/deposits) gives your customer a hosted page to pay with a local method. You're credited in the wallet you choose.
+
+<Steps>
+  <Step title="Find a payment method">
+    List the methods for your customer's country (three-letter code) and currency. The method's `id` is the deposit's `gateway`.
+
+```javascript
+const methods = await yativo.paymentMethods.payin({ country: 'BRA', currency: 'BRL' });
+console.log(methods); // [{ id: 22, method_name: 'Bank Transfer', currency: 'BRL', base_currency: 'USD' }, ...]
+```
+  </Step>
+  <Step title="Create the deposit">
+    `amount` is in the method's currency. `currency` is the wallet you're credited in: one of the method's `base_currency` values. Send your order ID as the idempotency key so a retry never creates a second deposit.
+
+```javascript
+const created = await yativo.deposits.create(
+  {
+    gateway: 22,             // the payment method id from step 1
+    amount: 250,             // how much the customer pays, in the method's currency (BRL here)
+    currency: 'USD',         // which of your wallets gets the money (one of base_currency)
+    redirect_url: 'https://your-shop.com/orders/1001', // where the customer goes afterwards
+  },
+  { idempotencyKey: 'order-1001' }, // your order id: retrying never charges twice
+);
+
+// Save created.deposit_data.id with your order, then send the customer here:
+console.log(created.deposit_url);
+```
+  </Step>
+  <Step title="Confirm before you fulfil">
+    When the customer comes back, or a `deposit.updated` webhook arrives, read the deposit from the API. A redirect back to your site isn't proof of payment.
+
+```javascript
+const deposit = await yativo.deposits.retrieve(savedDepositId);
+
+if (deposit.status === 'success') {
+  // the money arrived: ship the order
+}
+```
+  </Step>
+</Steps>
+
+A deposit's `status` is `pending`, `processing`, `success`, `failed`, `cancelled` or `expired`.
+
+## Handle webhooks
+
+Register your URL once and store the secret it returns as `YATIVO_WEBHOOK_SECRET`. Your account has one webhook URL.
+
+```javascript
+const endpoint = await yativo.webhookEndpoints.create({ url: 'https://your-shop.com/webhooks/yativo' });
+console.log(endpoint.secret); // copy this into YATIVO_WEBHOOK_SECRET. Don't share it.
+```
+
+The SDK checks the `Signature` header against the raw body and routes each event to your code. It answers `200` when your code succeeds, `401` for a bad signature and `500` when your code fails, so Yativo retries.
+
+```javascript
+import express from 'express';
+import Yativo, { WebhookHandler } from '@yativo/fiat-sdk';
+
+const yativo = new Yativo();
+const app = express();
+
+const webhooks = new WebhookHandler(process.env.YATIVO_WEBHOOK_SECRET)
+  .on('deposit.updated', async (event) => {
+    // Ask Yativo directly instead of trusting the message.
+    const deposit = await yativo.deposits.retrieve(event.payload.id);
+    if (deposit.status === 'success') {
+      // mark the order paid
+    }
+  })
+  .on('payout.updated', async (event) => {
+    console.log('Payout', event.payload.id, 'is now', event.payload.status);
+  });
+
+// IMPORTANT: use express.raw here, not express.json. The signature is checked on the raw body.
+app.post('/webhooks/yativo', express.raw({ type: 'application/json' }), webhooks.express());
+
+app.listen(3000);
+```
+
+Other frameworks:
+
+```javascript
+// Next.js App Router (app/api/webhooks/yativo/route.ts), Cloudflare Workers, Bun, Deno, Hono:
+export const POST = webhooks.fetch();
+
+// Plain Node.js http server:
+http.createServer(webhooks.node()).listen(3000);
+```
+
+<Tip>
+  Answer within 3 seconds and do slow work in the background. The same event can arrive more than once, so skip ones you've already handled. See [Webhooks](/yativo-fiat/webhooks) for every event.
+</Tip>
+
+## Card Checkout
+
+Card Checkout gives your buyer a hosted page to pay by card, Apple Pay or Google Pay. Your account needs Card Checkout access, and the selling customer needs an approved `card_checkout` endorsement.
+
+```javascript
+const order = await yativo.cardCheckout.createOrder(
+  {
+    customer_id: 'your-selling-customer-id', // must have an approved card_checkout endorsement
+    amount: '49.99',                          // a string with 2 decimals
+    currency: 'USD',
+    description: 'Pro plan, 1 month',
+    reference: 'INV-10023',                   // your invoice number (must be unique)
+    customer_email: 'buyer@example.com',
+    success_url: 'https://your-shop.com/thanks',
+    cancel_url: 'https://your-shop.com/cart',
+  },
+  { idempotencyKey: 'INV-10023' },
+);
+
+// Send the buyer to order.checkout_url exactly as it is (it's signed).
+```
+
+Treat the order as paid only after the `card_checkout.order.paid` webhook, confirmed by reading the order. The link works for 60 minutes.
+
+## Send a payout
+
+```javascript
+// 1. Which details does this payout method need? (account number, bank, ...)
+const form = await yativo.paymentMethods.payoutForm(methodId);
+
+// 2. Save the person you're paying
+const beneficiary = await yativo.beneficiaries.create({
+  gateway_id: methodId,
+  currency: 'BRL',
+  nickname: 'Supplier Ltda',
+  payment_data: { /* the fields from the form */ },
+});
+
+// 3. Lock a rate
+const quote = await yativo.rates.quote({
+  from_currency: 'USD', to_currency: 'BRL', amount: 500,
+  method_id: methodId, method_type: 'payout',
+});
+
+// 4. Send it
+const payout = await yativo.payouts.create(
+  { debit_wallet: 'USD', payment_method_id: beneficiary.id, quote_id: quote.quote_id },
+  { idempotencyKey: 'invoice-778' },
+);
+```
+
+Progress arrives through the `payout.updated` webhook. See [Payouts](/yativo-fiat/payouts).
+
+---
+
+## Everyday tasks
+
+| To… | Call |
+|---|---|
+| See your balances | `await yativo.wallets.balance()` |
+| Create a customer | `await yativo.customers.create({ ... })` |
+| Look up a customer | `await yativo.customers.retrieve(customerId)` |
+| Collect a payment | `await yativo.deposits.create({ gateway, amount, currency })` |
+| Check a payment | `await yativo.deposits.retrieve(depositId)` |
+| List payments | `await yativo.deposits.list({ per_page: 50 })` |
+| Give a customer a bank account | `await yativo.virtualAccounts.create({ customer_id, currency })` |
+| Get an exchange rate | `await yativo.rates.quote({ from_currency, to_currency, amount })` |
+| Pay someone | `await yativo.payouts.create({ debit_wallet, payment_method_id, amount })` |
+| Card payment link | `await yativo.cardCheckout.createOrder({ ... })` |
+| Move money between your wallets | `await yativo.swaps.create({ ... })` |
+| See your transactions | `await yativo.transactions.list()` |
+| Resend a missed webhook | `await yativo.events.resend(eventId)` |
+
+Every endpoint is wrapped. The full method list is in [docs/REFERENCE.md](https://github.com/Yativo/yativo-fiat-node/blob/main/docs/REFERENCE.md). To call an endpoint the SDK doesn't wrap yet, with the same authentication and retries:
+
+```javascript
+const response = await yativo.request('GET', '/some/new/endpoint', { query: { page: 1 } });
+```
+
+## Errors
+
+```javascript
+import { ValidationError, YativoError } from '@yativo/fiat-sdk';
+
+try {
+  await yativo.deposits.create({ gateway: 22, currency: 'USD' }); // amount is missing
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log('Please fix:', err.fields); // { amount: ['The amount field is required.'] }
+  } else if (err instanceof YativoError) {
+    console.log(err.status, err.code, err.message); // e.g. 403 forbidden "This IP address is not allowed..."
+  } else {
+    throw err;
+  }
+}
+```
+
+`BadRequestError` (400), `AuthenticationError` (401), `PermissionDeniedError` (403), `NotFoundError` (404), `ConflictError` (409), `ValidationError` (422), `RateLimitError` (429), `APIError` (5xx) and `APIConnectionError` (no answer). They all extend `YativoError` and have `status`, `code`, `message` and `fields`.
+
+Network errors, `429` and `5xx` are retried twice with backoff, using the same idempotency key. Other errors are never retried. See [Troubleshooting](/yativo-fiat/sdks/overview#troubleshooting) for what each common error means.
+
+## Pagination
+
+```javascript
+// One page
+const page = await yativo.deposits.list({ currency: 'BRL', per_page: 50 });
+console.log(page.data, page.pagination);
+
+// Every page, one item at a time
+for await (const deposit of yativo.paginate((q) => yativo.deposits.list(q), { per_page: 100 })) {
+  console.log(deposit.id, deposit.status);
+}
+```
+
+## Options
+
+| Option | Default | What it does |
+|---|---|---|
+| `apiKey` | `YATIVO_API_KEY` | Your API key |
+| `apiSecret` | `YATIVO_API_SECRET` | Your API secret |
+| `environment` | `YATIVO_ENVIRONMENT` or `production` | `production` or `sandbox` |
+| `baseUrl` | `YATIVO_BASE_URL` | Use a different URL (must be `https`, except `localhost`) |
+| `timeout` | `30000` | Milliseconds to wait for each request |
+| `maxRetries` | `2` | Retries for network errors, 429 and 5xx |
+| `webhookSecret` | `YATIVO_WEBHOOK_SECRET` | Used by `yativo.webhooks` |
+| `fetch` | global `fetch` | Your own fetch, e.g. for a proxy |
+
+## Test in sandbox
+
+Use sandbox keys with `YATIVO_ENVIRONMENT=sandbox`. No real money moves. Card Checkout test cards: `4242 4242 4242 4242` succeeds and `4000 0000 0000 0002` is declined, with any future expiry and any CVC. Send yourself sample webhooks:
+
+```javascript
+const yativo = new Yativo({ environment: 'sandbox' });
+await yativo.sandbox.simulateWebhook('payin'); // sends deposit.created and deposit.updated to your URL
+```
+
+## More
+
+<CardGroup cols={2}>
+  <Card title="Runnable examples" icon="play" href="https://github.com/Yativo/yativo-fiat-node/tree/main/examples">
+    A quick start, a complete checkout server with webhooks, and card payments.
+  </Card>
+  <Card title="Every method" icon="list" href="https://github.com/Yativo/yativo-fiat-node/blob/main/docs/REFERENCE.md">
+    All endpoints as Node.js / TypeScript calls.
+  </Card>
+</CardGroup>
