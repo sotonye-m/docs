@@ -1,0 +1,140 @@
+---
+title: "SDKs"
+sidebarTitle: "Overview"
+description: "Official Yativo Fiat libraries for Node.js, Python, PHP, Laravel and Go, and a WooCommerce plugin"
+---
+
+Use an SDK instead of calling the API by hand. Each one covers every Yativo Fiat endpoint with the same method names, and handles the parts that are easy to get wrong.
+
+<CardGroup cols={3}>
+  <Card title="Node.js / TypeScript" icon="js" href="/yativo-fiat/sdks/node">
+    `@yativo/fiat-sdk` · Node 18+
+  </Card>
+  <Card title="Python" icon="python" href="/yativo-fiat/sdks/python">
+    `yativo-fiat-sdk` · Python 3.8+
+  </Card>
+  <Card title="PHP" icon="php" href="/yativo-fiat/sdks/php">
+    `yativo/fiat-sdk` · PHP 8.1+
+  </Card>
+  <Card title="Laravel" icon="laravel" href="/yativo-fiat/sdks/laravel">
+    `yativo/fiat-sdk-laravel` · Laravel 10–13
+  </Card>
+  <Card title="Go" icon="golang" href="/yativo-fiat/sdks/go">
+    `github.com/Yativo/yativo-fiat-go` · Go 1.18+
+  </Card>
+  <Card title="WooCommerce" icon="wordpress" href="/yativo-fiat/sdks/woocommerce">
+    Plugin for WordPress stores, no code needed
+  </Card>
+</CardGroup>
+
+## What every SDK does for you
+
+| | |
+|---|---|
+| **Authentication** | Sends `X-Api-Key` and `X-Api-Secret` on every request. No login call and no tokens to refresh. |
+| **Idempotency** | Adds an `Idempotency-Key` to every `POST`, `PUT`, `PATCH` and `DELETE`. Pass your own, such as your order ID, so a retry never pays or collects twice. |
+| **Safe retries** | Retries network errors, `429` and `5xx` twice with backoff, using the same idempotency key. Other errors are never retried. |
+| **Typed errors** | Every failure has the HTTP status, a stable code, a readable message and, for validation errors, the messages per field. |
+| **Webhooks** | Verifies the `Signature` header in constant time and routes each event type to your code. |
+| **Pagination** | A helper that walks every page of a list. |
+| **Security** | HTTPS only, redirects are never followed, and your credentials never appear in logs, errors or debug output. No third-party runtime dependencies. |
+
+## Before you start
+
+<Steps>
+  <Step title="Create an API key">
+    Sign in to [app.yativo.com](https://app.yativo.com), go to **Developers → API Keys** and click **Generate key**. Copy the API secret straight away: it's shown once. See [API keys](/yativo-fiat/api-keys).
+  </Step>
+  <Step title="Add your server's IP address">
+    Add the IP of every server that will use the key. Requests from anywhere else are refused. See [IP whitelisting](/yativo-fiat/ip-allowlist).
+  </Step>
+  <Step title="Store the credentials as environment variables">
+    `YATIVO_API_KEY`, `YATIVO_API_SECRET` and `YATIVO_ENVIRONMENT` (`sandbox` or `production`). Every SDK reads them automatically.
+  </Step>
+  <Step title="Start in sandbox">
+    Sandbox has its own keys and moves no real money. See [Sandbox](/yativo-fiat/sandbox).
+  </Step>
+</Steps>
+
+## The same call in every language
+
+<CodeGroup>
+```javascript Node.js
+import Yativo from '@yativo/fiat-sdk';
+
+const yativo = new Yativo();
+const created = await yativo.deposits.create(
+  { gateway: 22, amount: 250, currency: 'USD', redirect_url: 'https://your-shop.com/orders/1001' },
+  { idempotencyKey: 'order-1001' },
+);
+// send the customer to created.deposit_url
+```
+
+```python Python
+from yativo_fiat import Yativo
+
+yativo = Yativo()
+created = yativo.deposits.create(
+    gateway=22, amount=250, currency="USD",
+    redirect_url="https://your-shop.com/orders/1001",
+    idempotency_key="order-1001",
+)
+# send the customer to created["deposit_url"]
+```
+
+```php PHP
+use Yativo\Fiat\Yativo;
+
+$yativo = new Yativo();
+$created = $yativo->deposits->create([
+    'gateway' => 22, 'amount' => 250, 'currency' => 'USD',
+    'redirect_url' => 'https://your-shop.com/orders/1001',
+], ['idempotency_key' => 'order-1001']);
+// send the customer to $created['deposit_url']
+```
+
+```php Laravel
+use Yativo\Fiat\Laravel\Facades\Yativo;
+
+$created = Yativo::deposits()->create([
+    'gateway' => 22, 'amount' => 250, 'currency' => 'USD',
+    'redirect_url' => route('orders.show', $order),
+], ['idempotency_key' => "order-{$order->id}"]);
+
+return redirect()->away($created['deposit_url']);
+```
+
+```go Go
+client, _ := yativo.New("", "")
+resp, err := client.Deposits.Create(ctx, map[string]any{
+    "gateway": 22, "amount": 250, "currency": "USD",
+    "redirect_url": "https://your-shop.com/orders/1001",
+}, yativo.WithIdempotencyKey("order-1001"))
+var created yativo.DepositCreated
+_ = resp.Decode(&created) // send the customer to created.DepositURL
+```
+</CodeGroup>
+
+## Troubleshooting
+
+These errors look the same in every SDK.
+
+| What you see | What it means | What to do |
+|---|---|---|
+| `401` *Both X-Api-Key and X-Api-Secret headers are required.* | The key or the secret is missing. | Set both `YATIVO_API_KEY` and `YATIVO_API_SECRET`. |
+| `401` *Invalid or revoked API credentials.* | The key and secret don't match, the key was revoked, or sandbox and production are mixed up. | Copy both values from the same key. Sandbox keys only work with `YATIVO_ENVIRONMENT=sandbox`. |
+| `403` *This API key has no whitelisted IP addresses.* | The key has no server addresses yet. | Add your server's IP to the key in **Developers → API Keys**. |
+| `403` *This IP address is not allowed to use this API key.* | The request came from a server that isn't on the key's list. | Find the address with `curl https://checkip.amazonaws.com` and add it. |
+| `403` *This endpoint cannot be used with an API key.* | Some account settings can only be changed in the dashboard. | Use [app.yativo.com](https://app.yativo.com). |
+| `409` *Idempotency key reuse detected with a different request payload.* | An idempotency key was reused for a different operation. | Use a new key for each new payment or payout. |
+| `422` with field errors | Something in the request is missing or wrong. | Read the error's fields. Each says what to fix. |
+| `429` or `5xx` | Too many requests, or a temporary problem. | The SDK already retried. Try again shortly. |
+| Your webhook URL answers `401` | The signature didn't match. | Check `YATIVO_WEBHOOK_SECRET` belongs to your current webhook, and pass the **raw** request body to the SDK. |
+
+## Source code and contributing
+
+Every SDK is open source under the MIT license, with runnable examples, a full method reference, tests and contribution guidelines:
+
+[Node.js](https://github.com/Yativo/yativo-fiat-node) · [Python](https://github.com/Yativo/yativo-fiat-python) · [PHP](https://github.com/Yativo/yativo-fiat-php) · [Laravel](https://github.com/Yativo/yativo-fiat-laravel) · [Go](https://github.com/Yativo/yativo-fiat-go) · [WooCommerce](https://github.com/Yativo/yativo-fiat-woocommerce)
+
+Report security issues privately to security@yativo.com.

@@ -1,0 +1,318 @@
+---
+title: "PHP SDK"
+description: "Install, configure and use the official Yativo Fiat SDK for PHP"
+---
+
+The official PHP library for the Yativo Fiat API. It sends your [API key](/yativo-fiat/authentication) on every request, adds idempotency keys to writes, retries temporary failures safely, raises typed errors and verifies [webhooks](/yativo-fiat/webhooks).
+
+<CardGroup cols={3}>
+  <Card title="Package" icon="box">`yativo/fiat-sdk`</Card>
+  <Card title="Requires" icon="gear">PHP 8.1 or newer with the `curl` and `json` extensions, and [Composer](https://getcomposer.org)</Card>
+  <Card title="Source" icon="github" href="https://github.com/Yativo/yativo-fiat-php">Yativo/yativo-fiat-php</Card>
+</CardGroup>
+
+---
+
+## Install
+
+```bash
+composer require yativo/fiat-sdk
+
+# Not on Packagist yet? Add the GitHub repository first:
+composer config repositories.yativo-fiat-php vcs https://github.com/Yativo/yativo-fiat-php
+composer require yativo/fiat-sdk:^1.0
+```
+
+## Configure
+
+You need an API key with your server's IP address on its [IP whitelist](/yativo-fiat/ip-allowlist). Put the key and secret in environment variables, never in code:
+
+```bash .env
+YATIVO_API_KEY=yativo_pk_your_key_here
+YATIVO_API_SECRET=yativo_sk_your_secret_here
+YATIVO_ENVIRONMENT=sandbox
+```
+
+Most frameworks load `.env` for you. In plain PHP, set the variables in your web server or PHP-FPM pool configuration, or load the file with [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv).
+
+The client reads these variables automatically. You can also pass them yourself:
+
+```php
+$yativo = new Yativo([
+    'api_key' => getenv('YATIVO_API_KEY'),
+    'api_secret' => getenv('YATIVO_API_SECRET'),
+    'environment' => 'sandbox', // or 'production'
+]);
+```
+
+<Warning>
+  Use the SDK on your server only. A browser or mobile app would expose your API secret.
+</Warning>
+
+## Make your first request
+
+```php first-request.php
+<?php
+
+require __DIR__ . '/vendor/autoload.php';
+
+use Yativo\Fiat\Yativo;
+
+// Reads YATIVO_API_KEY, YATIVO_API_SECRET and YATIVO_ENVIRONMENT from the environment.
+$yativo = new Yativo();
+
+$check = $yativo->ipWhitelist->check();
+echo 'Key check: ' . $check['result'] . PHP_EOL; // "pass" means you're good to go
+
+print_r($yativo->wallets->balance());
+```
+
+```bash
+set -a; . ./.env; set +a
+php first-request.php
+```
+
+You should see `Key check: pass` and your balances. `pass` means the key works from this server.
+
+---
+
+## Accept a payment
+
+A [deposit](/yativo-fiat/deposits) gives your customer a hosted page to pay with a local method. You're credited in the wallet you choose.
+
+<Steps>
+  <Step title="Find a payment method">
+    List the methods for your customer's country (three-letter code) and currency. The method's `id` is the deposit's `gateway`.
+
+```php
+$methods = $yativo->paymentMethods->payin(['country' => 'BRA', 'currency' => 'BRL']);
+print_r($methods); // [['id' => 22, 'method_name' => 'Bank Transfer', 'currency' => 'BRL', 'base_currency' => 'USD'], ...]
+```
+  </Step>
+  <Step title="Create the deposit">
+    `amount` is in the method's currency. `currency` is the wallet you're credited in: one of the method's `base_currency` values. Send your order ID as the idempotency key so a retry never creates a second deposit.
+
+```php
+$created = $yativo->deposits->create([
+    'gateway' => 22,          // the payment method id from step 1
+    'amount' => 250,          // how much the customer pays, in the method's currency (BRL here)
+    'currency' => 'USD',      // which of your wallets gets the money (one of base_currency)
+    'redirect_url' => 'https://your-shop.com/orders/1001', // where the customer goes afterwards
+], ['idempotency_key' => 'order-1001']); // your order id: retrying never charges twice
+
+// Save $created['deposit_data']['id'] with your order, then send the customer here:
+header('Location: ' . $created['deposit_url'], true, 303);
+```
+  </Step>
+  <Step title="Confirm before you fulfil">
+    When the customer comes back, or a `deposit.updated` webhook arrives, read the deposit from the API. A redirect back to your site isn't proof of payment.
+
+```php
+$deposit = $yativo->deposits->retrieve($savedDepositId);
+
+if ($deposit['status'] === 'success') {
+    // the money arrived: ship the order
+}
+```
+  </Step>
+</Steps>
+
+A deposit's `status` is `pending`, `processing`, `success`, `failed`, `cancelled` or `expired`.
+
+## Handle webhooks
+
+Register your URL once and store the secret it returns as `YATIVO_WEBHOOK_SECRET`. Your account has one webhook URL.
+
+```php
+$endpoint = $yativo->webhookEndpoints->create(['url' => 'https://your-shop.com/webhooks/yativo.php']);
+echo $endpoint['secret']; // copy this into YATIVO_WEBHOOK_SECRET. Don't share it.
+```
+
+The SDK checks the `Signature` header against the raw body and routes each event to your code. It answers `200` when your code succeeds, `401` for a bad signature and `500` when your code fails, so Yativo retries.
+
+```php
+<?php // webhooks/yativo.php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Yativo\Fiat\Webhook\WebhookEvent;
+use Yativo\Fiat\Webhook\WebhookHandler;
+use Yativo\Fiat\Yativo;
+
+$yativo = new Yativo();
+$webhooks = new WebhookHandler(getenv('YATIVO_WEBHOOK_SECRET'));
+
+$webhooks->on('deposit.updated', function (WebhookEvent $event) use ($yativo) {
+    // Ask Yativo directly instead of trusting the message.
+    $deposit = $yativo->deposits->retrieve($event->payload['id']);
+    if ($deposit['status'] === 'success') {
+        // mark the order paid
+    }
+});
+
+$webhooks->on('payout.updated', function (WebhookEvent $event) {
+    error_log("Payout {$event->payload['id']} is now {$event->payload['status']}");
+});
+
+// Checks the signature, runs your code and answers 200, 401 or 500.
+$webhooks->handleRequest();
+```
+
+Other frameworks:
+
+```php
+// Inside a framework controller, pass the raw body and the Signature header:
+$event = \Yativo\Fiat\Webhook\Webhook::constructEvent(
+    $request->getContent(),            // the raw body, not the decoded JSON
+    $request->headers->get('Signature'),
+    getenv('YATIVO_WEBHOOK_SECRET'),
+); // throws SignatureVerificationException if it doesn't match
+
+// Using Laravel? Install yativo/fiat-sdk-laravel: it does all of this for you.
+```
+
+<Tip>
+  Answer within 3 seconds and do slow work in the background. The same event can arrive more than once, so skip ones you've already handled. See [Webhooks](/yativo-fiat/webhooks) for every event.
+</Tip>
+
+## Card Checkout
+
+Card Checkout gives your buyer a hosted page to pay by card, Apple Pay or Google Pay. Your account needs Card Checkout access, and the selling customer needs an approved `card_checkout` endorsement.
+
+```php
+$order = $yativo->cardCheckout->createOrder([
+    'customer_id' => 'your-selling-customer-id', // must have an approved card_checkout endorsement
+    'amount' => '49.99',                          // a string with 2 decimals
+    'currency' => 'USD',
+    'description' => 'Pro plan, 1 month',
+    'reference' => 'INV-10023',                   // your invoice number (must be unique)
+    'customer_email' => 'buyer@example.com',
+    'success_url' => 'https://your-shop.com/thanks',
+    'cancel_url' => 'https://your-shop.com/cart',
+], ['idempotency_key' => 'INV-10023']);
+
+// Send the buyer to $order['checkout_url'] exactly as it is (it's signed).
+```
+
+Treat the order as paid only after the `card_checkout.order.paid` webhook, confirmed by reading the order. The link works for 60 minutes.
+
+## Send a payout
+
+```php
+// 1. Which details does this payout method need? (account number, bank, ...)
+$form = $yativo->paymentMethods->payoutForm($methodId);
+
+// 2. Save the person you're paying
+$beneficiary = $yativo->beneficiaries->create([
+    'gateway_id' => $methodId,
+    'currency' => 'BRL',
+    'nickname' => 'Supplier Ltda',
+    'payment_data' => [/* the fields from the form */],
+]);
+
+// 3. Lock a rate
+$quote = $yativo->rates->quote([
+    'from_currency' => 'USD', 'to_currency' => 'BRL', 'amount' => 500,
+    'method_id' => $methodId, 'method_type' => 'payout',
+]);
+
+// 4. Send it
+$payout = $yativo->payouts->create(
+    ['debit_wallet' => 'USD', 'payment_method_id' => $beneficiary['id'], 'quote_id' => $quote['quote_id']],
+    ['idempotency_key' => 'invoice-778'],
+);
+```
+
+Progress arrives through the `payout.updated` webhook. See [Payouts](/yativo-fiat/payouts).
+
+---
+
+## Everyday tasks
+
+| To… | Call |
+|---|---|
+| See your balances | `$yativo->wallets->balance()` |
+| Create a customer | `$yativo->customers->create([...])` |
+| Look up a customer | `$yativo->customers->retrieve($customerId)` |
+| Collect a payment | `$yativo->deposits->create([...])` |
+| Check a payment | `$yativo->deposits->retrieve($depositId)` |
+| List payments | `$yativo->deposits->list(['per_page' => 50])` |
+| Give a customer a bank account | `$yativo->virtualAccounts->create([...])` |
+| Get an exchange rate | `$yativo->rates->quote([...])` |
+| Pay someone | `$yativo->payouts->create([...])` |
+| Card payment link | `$yativo->cardCheckout->createOrder([...])` |
+| Move money between your wallets | `$yativo->swaps->create([...])` |
+| See your transactions | `$yativo->transactions->list()` |
+| Resend a missed webhook | `$yativo->events->resend($eventId)` |
+
+Every endpoint is wrapped. The full method list is in [docs/REFERENCE.md](https://github.com/Yativo/yativo-fiat-php/blob/main/docs/REFERENCE.md). To call an endpoint the SDK doesn't wrap yet, with the same authentication and retries:
+
+```php
+$response = $yativo->request('GET', '/some/new/endpoint', ['query' => ['page' => 1]]);
+```
+
+## Errors
+
+```php
+use Yativo\Fiat\Exception\ValidationException;
+use Yativo\Fiat\Exception\YativoException;
+
+try {
+    $yativo->deposits->create(['gateway' => 22, 'currency' => 'USD']); // amount is missing
+} catch (ValidationException $e) {
+    print_r($e->getFields()); // ['amount' => ['The amount field is required.']]
+} catch (YativoException $e) {
+    echo $e->getStatus(), ' ', $e->getErrorCode(), ' ', $e->getMessage();
+}
+```
+
+`BadRequestException` (400), `AuthenticationException` (401), `PermissionDeniedException` (403), `NotFoundException` (404), `ConflictException` (409), `ValidationException` (422), `RateLimitException` (429), `ApiException` (5xx) and `ApiConnectionException` (no answer), in `Yativo\Fiat\Exception`. They all extend `YativoException`, with `getStatus()`, `getErrorCode()`, `getMessage()` and `getFields()`.
+
+Network errors, `429` and `5xx` are retried twice with backoff, using the same idempotency key. Other errors are never retried. See [Troubleshooting](/yativo-fiat/sdks/overview#troubleshooting) for what each common error means.
+
+## Pagination
+
+```php
+// One page
+$page = $yativo->deposits->list(['currency' => 'BRL', 'per_page' => 50]);
+print_r($page->data);
+print_r($page->pagination);
+
+// Every page, one item at a time
+foreach ($yativo->paginate(fn (array $q) => $yativo->deposits->list($q), ['per_page' => 100]) as $deposit) {
+    echo $deposit['id'], ' ', $deposit['status'], PHP_EOL;
+}
+```
+
+## Options
+
+| Option | Default | What it does |
+|---|---|---|
+| `api_key` | `YATIVO_API_KEY` | Your API key |
+| `api_secret` | `YATIVO_API_SECRET` | Your API secret |
+| `environment` | `YATIVO_ENVIRONMENT` or `production` | `production` or `sandbox` |
+| `base_url` | `YATIVO_BASE_URL` | Use a different URL (must be `https`, except `localhost`) |
+| `timeout` | `30` | Seconds to wait for each request |
+| `max_retries` | `2` | Retries for network errors, 429 and 5xx |
+| `webhook_secret` | `YATIVO_WEBHOOK_SECRET` | Used by `$yativo->webhooks()` |
+| `transport` | curl | Your own `TransportInterface`, e.g. for a proxy |
+
+## Test in sandbox
+
+Use sandbox keys with `YATIVO_ENVIRONMENT=sandbox`. No real money moves. Card Checkout test cards: `4242 4242 4242 4242` succeeds and `4000 0000 0000 0002` is declined, with any future expiry and any CVC. Send yourself sample webhooks:
+
+```php
+$yativo = new Yativo(['environment' => 'sandbox']);
+$yativo->sandbox->simulateWebhook('payin'); // sends deposit.created and deposit.updated to your URL
+```
+
+## More
+
+<CardGroup cols={2}>
+  <Card title="Runnable examples" icon="play" href="https://github.com/Yativo/yativo-fiat-php/tree/main/examples">
+    A quick start, a complete checkout server with webhooks, and card payments.
+  </Card>
+  <Card title="Every method" icon="list" href="https://github.com/Yativo/yativo-fiat-php/blob/main/docs/REFERENCE.md">
+    All endpoints as PHP calls.
+  </Card>
+</CardGroup>
