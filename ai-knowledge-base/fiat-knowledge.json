@@ -507,6 +507,76 @@
     "updated_at": { "$date": "2025-01-01T00:00:00Z" }
   },
   {
+    "_id": "fiat-deposits-get",
+    "source": "docs",
+    "product": "fiat",
+    "version": "v1",
+    "type": "endpoint",
+    "category": "deposits",
+    "title": "Get a Deposit",
+    "method": "GET",
+    "path": "/wallet/deposits/{depositId}",
+    "baseUrl": "https://api.yativo.com/api/v1",
+    "description": "Retrieve one deposit (payin) by its id or deposit_id reference to confirm its status before fulfilling an order.",
+    "auth_required": true,
+    "auth_type": "api_key",
+    "request_body": null,
+    "request_params": {
+      "depositId": {
+        "type": "string",
+        "required": true,
+        "description": "The deposit id (deposit_data.id from POST /wallet/deposits/new, payload.id in deposit.* webhooks) or its deposit_id reference"
+      }
+    },
+    "response_example": {
+      "status": "success",
+      "status_code": 200,
+      "message": "Request successful",
+      "data": {
+        "id": "b3150e03-d27e-4de3-a0ff-16ebeb55683c",
+        "gateway": "22",
+        "currency": "CLP",
+        "deposit_currency": "USD",
+        "amount": 10000,
+        "receive_amount": 9.36,
+        "status": "success",
+        "customer_id": "948a039f-9883-4b1c-88a6-2f1d3c4b5a69",
+        "created_at": "2026-10-22T15:52:43.000000Z",
+        "deposit_gateway": {
+          "id": 22,
+          "method_name": "Bank Transfer",
+          "country": "CHL",
+          "currency": "CLP"
+        }
+      }
+    },
+    "errors": [
+      {
+        "status": 404,
+        "error": "Deposit not found",
+        "description": "The ID isn't one of your deposits"
+      }
+    ],
+    "related": [
+      "fiat-exchange-rates",
+      "fiat-webhooks"
+    ],
+    "tags": [
+      "deposits",
+      "payin",
+      "status",
+      "verification"
+    ],
+    "verified": true,
+    "content": "Get one deposit with GET /wallet/deposits/{depositId}, sending X-Api-Key and X-Api-Secret. depositId is the deposit's id (deposit_data.id in the POST /wallet/deposits/new response, payload.id in deposit.created and deposit.updated webhooks) or its deposit_id reference. The response is the same object as an item from GET /wallet/deposits: id, gateway, currency, deposit_currency, amount, receive_amount, status (pending, processing, success, failed, cancelled or expired), customer_id, created_at, updated_at and deposit_gateway (the payin method). Use it to confirm status is success before fulfilling an order, after a deposit.updated webhook or when the payer returns to your return_url; the return_url query string is not proof of payment. A deposit that is not yours returns 404 with data.error 'Deposit not found'.",
+    "created_at": {
+      "$date": "2026-10-22T00:00:00Z"
+    },
+    "updated_at": {
+      "$date": "2026-10-22T00:00:00Z"
+    }
+  },
+  {
     "_id": "fiat-kyc",
     "source": "docs",
     "product": "fiat",

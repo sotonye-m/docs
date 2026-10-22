@@ -274,7 +274,7 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
   }'
 ```
 
-When the payer finishes, they're sent to your `return_url` with `deposit_id` and `status` in the query string. Use the `deposit.updated` webhook as the final result.
+When the payer finishes, they're sent to your `return_url` with `deposit_id` and `status` in the query string. Use the `deposit.updated` webhook as the final result, and confirm it with [Get a deposit](#get-a-deposit) before you fulfil the order.
 
 <Note>
   Card payments are credited in USD only. A request for any other `currency` returns an error.
@@ -330,6 +330,26 @@ curl -X GET 'https://api.yativo.com/api/v1/wallet/deposits/?currency=CLP&start_d
 }
 ```
 </ResponseExample>
+
+---
+
+## Get a deposit
+
+```
+GET /wallet/deposits/{depositId}
+```
+
+Returns one deposit, by its `id` or its `deposit_id` reference. The object is the same as an item from the list above. Check its `status` before you fulfil an order. A redirect to your `return_url` or `redirect_url` isn't proof of payment.
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/wallet/deposits/b3150e03-d27e-4de3-a0ff-16ebeb55683c' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>
+
+`404 Deposit not found` means the ID isn't one of your deposits. See [Get Deposit](/fiat-api-reference/deposits/get).
 
 ---
 
