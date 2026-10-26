@@ -15,14 +15,14 @@ You can only view, fund, freeze, withdraw from or read transactions on your own 
 
 ## Step 1: Issue a Card
 
-Create a virtual card for an activated customer:
+Create a virtual card for a customer:
 
 ```
 POST /customer/virtual/cards/create
 ```
 
 <ParamField body="customer_id" type="string" required>
-  The ID of the activated customer.
+  The ID of the customer.
 </ParamField>
 
 <ParamField body="currency" type="string" required>

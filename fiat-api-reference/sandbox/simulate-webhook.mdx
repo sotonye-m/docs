@@ -1,0 +1,43 @@
+---
+title: "Simulate webhook (sandbox only)"
+description: "Send a sample event to your registered webhook URL. Sandbox only."
+openapi: "openapi-fiat.yaml POST /demo/webhook/{type}"
+---
+
+Sends a sample event to the webhook URL on your sandbox account, signed like a real delivery.
+
+```
+POST /demo/webhook/{type}
+```
+
+<Warning>
+  Sandbox only. Call `https://smtp.yativo.com/api/v1`. This path does not exist in production.
+</Warning>
+
+`type` is one of `payin`, `payout`, `virtual_account`, `virtual_account_created`, `virtual_account_updated`, `customer`, `customer_updated`, `endorsement`, `metadata_created`, `metadata_updated`, `webhook_updated`, `user`, `tracking`, `payin_method_enabled`, `payin_method_disabled`, `payout_method_enabled`, `payout_method_disabled`, `crypto_wallet`, `crypto_deposit` or `wallet_deleted`.
+
+For example, `payin` sends `deposit.created` and then `deposit.updated`. Their `customer` may be `null`. `virtualcard.*` events can't be simulated.
+
+See [Test in sandbox](/yativo-fiat/webhooks#test-in-sandbox) for the full list.
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://smtp.yativo.com/api/v1/demo/webhook/payin' \
+  -H 'X-Api-Key: YOUR_SANDBOX_API_KEY' \
+  -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "status": "Webhook dispatched successfully",
+    "type": "payin"
+  }
+}
+```
+</ResponseExample>

@@ -297,7 +297,7 @@ for await (const deposit of yativo.paginate((q) => yativo.deposits.list(q), { pe
 
 ## Test in sandbox
 
-Use sandbox keys with `YATIVO_ENVIRONMENT=sandbox`. No real money moves. Card Checkout test cards: `4242 4242 4242 4242` succeeds and `4000 0000 0000 0002` is declined, with any future expiry and any CVC. Send yourself sample webhooks:
+Use sandbox keys with `YATIVO_ENVIRONMENT=sandbox`. No real money moves. Credit a wallet with `POST /wallet/sandbox/topup`. Card Checkout test cards: `4242 4242 4242 4242` succeeds and `4000 0000 0000 0002` is declined, with any future expiry and any CVC. Send yourself sample webhooks:
 
 ```javascript
 const yativo = new Yativo({ environment: 'sandbox' });

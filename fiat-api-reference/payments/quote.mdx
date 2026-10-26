@@ -5,7 +5,7 @@ openapi: "openapi-fiat.yaml POST /exchange-rate"
 ---
 
 <Note>
-  This file is superseded by [exchange-rate.mdx](/fiat-api-reference/payments/exchange-rate) and [send-money-quote.mdx](/fiat-api-reference/payments/send-money-quote). See those pages for the correct, documented endpoints.
+  This file is superseded by [exchange-rate.mdx](/fiat-api-reference/payments/exchange-rate). See that page for the documented endpoint.
 </Note>
 
 The exchange rate endpoint uses **POST**, not GET:
@@ -14,6 +14,6 @@ The exchange rate endpoint uses **POST**, not GET:
 POST https://api.yativo.com/api/v1/exchange-rate
 ```
 
-Pass `from_currency`, `to_currency`, and `amount` as a JSON body. Returns the current rate, fee breakdown, and a `quote_id` that can be used in `POST /sendmoney` or `POST /wallet/payout` to guarantee the quoted rate for 5 minutes.
+Pass `from_currency`, `to_currency`, and `amount` as a JSON body. Returns the current rate, fee breakdown, and a `quote_id` that can be used in `POST /wallet/payout` to guarantee the quoted rate for 5 minutes.
 
 See [Exchange Rate reference](/fiat-api-reference/payments/exchange-rate) for the full parameter reference and response examples.

@@ -48,6 +48,17 @@ curl 'https://smtp.yativo.com/api/v1/ip-whitelist/check' \
 
 ---
 
+## Sandbox-only endpoints
+
+These paths exist only on `https://smtp.yativo.com/api/v1`. Production refuses them.
+
+| Endpoint | What it does |
+|---|---|
+| `POST /wallet/sandbox/topup` | Credit test funds to a wallet you already have. See [Top up wallet](/fiat-api-reference/sandbox/wallet-topup) |
+| `POST /demo/webhook/{type}` | Send a sample event to your registered webhook URL. See [Simulate webhook](/fiat-api-reference/sandbox/simulate-webhook) |
+
+---
+
 ## How to Test
 
 <Steps>
@@ -66,11 +77,14 @@ curl 'https://smtp.yativo.com/api/v1/ip-whitelist/check' \
   <Step title="Create virtual accounts">
     After the customer's endorsement for the currency is `approved`, call `POST /business/virtual-account/create`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
   </Step>
-  <Step title="Simulate deposits">
-    Use the sandbox dashboard or API to trigger test deposits to your virtual accounts.
+  <Step title="Top up a wallet">
+    Credit test funds with `POST /wallet/sandbox/topup`. See [Top up wallet](/fiat-api-reference/sandbox/wallet-topup).
   </Step>
   <Step title="Test payouts">
-    Call `POST /sendmoney` or `POST /wallet/payout` — payments are simulated and will transition through statuses.
+    Call `POST /wallet/payout` or `POST /payout/simple` — payments are simulated and will transition through statuses.
+  </Step>
+  <Step title="Simulate webhooks">
+    Send a sample event with `POST /demo/webhook/{type}`. See [Simulate webhook](/fiat-api-reference/sandbox/simulate-webhook).
   </Step>
 </Steps>
 
@@ -116,7 +130,7 @@ console.log('Customer:', customer.customer_id);
 ## Differences from Production
 
 - **Account and customer KYC are separate** — [Sandbox KYC](/yativo-fiat/sandbox-kyc) covers both. Creating a customer does not set them to approved
-- **No real funds** — wallet balances may be pre-funded in sandbox; payouts simulate the full transaction lifecycle
+- **No real funds** — credit a wallet with `POST /wallet/sandbox/topup`. Payouts simulate the full transaction lifecycle
 - **Some payment methods may be limited** — not all live corridors are available in sandbox; contact your integration team if you need a specific one
 - **Webhooks fire normally** — you'll receive all webhook events in sandbox; make sure your test endpoint is reachable
 

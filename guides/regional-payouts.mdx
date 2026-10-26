@@ -11,10 +11,9 @@ The general flow is the same for all regions:
 GET /payment-methods/payout/countries       → confirm country is supported
 GET /payment-methods/payout?country={iso3}  → get payment_method_id for the rail
 GET /beneficiary/form/show/{id}             → get required account_details fields
-POST /beneficiaries                         → create beneficiary
 POST /beneficiaries/payment-methods         → save bank details
-POST /sendmoney/quote                       → lock rate
-POST /sendmoney                             → execute
+POST /exchange-rate                         → lock rate
+POST /wallet/payout                         → execute
 ```
 
 ---
@@ -85,20 +84,20 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
   }'
 
 # 3. Get a quote (USD → MXN)
-curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
+curl -X POST 'https://api.yativo.com/api/v1/exchange-rate' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: quote-mx-001' \
-  -d '{ "from_currency": "USD", "to_currency": "MXN", "amount": 500, "beneficiary_payment_method_id": "PM_ID" }'
+  -d '{ "from_currency": "USD", "to_currency": "MXN", "amount": 500, "method_id": 30, "method_type": "payout" }'
 
 # 4. Execute
-curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: send-mx-001' \
-  -d '{ "quote_id": "QUOTE_ID" }'
+  -d '{ "debit_wallet": "USD", "payment_method_id": "PM_ID", "quote_id": "QUOTE_ID" }'
 ```
 
 ### Virtual accounts (receive MXN via SPEI)

@@ -211,4 +211,4 @@ $this->call('POST', '/webhooks/yativo', [], [], [], [
 ], $body)->assertOk();
 ```
 
-Against the sandbox, send sample webhooks with `Yativo::sandbox()->simulateWebhook('payin')`.
+Against the sandbox, credit a wallet with `POST /wallet/sandbox/topup` and send sample webhooks with `Yativo::sandbox()->simulateWebhook('payin')`.

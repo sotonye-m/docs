@@ -400,32 +400,6 @@ See [Get Market Rates](/fiat-api-reference/payments/market-rates) for the full r
 
 ---
 
-## Get a Locked Quote for Send Money
-
-For sending money specifically (rather than wallet payouts), use the dedicated send money quote endpoint which also returns a `quote_id`:
-
-```
-POST /sendmoney/quote
-```
-
-<RequestExample>
-```bash USD → MXN
-curl -X POST 'https://api.yativo.com/api/v1/sendmoney/quote' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
-  -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: quote-001' \
-  -d '{
-    "from_currency": "USD",
-    "to_currency": "MXN",
-    "amount": 200,
-    "beneficiary_payment_method_id": "pm-3a4b5c6d-7e8f-9a0b"
-  }'
-```
-</RequestExample>
-
----
-
 ## Complete Quote Workflow
 
 ```

@@ -1,0 +1,67 @@
+---
+title: "Top up wallet (sandbox only)"
+description: "Credit test funds to a wallet. Sandbox only."
+openapi: "openapi-fiat.yaml POST /wallet/sandbox/topup"
+---
+
+Credits test funds to one of your wallets so you can try payouts, swaps and cards without a real deposit.
+
+```
+POST /wallet/sandbox/topup
+```
+
+<Warning>
+  Sandbox only. Call `https://smtp.yativo.com/api/v1`. Production returns `403` with `This endpoint is only available in sandbox.`
+</Warning>
+
+`amount` is in major units: `25.5` credits `25.50`. The wallet must already exist. You can't top up your USDC balance with this endpoint.
+
+`Idempotency-Key` is optional. Send one to collapse retries of the same top-up into a single credit. Without it, each call adds funds again.
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://smtp.yativo.com/api/v1/wallet/sandbox/topup' \
+  -H 'X-Api-Key: YOUR_SANDBOX_API_KEY' \
+  -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "USD",
+    "amount": 25.5
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "currency": "USD",
+    "amount": 25.5,
+    "balance": 25.5
+  }
+}
+```
+
+```json Outside sandbox
+{
+  "status": "failed",
+  "status_code": 403,
+  "message": "Request failed.",
+  "data": {
+    "error": "This endpoint is only available in sandbox."
+  }
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | `data.error` |
+|---|---|
+| `400` | `Amount must be at least 0.01.` |
+| `400` | `Invalid wallet selected.` — for example when you top up USDC |
+| `403` | `This endpoint is only available in sandbox.` |
+| `404` | `Wallet not found. Create the wallet before topping it up.` |

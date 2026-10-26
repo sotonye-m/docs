@@ -3152,141 +3152,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /sendmoney/quote:
-    post:
-      tags: [Payments & Transfers]
-      summary: Get Send Money Quote
-      description: |
-        Generates a rate-locked quote for a cross-border payment. The quote guarantees the
-        displayed rate and fee for **5 minutes**. Use the returned `quote_id` when executing
-        with `POST /sendmoney`. Requires an `Idempotency-Key` header.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [from_currency, to_currency, amount]
-              properties:
-                from_currency:
-                  type: string
-                  example: USD
-                  description: Source currency code (e.g. `"USD"`, `"EUR"`).
-                to_currency:
-                  type: string
-                  example: MXN
-                  description: Destination currency code (e.g. `"CLP"`, `"MXN"`, `"BRL"`).
-                amount:
-                  type: number
-                  example: 200
-                  description: Amount in the source currency to send.
-      responses:
-        '200':
-          description: Quote created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  status_code:
-                    type: integer
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      quote_id:
-                        type: string
-                        format: uuid
-                      from_currency:
-                        type: string
-                      to_currency:
-                        type: string
-                      rate:
-                        type: string
-                      amount:
-                        type: string
-                      payout_data:
-                        type: object
-
-  /sendmoney:
-    post:
-      tags: [Payments & Transfers]
-      summary: Send Money
-      description: |
-        Execute a cross-border payment using a quote ID obtained from `POST /sendmoney/quote`.
-        The quote locks the exchange rate for 5 minutes.
-        Requires an `Idempotency-Key` header.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [quote_id]
-              properties:
-                quote_id:
-                  type: string
-                  format: uuid
-                  description: The quote ID from `POST /sendmoney/quote`. Valid for 5 minutes.
-                debit_wallet:
-                  type: string
-                  description: Currency to debit from your wallet (e.g. `"USD"`).
-                payment_method_id:
-                  type: number
-                  description: Saved beneficiary payment method ID.
-                customer_id:
-                  type: string
-                  description: The customer the payment method belongs to.
-                amount:
-                  type: number
-                  description: Amount to send. Required if `quote_id` is not provided.
-      responses:
-        '200':
-          description: Payment initiated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  status_code:
-                    type: integer
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      transaction_id:
-                        type: string
-                      status:
-                        type: string
-                        example: pending
-                      from_currency:
-                        type: string
-                      to_currency:
-                        type: string
-                      amount:
-                        type: string
-                      rate:
-                        type: string
-                      created_at:
-                        type: string
-                        format: date-time
-        '400':
-          description: Quote expired or invalid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
   /payment-methods/payout:
     get:
       tags: [Payments & Transfers]
@@ -4325,6 +4190,88 @@ paths:
                           type: string
                           format: date-time
 
+  /wallet/sandbox/topup:
+    post:
+      tags: [Sandbox]
+      summary: Top up wallet (sandbox only)
+      description: |
+        Credits test funds to one of your wallets. **Sandbox only.** Production returns `403`
+        with `This endpoint is only available in sandbox.`
+
+        `amount` is in major units (25.5 credits 25.50). The wallet must already exist.
+        You can't top up your USDC balance with this endpoint.
+
+        `Idempotency-Key` is optional. Send one to collapse retries of the same top-up into
+        a single credit. Without it, each call adds funds again.
+      servers:
+        - url: https://smtp.yativo.com/api/v1
+          description: Sandbox
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currency, amount]
+              properties:
+                currency:
+                  type: string
+                  example: USD
+                  description: Wallet currency code (e.g. `USD`, `EUR`, `BRL`).
+                amount:
+                  type: number
+                  minimum: 0.01
+                  maximum: 1000000
+                  example: 25.5
+                  description: Amount to credit, in major units. Minimum `0.01`, maximum `1000000`.
+      responses:
+        '200':
+          description: Wallet credited
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      currency:
+                        type: string
+                        example: USD
+                      amount:
+                        type: number
+                        example: 25.5
+                      balance:
+                        type: number
+                        example: 25.5
+                        description: Wallet balance after the credit, in major units.
+        '400':
+          description: Validation failed, amount below `0.01`, or the wallet can't be credited (for example USDC)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Called outside sandbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: You don't have a wallet in that currency
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   # ============================================================
   # BENEFICIARIES
   # ============================================================
@@ -4983,94 +4930,12 @@ paths:
   # VIRTUAL CARDS
   # ============================================================
 
-  /customer/virtual/cards/activate:
-    post:
-      tags: [Virtual Cards]
-      summary: Activate Customer for Virtual Cards
-      description: |
-        Registers a customer for virtual card creation. Required before issuing any virtual cards.
-        Fields already stored on the customer's profile may be omitted.
-        Requires an `Idempotency-Key` header.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [customer_id]
-              properties:
-                customer_id:
-                  type: string
-                  format: uuid
-                  description: The ID of the customer to activate. Must exist in your customers table.
-                user_photo:
-                  type: string
-                  description: Customer photo (base64 or URL). Required if not already on the customer's profile.
-                idType:
-                  type: string
-                  enum: [passport, drivers_license, national_id]
-                  description: Government ID type (e.g. `"passport"`, `"drivers_license"`, `"national_id"`). Required for Nigerian customers.
-                customer_idFront:
-                  type: string
-                  description: Front image of the customer's government-issued ID. Required if not already on the customer's profile.
-                customer_idNumber:
-                  type: string
-                  description: Government-issued ID number. Required if not already on the customer's profile.
-                customer_address:
-                  type: object
-                  properties:
-                    country:
-                      type: string
-                      description: ISO 3166-1 alpha-2.
-                    city:
-                      type: string
-                    state:
-                      type: string
-                    zipcode:
-                      type: string
-                    street:
-                      type: string
-                    number:
-                      type: string
-                    customer_address.country:
-                      type: string
-                      description: ISO 3166-1 alpha-2 country code (e.g. `"US"`).
-                    customer_address.city:
-                      type: string
-                      description: City name.
-                    customer_address.state:
-                      type: string
-                      description: State or region.
-                    customer_address.zipcode:
-                      type: string
-                      description: Postal / ZIP code.
-                    customer_address.street:
-                      type: string
-                      description: Street name.
-                    customer_address.number:
-                      type: string
-                      description: Street number.
-                  description: Customer address. Each sub-field is required if not already on the customer's profile.
-      responses:
-        '200':
-          description: Customer registered for virtual cards
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: string
-                    example: User registered successfully.
-
   /customer/virtual/cards/create:
     post:
       tags: [Virtual Cards]
       summary: Create Virtual Card
       description: |
-        Issues a virtual card for an activated customer. The initial funding amount is debited
+        Issues a virtual card for a customer. The initial funding amount is debited
         from your USD wallet. Minimum $3.00, maximum $10,000.00.
         Requires an `Idempotency-Key` header.
       parameters:
@@ -5086,7 +4951,7 @@ paths:
                 customer_id:
                   type: string
                   format: uuid
-                  description: The ID of the activated customer. Must exist in your customers table.
+                  description: The ID of the customer. Must exist in your customers table.
                 amount:
                   type: number
                   minimum: 3
@@ -5833,6 +5698,84 @@ paths:
                     $ref: '#/components/schemas/WalletSwap'
         '404':
           description: Swap not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # SANDBOX
+  # ============================================================
+
+  /demo/webhook/{type}:
+    post:
+      tags: [Sandbox]
+      summary: Simulate webhook (sandbox only)
+      description: |
+        Sends a sample event to your registered webhook URL. **Sandbox only.** This path
+        does not exist in production.
+
+        Sample events are signed like real ones. For example, `payin` sends `deposit.created`
+        and then `deposit.updated`. Their `customer` may be `null`. `virtualcard.*` events
+        can't be simulated.
+      servers:
+        - url: https://smtp.yativo.com/api/v1
+          description: Sandbox
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - payin
+              - payout
+              - virtual_account
+              - virtual_account_created
+              - virtual_account_updated
+              - customer
+              - customer_updated
+              - endorsement
+              - metadata_created
+              - metadata_updated
+              - webhook_updated
+              - user
+              - tracking
+              - payin_method_enabled
+              - payin_method_disabled
+              - payout_method_enabled
+              - payout_method_disabled
+              - crypto_wallet
+              - crypto_deposit
+              - wallet_deleted
+          description: The sample to send. See [Test in sandbox](/yativo-fiat/webhooks#test-in-sandbox).
+      responses:
+        '200':
+          description: Sample dispatched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: Webhook dispatched successfully
+                      type:
+                        type: string
+                        example: payin
+        '400':
+          description: Unknown `type`
           content:
             application/json:
               schema:
@@ -9118,63 +9061,6 @@ paths:
                       type: object
                       additionalProperties: true
       summary: List Currencies
-  /sendmoney/purpose:
-    post:
-      tags:
-      - Payments & Transfers
-      description: Records the purpose of a transfer against its quote, for compliance. Call it after [Create Send Money Quote](/fiat-api-reference/payments/send-money-quote) and before [Send Money](/fiat-api-reference/payments/send-money).
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                quote_id:
-                  type: string
-                  description: The `quote_id` from Create Send Money Quote.
-                transfer_purpose:
-                  type: string
-                  example: family_support
-                transfer_memo:
-                  type: string
-                  example: Rent for October
-                attachment:
-                  type: string
-                  description: URL of a supporting document, e.g. from [Upload File](/fiat-api-reference/kyc/upload).
-                metadata:
-                  type: object
-                  additionalProperties: true
-              required:
-              - quote_id
-              - transfer_purpose
-      responses:
-        '200':
-          description: Request successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  status_code:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Request successful
-                  data:
-                    type: object
-                    additionalProperties: true
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      summary: Add Transfer Purpose
   /business/transaction/by-currency:
     get:
       tags:
@@ -9297,7 +9183,7 @@ tags:
       Lists your KYC and KYB forms need: countries, subdivisions, postal code formats, ID types,
       occupations, industries and allowed values. Served from `https://kyc.yativo.com/api`.
   - name: Payments & Transfers
-    description: Exchange rates, quotes, send money, payout methods, and wallet payouts.
+    description: Exchange rates, quotes, payout methods, and wallet payouts.
   - name: Deposits
     description: Initiate and retrieve payin deposits.
   - name: Virtual Accounts
@@ -9309,7 +9195,7 @@ tags:
   - name: Transactions
     description: List, retrieve, track, and download receipts for all transaction types.
   - name: Virtual Cards
-    description: Activate, issue, manage, and terminate prepaid virtual cards. Every card request works only on your own cards. Any other card ID returns `404` with `Card not found`.
+    description: Issue, manage, and terminate prepaid virtual cards. Every card request works only on your own cards. Any other card ID returns `404` with `Card not found`.
   - name: Payouts
     description: Single payouts to beneficiaries.
   - name: Currency Swap
@@ -9324,5 +9210,7 @@ tags:
     description: Each corporate card's employee-only page for card details and PIN, employee card sign-in, and branding.
   - name: Webhooks
     description: Register and manage webhook endpoints for real-time event notifications.
+  - name: Sandbox
+    description: Endpoints that exist only on the sandbox host. Production refuses them.
   - name: Developer
     description: Webhook event inspection.

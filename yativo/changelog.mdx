@@ -5,6 +5,9 @@ description: "Latest updates, improvements, and fixes across all Yativo platform
 
 <Update label="October 2026" description="Login tokens and gift cards discontinued, currency swap, EUR SEPA deposits, market rates, fee schedule, and API key restrictions">
   ### Yativo Fiat
+  - **Sandbox-only endpoints:** credit a wallet with `POST /wallet/sandbox/topup`, and send a sample webhook with `POST /demo/webhook/{type}`. Both work only on the sandbox host. See [Sandbox](/yativo-fiat/sandbox)
+  - **Payouts:** `POST /sendmoney`, `POST /sendmoney/quote` and `POST /sendmoney/purpose` are no longer in the docs. Quote with `POST /exchange-rate` and pay out with `POST /wallet/payout` or `POST /payout/simple`. See [Payouts](/yativo-fiat/payouts)
+  - **Virtual cards:** `POST /customer/virtual/cards/activate` is no longer in the docs. Issue a card with `POST /customer/virtual/cards/create`. See [Virtual Cards](/yativo-fiat/virtual-cards)
   - **Official SDKs:** libraries for Node.js, Python, PHP, Laravel and Go, and a WooCommerce plugin. They handle API key authentication, idempotency keys, safe retries, typed errors and webhook verification. See [SDKs](/yativo-fiat/sdks/overview)
   - **Get a deposit:** new `GET /wallet/deposits/{depositId}` returns one deposit by its `id` or `deposit_id`, so you can confirm its `status` before you fulfil an order. See [Get Deposit](/fiat-api-reference/deposits/get)
   - **Card payments:** customers can pay deposits by card on a secure card page, in Bolivia (BOB or USD) and internationally (USD). Card payments are credited in USD and held for 3 US business days before they reach your card balance. See [Card payments](/yativo-fiat/deposits#card-payments)

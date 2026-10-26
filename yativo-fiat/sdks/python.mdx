@@ -282,7 +282,7 @@ for deposit in yativo.paginate(yativo.deposits.list, per_page=100):
 
 ## Test in sandbox
 
-Use sandbox keys with `YATIVO_ENVIRONMENT=sandbox`. No real money moves. Card Checkout test cards: `4242 4242 4242 4242` succeeds and `4000 0000 0000 0002` is declined, with any future expiry and any CVC. Send yourself sample webhooks:
+Use sandbox keys with `YATIVO_ENVIRONMENT=sandbox`. No real money moves. Credit a wallet with `POST /wallet/sandbox/topup`. Card Checkout test cards: `4242 4242 4242 4242` succeeds and `4000 0000 0000 0002` is declined, with any future expiry and any CVC. Send yourself sample webhooks:
 
 ```python
 yativo = Yativo(environment="sandbox")

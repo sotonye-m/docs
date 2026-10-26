@@ -165,9 +165,35 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/create' \
 
 ---
 
+## Top up in sandbox
+
+In sandbox, credit test funds to a wallet you already have:
+
+```
+POST /wallet/sandbox/topup
+```
+
+<Warning>
+  Sandbox only. Production returns `403`.
+</Warning>
+
+See [Top up wallet](/fiat-api-reference/sandbox/wallet-topup).
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://smtp.yativo.com/api/v1/wallet/sandbox/topup' \
+  -H 'X-Api-Key: YOUR_SANDBOX_API_KEY' \
+  -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{ "currency": "USD", "amount": 100 }'
+```
+</RequestExample>
+
+---
+
 ## Quick Wallet Payout
 
-Initiate a payout directly from your wallet balance without the full send money flow:
+Initiate a payout directly from your wallet balance:
 
 ```
 POST /wallet/payout
@@ -186,7 +212,7 @@ POST /wallet/payout
 </ParamField>
 
 <ParamField body="quote_id" type="string">
-  Quote ID from `POST /sendmoney/quote` or `POST /exchange-rate`. Locks the rate for 5 minutes. Recommended — amount is taken from the quote.
+  Quote ID from `POST /exchange-rate`. Locks the rate for 5 minutes. Recommended — amount is taken from the quote.
 </ParamField>
 
 <ParamField body="amount" type="number">

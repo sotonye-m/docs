@@ -22,6 +22,29 @@
       ]
     },
     {
+      "removed": "pages",
+      "from": "Yativo Fiat > Payments",
+      "pages": [
+        "yativo-fiat/send-money"
+      ]
+    },
+    {
+      "removed": "pages",
+      "from": "Fiat API References > Payments & Transfers",
+      "pages": [
+        "fiat-api-reference/payments/send-money-quote",
+        "fiat-api-reference/payments/send-money",
+        "fiat-api-reference/payments/send-money-purpose"
+      ]
+    },
+    {
+      "removed": "pages",
+      "from": "Fiat API References > Virtual Cards",
+      "pages": [
+        "fiat-api-reference/virtual-cards/activate"
+      ]
+    },
+    {
       "removed": "tab",
       "tab": "Yativo Crypto",
       "position": 3,

@@ -26,6 +26,10 @@ The page files still exist and are still reachable by URL. Only the menu entry i
 | 2026-10-21 | Get Employee KYC | `GET /corporate-card/employees/{employee_id}/kyc`. Integrators can submit employee KYC but not read it back. The `kyc` object on Get Employee and the full KYC record in the Submit Employee KYC response aren't documented either | `…/corporate-cards/kyc-get` → `…/corporate-cards/employees-get` |
 | 2026-10-21 | Login History | `GET /auth/login-history` and the "Account Security" tag. Removed the "Review sign-in activity" section of `yativo-fiat/security.mdx` and the changelog entry | `/fiat-api-reference/security/login-history` → `/yativo-fiat/security` |
 | 2026-10-21 | Batch Payout | `POST /payout/batch`. Removed the Batch Payout section and `/batch` mentions from `yativo-fiat/payouts.mdx` | `/fiat-api-reference/payouts/batch` → `/fiat-api-reference/payouts/simple` |
+| 2026-10-26 | Send Money | `POST /sendmoney`. Removed the Send Money guide and send-money sections from exchange rates, regional payouts and related pages | `/yativo-fiat/send-money` → `/yativo-fiat/payouts`, `/fiat-api-reference/payments/send-money` → `/fiat-api-reference/payments/payout` |
+| 2026-10-26 | Get Send Money Quote | `POST /sendmoney/quote` | `/fiat-api-reference/payments/send-money-quote` → `/fiat-api-reference/payments/exchange-rate` |
+| 2026-10-26 | Add Transfer Purpose | `POST /sendmoney/purpose` | `/fiat-api-reference/payments/send-money-purpose` → `/fiat-api-reference/payments/payout` |
+| 2026-10-26 | Activate Customer for Virtual Cards | `POST /customer/virtual/cards/activate`. Issue a card with `POST /customer/virtual/cards/create` | `/fiat-api-reference/virtual-cards/activate` → `/fiat-api-reference/virtual-cards/create` |
 
 ## Renamed
 

@@ -65,7 +65,7 @@ Every API key is limited to the server IPs you list on it. See [IP whitelisting]
 For mutating requests (payouts, deposits, transfers), use the `Idempotency-Key` header to safely retry without risk of duplicate transactions:
 
 ```bash
-curl -X POST 'https://api.yativo.com/api/v1/sendmoney' \
+curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Idempotency-Key: your-unique-request-id-abc123' \

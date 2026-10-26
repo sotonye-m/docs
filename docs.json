@@ -79,7 +79,6 @@
             "group": "Payments",
             "pages": [
               "yativo-fiat/accept-payments",
-              "yativo-fiat/send-money",
               "yativo-fiat/payouts",
               "yativo-fiat/exchange-rates",
               "yativo-fiat/fees",
@@ -241,9 +240,6 @@
               "fiat-api-reference/payments/exchange-rate",
               "fiat-api-reference/payments/market-rates",
               "fiat-api-reference/payments/fees",
-              "fiat-api-reference/payments/send-money-quote",
-              "fiat-api-reference/payments/send-money",
-              "fiat-api-reference/payments/send-money-purpose",
               "fiat-api-reference/payments/methods",
               "fiat-api-reference/payments/payin-methods",
               "fiat-api-reference/payments/methods-form",
@@ -288,6 +284,13 @@
             ]
           },
           {
+            "group": "Sandbox",
+            "pages": [
+              "fiat-api-reference/sandbox/wallet-topup",
+              "fiat-api-reference/sandbox/simulate-webhook"
+            ]
+          },
+          {
             "group": "Beneficiaries",
             "pages": [
               "fiat-api-reference/beneficiaries/payment-methods-create",
@@ -311,7 +314,6 @@
           {
             "group": "Virtual Cards",
             "pages": [
-              "fiat-api-reference/virtual-cards/activate",
               "fiat-api-reference/virtual-cards/create",
               "fiat-api-reference/virtual-cards/list",
               "fiat-api-reference/virtual-cards/get",
@@ -619,6 +621,26 @@
     {
       "source": "/fiat-api-reference/payouts/batch",
       "destination": "/fiat-api-reference/payouts/simple"
+    },
+    {
+      "source": "/yativo-fiat/send-money",
+      "destination": "/yativo-fiat/payouts"
+    },
+    {
+      "source": "/fiat-api-reference/payments/send-money",
+      "destination": "/fiat-api-reference/payments/payout"
+    },
+    {
+      "source": "/fiat-api-reference/payments/send-money-quote",
+      "destination": "/fiat-api-reference/payments/exchange-rate"
+    },
+    {
+      "source": "/fiat-api-reference/payments/send-money-purpose",
+      "destination": "/fiat-api-reference/payments/payout"
+    },
+    {
+      "source": "/fiat-api-reference/virtual-cards/activate",
+      "destination": "/fiat-api-reference/virtual-cards/create"
     }
   ],
   "description": "Yativo developer docs: APIs and guides for cross-border fiat payments, payouts and virtual accounts, plus multi-chain crypto wallets, cards, swaps and AI agent integrations."
