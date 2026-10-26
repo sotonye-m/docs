@@ -257,6 +257,7 @@
             "pages": [
               "fiat-api-reference/deposits/create",
               "fiat-api-reference/deposits/list",
+              "fiat-api-reference/deposits/get",
               "fiat-api-reference/deposits/payin-countries",
               "fiat-api-reference/deposits/payin-currencies",
               "fiat-api-reference/deposits/crypto-create-wallet",

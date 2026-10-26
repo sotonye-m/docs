@@ -1,0 +1,33 @@
+---
+title: "Get Deposit"
+description: "Retrieve one deposit and confirm its status"
+openapi: "openapi-fiat.yaml GET /wallet/deposits/{depositId}"
+---
+
+Returns one of your deposits. Pass the deposit's `id` or its `deposit_id` reference.
+
+```
+GET https://api.yativo.com/api/v1/wallet/deposits/{depositId}
+```
+
+Use it to confirm a deposit before you fulfil an order. Check `status` after a `deposit.updated` webhook, or when the payer returns to your `return_url`. The query string on `return_url` isn't proof of payment.
+
+<RequestExample>
+```bash cURL
+curl 'https://api.yativo.com/api/v1/wallet/deposits/b3150e03-d27e-4de3-a0ff-16ebeb55683c' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+
+```javascript Node.js
+const res = await fetch(`https://api.yativo.com/api/v1/wallet/deposits/${depositId}`, {
+  headers: { 'X-Api-Key': process.env.YATIVO_API_KEY, 'X-Api-Secret': process.env.YATIVO_API_SECRET },
+});
+const { data } = await res.json();
+if (data.status === 'success') {
+  // fulfil the order
+}
+```
+</RequestExample>
+
+`404 Deposit not found` means the ID isn't one of your deposits.

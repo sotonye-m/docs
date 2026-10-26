@@ -181,6 +181,28 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
   }'
 ```
 
+```bash Ecuador (USD bank transfer)
+curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: unique-key-here' \
+  -d '{
+    "gateway_id": GATEWAY_ID,
+    "currency": "USD",
+    "nickname": "Carlos Andrade - Banco del Pichincha",
+    "payment_data": {
+      "method": "bank_transfer",
+      "beneficiary_name": "Carlos Andrade Vera",
+      "document_type": "IDCD",
+      "document_value": "1712345678",
+      "bank_code": "010",
+      "account_type": "savings",
+      "account_number": "2203456789"
+    }
+  }'
+```
+
 ```bash Brazil (PIX)
 curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
   -H 'X-Api-Key: YOUR_API_KEY' \
@@ -198,6 +220,14 @@ curl -X POST 'https://api.yativo.com/api/v1/beneficiaries/payment-methods' \
   }'
 ```
 </RequestExample>
+
+### Ecuador (USD)
+
+- Find the method with `GET /payment-methods/payout?country=ECU&currency=USD`. Bank codes are listed in its form (`GET /beneficiary/form/show/{payment_method_id}`).
+- `document_type` is `IDCD` (cédula), `CCPT` (passport) or `TXID` (RUC). `account_type` is `checking` or `savings`.
+- Payouts are 1.00 to 10,000.00 USD and can include cents.
+- The payout also names the sender: the customer the payout is for, or your business when there's no customer.
+- These transfers are completed manually, so they can take longer. They stay `processing` until the bank transfer is confirmed.
 
 ---
 
