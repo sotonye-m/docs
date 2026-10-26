@@ -33,10 +33,6 @@
         "href": "https://yativo.com"
       },
       {
-        "label": "Get Started — Crypto",
-        "href": "https://crypto.yativo.com"
-      },
-      {
         "label": "Support",
         "href": "https://yativo.com/support"
       }
@@ -287,6 +283,11 @@
             "group": "Sandbox",
             "pages": [
               "fiat-api-reference/sandbox/wallet-topup",
+              "fiat-api-reference/sandbox/transactions-succeed",
+              "fiat-api-reference/sandbox/transactions-fail",
+              "fiat-api-reference/sandbox/virtual-account-deposit",
+              "fiat-api-reference/sandbox/virtual-card",
+              "fiat-api-reference/sandbox/spend-card",
               "fiat-api-reference/sandbox/simulate-webhook"
             ]
           },
@@ -455,11 +456,6 @@
           "anchor": "Fiat Dashboard",
           "href": "https://app.yativo.com",
           "icon": "building-columns"
-        },
-        {
-          "anchor": "Crypto Dashboard",
-          "href": "https://crypto.yativo.com",
-          "icon": "bitcoin"
         },
         {
           "anchor": "Status",

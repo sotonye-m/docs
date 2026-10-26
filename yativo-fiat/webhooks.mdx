@@ -876,7 +876,9 @@ curl -X POST 'https://smtp.yativo.com/api/v1/demo/webhook/payin' \
   -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET'
 ```
 
-Sample events are signed like real ones. For example, `payin` sends `deposit.created` and then `deposit.updated`. Their `customer` may be `null`. `virtualcard.*` events can't be simulated.
+Sample events are signed like real ones. For example, `payin` sends `deposit.created` and then `deposit.updated`. Their `customer` may be `null`.
+
+To settle a real sandbox record — a payin, payout, virtual-account deposit, or card event — use the helpers in [Sandbox simulation endpoints](/yativo-fiat/sandbox#sandbox-simulation-endpoints).
 
 ---
 

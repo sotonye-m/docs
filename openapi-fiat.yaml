@@ -4195,8 +4195,8 @@ paths:
       tags: [Sandbox]
       summary: Top up wallet (sandbox only)
       description: |
-        Credits test funds to one of your wallets. **Sandbox only.** Production returns `403`
-        with `This endpoint is only available in sandbox.`
+        Credits test funds to one of your wallets. **Sandbox only.** Production returns `404`
+        with `Not found`.
 
         `amount` is in major units (25.5 credits 25.50). The wallet must already exist.
         You can't top up your USDC balance with this endpoint.
@@ -4259,14 +4259,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Called outside sandbox
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: You don't have a wallet in that currency
+          description: Called outside sandbox (`Not found`), or you don't have a wallet in that currency
           content:
             application/json:
               schema:
@@ -5712,12 +5706,12 @@ paths:
       tags: [Sandbox]
       summary: Simulate webhook (sandbox only)
       description: |
-        Sends a sample event to your registered webhook URL. **Sandbox only.** This path
-        does not exist in production.
+        Sends a sample event to your registered webhook URL. **Sandbox only.** Production
+        returns `404` with `Not found`.
 
         Sample events are signed like real ones. For example, `payin` sends `deposit.created`
-        and then `deposit.updated`. Their `customer` may be `null`. `virtualcard.*` events
-        can't be simulated.
+        and then `deposit.updated`. Their `customer` may be `null`. This does not create a
+        record — use the other sandbox simulation endpoints when you need the object to exist.
       servers:
         - url: https://smtp.yativo.com/api/v1
           description: Sandbox
@@ -5776,6 +5770,274 @@ paths:
                         example: payin
         '400':
           description: Unknown `type`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Called outside sandbox (`Not found`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sandbox/transactions/{id}/succeed:
+    post:
+      tags: [Sandbox]
+      summary: Mark a payin or payout successful (sandbox only)
+      description: |
+        Settles a pending deposit or payout you own. **Sandbox only.** Production
+        returns `404` with `Not found`.
+
+        Succeeding a deposit credits the wallet and sends `deposit.updated`.
+        Succeeding a payout marks it complete and sends `payout.updated`.
+        `{id}` is the deposit id, payout id, or `transaction_id`.
+      servers:
+        - url: https://smtp.yativo.com/api/v1
+          description: Sandbox
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Deposit id, payout id, or transaction_id.
+      responses:
+        '200':
+          description: Record settled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Called outside sandbox, or the id is not yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The record is already in a terminal state sandbox will not reverse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sandbox/transactions/{id}/fail:
+    post:
+      tags: [Sandbox]
+      summary: Mark a payin or payout failed (sandbox only)
+      description: |
+        Fails a pending deposit or payout you own. **Sandbox only.** Production
+        returns `404` with `Not found`.
+
+        A pending deposit is marked `failed` (no credit). A pending payout is
+        marked `failed` and the debit is refunded. A deposit that has already
+        been credited, or a payout that has already completed, cannot be moved
+        backwards (`409`).
+      servers:
+        - url: https://smtp.yativo.com/api/v1
+          description: Sandbox
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Deposit id, payout id, or transaction_id.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: insufficient_funds
+                  description: Optional failure reason stored on the record.
+      responses:
+        '200':
+          description: Record failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Called outside sandbox, or the id is not yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The record is already in a terminal state sandbox will not reverse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sandbox/virtual-accounts/{accountId}/simulate-deposit:
+    post:
+      tags: [Sandbox]
+      summary: Simulate a virtual account deposit (sandbox only)
+      description: |
+        Credits (or fails) a deposit into a virtual account you own. **Sandbox
+        only.** Production returns `404` with `Not found`. Sandbox simulations
+        do not charge virtual-account fees.
+      servers:
+        - url: https://smtp.yativo.com/api/v1
+          description: Sandbox
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The virtual account's `account_id` or `account_number`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: number
+                  minimum: 0.01
+                  maximum: 1000000
+                  example: 250
+                  description: Major units in the account's currency.
+                outcome:
+                  type: string
+                  enum: [success, fail]
+                  default: success
+                  description: '`success` credits the wallet and sends `virtual_account.deposit`. `fail` creates a failed deposit.'
+                sender:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: Jane Doe
+                    bank:
+                      type: string
+                      example: Sandbox Bank
+                    account_number:
+                      type: string
+                      example: "1234567890"
+      responses:
+        '200':
+          description: Deposit simulated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Called outside sandbox, or the virtual account is not yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sandbox/virtual-cards/{cardId}/simulate:
+    post:
+      tags: [Sandbox]
+      summary: Simulate a virtual card event (sandbox only)
+      description: |
+        Updates local card status where the event would in production and sends
+        the matching `virtualcard.*` webhook. **Sandbox only.** Production
+        returns `404` with `Not found`. Never calls the card issuer.
+      servers:
+        - url: https://smtp.yativo.com/api/v1
+          description: Sandbox
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  example: virtualcard.transaction.settlement
+                  description: Any documented `virtualcard.*` event. Defaults to settlement, or declined when `outcome` is `fail`.
+                amount:
+                  type: number
+                  example: 12.5
+                  description: Major units. Default `4.5`.
+                outcome:
+                  type: string
+                  enum: [success, fail]
+                transaction_type:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Event simulated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Called outside sandbox, or the card is not yours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sandbox/spend-cards/{cardId}/simulate:
+    post:
+      tags: [Sandbox]
+      summary: Simulate a spend card event (sandbox only)
+      description: |
+        Writes transaction events to spend-card activity history and sends
+        `business_spend_card.transaction.*`. Lifecycle events only send the
+        webhook. **Sandbox only.** Production returns `404` with `Not found`.
+      servers:
+        - url: https://smtp.yativo.com/api/v1
+          description: Sandbox
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  example: business_spend_card.transaction.approved
+                  description: Any documented `business_spend_card.*` event.
+                amount:
+                  type: number
+                  example: 19.99
+                  description: Major units. Default `9.99`.
+                outcome:
+                  type: string
+                  enum: [success, fail]
+                description:
+                  type: string
+                  example: Sandbox coffee
+      responses:
+        '200':
+          description: Event simulated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Called outside sandbox, or the card is not yours
           content:
             application/json:
               schema:

@@ -1,0 +1,29 @@
+---
+title: "Mark transaction failed (sandbox only)"
+description: "Settle a pending payin or payout as failed. Sandbox only."
+openapi: "openapi-fiat.yaml POST /sandbox/transactions/{id}/fail"
+---
+
+Fails a pending deposit or payout you own.
+
+```
+POST /sandbox/transactions/{id}/fail
+```
+
+<Warning>
+  Sandbox only. Call `https://smtp.yativo.com/api/v1`. Production returns `404` with `Not found`.
+</Warning>
+
+A pending deposit is marked `failed` (no credit). A pending payout is marked `failed` and the debit is refunded. A deposit that has already been credited, or a payout that has already completed, cannot be moved backwards (`409`).
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://smtp.yativo.com/api/v1/sandbox/transactions/payout_123/fail' \
+  -H 'X-Api-Key: YOUR_SANDBOX_API_KEY' \
+  -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{ "reason": "insufficient_funds" }'
+```
+</RequestExample>
+
+See every sandbox simulation endpoint in [Sandbox](/yativo-fiat/sandbox#sandbox-simulation-endpoints).

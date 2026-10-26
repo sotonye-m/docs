@@ -1,153 +1,181 @@
 ---
 title: "Changelog"
-description: "Latest updates, improvements, and fixes across all Yativo platforms"
+description: "New endpoints, behavior changes, and docs updates for Yativo Fiat and Yativo Crypto."
+rss: true
+icon: "clock-rotate-left"
 ---
 
-<Update label="October 2026" description="Login tokens and gift cards discontinued, currency swap, EUR SEPA deposits, market rates, fee schedule, and API key restrictions">
-  ### Yativo Fiat
-  - **Sandbox-only endpoints:** credit a wallet with `POST /wallet/sandbox/topup`, and send a sample webhook with `POST /demo/webhook/{type}`. Both work only on the sandbox host. See [Sandbox](/yativo-fiat/sandbox)
-  - **Payouts:** `POST /sendmoney`, `POST /sendmoney/quote` and `POST /sendmoney/purpose` are no longer in the docs. Quote with `POST /exchange-rate` and pay out with `POST /wallet/payout` or `POST /payout/simple`. See [Payouts](/yativo-fiat/payouts)
-  - **Virtual cards:** `POST /customer/virtual/cards/activate` is no longer in the docs. Issue a card with `POST /customer/virtual/cards/create`. See [Virtual Cards](/yativo-fiat/virtual-cards)
-  - **Official SDKs:** libraries for Node.js, Python, PHP, Laravel and Go, and a WooCommerce plugin. They handle API key authentication, idempotency keys, safe retries, typed errors and webhook verification. See [SDKs](/yativo-fiat/sdks/overview)
-  - **Get a deposit:** new `GET /wallet/deposits/{depositId}` returns one deposit by its `id` or `deposit_id`, so you can confirm its `status` before you fulfil an order. See [Get Deposit](/fiat-api-reference/deposits/get)
-  - **Card payments:** customers can pay deposits by card on a secure card page, in Bolivia (BOB or USD) and internationally (USD). Card payments are credited in USD and held for 3 US business days before they reach your card balance. See [Card payments](/yativo-fiat/deposits#card-payments)
-  - **Ecuador payouts:** send USD bank transfers to Ecuador, from 1.00 to 10,000.00 USD with cents. See [Ecuador (USD)](/yativo-fiat/beneficiaries#ecuador-usd)
-  - **KYB tax ID documents:** a `tax_id` entry in an associated person's or the business's `identifying_information` now needs `image_front`: a photo of the tax ID or a tax return filing. Tax ID numbers take letters and digits only. See [Business KYB](/yativo-fiat/kyc#business-kyb)
-  - **NGN rates:** NGN is priced at the average market rate, or the buy rate when no average is available, across quotes, deposits, payouts and `GET /exchange-rates`
-  - **Webhook payloads:** `user.updated`, `customer.created`, `customer.updated` and `deposit.*` now carry only their documented fields. `user.updated` is sent when your name, email, membership ID or KYC status changes, not when you sign in. `customer.updated` is sent when a profile field or the customer's KYC status changes. `endorsement.updated` no longer includes `_webhook_id`. The delivery log and resends show each payload with today's fields. See [Webhooks](/yativo-fiat/webhooks)
-  - **`virtual_account.deleted` webhook:** sent when you delete a virtual account. `DELETE /business/virtual-account/delete-virtual-account/{account_id}` now returns the deleted `account_id`, and `404` for an ID that isn't yours. See [Delete Virtual Account](/fiat-api-reference/virtual-accounts/delete)
-  - **Corporate card errors:** a failed card request returns only `data.error` with a readable reason. When the card service can't complete the request, you get `502`. See [Errors](/yativo-fiat/sandbox-corporate-cards#errors)
-  - **More endpoints in the API reference:** corporate card employees, employee KYC submission, employee balances, cards, memos, the USDC funding address and card transactions, plus stablecoin deposit wallets, pay-in countries and currencies, `GET /currencies/all`, `POST /sendmoney/purpose`, `GET /business/transaction/by-currency`, `POST /storage/upload` and `DELETE /customer/{customer_id}`. Each has a "Try it" playground. See [Corporate Cards](/fiat-api-reference/corporate-cards/employees-create)
-  - **KYB associated persons:** directors, signers and controllers (`is_director`, `is_signer` or `has_control` true) are now kept even when they own less than `ownership_threshold`. At least one person must still meet the threshold. The role flags accept `true`/`false`, `1`/`0` and `"1"`/`"0"`. See [Business KYB](/yativo-fiat/kyc#business-kyb)
-  - **Hosted KYB drafts:** customers can save any section of the hosted business form as a draft and finish it later. They can't submit until every drafted section is saved. See [Integration approaches](/yativo-fiat/kyc#integration-approaches)
-  - **Beneficiaries are saved payment methods:** add a beneficiary with `POST /beneficiaries/payment-methods` using `gateway_id`, `payment_data`, `currency` and `nickname`, and use its `id` in payouts and quotes. You no longer need to create a separate beneficiary record first. See [Beneficiaries](/yativo-fiat/beneficiaries)
-  - **Virtual cards:** every card request works only on your own cards. Any other card ID returns `404` with `Card not found`. See [Virtual Cards](/yativo-fiat/virtual-cards)
-  - **Endorsement resubmission:** the `{endorsement}` in `POST /customer/kyc/resubmit/{customerId}/{endorsement}` is no longer case-sensitive
-  - **Corrections:** `GET /payment-methods/payin/currency` takes a three-letter `country` (`BRA`, not `BR`), and `GET /payment-methods/payin/countries` returns `country`, `name`, `flag` and `currencies`. `POST /sendmoney/purpose` takes `quote_id` and `transfer_purpose`. The `GET /corporate-card/wallet` balances are in USD, not cents
-  - **Login tokens discontinued:** `POST /auth/login`, `GET /auth/refresh-token` and `Authorization: Bearer` tokens (legacy Account ID and App Secret) no longer work for API requests. Send `X-Api-Key` and `X-Api-Secret` on every request. See [Authentication](/yativo-fiat/authentication)
-  - **Gift cards discontinued:** `GET /giftcards`, `GET /giftcards/categories`, `POST /giftcards`, `GET /giftcards/redeem/{transactionId}` and the `giftcard.status_changed` webhook are no longer available
-  - **Corporate cards in sandbox (invitation only):** issue cards to your business customers' employees, fund each employee's balance from your USDC balance, and review memos, in the sandbox API and dashboard ahead of production. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards)
-  - **Corporate card links:** card number, CVV and PIN are now only on each card's reusable, embeddable link, which only the card's employee can open (email code the first time, then a passkey or authenticator app). Brand it with your logo, font and colours, reset an employee's sign-in, and change an employee's email with their confirmation on the card link. Removed: `GET /spend/cards/{card_id}/widget-token`, `POST /spend/cards/pin` and `POST /corporate-card/employees/cards/pin`. See [Corporate Card Links](/yativo-fiat/corporate-card-links)
-  - **Sandbox KYC:** sandbox does not approve KYC when you create a customer. Your account stays limited until `kyc_status` is `approved` and `is_kyc_submitted` is true. The sandbox dashboard collects business verification in a form. See [Sandbox KYC](/yativo-fiat/sandbox-kyc)
-  - **Pay out by receive amount:** set `amount_type: "receive"` on `POST /exchange-rate` (payout quotes) or `POST /wallet/payout` to fix exactly what the customer receives. Yativo works out the send amount and fees. `POST /wallet/payout` responses now include `amount_type`, `send_amount`, `customer_receive_amount` and `debit_amount`. See [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount)
-  - **Market rates:** new `GET /exchange-rates` returns live indicative rates for every wallet currency, for display to your customers. See [Live market rates](/yativo-fiat/exchange-rates#live-market-rates)
-  - **Fee schedule:** new `GET /fees` returns your account's fees for every payin and payout method, virtual account currency and card action, including custom pricing. See [Fees](/yativo-fiat/fees)
-  - **EUR deposits via SEPA:** customers can fund deposits by bank transfer to a Yativo IBAN. See [Deposits](/yativo-fiat/deposits#eur-bank-transfer-sepa)
-  - Endpoints that change sign-in settings (passkeys, two-factor authentication, PIN, app secret) or delete the account now return `403` when called with an API key
-  - `GET /ip-whitelist/check` now returns `api_key.label` (was `name`) and a `network.warning` when your request came through a proxy
-  - **Currency swap:** swap balance between your own wallets with `GET /wallet/swap/pairs`, `POST /wallet/swap/quote`, `POST /wallet/swap`, `GET /wallet/swap` and `GET /wallet/swap/{reference}`. Each pair has its own rate, fees and limits. `POST /swap/init` and `POST /swap/process` are no longer available. See [Currency Swap](/yativo-fiat/swap)
-  - **USDC balance:** your USDC balance is only for corporate cards. Payouts, transfers and swaps out of it fail with `Invalid wallet selected.` Fund it with a USDC deposit or a swap from USD. See [USDC balance](/yativo-fiat/sandbox-corporate-cards#usdc-balance)
-  - **Wallet address limits:** `POST /crypto/create-wallet` and corporate card funding addresses allow 3 address requests a minute per customer. Going over returns `403` and blocks both for that customer for 24 hours. See [Wallet address limits](/yativo-fiat/deposits#wallet-address-limits)
-  - **Unified errors:** every failed response now includes `error_details`, with a stable `code`, `message`, `fields`, `retryable` and `retry_after`. See [Error response format](/fiat-api-reference/introduction#error-response-format)
-  - **Payout references and invoices:** `POST /wallet/payout` and `POST /payout/simple` accept `reference` (shown to the recipient's bank), plus `invoice` or `invoice_url`. `payout.updated` webhooks include `reference`. See [Initiate Payout](/fiat-api-reference/payments/payout)
-  - **Verification results come from endorsements:** a customer's KYC or KYB result is only available through their endorsements, via the `endorsement.updated` webhook or the `endorsement` list on `GET /customer/{customer_id}`. Each service is available when its endorsement is `approved`. `GET /customer/kyc/{customer_id}` and `is_va_approved` are no longer documented as a status check. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements)
-  - **Corporate cards:** customers now need an approved `cobo_pobo` endorsement, not `faster_payments`
-  - **Virtual account currencies:** `USD_KIRA` and `USDKIRA` are no longer available. Get the codes your account can use from `GET /business/virtual-account/currencies-and-endorsements`
-  - **KYC lookups in the API reference:** countries, subdivisions, postal code formats, ID types, occupations, industries, account purposes, sources of funds and transaction currencies and countries, each with a "Try it" playground. See [KYC Lookups](/fiat-api-reference/kyc-lookups/countries)
-  - **KYC sandbox host:** sandbox customers use `https://kyc-sandbox.yativo.com`; production uses `https://kyc.yativo.com`. KYC platform endpoints don't need an API key. KYB business profile fields go in the `extra_business_info`, `collections_data` and `payouts_data` objects. See [KYC / KYB](/yativo-fiat/kyc)
-  - **Try it on every endpoint:** every fiat API reference page now has an interactive playground
-  - **KYC rules documented:** duplicate-person `409` with `duplicate_of`, the permanent `403` for placeholder names, what each endorsement needs, sandbox test values, and a go-live checklist. See [KYC / KYB](/yativo-fiat/kyc)
-  - **Endorsement resubmission:** `POST /customer/kyc/resubmit/{customer_id}/{endorsement}` re-runs verification for one endorsement. See [KYC / KYB](/yativo-fiat/kyc#resubmit-one-endorsement)
-  - **KYC and KYB rules:** files can be 5 KB–30 MB; tax IDs take letters and digits only; KYB requires `primary_website`, proof of address for every address, `pep_status`, `third_party_msb_payments`, `expected_monthly_payments_usd` and a `shareholding_structure` extra document; associated persons below the ownership threshold (default 25%) are dropped; individual submissions return `warnings` for values verification is likely to reject. See [KYC / KYB](/yativo-fiat/kyc)
-  - **MCP server:** connect Claude, Cursor or any MCP client to your fiat account at `https://api.yativo.com/mcp` to check balances and deposits, and quote and send payouts with your approval. See [Fiat MCP server](/yativo-fiat/mcp-server)
+What changed in the API and the docs. Filter by Fiat, Crypto, or Docs.
 
-  ### Docs
-  - **Corrected:** the fiat webhook signature header is `Signature`, not `X-Yativo-Signature`. Webhooks time out after 3 seconds and are attempted up to 3 times. The [Webhooks](/yativo-fiat/webhooks) page now lists every event type, including virtual card and corporate card events
-  - **Corrected:** `POST /payout/simple` requires `debit_wallet` and `customer_id`. Insufficient balance returns `400`, not `402`. Idempotency keys are kept for 60 minutes, not 24 hours
-  - **Corrected:** KYB `account_purpose` and `source_of_funds` use their own lists, separate from individual KYC. KYB associated persons send ID images as `image_front` and `image_back`
-  - [AI and MCP servers](/yativo/mcp) compares the Docs, Fiat and Agentic Wallet MCP servers, and documents the Docs MCP server at `https://docs.yativo.com/mcp`
+<Update label="October 2026" description="SDKs, currency swap, sandbox testing, and authentication changes" tags={["Fiat", "Crypto", "Docs"]}>
 
-  ### Yativo Crypto
-  - Card IBAN removed from the crypto docs. To receive money by bank transfer, use [Yativo Fiat virtual accounts](/yativo-fiat/virtual-accounts)
+## Payments
+
+- **Payouts:** `POST /sendmoney`, `POST /sendmoney/quote` and `POST /sendmoney/purpose` are no longer in the docs. Quote with `POST /exchange-rate` and pay out with `POST /wallet/payout` or `POST /payout/simple`. See [Payouts](/yativo-fiat/payouts)
+- **Get a deposit:** new `GET /wallet/deposits/{depositId}` returns one deposit by its `id` or `deposit_id`, so you can confirm its `status` before you fulfil an order. See [Get Deposit](/fiat-api-reference/deposits/get)
+- **Card payments:** customers can pay deposits by card on a secure card page, in Bolivia (BOB or USD) and internationally (USD). Card payments are credited in USD and held for 3 US business days before they reach your card balance. See [Card payments](/yativo-fiat/deposits#card-payments)
+- **Ecuador payouts:** send USD bank transfers to Ecuador, from 1.00 to 10,000.00 USD with cents. See [Ecuador (USD)](/yativo-fiat/beneficiaries#ecuador-usd)
+- **EUR deposits via SEPA:** customers can fund deposits by bank transfer to a Yativo IBAN. See [Deposits](/yativo-fiat/deposits#eur-bank-transfer-sepa)
+- **Pay out by receive amount:** set `amount_type: "receive"` on `POST /exchange-rate` (payout quotes) or `POST /wallet/payout` to fix exactly what the customer receives. Yativo works out the send amount and fees. `POST /wallet/payout` responses now include `amount_type`, `send_amount`, `customer_receive_amount` and `debit_amount`. See [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount)
+- **Market rates:** new `GET /exchange-rates` returns live indicative rates for every wallet currency, for display to your customers. See [Live market rates](/yativo-fiat/exchange-rates#live-market-rates)
+- **Fee schedule:** new `GET /fees` returns your account's fees for every payin and payout method, virtual account currency and card action, including custom pricing. See [Fees](/yativo-fiat/fees)
+- **Currency swap:** swap balance between your own wallets with `GET /wallet/swap/pairs`, `POST /wallet/swap/quote`, `POST /wallet/swap`, `GET /wallet/swap` and `GET /wallet/swap/{reference}`. Each pair has its own rate, fees and limits. `POST /swap/init` and `POST /swap/process` are no longer available. See [Currency Swap](/yativo-fiat/swap)
+- **Beneficiaries are saved payment methods:** add a beneficiary with `POST /beneficiaries/payment-methods` using `gateway_id`, `payment_data`, `currency` and `nickname`, and use its `id` in payouts and quotes. You no longer need to create a separate beneficiary record first. See [Beneficiaries](/yativo-fiat/beneficiaries)
+- **Payout references and invoices:** `POST /wallet/payout` and `POST /payout/simple` accept `reference` (shown to the recipient's bank), plus `invoice` or `invoice_url`. `payout.updated` webhooks include `reference`. See [Initiate Payout](/fiat-api-reference/payments/payout)
+- **NGN rates:** NGN is priced at the average market rate, or the buy rate when no average is available, across quotes, deposits, payouts and `GET /exchange-rates`
+- **Gift cards discontinued:** `GET /giftcards`, `GET /giftcards/categories`, `POST /giftcards`, `GET /giftcards/redeem/{transactionId}` and the `giftcard.status_changed` webhook are no longer available
+- **`virtual_account.deleted` webhook:** sent when you delete a virtual account. `DELETE /business/virtual-account/delete-virtual-account/{account_id}` now returns the deleted `account_id`, and `404` for an ID that isn't yours. See [Delete Virtual Account](/fiat-api-reference/virtual-accounts/delete)
+- **Virtual account currencies:** `USD_KIRA` and `USDKIRA` are no longer available. Get the codes your account can use from `GET /business/virtual-account/currencies-and-endorsements`
+- **Wallet address limits:** `POST /crypto/create-wallet` and corporate card funding addresses allow 3 address requests a minute per customer. Going over returns `403` and blocks both for that customer for 24 hours. See [Wallet address limits](/yativo-fiat/deposits#wallet-address-limits)
+
+## Cards
+
+- **Virtual cards:** `POST /customer/virtual/cards/activate` is no longer in the docs. Issue a card with `POST /customer/virtual/cards/create`. See [Virtual Cards](/yativo-fiat/virtual-cards)
+- **Virtual cards:** every card request works only on your own cards. Any other card ID returns `404` with `Card not found`. See [Virtual Cards](/yativo-fiat/virtual-cards)
+- **Corporate cards in sandbox (invitation only):** issue cards to your business customers' employees, fund each employee's balance from your USDC balance, and review memos, in the sandbox API and dashboard ahead of production. See [Corporate Cards in Sandbox](/yativo-fiat/sandbox-corporate-cards)
+- **Corporate card links:** card number, CVV and PIN are now only on each card's reusable, embeddable link, which only the card's employee can open (email code the first time, then a passkey or authenticator app). Brand it with your logo, font and colours, reset an employee's sign-in, and change an employee's email with their confirmation on the card link. Removed: `GET /spend/cards/{card_id}/widget-token`, `POST /spend/cards/pin` and `POST /corporate-card/employees/cards/pin`. See [Corporate Card Links](/yativo-fiat/corporate-card-links)
+- **Corporate card errors:** a failed card request returns only `data.error` with a readable reason. When the card service can't complete the request, you get `502`. See [Errors](/yativo-fiat/sandbox-corporate-cards#errors)
+- **USDC balance:** your USDC balance is only for corporate cards. Payouts, transfers and swaps out of it fail with `Invalid wallet selected.` Fund it with a USDC deposit or a swap from USD. See [USDC balance](/yativo-fiat/sandbox-corporate-cards#usdc-balance)
+- **Corporate cards:** customers now need an approved `cobo_pobo` endorsement, not `faster_payments`
+
+## KYC
+
+- **KYB tax ID documents:** a `tax_id` entry in an associated person's or the business's `identifying_information` now needs `image_front`: a photo of the tax ID or a tax return filing. Tax ID numbers take letters and digits only. See [Business KYB](/yativo-fiat/kyc#business-kyb)
+- **KYB associated persons:** directors, signers and controllers (`is_director`, `is_signer` or `has_control` true) are now kept even when they own less than `ownership_threshold`. At least one person must still meet the threshold. The role flags accept `true`/`false`, `1`/`0` and `"1"`/`"0"`. See [Business KYB](/yativo-fiat/kyc#business-kyb)
+- **Hosted KYB drafts:** customers can save any section of the hosted business form as a draft and finish it later. They can't submit until every drafted section is saved. See [Integration approaches](/yativo-fiat/kyc#integration-approaches)
+- **Verification results come from endorsements:** a customer's KYC or KYB result is only available through their endorsements, via the `endorsement.updated` webhook or the `endorsement` list on `GET /customer/{customer_id}`. Each service is available when its endorsement is `approved`. `GET /customer/kyc/{customer_id}` and `is_va_approved` are no longer documented as a status check. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements)
+- **Endorsement resubmission:** `POST /customer/kyc/resubmit/{customer_id}/{endorsement}` re-runs verification for one endorsement. The `{endorsement}` path value is no longer case-sensitive. See [KYC / KYB](/yativo-fiat/kyc#resubmit-one-endorsement)
+- **KYC sandbox host:** sandbox customers use `https://kyc-sandbox.yativo.com`; production uses `https://kyc.yativo.com`. KYC platform endpoints don't need an API key. KYB business profile fields go in the `extra_business_info`, `collections_data` and `payouts_data` objects. See [KYC / KYB](/yativo-fiat/kyc)
+- **KYC lookups in the API reference:** countries, subdivisions, postal code formats, ID types, occupations, industries, account purposes, sources of funds and transaction currencies and countries, each with a "Try it" playground. See [KYC Lookups](/fiat-api-reference/kyc-lookups/countries)
+- **KYC rules documented:** duplicate-person `409` with `duplicate_of`, the permanent `403` for placeholder names, what each endorsement needs, sandbox test values, and a go-live checklist. Files can be 5 KB–30 MB; tax IDs take letters and digits only; KYB requires `primary_website`, proof of address for every address, `pep_status`, `third_party_msb_payments`, `expected_monthly_payments_usd` and a `shareholding_structure` extra document; associated persons below the ownership threshold (default 25%) are dropped; individual submissions return `warnings` for values verification is likely to reject. See [KYC / KYB](/yativo-fiat/kyc)
+
+## Sandbox
+
+- **Sandbox simulation endpoints:** credit a wallet, settle a payin or payout, simulate a virtual-account deposit, fire a virtual-card or spend-card event, or send a sample webhook. All of them live in the [Sandbox](/fiat-api-reference/sandbox/wallet-topup) API reference group. Production returns `404 Not found`. See [Sandbox](/yativo-fiat/sandbox#sandbox-simulation-endpoints)
+- **IP whitelist optional on sandbox:** sandbox API keys may omit allowed IPs. Production (`api.yativo.com` and every other host on that server) still requires a whitelist — a request with none is `401`. See [IP whitelisting](/yativo-fiat/ip-allowlist)
+- **Sandbox KYC:** sandbox does not approve KYC when you create a customer. Your account stays limited until `kyc_status` is `approved` and `is_kyc_submitted` is true. The sandbox dashboard collects business verification in a form. See [Sandbox KYC](/yativo-fiat/sandbox-kyc)
+
+## API
+
+- **Official SDKs:** libraries for Node.js, Python, PHP, Laravel and Go, and a WooCommerce plugin. They handle API key authentication, idempotency keys, safe retries, typed errors and webhook verification. See [SDKs](/yativo-fiat/sdks/overview)
+- **Login tokens discontinued:** `POST /auth/login`, `GET /auth/refresh-token` and `Authorization: Bearer` tokens (legacy Account ID and App Secret) no longer work for API requests. Send `X-Api-Key` and `X-Api-Secret` on every request. See [Authentication](/yativo-fiat/authentication)
+- **Webhook payloads:** `user.updated`, `customer.created`, `customer.updated` and `deposit.*` now carry only their documented fields. `user.updated` is sent when your name, email, membership ID or KYC status changes, not when you sign in. `customer.updated` is sent when a profile field or the customer's KYC status changes. `endorsement.updated` no longer includes `_webhook_id`. The delivery log and resends show each payload with today's fields. See [Webhooks](/yativo-fiat/webhooks)
+- **Unified errors:** every failed response now includes `error_details`, with a stable `code`, `message`, `fields`, `retryable` and `retry_after`. See [Error response format](/fiat-api-reference/introduction#error-response-format)
+- **MCP server:** connect Claude, Cursor or any MCP client to your fiat account at `https://api.yativo.com/mcp` to check balances and deposits, and quote and send payouts with your approval. See [Fiat MCP server](/yativo-fiat/mcp-server)
+- Endpoints that change sign-in settings (passkeys, two-factor authentication, PIN, app secret) or delete the account now return `403` when called with an API key
+- `GET /ip-whitelist/check` now returns `api_key.label` (was `name`) and a `network.warning` when your request came through a proxy
+- **Try it on every endpoint:** every fiat API reference page now has an interactive playground
+- **More endpoints in the API reference:** corporate card employees, employee KYC submission, employee balances, cards, memos, the USDC funding address and card transactions, plus stablecoin deposit wallets, pay-in countries and currencies, `GET /currencies/all`, `GET /business/transaction/by-currency`, `POST /storage/upload` and `DELETE /customer/{customer_id}`. Each has a "Try it" playground. See [Corporate Cards](/fiat-api-reference/corporate-cards/employees-create)
+
+## Docs
+
+- **Corrected:** the fiat webhook signature header is `Signature`, not `X-Yativo-Signature`. Webhooks time out after 3 seconds and are attempted up to 3 times. The [Webhooks](/yativo-fiat/webhooks) page now lists every event type, including virtual card and corporate card events
+- **Corrected:** `POST /payout/simple` requires `debit_wallet` and `customer_id`. Insufficient balance returns `400`, not `402`. Idempotency keys are kept for 60 minutes, not 24 hours
+- **Corrected:** KYB `account_purpose` and `source_of_funds` use their own lists, separate from individual KYC. KYB associated persons send ID images as `image_front` and `image_back`
+- **Corrected:** `GET /payment-methods/payin/currency` takes a three-letter `country` (`BRA`, not `BR`), and `GET /payment-methods/payin/countries` returns `country`, `name`, `flag` and `currencies`. The `GET /corporate-card/wallet` balances are in USD, not cents
+- [AI and MCP servers](/yativo/mcp) compares the Docs, Fiat and Agentic Wallet MCP servers, and documents the Docs MCP server at `https://docs.yativo.com/mcp`
+
+## Yativo Crypto
+
+- Card IBAN removed from the crypto docs. To receive money by bank transfer, use [Yativo Fiat virtual accounts](/yativo-fiat/virtual-accounts)
+
 </Update>
 
-<Update label="September 2026" description="API Keys, IP whitelisting, passkeys, and crypto API updates">
-  ### Yativo Fiat
-  - **API Keys:** servers now authenticate with `X-Api-Key` and `X-Api-Secret`. See [Authentication](/yativo-fiat/authentication)
-  - **Deprecated:** legacy API keys (Account ID + App Secret, `POST /auth/login`). From 15 October 2026, its tokens only work inside the dashboard
-  - **IP whitelisting:** every API key lists the server IPs allowed to use it, enforced from midnight on 14 October 2026. See [IP whitelisting](/yativo-fiat/ip-allowlist)
-  - New `GET /ip-whitelist/check` to confirm each server is allowed
-  - **Passkeys:** everyone on a team can sign in to the dashboard with a passkey. See [Passkeys](/yativo-fiat/passkeys)
+<Update label="September 2026" description="API keys, IP whitelisting, and passkeys" tags={["Fiat", "Crypto"]}>
 
-  ### Yativo Crypto
-  - Customers: get, update and delete a customer, plus per-customer auto-forwarding. See [Customers](/yativo-crypto/customers)
-  - Agentic wallets: per-connector capabilities, `GET /agent/capabilities`, `GET /agent/openapi.json`, and prediction market trading. See [Agentic Wallets](/yativo-crypto/agentic-wallets)
-  - Transactions: `POST /transactions/preview-fee`, daily and monthly withdrawal limits, and review holds for large sends
-  - Gas station low-balance email alerts with custom thresholds and recipients
-  - Swap: `GET /swap/destinations` and `GET /swap/available-chains`
-  - Deposit webhooks use the on-chain transaction hash as `transaction_id`; deposits below the minimum aren't credited
-  - Secure card view: card data always renders light, and the view can be embedded on any website
-  - Crypto docs now cover the crypto API only. Fiat features are documented under Yativo Fiat
+## Yativo Fiat
+
+- **API Keys:** servers now authenticate with `X-Api-Key` and `X-Api-Secret`. See [Authentication](/yativo-fiat/authentication)
+- **Deprecated:** legacy API keys (Account ID + App Secret, `POST /auth/login`). From 15 October 2026, its tokens only work inside the dashboard
+- **IP whitelisting:** every API key lists the server IPs allowed to use it, enforced from midnight on 14 October 2026. See [IP whitelisting](/yativo-fiat/ip-allowlist)
+- New `GET /ip-whitelist/check` to confirm each server is allowed
+- **Passkeys:** everyone on a team can sign in to the dashboard with a passkey. See [Passkeys](/yativo-fiat/passkeys)
+
+## Yativo Crypto
+
+- Customers: get, update and delete a customer, plus per-customer auto-forwarding. See [Customers](/yativo-crypto/customers)
+- Agentic wallets: per-connector capabilities, `GET /agent/capabilities`, `GET /agent/openapi.json`, and prediction market trading. See [Agentic Wallets](/yativo-crypto/agentic-wallets)
+- Transactions: `POST /transactions/preview-fee`, daily and monthly withdrawal limits, and review holds for large sends
+- Gas station low-balance email alerts with custom thresholds and recipients
+- Swap: `GET /swap/destinations` and `GET /swap/available-chains`
+- Deposit webhooks use the on-chain transaction hash as `transaction_id`; deposits below the minimum aren't credited
+- Secure card view: card data always renders light, and the view can be embedded on any website
+- Crypto docs now cover the crypto API only. Fiat features are documented under Yativo Fiat
+
 </Update>
 
-<Update label="April 2026" description="Developer experience, documentation, and monitoring improvements">
-  ### Docs
-  - Comprehensive Yativo Fiat documentation with guides, API references, KYC/KYB docs
-  - Added HMAC SHA256 webhook signature verification examples in 7 languages
-  - Docs reordered: Yativo → Yativo Fiat → Fiat API References → Yativo Crypto → Crypto API References
-  - Changelog page added
+<Update label="April 2026" description="Docs, monitoring, and SDK hardening" tags={["Docs", "Crypto"]}>
 
-  ### Monitoring
-  - Two public status pages for production/live/main:
-    - [status.yativo.com](https://status.yativo.com) (primary)
-    - [status2.yativo.com](https://status2.yativo.com) (backup)
-  - Both pages show real-time uptime, incident history, and scheduled maintenance
-  - Fiat backend health check endpoints added (`/api/health`, `/api/health/ping`)
+## Docs
 
-  ### Yativo Crypto SDK
-  - 2FA enforcement on all critical operations: send funds, API key management, swaps, card freeze/unfreeze, auto-forwarding rules
-  - TypeScript SDK updated with `twoFactorCode` parameter on sensitive endpoints
-  - Chrome extension updated with 2FA modal prompt for sensitive actions
+- Comprehensive Yativo Fiat documentation with guides, API references, KYC/KYB docs
+- Added HMAC SHA256 webhook signature verification examples in 7 languages
+- Docs reordered: Yativo → Yativo Fiat → Fiat API References → Yativo Crypto → Crypto API References
+- Changelog page added
 
-  ### Security
-  - Webhook HMAC SHA256 signature verification documented with multi-language examples
-  - Removed API registration/login from public docs — onboarding exclusively via dashboard
+## Monitoring
+
+- Two public status pages for production:
+  - [status.yativo.com](https://status.yativo.com) (primary)
+  - [status2.yativo.com](https://status2.yativo.com) (backup)
+- Both pages show real-time uptime, incident history, and scheduled maintenance
+- Fiat backend health check endpoints added (`/api/health`, `/api/health/ping`)
+
+## Yativo Crypto SDK
+
+- 2FA enforcement on all critical operations: send funds, API key management, swaps, card freeze/unfreeze, auto-forwarding rules
+- TypeScript SDK updated with `twoFactorCode` parameter on sensitive endpoints
+- Chrome extension updated with 2FA modal prompt for sensitive actions
+
+## Security
+
+- Webhook HMAC SHA256 signature verification documented with multi-language examples
+- Removed API registration/login from public docs — onboarding exclusively via dashboard
+
 </Update>
 
-<Update label="March 2026" description="Auto-forwarding, XSS hardening, and SDK improvements">
-  ### Yativo Crypto
-  - Auto-forwarding rules API: create, list, update, delete rules for automatic fund forwarding
-  - Auto-forwarding supports `twoFactorCode` for create/update/delete operations
+<Update label="March 2026" description="Auto-forwarding, receipts, and virtual cards" tags={["Fiat", "Crypto"]}>
 
-  ### Security
-  - XSS sanitization added to all user-facing string inputs across crypto API
-  - Browser extension hardened against XSS injection vectors
+## Yativo Crypto
 
-  ### Yativo Fiat
-  - Virtual card operations: activate, create, topup, freeze, withdraw, terminate
-  - Send money quote endpoint: `/sendmoney/quote` for pre-flight rate checks
-  - Wallet creation API: `POST /wallet/create`
-  - PDF transaction receipts: `GET /business/transaction/receipt/{id}`
+- Auto-forwarding rules API: create, list, update, delete rules for automatic fund forwarding
+- Auto-forwarding supports `twoFactorCode` for create/update/delete operations
+
+## Security
+
+- XSS sanitization added to all user-facing string inputs across crypto API
+- Browser extension hardened against XSS injection vectors
+
+## Yativo Fiat
+
+- Virtual card operations: create, topup, freeze, withdraw, terminate
+- Wallet creation API: `POST /wallet/create`
+- PDF transaction receipts: `GET /business/transaction/receipt/{id}`
+
 </Update>
 
-<Update label="February 2026" description="Multi-platform SDK release and KYC platform">
-  ### SDKs
-  - TypeScript/Node.js SDK released with full crypto API coverage
-  - Python SDK released
-  - PHP SDK released
-  - Java SDK released
-  - Chrome extension with full wallet management UI
+<Update label="February 2026" description="SDKs, KYC platform, and virtual accounts" tags={["Fiat", "Crypto"]}>
 
-  ### KYC/KYB Platform
-  - Individual KYC submission API at kyc.yativo.com
-  - Business KYB submission with document upload support
-  - Hosted KYC links for no-code integration
-  - Webhook notifications on KYC status changes
+## SDKs
 
-  ### Yativo Fiat
-  - Magic link passwordless authentication
-  - API key generation with PIN protection
-  - Business virtual accounts (SEPA, SPEI, Brazil, USD LatAm)
-  - Service endorsements for regional payment rails
+- TypeScript/Node.js SDK released with full crypto API coverage
+- Python SDK released
+- PHP SDK released
+- Java SDK released
+- Chrome extension with full wallet management UI
+
+## KYC / KYB
+
+- Individual KYC submission API at kyc.yativo.com
+- Business KYB submission with document upload support
+- Hosted KYC links for no-code integration
+- Webhook notifications on KYC status changes
+
+## Yativo Fiat
+
+- Magic link passwordless authentication
+- API key generation with PIN protection
+- Business virtual accounts (SEPA, SPEI, Brazil, USD LatAm)
+- Service endorsements for regional payment rails
+
 </Update>
-
-<Update label="January 2026" description="Platform launch">
-  ### Launch
-  - Yativo Fiat platform launched at [app.yativo.com](https://app.yativo.com)
-  - Yativo Crypto platform launched at [crypto.yativo.com](https://crypto.yativo.com)
-  - Multi-currency wallets with support for 30+ currencies
-  - Real-time exchange rates and FX conversion
-  - Developer API with sandbox environment at smtp.yativo.com
-  - Webhook infrastructure for real-time event notifications
-</Update>
-

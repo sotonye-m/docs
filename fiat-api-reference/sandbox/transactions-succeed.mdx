@@ -1,0 +1,29 @@
+---
+title: "Mark transaction successful (sandbox only)"
+description: "Settle a pending payin or payout as success. Sandbox only."
+openapi: "openapi-fiat.yaml POST /sandbox/transactions/{id}/succeed"
+---
+
+Settles a pending deposit or payout you own so the wallet movement and webhook match a live settlement.
+
+```
+POST /sandbox/transactions/{id}/succeed
+```
+
+<Warning>
+  Sandbox only. Call `https://smtp.yativo.com/api/v1`. Production returns `404` with `Not found`.
+</Warning>
+
+`{id}` is the deposit id, payout id, or the `transaction_id` from the transaction record.
+
+Succeeding a **deposit** credits the wallet and sends `deposit.updated`. Succeeding a **payout** marks it complete and sends `payout.updated`.
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://smtp.yativo.com/api/v1/sandbox/transactions/dep_123/succeed' \
+  -H 'X-Api-Key: YOUR_SANDBOX_API_KEY' \
+  -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET'
+```
+</RequestExample>
+
+See every sandbox simulation endpoint in [Sandbox](/yativo-fiat/sandbox#sandbox-simulation-endpoints).

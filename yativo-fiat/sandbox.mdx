@@ -48,14 +48,21 @@ curl 'https://smtp.yativo.com/api/v1/ip-whitelist/check' \
 
 ---
 
-## Sandbox-only endpoints
+## Sandbox simulation endpoints
 
-These paths exist only on `https://smtp.yativo.com/api/v1`. Production refuses them.
+These paths exist only on sandbox (`https://smtp.yativo.com/api/v1`, `https://test-api.yativo.com/api/v1`). Production returns the same generic `404 Not found` as an unknown route.
 
 | Endpoint | What it does |
 |---|---|
 | `POST /wallet/sandbox/topup` | Credit test funds to a wallet you already have. See [Top up wallet](/fiat-api-reference/sandbox/wallet-topup) |
-| `POST /demo/webhook/{type}` | Send a sample event to your registered webhook URL. See [Simulate webhook](/fiat-api-reference/sandbox/simulate-webhook) |
+| `POST /sandbox/transactions/{id}/succeed` | Settle a pending payin or payout as success. See [Mark transaction successful](/fiat-api-reference/sandbox/transactions-succeed) |
+| `POST /sandbox/transactions/{id}/fail` | Settle a pending payin or payout as failed. See [Mark transaction failed](/fiat-api-reference/sandbox/transactions-fail) |
+| `POST /sandbox/virtual-accounts/{accountId}/simulate-deposit` | Credit or fail a deposit into a virtual account. See [Simulate a virtual account deposit](/fiat-api-reference/sandbox/virtual-account-deposit) |
+| `POST /sandbox/virtual-cards/{cardId}/simulate` | Fire a `virtualcard.*` event on a card you own. See [Simulate a virtual card event](/fiat-api-reference/sandbox/virtual-card) |
+| `POST /sandbox/spend-cards/{cardId}/simulate` | Fire a `business_spend_card.*` event on a spend card you own. See [Simulate a spend card event](/fiat-api-reference/sandbox/spend-card) |
+| `POST /demo/webhook/{type}` | Send a sample event to your registered webhook URL without creating a record. See [Simulate webhook](/fiat-api-reference/sandbox/simulate-webhook) |
+
+An IP whitelist is optional on sandbox. Production keys still need one — a production request with no whitelist is `401`. See [IP whitelisting](/yativo-fiat/ip-allowlist).
 
 ---
 
@@ -81,10 +88,10 @@ These paths exist only on `https://smtp.yativo.com/api/v1`. Production refuses t
     Credit test funds with `POST /wallet/sandbox/topup`. See [Top up wallet](/fiat-api-reference/sandbox/wallet-topup).
   </Step>
   <Step title="Test payouts">
-    Call `POST /wallet/payout` or `POST /payout/simple` — payments are simulated and will transition through statuses.
+    Call `POST /wallet/payout` or `POST /payout/simple`, then settle a specific record with `POST /sandbox/transactions/{id}/succeed` or `/fail`.
   </Step>
-  <Step title="Simulate webhooks">
-    Send a sample event with `POST /demo/webhook/{type}`. See [Simulate webhook](/fiat-api-reference/sandbox/simulate-webhook).
+  <Step title="Simulate the rest">
+    Virtual account deposits, virtual cards, spend cards and sample webhooks all live under [Sandbox simulation endpoints](#sandbox-simulation-endpoints).
   </Step>
 </Steps>
 

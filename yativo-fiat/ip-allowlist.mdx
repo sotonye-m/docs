@@ -3,10 +3,13 @@ title: "IP Whitelisting"
 description: "Limit each API key to the servers allowed to use it"
 ---
 
-Every API key has an **IP whitelist**: the public IP addresses of the servers allowed to use it. Requests made with the key must come from one of those IPs, or they're rejected with `403`.
+Every API key has an **IP whitelist**: the public IP addresses of the servers allowed to use it.
+
+- **Production** (`https://api.yativo.com`, and every other host on that server): the key must have at least one allowed IP. A request with no whitelist is rejected with `401`.
+- **Sandbox**: a whitelist is optional. If you set one, requests must still come from those IPs.
 
 <Warning>
-  IP whitelists have been enforced since **14 October 2026**. A key with no IPs on it is refused. Run the [check](#check-your-ip) from every new server before it uses a key.
+  Production keys without a whitelist are refused with `401`. Run the [check](#check-your-ip) from every production server before you go live.
 </Warning>
 
 ---
@@ -33,7 +36,7 @@ curl https://checkip.amazonaws.com
 
 ## Whitelist rules
 
-- Every key needs at least one entry, and can have up to 50.
+- Production keys need at least one entry, and can have up to 50. Sandbox keys may omit the list.
 - Each entry is a single IPv4 or IPv6 address (`203.0.113.10`, `2001:db8::1`) or a CIDR range (`198.51.100.0/28`).
 - Ranges can't be broader than `/16` for IPv4 or `/32` for IPv6. `0.0.0.0/0` is rejected.
 - IPs added under **Profile → Whitelist** apply to every API key on your account, on top of each key's own list.
@@ -108,8 +111,8 @@ To check a server you haven't deployed yet, add `?ip=<address>`. `result` then d
 
 | HTTP | `data.error` | Fix |
 |---|---|---|
+| 401 | `This API key has no whitelisted IP addresses. ...` | Production request with no whitelist. Add at least one IP to the key. Sandbox allows this. |
 | 403 | `This IP address is not allowed to use this API key.` | Check your server's public IP and add it to the key. |
-| 403 | `This API key has no whitelisted IP addresses. ...` | Add at least one IP to the key. |
 | 403 | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | Make the change in the dashboard. |
 
 ---
@@ -121,9 +124,9 @@ To check a server you haven't deployed yet, add `?ip=<address>`. `result` then d
     No. It only applies to requests made with an API key. People can sign in to the dashboard from any network.
   </Accordion>
   <Accordion title="Can I allow any IP?">
-    No. Every key needs a whitelist, and ranges broader than `/16` (IPv4) or `/32` (IPv6) are rejected.
+    On sandbox, omit the whitelist to call from any IP. On production, every key needs at least one address, and ranges broader than `/16` (IPv4) or `/32` (IPv6) are rejected.
   </Accordion>
-  <Accordion title="My key worked and now returns 403.">
-    Your server's public IP has probably changed. Run the check endpoint from that server and add the new `request_ip` to the key.
+  <Accordion title="My key worked and now returns 401 or 403.">
+    A `401` with no whitelisted IPs means you called production without a whitelist. A `403` means your server's public IP isn't on the list — run the check endpoint and add the new `request_ip`.
   </Accordion>
 </AccordionGroup>

@@ -1,0 +1,37 @@
+---
+title: "Simulate a virtual account deposit (sandbox only)"
+description: "Credit or fail a deposit into a virtual account. Sandbox only."
+openapi: "openapi-fiat.yaml POST /sandbox/virtual-accounts/{accountId}/simulate-deposit"
+---
+
+Creates a deposit on a virtual account you own. A successful outcome credits the wallet and sends `virtual_account.deposit`. Sandbox simulations do not charge virtual-account fees.
+
+```
+POST /sandbox/virtual-accounts/{accountId}/simulate-deposit
+```
+
+<Warning>
+  Sandbox only. Call `https://smtp.yativo.com/api/v1`. Production returns `404` with `Not found`.
+</Warning>
+
+`{accountId}` is the virtual account's `account_id` or `account_number`.
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://smtp.yativo.com/api/v1/sandbox/virtual-accounts/va_123/simulate-deposit' \
+  -H 'X-Api-Key: YOUR_SANDBOX_API_KEY' \
+  -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "amount": 250,
+    "outcome": "success",
+    "sender": {
+      "name": "Jane Doe",
+      "bank": "Sandbox Bank",
+      "account_number": "1234567890"
+    }
+  }'
+```
+</RequestExample>
+
+See every sandbox simulation endpoint in [Sandbox](/yativo-fiat/sandbox#sandbox-simulation-endpoints).

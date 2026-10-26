@@ -1,0 +1,33 @@
+---
+title: "Simulate a spend card event (sandbox only)"
+description: "Fire a business_spend_card.* event on a card you own. Sandbox only."
+openapi: "openapi-fiat.yaml POST /sandbox/spend-cards/{cardId}/simulate"
+---
+
+Transaction events are written to spend-card activity history and sent as `business_spend_card.transaction.*`. Lifecycle events (`created`, `funded`, `suspended`, …) only send the webhook.
+
+```
+POST /sandbox/spend-cards/{cardId}/simulate
+```
+
+<Warning>
+  Sandbox only. Call `https://smtp.yativo.com/api/v1`. Production returns `404` with `Not found`.
+</Warning>
+
+The card must belong to your business. Omit `event` to default to `business_spend_card.transaction.approved`, or `.declined` when `outcome` is `fail`.
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://smtp.yativo.com/api/v1/sandbox/spend-cards/card_123/simulate' \
+  -H 'X-Api-Key: YOUR_SANDBOX_API_KEY' \
+  -H 'X-Api-Secret: YOUR_SANDBOX_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "event": "business_spend_card.transaction.approved",
+    "amount": 19.99,
+    "description": "Sandbox coffee"
+  }'
+```
+</RequestExample>
+
+See [Corporate cards](/yativo-fiat/webhooks#corporate-cards) and every sandbox simulation endpoint in [Sandbox](/yativo-fiat/sandbox#sandbox-simulation-endpoints).

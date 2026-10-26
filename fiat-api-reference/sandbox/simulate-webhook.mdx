@@ -11,12 +11,14 @@ POST /demo/webhook/{type}
 ```
 
 <Warning>
-  Sandbox only. Call `https://smtp.yativo.com/api/v1`. This path does not exist in production.
+  Sandbox only. Call `https://smtp.yativo.com/api/v1`. Production returns `404` with `Not found`.
 </Warning>
 
 `type` is one of `payin`, `payout`, `virtual_account`, `virtual_account_created`, `virtual_account_updated`, `customer`, `customer_updated`, `endorsement`, `metadata_created`, `metadata_updated`, `webhook_updated`, `user`, `tracking`, `payin_method_enabled`, `payin_method_disabled`, `payout_method_enabled`, `payout_method_disabled`, `crypto_wallet`, `crypto_deposit` or `wallet_deleted`.
 
-For example, `payin` sends `deposit.created` and then `deposit.updated`. Their `customer` may be `null`. `virtualcard.*` events can't be simulated.
+For example, `payin` sends `deposit.created` and then `deposit.updated`. Their `customer` may be `null`.
+
+This sends a sample only — it does not create a record. To settle a real sandbox payin, virtual account, or card, use the other endpoints in [Sandbox](/yativo-fiat/sandbox#sandbox-simulation-endpoints).
 
 See [Test in sandbox](/yativo-fiat/webhooks#test-in-sandbox) for the full list.
 
