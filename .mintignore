@@ -11,3 +11,6 @@ ai-knowledge-base/
 
 # Record of menus hidden from navigation (not a docs page)
 nav-records/
+
+# Mintlify agent workflows (not documentation pages)
+.mintlify/

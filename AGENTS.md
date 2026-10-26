@@ -19,7 +19,7 @@ npx -y mint@latest validate
 
 - Add every new page to `docs.json` navigation
 - When removing or renaming a page, add an entry to `redirects` in `docs.json`
-- Add integrator-visible changes to `yativo/changelog.mdx` under the current month
+- Add integrator-visible changes to `yativo/changelog.mdx` under the current month. The Mintlify workflow in `.mintlify/workflows/update-changelog.md` drafts that entry after a push to `main` when the change is worth publishing, and skips typos and internal files
 - Don't escape code fences or backticks in MDX (`` \`\`\` `` breaks parsing)
 
 ## Hidden and removed menus
