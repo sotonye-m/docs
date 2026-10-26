@@ -14,7 +14,7 @@
     "related": ["ui-crypto-accounts", "ui-crypto-transactions"],
     "tags": ["dashboard", "overview", "crypto", "ui"],
     "verified": true,
-    "content": "The Yativo Crypto dashboard (crypto.yativo.com) is your main hub for managing crypto wallets, WaaS accounts, virtual cards, gift cards, and developer tools. From the sidebar you can navigate to: Accounts (wallet balances and addresses), Transactions (full history), Swap (exchange tokens), Cards (virtual and physical cards), Agentic Wallets (automated wallets), Virtual Accounts (IBAN), Payment Gateway, Gift Cards, Payouts, Customers (WaaS), Developer (API keys and webhooks), and Subscriptions. The top bar shows your current balance summary and notification bell. Dark mode can be toggled from the profile menu at the top right."
+    "content": "The Yativo Crypto dashboard is your main hub for managing crypto wallets, WaaS accounts, virtual cards, gift cards, and developer tools. From the sidebar you can navigate to: Accounts (wallet balances and addresses), Transactions (full history), Swap (exchange tokens), Cards (virtual and physical cards), Agentic Wallets (automated wallets), Virtual Accounts (IBAN), Payment Gateway, Gift Cards, Payouts, Customers (WaaS), Developer (API keys and webhooks), and Subscriptions. The top bar shows your current balance summary and notification bell. Dark mode can be toggled from the profile menu at the top right."
   },
   {
     "_id": "ui-crypto-accounts",

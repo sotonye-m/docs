@@ -12,7 +12,6 @@ info:
     | | Production | Sandbox |
     |---|---|---|
     | Base URL | `https://crypto-api.yativo.com/api/v1` | `https://crypto-sandbox.yativo.com/api/v1` |
-    | Dashboard | [crypto.yativo.com](https://crypto.yativo.com) | [sandbox-crypto.yativo.com](https://sandbox-crypto.yativo.com) |
 
     **Idempotency**
     `POST /transactions/send-funds` auto-generates an idempotency key. Supply your own via `"idempotency_key"` in the request body. Keys expire after 24 hours.

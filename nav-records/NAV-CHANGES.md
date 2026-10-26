@@ -6,6 +6,13 @@ A record of menus, pages and endpoints that were hidden, removed or renamed on p
 
 `nav-records/` is excluded from the site in `.mintignore`. The exact removed `docs.json` blocks are in [`disabled-nav.json`](disabled-nav.json), so a hidden menu can be restored as it was.
 
+## Removed navbar / anchors
+
+| Date | Item | Why |
+|---|---|---|
+| 2026-10-26 | Navbar **Get Started — Crypto** | Crypto dashboard URL removed from public docs |
+| 2026-10-26 | Global anchor **Crypto Dashboard** | Crypto dashboard URL removed from public docs |
+
 ## Hidden from the menu (pages kept)
 
 The page files still exist and are still reachable by URL. Only the menu entry is gone.

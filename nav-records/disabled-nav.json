@@ -2,6 +2,21 @@
   "note": "Menu entries removed from docs.json navigation. The pages still exist. Restore only when explicitly requested. See nav-records/NAV-CHANGES.md.",
   "entries": [
     {
+      "removed": "navbar.link",
+      "from": "navbar.links",
+      "block": {
+        "label": "Get Started — Crypto"
+      }
+    },
+    {
+      "removed": "global.anchor",
+      "from": "navigation.global.anchors",
+      "block": {
+        "anchor": "Crypto Dashboard",
+        "icon": "bitcoin"
+      }
+    },
+    {
       "removed": "pages",
       "from": "Fiat API References > Beneficiaries",
       "pages": [

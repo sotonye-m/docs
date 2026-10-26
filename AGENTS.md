@@ -34,7 +34,7 @@ npx -y mint@latest validate
 - **API key**: the `X-Api-Key` + `X-Api-Secret` pair fiat servers send on every request. Use "an API key"
 - **Legacy API keys**: the deprecated fiat Account ID + App Secret login (`POST /auth/login`)
 - **IP whitelist**: the server IPs allowed to use a fiat API key. Link to `/yativo-fiat/ip-allowlist`
-- **Dashboard**: app.yativo.com (fiat) or crypto.yativo.com (crypto). Write UI paths in bold with arrows: **Developers → API Keys**
+- **Dashboard**: app.yativo.com. Write UI paths in bold with arrows: **Developers → API Keys**
 
 ## Style preferences
 
