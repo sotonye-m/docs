@@ -1,87 +1,51 @@
 ---
 title: "Initiate Payout"
-description: "Send money from your wallet to a customer's saved payout method"
-openapi: "openapi-fiat.yaml POST /wallet/payout"
+description: "Send a single payment to a saved beneficiary payment method"
+openapi: "openapi-fiat.yaml POST /payout/simple"
 ---
 
-Send money from one of your wallets to a customer's saved payout method. Pass a `quote_id` to lock the rate and fees for 5 minutes, or send `amount` to pay at the current rate.
-
-By default `amount` is what leaves your wallet. Set `amount_type` to `receive` to fix what the customer receives instead. See [Pay out by receive amount](/yativo-fiat/exchange-rates#pay-out-by-receive-amount).
+Send a single payment to a saved beneficiary. Debits your wallet at the time of submission.
 
 ```
-POST /wallet/payout
+POST https://api.yativo.com/api/v1/payout/simple
 ```
 
 <Note>
-  Requires an `Idempotency-Key` header. Use a unique key per payout to prevent duplicate transactions.
+  Requires an `Idempotency-Key` header. Your wallet is charged immediately on submission.
 </Note>
 
-## Request body
+`/payout/simple` works like [`POST /wallet/payout`](/yativo-fiat/wallets#quick-wallet-payout) with `beneficiary_details_id` in place of `payment_method_id`. To fix the amount the customer receives (`amount_type: "receive"`), use `/wallet/payout`.
 
 Every payout goes through compliance checks before it's sent. If you include an invoice, it's reviewed with the payout, so make sure its total and beneficiary match. A payout that needs a closer look stays `pending` until the review is finished.
 
 <RequestExample>
-```bash cURL — With quote (recommended)
-curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/payout/simple' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: payout-c586066b-2026-10-01-001' \
+  -H 'Idempotency-Key: payout-simple-001' \
   -d '{
     "debit_wallet": "USD",
-    "payment_method_id": 555,
+    "amount": 250,
+    "beneficiary_details_id": 42,
     "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed"
-  }'
-```
-
-```bash cURL — Fixed receive amount
-curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
-  -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: payout-c586066b-2026-10-01-002' \
-  -d '{
-    "debit_wallet": "USD",
-    "payment_method_id": 555,
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "amount": 5000,
-    "amount_type": "receive"
-  }'
-```
-
-```bash cURL — Fixed send amount
-curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
-  -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: payout-c586066b-2026-10-01-003' \
-  -d '{
-    "debit_wallet": "USD",
-    "payment_method_id": 555,
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
-    "amount": 500
+    "reference": "INV-2026-0042"
   }'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json 201 Created
+```json Success
 {
   "status": "success",
-  "status_code": 201,
-  "message": "Withdrawal request initiated successfully",
+  "status_code": 200,
+  "message": "Request successful",
   "data": {
-    "transaction_id": 4321,
-    "payout_id": 4321,
-    "status": "pending",
-    "amount_type": "receive",
-    "send_amount": 275.886423,
-    "customer_receive_amount": 5000,
-    "debit_amount": 278.386423,
-    "currency": "MXN",
-    "fees": { "...": "full fee and rate breakdown" },
-    "processed_at": "2026-10-01T12:01:30.000000Z"
+    "transaction_id": "txn-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "status": "processing",
+    "amount": "250.00",
+    "created_at": "2026-06-01T10:00:00.000000Z"
   }
 }
 ```
@@ -91,31 +55,9 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   "status": "failed",
   "status_code": 400,
   "message": "Request failed.",
-  "data": { "error": "Insufficient wallet balance" }
+  "data": {
+    "error": "Insufficient wallet balance"
+  }
 }
 ```
 </ResponseExample>
-
-## Response fields
-
-| Field | Description |
-|---|---|
-| `transaction_id` | The transaction ID for this payout. Use it with `GET /transaction/tracking/{id}`. |
-| `payout_id` | The payout ID. Use it with `GET /payout/fetch/{payout_id}`. |
-| `status` | Starts as `pending`. Payouts settle asynchronously; use webhooks for the final status. |
-| `amount_type` | `send` or `receive`, as applied to this payout. |
-| `send_amount` | The amount sent, in the debit wallet currency, before fees. |
-| `customer_receive_amount` | The amount the customer receives, in `currency`. |
-| `debit_amount` | The total debited from your wallet, fees included. |
-| `currency` | The payout currency. |
-| `fees` | The full fee and rate breakdown. |
-
-## Errors
-
-| Status | `data.error` |
-|---|---|
-| `400` | `Insufficient wallet balance`. Nothing is debited. |
-| `400` | `Quote has expired. Please generate a new quote.` |
-| `400` | `Minimum withdrawal: ...` or `Maximum withdrawal: ...`. Limits are checked against the send amount and shown in your wallet currency, so a receive amount can be rejected for being above or below a limit. |
-| `400` | `Unsupported withdrawal method for quotes`. The quote's method doesn't match the payout method. |
-| `422` | `amount_type must be either send or receive` |
