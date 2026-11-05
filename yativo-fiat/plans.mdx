@@ -14,14 +14,9 @@ Pass `payment_method` on quote, subscribe and renew. It defaults to `wallet`.
 | Method | `payment_method` | What happens |
 |---|---|---|
 | USD balance | `wallet` | The plan price is debited from your **USD** wallet. With `auto_renew` on, each renewal is debited too |
-| Card | `card` | You get a `checkout_url` for a secure card payment page. The plan activates once the payment is confirmed. Card billing can be recurring or one-time (see below). **Paying by card doesn't add money to your USD wallet** |
+| Card | `card` | You get a `checkout_url` for a secure card payment page. The plan activates once the payment is confirmed, and renewals charge the saved card each period. **Paying by card doesn't add money to your USD wallet** |
 
-For card, `auto_renew` chooses how the card is billed:
-
-| `auto_renew` | Card billing |
-|---|---|
-| `true` (default) | **Recurring.** The saved card is charged at the end of every period until you cancel |
-| `false` | **One-time.** The card is charged once for this period. The plan ends at `current_period_end` unless you renew it, from your USD balance or by card. `cancel_at_period_end` is `true` once the plan is active |
+To pay for a single period by card, subscribe by card and then [turn off auto-renew](#cancel-resume-and-auto-renew). The card isn't charged again, and the plan ends at the end of the period unless you renew it.
 
 `GET /business/subscription` returns `payment_options`: each method with a `label`, a `description` to show your users, `available` and `unavailable_reason`. Plans with custom negotiated pricing can only be paid from the USD balance.
 
@@ -197,7 +192,7 @@ POST /business/subscription/subscribe
 |---|---|---|
 | `plan_id` | Yes | From `GET /business/subscription/plans` |
 | `payment_method` | No | `wallet` (default) or `card`. Ignored for free plans |
-| `auto_renew` | No | Defaults to `true`. USD balance: `false` stops automatic renewal from the balance. Card: `false` makes it a one-time payment for this period |
+| `auto_renew` | No | USD balance only. Defaults to `true` |
 
 <RequestExample>
 ```bash Wallet
@@ -209,22 +204,13 @@ curl -X POST 'https://api.yativo.com/api/v1/business/subscription/subscribe' \
   -d '{ "plan_id": 3, "payment_method": "wallet", "auto_renew": true }'
 ```
 
-```bash Card (recurring)
+```bash Card
 curl -X POST 'https://api.yativo.com/api/v1/business/subscription/subscribe' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Idempotency-Key: 8a2c4e6f-1b3d-4f5a-8c7e-9d0b1a2c3e4f' \
   -H 'Content-Type: application/json' \
-  -d '{ "plan_id": 3, "payment_method": "card", "auto_renew": true }'
-```
-
-```bash Card (one-time)
-curl -X POST 'https://api.yativo.com/api/v1/business/subscription/subscribe' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
-  -H 'Idempotency-Key: 1f3b5d7e-9a2c-4e6f-8b1d-3c5e7a9b2d40' \
-  -H 'Content-Type: application/json' \
-  -d '{ "plan_id": 3, "payment_method": "card", "auto_renew": false }'
+  -d '{ "plan_id": 3, "payment_method": "card" }'
 ```
 </RequestExample>
 
@@ -257,7 +243,7 @@ curl -X POST 'https://api.yativo.com/api/v1/business/subscription/subscribe' \
 
 <Steps>
   <Step title="Start the checkout">
-    Call `subscribe` (or `renew` for the current plan) with `payment_method: "card"`, and `auto_renew: false` for a one-time payment. Send the user to `data.checkout_url`. The link opens the secure card payment page.
+    Call `subscribe` (or `renew` for the current plan) with `payment_method: "card"` and send the user to `data.checkout_url`. The link opens the secure card payment page.
   </Step>
   <Step title="The user pays">
     After paying, the user is sent back to **Settings → Billing** in the dashboard.
@@ -267,7 +253,7 @@ curl -X POST 'https://api.yativo.com/api/v1/business/subscription/subscribe' \
   </Step>
 </Steps>
 
-Checkout links expire after 60 minutes. Calling `subscribe` with `card` again for the same plan and the same `auto_renew` returns the open link while it's still valid. To make a one-time card plan recurring, call `resume` before it ends. When a card renewal fails, `status` becomes `past_due`: renew with `card` for a new checkout, or with `wallet`.
+Checkout links expire after 60 minutes. Calling `subscribe` with `card` again for the same plan returns the open link while it's still valid. When a card renewal fails, `status` becomes `past_due`: renew with `card` for a new checkout, or with `wallet`.
 
 ## Renew now
 
@@ -282,7 +268,7 @@ curl -X POST 'https://api.yativo.com/api/v1/business/subscription/renew' \
   -d '{ "payment_method": "wallet" }'
 ```
 
-Returns `action: "renewed"` for `wallet`, or `action: "checkout"` with a `checkout_url` for `card`. With `card`, send `auto_renew: false` to pay this period once instead of setting up recurring charges. Free plans renew by themselves, so renewing one returns an error.
+Returns `action: "renewed"` for `wallet`, or `action: "checkout"` with a `checkout_url` for `card`. Free plans renew by themselves, so renewing one returns an error.
 
 ## Cancel, resume and auto-renew
 
@@ -296,7 +282,7 @@ curl -X POST 'https://api.yativo.com/api/v1/business/subscription/cancel' \
 ```
 
 - **Cancel:** `reason` is optional. The plan stays active until `current_period_end`, then the account moves to the free plan. Nothing more is charged, and `cancel_at_period_end` becomes `true`.
-- **Resume:** `POST /business/subscription/resume` turns renewal back on and drops a scheduled downgrade. For a one-time card plan it makes the card billing recurring. It only works before the period ends.
+- **Resume:** `POST /business/subscription/resume` turns renewal back on and drops a scheduled downgrade. It only works before the period ends.
 - **Auto-renew:** `PUT /business/subscription/auto-renew` with `{ "auto_renew": false }`. For USD balance billing, the plan then isn't renewed automatically; renew it yourself before it ends. For card billing it's the same as cancel and resume.
 
 ## Payment and plan history
