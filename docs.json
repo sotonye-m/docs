@@ -75,6 +75,7 @@
             "group": "Payments",
             "pages": [
               "yativo-fiat/accept-payments",
+              "yativo-fiat/card-checkout",
               "yativo-fiat/payouts",
               "yativo-fiat/exchange-rates",
               "yativo-fiat/fees",

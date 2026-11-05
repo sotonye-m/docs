@@ -76,9 +76,12 @@ All successful responses follow this structure:
 
 ### Error response format
 
-Every failed response has `status: "failed"`, and the reason in `data`. Most errors put a message in `data.error`. Validation errors list the failing fields in `data`.
+Every failed response has `status: "failed"`, and the reason in `data`. Most errors put a message in `data.error`, and the same text in `message`. Validation errors list the failing fields in `data`, and `message` is `Request failed.`
 
-Every failed response also includes `error_details`, with the same shape for every endpoint. Read errors from `error_details` so you don't have to handle each endpoint's `data` shape.
+Every failed response also includes two objects with the same shape for every endpoint:
+
+- `error_details`: the error message, per-field messages and retry hints. Read errors from here so you don't have to handle each endpoint's `data` shape.
+- `error`: a short `code`, the `message` and a `request_id`. Quote the `request_id` when you contact support. Send your own `X-Request-Id` header to have it used as the `request_id`, so you can match the error to your logs.
 
 ```json
 {
@@ -87,6 +90,11 @@ Every failed response also includes `error_details`, with the same shape for eve
   "message": "Request failed.",
   "data": {
     "customer_email": ["The customer email field is required."]
+  },
+  "error": {
+    "code": "invalid_argument",
+    "message": "Request failed.",
+    "request_id": "req_5f2c9a1e7b3d4c8a6e0f1b2d"
   },
   "error_details": {
     "code": "validation_error",
@@ -101,6 +109,16 @@ Every failed response also includes `error_details`, with the same shape for eve
 }
 ```
 
+`error` fields:
+
+| Field | Description |
+|---|---|
+| `code` | Short code from the HTTP status: `invalid_argument` (`400`, `422`), `unauthenticated` (`401`), `permission_denied` (`403`), `not_found` (`404`), `method_not_allowed` (`405`), `rate_limited` (`429`) or `internal_error` (`5xx`) |
+| `message` | Same as the top-level `message` |
+| `request_id` | Your `X-Request-Id` header if you sent one, otherwise an ID starting `req_` |
+
+`error_details` fields:
+
 | Field | Description |
 |---|---|
 | `code` | Stable error code from the HTTP status: `bad_request`, `unauthenticated`, `payment_required`, `forbidden`, `not_found`, `method_not_allowed`, `conflict`, `validation_error`, `rate_limited`, `server_error`, `upstream_error`, `service_unavailable` or `upstream_timeout` |
@@ -111,6 +129,8 @@ Every failed response also includes `error_details`, with the same shape for eve
 | `retry_after` | Seconds to wait before retrying, from the `Retry-After` header. `null` when not set |
 
 A `5xx` response's `message` is always generic. It never contains internal details.
+
+Successful responses always return HTTP `200`. `status_code` in the body can be `201` or `202`, for example when a resource was created or accepted for review.
 
 ## KYC platform
 
