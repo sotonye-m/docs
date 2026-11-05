@@ -1,23 +1,58 @@
 ---
-title: "Business Plans"
-description: "View available subscription plans and manage your account tier"
+title: "Plans and billing"
+description: "Choose a plan, pay for it from your USD balance or by card, and pay service fees"
 ---
 
-Yativo offers tiered business plans that unlock higher transaction limits, additional payment corridors, and priority support. Plans are billed in USD and charged directly from your USD wallet.
+Your account is always on a plan. The plan sets your default [fees](/yativo-fiat/fees), your limits and the features listed on it. These endpoints show the plans you can choose, change or renew your plan, and pay the service fees billed to your account.
+
+Every endpoint acts on your business account, whoever on your team calls it. Team members need the **Plans → view** permission to read and **Plans → upgrade** for everything else.
+
+## How you pay for a plan
+
+Pass `payment_method` on quote, subscribe and renew. It defaults to `wallet`.
+
+| Method | `payment_method` | What happens |
+|---|---|---|
+| USD balance | `wallet` | The plan price is debited from your **USD** wallet. With `auto_renew` on, each renewal is debited too |
+| Card | `card` | You get a `checkout_url` for a secure card payment page. The plan activates once the payment is confirmed. Card billing can be recurring or one-time (see below). **Paying by card doesn't add money to your USD wallet** |
+
+For card, `auto_renew` chooses how the card is billed:
+
+| `auto_renew` | Card billing |
+|---|---|
+| `true` (default) | **Recurring.** The saved card is charged at the end of every period until you cancel |
+| `false` | **One-time.** The card is charged once for this period. The plan ends at `current_period_end` unless you renew it, from your USD balance or by card. `cancel_at_period_end` is `true` once the plan is active |
+
+`GET /business/subscription` returns `payment_options`: each method with a `label`, a `description` to show your users, `available` and `unavailable_reason`. Plans with custom negotiated pricing can only be paid from the USD balance.
+
+When a renewal isn't paid, the plan stays active for a grace period. Pay before `grace_ends_at` (by wallet or card) to keep it. Otherwise the account moves to its fallback plan, usually the free plan.
+
+## Endpoints
+
+| Method | Path | What it does |
+|---|---|---|
+| `GET` | `/business/subscription` | Current plan and billing state |
+| `GET` | `/business/subscription/plans` | Plans you can choose |
+| `GET` | `/business/subscription/quote` | Cost and effect of choosing a plan |
+| `POST` | `/business/subscription/subscribe` | Subscribe, upgrade or downgrade |
+| `POST` | `/business/subscription/renew` | Pay for the current plan now |
+| `POST` | `/business/subscription/cancel` | Stop renewing at the end of the period |
+| `POST` | `/business/subscription/resume` | Undo a cancellation or a scheduled downgrade |
+| `PUT` | `/business/subscription/auto-renew` | Turn automatic renewal on or off |
+| `GET` | `/business/subscription/payments` | Plan payments |
+| `GET` | `/business/subscription/history` | Plan changes and renewals |
 
 ---
 
-## Get Current Plan
-
-Returns your account's active subscription plan and its features.
+## Get your current plan
 
 ```
-GET https://api.yativo.com/api/v1/business/plans/current
+GET /business/subscription
 ```
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/business/plans/current' \
+curl -X GET 'https://api.yativo.com/api/v1/business/subscription' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
@@ -30,161 +65,385 @@ curl -X GET 'https://api.yativo.com/api/v1/business/plans/current' \
   "status_code": 200,
   "message": "Request successful",
   "data": {
-    "id": 1,
-    "name": "Starter",
-    "price": "0.00",
-    "currency": "USD",
-    "features": [
-      { "name": "Virtual Accounts", "value": "5" },
-      { "name": "Monthly Payout Volume", "value": "$50,000" },
-      { "name": "API Rate Limit", "value": "100 req/min" }
+    "subscription": {
+      "id": 4182,
+      "status": "active",
+      "plan": { "id": 2, "name": "Pro", "price": 30, "currency": "USD", "period_days": 30, "is_free": false, "is_custom": false },
+      "billing_method": "card",
+      "auto_renew": true,
+      "cancel_at_period_end": false,
+      "started_at": "2026-10-01T09:12:00+00:00",
+      "current_period_end": "2026-10-31T09:12:00+00:00",
+      "days_remaining": 18,
+      "grace_ends_at": null,
+      "last_payment_at": "2026-10-01T09:12:00+00:00",
+      "payment_issue": null,
+      "scheduled_change": null,
+      "manage_card_url": "https://api.yativo.com/subscriptions/4182/card?expires=...&signature=...",
+      "actions": { "can_renew": true, "can_cancel": true, "can_resume": false }
+    },
+    "payment_methods": ["wallet", "card"],
+    "payment_options": [
+      {
+        "method": "wallet",
+        "label": "Yativo USD balance",
+        "description": "Pay from your USD wallet balance. The plan price is debited from the wallet; nothing is charged to a card.",
+        "available": true,
+        "unavailable_reason": null
+      },
+      {
+        "method": "card",
+        "label": "Card Payment",
+        "description": "Pay the plan directly by card. This is a subscription charge only — it does not add funds to your USD wallet.",
+        "available": true,
+        "unavailable_reason": null
+      }
+    ]
+  }
+}
+```
+</ResponseExample>
+
+| Field | Meaning |
+|---|---|
+| `status` | `active`, `past_due` (a renewal failed; the plan is kept until `grace_ends_at`) or `overdue` (the grace period ended) |
+| `billing_method` | `wallet`, `card`, `invoice`, `manual` (complimentary) or `free` |
+| `current_period_end` | The date the plan is paid until |
+| `payment_issue` | Why the last renewal failed, when `status` is `past_due` or `overdue` |
+| `scheduled_change` | A downgrade waiting for the end of the period: `plan_id`, `plan_name` and `effective_at` |
+| `manage_card_url` | Card billing only. Opens a page to update the card or download card receipts. Valid for 30 minutes; read the subscription again for a fresh link |
+| `actions` | Whether you can renew, cancel or resume right now |
+| `payment_methods` | The methods you can pass to subscribe and renew |
+| `payment_options` | The same methods with display text and availability |
+
+An account with no plan is put on the free plan the first time it calls this endpoint.
+
+## List plans
+
+```
+GET /business/subscription/plans
+```
+
+```json Response
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "plans": [
+      {
+        "id": 2,
+        "name": "Pro",
+        "description": "For growing businesses",
+        "price": 30,
+        "currency": "USD",
+        "period_days": 30,
+        "is_free": false,
+        "is_custom": false,
+        "contact_sales": false,
+        "is_current": true,
+        "change_type": "renew",
+        "features": [
+          { "code": "payouts", "name": "Payouts per month", "description": null, "type": "limit", "limit": 500 }
+        ],
+        "metadata": null
+      }
     ],
-    "subscribed_at": "2026-01-01T00:00:00.000000Z"
+    "payment_methods": ["wallet", "card"]
   }
 }
 ```
-</ResponseExample>
 
----
+- `change_type` says what choosing the plan would do: `new`, `renew`, `upgrade` (takes effect now) or `downgrade` (takes effect at the end of the paid period).
+- `is_custom: true` marks a plan built for your account with negotiated pricing. Only you see it.
+- `contact_sales: true` plans have `price: null` and can't be bought through the API. Contact your account manager.
+- A feature `limit` of `-1` means unlimited.
 
-## List All Plans
+## Get a quote
 
-Browse all available plans and their features.
+See what a plan change costs before you make it.
 
 ```
-GET https://api.yativo.com/api/v1/business/plans/all
+GET /business/subscription/quote?plan_id=3&payment_method=wallet
 ```
 
-<RequestExample>
-```bash cURL
-curl -X GET 'https://api.yativo.com/api/v1/business/plans/all' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
+```json Response
 {
   "status": "success",
   "status_code": 200,
   "message": "Request successful",
-  "data": [
-    {
-      "id": 1,
-      "name": "Starter",
-      "price": "0.00",
-      "currency": "USD",
-      "features": [
-        { "name": "Virtual Accounts", "value": "5" },
-        { "name": "Monthly Payout Volume", "value": "$50,000" }
-      ]
-    },
-    {
-      "id": 2,
-      "name": "Growth",
-      "price": "99.00",
-      "currency": "USD",
-      "features": [
-        { "name": "Virtual Accounts", "value": "50" },
-        { "name": "Monthly Payout Volume", "value": "$500,000" },
-        { "name": "Priority Support", "value": "true" }
-      ]
-    },
-    {
-      "id": 3,
-      "name": "Enterprise",
-      "price": "Custom",
-      "currency": "USD",
-      "features": [
-        { "name": "Virtual Accounts", "value": "Unlimited" },
-        { "name": "Monthly Payout Volume", "value": "Custom" },
-        { "name": "Dedicated Account Manager", "value": "true" }
-      ]
-    }
-  ]
+  "data": {
+    "action": "upgrade",
+    "effective": "now",
+    "price": 90,
+    "credit": 15,
+    "amount_due": 75,
+    "currency": "USD",
+    "period_end": "2026-11-12T10:00:00+00:00",
+    "message": "Unused time on your current plan (15.00 USD) is credited against Scale."
+  }
 }
 ```
-</ResponseExample>
 
----
+When you upgrade and pay from the USD balance, the unused part of your current paid period is credited (`credit`) and you pay `amount_due`. Card upgrades charge the full price, so `credit` is `0`. A downgrade returns `effective: "period_end"` and `amount_due: 0`.
 
-## Subscribe to a Plan
-
-Subscribe your account to a specific plan. The plan price is charged immediately from your USD wallet.
+## Subscribe, upgrade or downgrade
 
 ```
-POST https://api.yativo.com/api/v1/business/plans/subscribe/{plan_id}
+POST /business/subscription/subscribe
 ```
 
-<Note>
-  Requires `Idempotency-Key` header. The plan cost is debited from your USD wallet at the time of subscription.
-</Note>
-
-<ParamField path="plan_id" type="number" required>
-  The ID of the plan to subscribe to (from the list plans endpoint).
-</ParamField>
+| Field | Required | Description |
+|---|---|---|
+| `plan_id` | Yes | From `GET /business/subscription/plans` |
+| `payment_method` | No | `wallet` (default) or `card`. Ignored for free plans |
+| `auto_renew` | No | Defaults to `true`. USD balance: `false` stops automatic renewal from the balance. Card: `false` makes it a one-time payment for this period |
 
 <RequestExample>
-```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/business/plans/subscribe/2' \
+```bash Wallet
+curl -X POST 'https://api.yativo.com/api/v1/business/subscription/subscribe' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 5d1e8f2a-3b4c-4d6e-9f7a-1b2c3d4e5f60' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: subscribe-growth-001'
+  -d '{ "plan_id": 3, "payment_method": "wallet", "auto_renew": true }'
+```
+
+```bash Card (recurring)
+curl -X POST 'https://api.yativo.com/api/v1/business/subscription/subscribe' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 8a2c4e6f-1b3d-4f5a-8c7e-9d0b1a2c3e4f' \
+  -H 'Content-Type: application/json' \
+  -d '{ "plan_id": 3, "payment_method": "card", "auto_renew": true }'
+```
+
+```bash Card (one-time)
+curl -X POST 'https://api.yativo.com/api/v1/business/subscription/subscribe' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 1f3b5d7e-9a2c-4e6f-8b1d-3c5e7a9b2d40' \
+  -H 'Content-Type: application/json' \
+  -d '{ "plan_id": 3, "payment_method": "card", "auto_renew": false }'
 ```
 </RequestExample>
 
 <ResponseExample>
-```json Success
+```json Card
 {
   "status": "success",
   "status_code": 200,
-  "message": "Subscription to Growth Business Plan successful",
+  "message": "Complete the payment to activate your plan.",
   "data": {
-    "plan_id": 2,
-    "plan_name": "Growth",
-    "subscribed_at": "2026-06-01T10:00:00.000000Z"
-  }
-}
-```
-
-```json Insufficient balance
-{
-  "status": "failed",
-  "status_code": 400,
-  "message": "Request failed.",
-  "data": {
-    "error": "Insufficient wallet balance"
+    "action": "checkout",
+    "checkout_url": "https://api.yativo.com/subscriptions/checkout/6f0d3c4e-...",
+    "quote": { "action": "upgrade", "price": 90, "credit": 0, "amount_due": 90, "currency": "USD" },
+    "subscription": { "id": 4182, "status": "active", "billing_method": "wallet" }
   }
 }
 ```
 </ResponseExample>
 
----
+`data.action` says what happened:
 
-## Upgrade Plan
+| `action` | Meaning | What to do |
+|---|---|---|
+| `activated` | The new plan is active now and the USD balance was debited | Show the new `subscription` |
+| `renewed` | You chose your current plan, so it was renewed for another period | Nothing |
+| `scheduled` | A downgrade. You keep the current plan until it ends | Show `subscription.scheduled_change` |
+| `checkout` | A card payment is needed. The subscription is unchanged until it's paid | Send the user to `checkout_url` |
 
-Upgrade your existing plan to a higher tier. The cost difference is prorated and charged from your USD wallet.
+### Pay a plan by card
 
-```
-PUT https://api.yativo.com/api/v1/business/plans/upgrade/{plan_id}
-```
+<Steps>
+  <Step title="Start the checkout">
+    Call `subscribe` (or `renew` for the current plan) with `payment_method: "card"`, and `auto_renew: false` for a one-time payment. Send the user to `data.checkout_url`. The link opens the secure card payment page.
+  </Step>
+  <Step title="The user pays">
+    After paying, the user is sent back to **Settings → Billing** in the dashboard.
+  </Step>
+  <Step title="Confirm the plan">
+    Read `GET /business/subscription` until `billing_method` is `card` and `plan.id` is the plan you chose. This usually takes a few seconds. Plan payments show as `pending` in `GET /business/subscription/payments` until then.
+  </Step>
+</Steps>
 
-<ParamField path="plan_id" type="number" required>
-  The ID of the plan to upgrade to.
-</ParamField>
+Checkout links expire after 60 minutes. Calling `subscribe` with `card` again for the same plan and the same `auto_renew` returns the open link while it's still valid. To make a one-time card plan recurring, call `resume` before it ends. When a card renewal fails, `status` becomes `past_due`: renew with `card` for a new checkout, or with `wallet`.
 
-<RequestExample>
-```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/business/plans/upgrade/3' \
+## Renew now
+
+Pay for the current plan straight away: renew early (the new period starts when the current one ends) or settle a `past_due` or `overdue` plan.
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/business/subscription/renew' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 2e4f6a8c-0b1d-4e3f-a5c7-9e1b3d5f7a90' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: upgrade-enterprise-001'
+  -d '{ "payment_method": "wallet" }'
 ```
-</RequestExample>
 
-<Note>
-  Enterprise plans have `"price": "Custom"`. Upgrading to Enterprise will initiate a contact request with the Yativo sales team rather than charging your wallet immediately.
-</Note>
+Returns `action: "renewed"` for `wallet`, or `action: "checkout"` with a `checkout_url` for `card`. With `card`, send `auto_renew: false` to pay this period once instead of setting up recurring charges. Free plans renew by themselves, so renewing one returns an error.
+
+## Cancel, resume and auto-renew
+
+```bash
+curl -X POST 'https://api.yativo.com/api/v1/business/subscription/cancel' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 6c8e0a2b-4d5f-4a7c-9e1b-3d5f7a9c1e20' \
+  -H 'Content-Type: application/json' \
+  -d '{ "reason": "Switching provider" }'
+```
+
+- **Cancel:** `reason` is optional. The plan stays active until `current_period_end`, then the account moves to the free plan. Nothing more is charged, and `cancel_at_period_end` becomes `true`.
+- **Resume:** `POST /business/subscription/resume` turns renewal back on and drops a scheduled downgrade. For a one-time card plan it makes the card billing recurring. It only works before the period ends.
+- **Auto-renew:** `PUT /business/subscription/auto-renew` with `{ "auto_renew": false }`. For USD balance billing, the plan then isn't renewed automatically; renew it yourself before it ends. For card billing it's the same as cancel and resume.
+
+## Payment and plan history
+
+```
+GET /business/subscription/payments?per_page=20
+GET /business/subscription/history?per_page=20
+```
+
+Both are paginated, newest first: the rows are in `data` and the page is in `pagination` (`current_page`, `last_page`, `per_page`, `total`). Each payment has `id`, `status` (`succeeded`, `failed`, `pending` or `refunded`), `method`, `amount`, `currency`, `plan`, `invoice_number`, `period_start`, `period_end`, `failure_reason`, `paid_at` and `created_at`.
+
+Each history entry has a `type`, `from_plan`, `to_plan`, `by` (`You`, `Yativo` or `Automatic`) and `created_at`. `type` is one of `started`, `subscribed`, `upgraded`, `renewed`, `assigned`, `change_scheduled`, `cancel_scheduled`, `resumed`, `past_due`, `recovered`, `overdue`, `downgraded`, `ended`, `fallback`, `invoice_paid`, `extended`, `auto_renew_on` or `auto_renew_off`.
+
+The account owner is emailed when a plan activates or renews, a few days before a renewal, when a renewal fails, when a plan becomes overdue or is downgraded, and when a cancellation or downgrade is scheduled.
+
+---
+
+## Service fees
+
+Some services are billed separately from your plan: account maintenance and the annual verification (KYC/KYB) review. Each charge is a **bill**. Bills aren't transactions and never appear in your transaction history. Yativo collects outstanding bills from your USD balance when it covers them. You can also pay them by card.
+
+| Method | Path | What it does |
+|---|---|---|
+| `GET` | `/business/billing/pending` | Everything still owed, oldest due first |
+| `GET` | `/business/billing/partially-paid` | Bills that are partly paid |
+| `GET` | `/business/billing/history` | Every bill, newest first |
+| `GET` | `/business/billing/{id}` | One bill with its line items and payments |
+| `GET` | `/business/billing/{id}/line-items` | What the bill is for, per account or service |
+| `GET` | `/business/billing/{id}/collections` | Every payment made against the bill |
+| `POST` | `/business/billing/card-payments` | Pay outstanding bills by card |
+| `GET` | `/business/billing/card-payments/{reference}` | Status of a card payment |
+
+### Outstanding bills
+
+```
+GET /business/billing/pending
+```
+
+```json Response
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "total_outstanding": 25,
+    "currency": "USD",
+    "bills": [
+      {
+        "id": "9a4f2c1e-6b3d-4e8a-b7c5-1d2e3f4a5b6c",
+        "reference": "BILL-9a4f2c1e-6b3d-4e8a-b7c5-1d2e3f4a5b6c",
+        "type": "maintenance",
+        "title": "Account maintenance",
+        "billing_period": "2026-10",
+        "period_start": "2026-10-01",
+        "period_end": "2026-10-31",
+        "due_date": "2026-11-01",
+        "currency": "USD",
+        "original_amount": 25,
+        "amount_paid": 0,
+        "outstanding_amount": 25,
+        "status": "pending",
+        "payment_method": null,
+        "payment_reference": null,
+        "paid_at": null,
+        "last_collection_attempt_at": "2026-11-01T00:05:00+00:00",
+        "created_at": "2026-11-01T00:00:00+00:00"
+      }
+    ]
+  }
+}
+```
+
+- `type` is `maintenance` or `kyc_annual`.
+- `status` is `pending`, `partially_paid`, `processing`, `paid`, `failed` (a collection attempt failed) or `cancelled`. Outstanding bills are the ones in `pending`, `partially_paid`, `processing` or `failed` with an `outstanding_amount` above `0`.
+- `GET /business/billing/history` takes optional `status`, `type` and `per_page` (up to 100) filters and returns `bills` with a `pagination` object.
+- `line_items` show each charged account or service with its `description`, `service_type`, `account_number`, `customer_id` and amounts. `payments` show each collection with its `payment_method` (wallet or card), `amount`, `status`, `collected_at` and `failure_reason`.
+
+### Pay bills by card
+
+<Steps>
+  <Step title="Start a card payment">
+    Send the IDs of the bills to pay (1 to 50). The payment covers their full outstanding balance.
+
+    ```bash
+    curl -X POST 'https://api.yativo.com/api/v1/business/billing/card-payments' \
+      -H 'X-Api-Key: YOUR_API_KEY' \
+      -H 'X-Api-Secret: YOUR_API_SECRET' \
+      -H 'Idempotency-Key: 4b6d8f0a-2c3e-4a5b-8d7f-1a3c5e7b9d20' \
+      -H 'Content-Type: application/json' \
+      -d '{ "bill_ids": ["9a4f2c1e-6b3d-4e8a-b7c5-1d2e3f4a5b6c"] }'
+    ```
+
+    ```json Response
+    {
+      "status": "success",
+      "status_code": 201,
+      "message": "Request successful",
+      "data": {
+        "reference": "bcp_01jbx7q2k9x0m3c8v1b5n6z4l2",
+        "status": "initiated",
+        "amount": 25,
+        "currency": "USD",
+        "checkout_url": "https://...",
+        "bills": [{ "billing_record_id": "9a4f2c1e-6b3d-4e8a-b7c5-1d2e3f4a5b6c", "amount": 25 }],
+        "failure_reason": null,
+        "paid_at": null,
+        "expires_at": "2026-11-05T15:00:00+00:00",
+        "created_at": "2026-11-05T14:00:00+00:00"
+      }
+    }
+    ```
+  </Step>
+  <Step title="Send the user to checkout_url">
+    The user pays on the secure card payment page and is sent back to **Settings → Billing** in the dashboard. Keep the `reference`: the return doesn't include it.
+  </Step>
+  <Step title="Confirm the payment">
+    Read `GET /business/billing/card-payments/{reference}` until `status` is `succeeded`. A bill only counts as paid once its card payment has succeeded.
+  </Step>
+</Steps>
+
+| Card payment `status` | Meaning |
+|---|---|
+| `initiated` | Waiting for the user to pay. `checkout_url` is set |
+| `processing` | Payment submitted and waiting for confirmation. `checkout_url` is set |
+| `succeeded` | Paid. The bills are settled |
+| `failed` | The payment didn't go through. `failure_reason` says why |
+| `expired` | The link expired before payment. Start a new card payment |
+
+The link expires after `expires_at`, 60 minutes by default. Starting a card payment again for the same bills while one is open returns the open one.
+
+---
+
+## Errors
+
+Plan and billing errors return `422` with a message you can show the user. See [Error response format](/fiat-api-reference/introduction#error-response-format) for the full response.
+
+| Message | Cause |
+|---|---|
+| `Insufficient USD wallet balance: ...` | Add USD to your wallet, or pay with `payment_method: "card"` |
+| `Please contact sales to move to the Enterprise plan.` | The plan has `contact_sales: true` |
+| `This plan is not available.` | The plan is inactive or belongs to another account |
+| `Card payments are not available right now. Pay from your wallet instead.` | Card payment is temporarily unavailable |
+| `Free plans renew automatically.` | You called `renew` on a free plan |
+| `Select at least one bill to pay.` | `bill_ids` is empty |
+| `One or more selected bills are not outstanding.` | A bill in `bill_ids` is already paid, cancelled or not yours |
+| `Card checkout could not be started. Please try again.` | The card payment page couldn't be opened. Retry |
+
+## Older plan endpoints
+
+`GET /business/plans/current`, `GET /business/plans/all`, `POST /business/plans/subscribe/{plan_id}` and `PUT /business/plans/upgrade/{plan_id}` still work and follow the same rules: USD balance by default, or pass `payment_method: "card"` to get a `checkout_url`. Use the `/business/subscription` endpoints for new work.

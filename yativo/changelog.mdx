@@ -7,6 +7,14 @@ icon: "clock-rotate-left"
 
 What changed in the API and the docs. Filter by Fiat, Crypto, or Docs.
 
+<Update label="November 2026" description="Card Checkout, plan and service-fee card payments, and error request IDs">
+  ### Yativo Fiat
+  - **Card Checkout:** let your customers sell by debit and credit card on a Yativo-hosted checkout page. Verify each selling customer once with its `card_checkout` endorsement, create orders with `POST /card-checkout/orders`, and follow them with `card_checkout.order.*` webhooks. See [Card Checkout](/yativo-fiat/card-checkout)
+  - **Plans:** new `/business/subscription` endpoints to list plans, quote, subscribe, renew, cancel and read payment history. Pay a plan from your USD balance or by card with `payment_method: "card"`, which returns a `checkout_url`. Card billing is recurring by default; send `auto_renew: false` for a one-time payment for the current period. The older `/business/plans` endpoints still work. See [Plans and billing](/yativo-fiat/plans)
+  - **Service fees:** account maintenance and annual verification fees are billed as bills under `/business/billing`, separate from transactions. Pay outstanding bills by card with `POST /business/billing/card-payments`. See [Service fees](/yativo-fiat/plans#service-fees)
+  - **Errors:** `message` now carries the error text (validation errors still say `Request failed.`), and every failed response includes an `error` object with `code`, `message` and `request_id`. Send an `X-Request-Id` header to have it used as the `request_id`. Successful responses always return HTTP `200`; `status_code` in the body can still be `201` or `202`. See [Error response format](/fiat-api-reference/introduction#error-response-format)
+</Update>
+
 <Update label="October 2026" description="SDKs, currency swap, sandbox testing, and authentication changes" tags={["Fiat", "Crypto", "Docs"]}>
 
 ## Payments

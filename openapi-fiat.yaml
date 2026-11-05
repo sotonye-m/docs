@@ -671,6 +671,23 @@ components:
           nullable: true
           description: Seconds to wait before retrying, from the `Retry-After` header.
 
+    ErrorSummary:
+      type: object
+      description: Short error summary included in every failed response.
+      properties:
+        code:
+          type: string
+          enum: [invalid_argument, unauthenticated, permission_denied, not_found, method_not_allowed, rate_limited, internal_error]
+          description: Short code from the HTTP status.
+          example: invalid_argument
+        message:
+          type: string
+          description: Same as the top-level `message`.
+        request_id:
+          type: string
+          description: Your `X-Request-Id` header if you sent one, otherwise an ID starting `req_`. Quote it when you contact support.
+          example: req_5f2c9a1e7b3d4c8a6e0f1b2d
+
     ErrorResponse:
       type: object
       properties:
@@ -681,13 +698,17 @@ components:
           type: integer
         message:
           type: string
-          example: Request failed.
+          description: The error message, the same as `data.error`.
+          example: Insufficient wallet balance
         data:
           type: object
           nullable: true
           properties:
             error:
               type: string
+              example: Insufficient wallet balance
+        error:
+          $ref: '#/components/schemas/ErrorSummary'
         error_details:
           $ref: '#/components/schemas/ErrorDetails'
 
@@ -710,6 +731,8 @@ components:
             type: array
             items:
               type: string
+        error:
+          $ref: '#/components/schemas/ErrorSummary'
         error_details:
           $ref: '#/components/schemas/ErrorDetails'
 
@@ -3719,7 +3742,7 @@ paths:
               example:
                 status: failed
                 status_code: 404
-                message: Request failed.
+                message: Deposit not found
                 data:
                   error: Deposit not found
 
@@ -3920,7 +3943,7 @@ paths:
                     example: 400
                   message:
                     type: string
-                    example: Request failed.
+                    example: Unable to delete virtual account, please try again later
                   data:
                     type: object
                     properties:
@@ -3942,7 +3965,7 @@ paths:
                     example: 404
                   message:
                     type: string
-                    example: Request failed.
+                    example: Account with the provided ID does not exists
                   data:
                     type: object
                     properties:
@@ -6485,7 +6508,7 @@ paths:
                     example: 404
                   message:
                     type: string
-                    example: Request failed.
+                    example: Webhook event not found
                   data:
                     type: object
                     properties:
