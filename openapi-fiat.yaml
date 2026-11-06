@@ -9616,7 +9616,12 @@ paths:
       tags:
       - RFIs
       summary: Reply to RFI
-      description: Submit or update answers for an open RFI. Yativo reviews before anything is sent upstream.
+      description: |
+        Submit a **complete** reply in one request. Every `requested_items[].id` must appear in
+        `responses` with valid fields for that item's `response_types`. Partial replies aren't
+        supported. After success, `responses_submitted_at` is set and the RFI can't be answered
+        again until Yativo reopens it (`response_required` becomes true). Yativo reviews before
+        anything is sent upstream. Same body and rules apply to `POST /business/rfis/{id}/responses`.
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
       - name: id
@@ -9632,13 +9637,13 @@ paths:
               $ref: '#/components/schemas/ProviderRfiDraftRequest'
       responses:
         '200':
-          description: Draft saved
+          description: Reply received
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProviderRfiResponse'
         '422':
-          description: RFI closed
+          description: RFI closed, reply already submitted, or incomplete responses
           content:
             application/json:
               schema:

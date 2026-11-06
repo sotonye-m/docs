@@ -684,7 +684,7 @@ Same `payload` shape as above. `status` may be `under_review` or `closed`; `resp
 
 Same `payload` shape; sent when `response_required` is `true` and the RFI newly needs your team (often together with `rfi.created`).
 
-Reply with `PUT /api/v1/business/rfis/{id}/draft-responses`. Yativo reviews before anything is sent upstream.
+Reply once with every requested item via `PUT /api/v1/business/rfis/{id}/draft-responses` (or `POST …/responses`). Replies are final until Yativo reopens the RFI. Yativo reviews before anything is sent upstream.
 
 Sandbox: `POST /v1/demo/webhook/rfi` (optional body `event`: `rfi.created`, `rfi.updated`, `rfi.response_required`).
 

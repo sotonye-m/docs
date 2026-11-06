@@ -6,7 +6,7 @@ description: "List compliance RFIs and reply with answers"
 When a payment partner needs more information about a customer, payment, or transfer, Yativo records an **RFI** (request for information) on your account. You can list RFIs and reply from your own UI or workflow.
 
 <Warning>
-  Answers you save or submit through the API are **reviewed by Yativo** before anything is sent upstream. Yativo operations submits approved responses from the internal RFI workspace.
+  Each reply must include **every** requested item in one API call. A reply is **final** for that open period — you can't send a partial answer or edit it later unless Yativo reopens the RFI (`response_required` becomes `true` and `status` is `action_required` again). Yativo **reviews** every reply before anything is sent upstream.
 </Warning>
 
 API responses do not include upstream partner names, external reference ids, or third-party dashboard links.
@@ -75,6 +75,7 @@ curl -G 'https://api.yativo.com/api/v1/business/rfis' \
         ],
         "draft_responses": {},
         "draft_responses_at": null,
+        "responses_submitted_at": null,
         "submitted_at": null,
         "is_open": true,
         "response_required": true,
@@ -100,8 +101,8 @@ curl -G 'https://api.yativo.com/api/v1/business/rfis' \
 
 | Value | Meaning |
 |---|---|
-| `action_required` | Your team should submit answers |
-| `under_review` | With Yativo or compliance review |
+| `action_required` | Yativo is waiting for your reply (`response_required` is `true`) |
+| `under_review` | Your reply was received (`responses_submitted_at` is set); Yativo is reviewing — you can't send another reply yet |
 | `closed` | No further action |
 
 ---
@@ -118,9 +119,13 @@ GET /business/rfis/{id}
 
 ## Reply to RFI
 
+Send **one complete reply** per open period. Include every `requested_items[].id` in the JSON body. The same rules apply to `POST /business/rfis/{id}/responses`.
+
 ```
 PUT /business/rfis/{id}/draft-responses
 ```
+
+After a successful reply, `responses_submitted_at` is set, `response_required` becomes `false`, and `status` moves to `under_review`. Further reply calls return `422` until Yativo reopens the RFI for another customer response.
 
 <RequestExample>
 ```bash cURL
@@ -159,11 +164,11 @@ Keys must match `requested_items[].id`. Each item accepts only the field names l
 | `document_list` | `document_list` | array of `{ "file": "data:…;base64,…", "description": "…" }` on write (PDF/images only, max 24 MB per file); reads return `file_attached: true` instead of base64 |
 | `identifying_information_list` | `identifying_information_list` | array of ID objects |
 
-Partial replies merge with answers already on file; omitting `document_list` keeps previously uploaded documents.
+Within a single reply, each `document_list` entry must be included in that request (you can't upload documents in a follow-up call for the same open period).
 
-The response matches **Show RFI** with `draft_responses` populated and `draft_responses_at` set. Document bytes are not echoed on GET — only `file_attached` and `description`.
+The response matches **Show RFI** with `draft_responses` populated, `responses_submitted_at` set, and `draft_responses_at` updated. Document bytes are not echoed on GET — only `file_attached` and `description`.
 
-To require every `requested_items[]` entry in one call, use `POST /business/rfis/{id}/responses` with the same JSON body. That endpoint returns `422` if any item is missing or incomplete.
+Returns `422` if any requested item is missing or incomplete, if the RFI is closed, or if you already replied and Yativo hasn't reopened the RFI.
 
 ---
 

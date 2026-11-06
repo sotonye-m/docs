@@ -1,14 +1,22 @@
 ---
 title: "Reply to RFI"
-description: "Send answers for an open RFI (reviewed by Yativo before submission upstream)"
+description: "Send a complete answer for an open RFI in one request"
 openapi: "openapi-fiat.yaml PUT /business/rfis/{id}/draft-responses"
 ---
 
-Submit or update your answers for an open RFI. You can send a partial reply (merged into any existing answers) or answer every requested item in one call. Yativo reviews before anything is sent upstream.
+Submit your answers for an open RFI in **one request**. The body must include **every** `requested_items[].id`, each with at least one valid field from that item's `response_types`.
+
+<Warning>
+  A reply is **final**. You can't send a partial reply or change answers later on the same open period. After a successful call, `responses_submitted_at` is set and `response_required` becomes `false` while Yativo reviews. To answer again, wait until Yativo reopens the RFI (`response_required` is `true` and `status` is `action_required` again).
+</Warning>
+
+Yativo reviews your reply before anything is sent upstream.
 
 ```
 PUT https://api.yativo.com/api/v1/business/rfis/{id}/draft-responses
 ```
+
+You can also use `POST /business/rfis/{id}/responses` with the same JSON body and the same rules.
 
 <RequestExample>
 ```bash cURL
@@ -19,7 +27,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/business/rfis/42/draft-responses' \
   -H 'Idempotency-Key: rfi-reply-42-v1' \
   -d '{
     "responses": {
-      "523bc014-8d2e-4d0b-b5fc-5ea407168f7d": {
+      "2095d3da-2761-4d30-93e6-b46018bf576a": {
         "free_text_explanation": "Customer explanation here."
       }
     }
@@ -27,4 +35,4 @@ curl -X PUT 'https://api.yativo.com/api/v1/business/rfis/42/draft-responses' \
 ```
 </RequestExample>
 
-Returns `422` if the RFI is closed.
+Returns `422` if the RFI is closed, if a reply was already submitted and Yativo hasn't reopened it, or if any requested item is missing or incomplete.
