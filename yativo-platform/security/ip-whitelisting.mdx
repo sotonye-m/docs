@@ -1,0 +1,292 @@
+---
+title: "IP Whitelisting Guide"
+description: "IP Whitelisting Guide — integration guide for the Yativo API."
+---
+
+Every Yativo API key has an **IP whitelist**: the list of public IP addresses
+allowed to use it. This guide explains the rules, how to find the right IPs,
+and how to check your setup.
+
+Related guides:
+
+- [Team API Keys](/yativo-platform/authentication): creating and using `X-Api-Key` / `X-Api-Secret`.
+- [Passkey Login](/yativo-platform/security/passkey-authentication): dashboard sign-in, which doesn't use a whitelist.
+
+---
+
+- [Environments](#environments)
+- [Two kinds of whitelist](#two-kinds-of-whitelist)
+- [Find your server's public IP](#find-your-servers-public-ip)
+- [Whitelist rules](#whitelist-rules)
+- [Check your IP](#check-your-ip)
+- [Change a key's allowed IPs](#change-a-keys-allowed-ips)
+- [Account whitelist endpoints (dashboard)](#account-whitelist-endpoints-dashboard)
+- [Errors](#errors)
+- [FAQ](#faq)
+
+---
+
+## Environments
+
+| Environment | Base URL |
+|---|---|
+| Sandbox | `https://smtp.yativo.com/api/v1` |
+| Production | `https://api.yativo.com/api/v1` |
+
+Sandbox and production whitelists are separate.
+
+## Rules at a glance
+
+- **Production** (`https://api.yativo.com`, and every other host on that
+  server): every API key must have at least one allowed IP. A request with
+  no whitelist is rejected with `401`.
+- **Sandbox** (`https://smtp.yativo.com`): a whitelist is optional. If
+  you set one, requests must still come from those IPs.
+- Since 15 October 2026, keys and whitelists can only be managed in the
+  dashboard.
+
+Use the [check endpoint](#check-your-ip) to confirm every server that uses a
+key passes before you go live.
+
+## Two kinds of whitelist
+
+| | Key whitelist | Account whitelist |
+|---|---|---|
+| Set on | Each API key (`allowed_ips`) | The team owner's account |
+| Managed in | Dashboard → **API Keys** → the key | Dashboard → **Settings** → **IP Whitelist** |
+| Accepts | IPs and CIDR ranges | Single IPs only |
+| Applies to | That key | **Every** key of the owner's team |
+
+A key's **effective whitelist** is its own `allowed_ips` plus the owner's
+account whitelist. Removing an IP from the account whitelist removes it from
+every key at once.
+
+Use key whitelists for most setups. Use the account whitelist for an address
+that every key should accept, such as your main NAT gateway.
+
+## Find your server's public IP
+
+The whitelist must contain the **public** IP your requests come from, as seen
+by the internet. Private addresses (`10.x.x.x`, `172.16.x.x`–`172.31.x.x`,
+`192.168.x.x`) don't work.
+
+Run this **on the server that will call the API**:
+
+```bash
+curl https://checkip.amazonaws.com
+```
+
+Or, once you have a key, call the [check endpoint](#check-your-ip) from that
+server and use `tested_ip`.
+
+| Setup | What to whitelist |
+|---|---|
+| Single VM or dedicated server | Its static public IP |
+| Kubernetes, serverless, autoscaling | The NAT gateway or egress IP, not individual nodes or pods |
+| Several servers or regions | Each egress IP, or a CIDR range you control |
+| Outbound proxy | The proxy's public IP |
+| Dynamic IPs (home connections, some PaaS) | Not supported. Set up a static egress IP first |
+
+## Whitelist rules
+
+- **At least one entry** is required on every key. A key with no effective
+  whitelist is blocked from every IP.
+- Each key entry is either a single IP (`203.0.113.10`, `2001:db8::1`) or a
+  CIDR range (`198.51.100.0/28`, `2001:db8:abcd::/48`).
+- Ranges can't be broader than **/16 for IPv4** or **/32 for IPv6**. Entries
+  like `0.0.0.0/0` are rejected.
+- Up to **50** entries per key, with no duplicates.
+- The account whitelist accepts single IPs only.
+- The IP checked is the address your request reaches Yativo from. Setting
+  `X-Forwarded-For` or similar headers yourself has no effect.
+
+## Check your IP
+
+`GET /ip-whitelist/check`
+
+Shows which IP Yativo sees for your request and whether it passes your
+whitelist. It never blocks, so you can call it any time, including right
+after changing a whitelist. Limited to 30 requests a minute.
+
+Call it with your API key, from the server that uses the key:
+
+```bash
+curl -s https://api.yativo.com/api/v1/ip-whitelist/check \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Accept: application/json"
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "key_usage": {
+      "authenticated_with_api_key": true,
+      "key": "yativo_pk_9f1c2a...",
+      "request_ip": "203.0.113.10",
+      "allowed_server": true,
+      "matched_entry": "203.0.113.10",
+      "message": "This API key is being used from an allowed server (203.0.113.10 matches 203.0.113.10)."
+    },
+    "result": "pass",
+    "summary": "203.0.113.10 passes the IP whitelist.",
+    "tested_ip": "203.0.113.10",
+    "tested_ip_source": "detected",
+    "network": {
+      "detected_ip": "203.0.113.10",
+      "warning": null
+    },
+    "api_key": {
+      "key": "yativo_pk_9f1c2a...",
+      "label": "Production backend",
+      "key_allowed_ips": ["203.0.113.10"],
+      "account_whitelisted_ips": [],
+      "matched_entry": "203.0.113.10",
+      "would_allow": true,
+      "would_return": null
+    },
+    "sitewide": {
+      "account_whitelisted_ips": [],
+      "matches_own_account_ip": false,
+      "would_allow": true,
+      "would_return": null
+    }
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `key_usage.allowed_server` | `true` if the server that sent this request is on the key's whitelist. Always uses the real request IP, even with `?ip=`. `null` if you didn't use an API key. |
+| `key_usage.request_ip` | The IP Yativo sees for this request. |
+| `key_usage.message` | The result in one sentence, including the exact error you'd get. |
+| `result` | `pass` or `fail` for `tested_ip`. |
+| `summary` | The result in one sentence, including which check would block the request. |
+| `tested_ip` / `tested_ip_source` | The IP checked, and whether it was `detected` or came from `?ip=` (`query`). |
+| `api_key.key_allowed_ips` | The key's own entries. |
+| `api_key.account_whitelisted_ips` | Entries that come from the owner's account whitelist. |
+| `api_key.matched_entry` | The entry that matched, or `null`. |
+| `api_key.would_return` | The exact error you'd get if blocked. |
+| `network.warning` | Set when your request came through a proxy, so the detected IP may not be your server's. |
+
+To check another address, such as a server you haven't deployed yet, add
+`?ip=<address>`. `result`, `summary`, `api_key` and `sitewide` then describe
+that address, and `key_usage` still describes the server you called from:
+
+```bash
+curl -s "https://api.yativo.com/api/v1/ip-whitelist/check?ip=198.51.100.7" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET"
+```
+
+If `detected_ip` isn't the IP you expected, your traffic leaves through a
+different address, such as a NAT gateway or proxy. Whitelist `detected_ip`.
+
+## Change a key's allowed IPs
+
+In the dashboard, go to **API Keys** → the key → **Allowed IPs**. The list you
+save replaces the current one, and the key and secret don't change. This
+needs the `team.api-keys.create` permission. A revoked key can't be changed.
+
+> **When moving servers:** add the new IP first, deploy, then remove the old
+> IP. This avoids downtime.
+
+Dashboard developers: this is
+`PUT /teams/{teamId}/api-keys/{keyId}/allowed-ips`, described in
+[Team API Keys](/yativo-platform/authentication#change-a-keys-allowed-ips).
+
+## Account whitelist endpoints (dashboard)
+
+These endpoints power the account whitelist in the dashboard settings. Since
+15 October 2026 they only work from the dashboard (`https://app.yativo.com`)
+with the user's bearer token. API-key requests get `403`.
+
+Team members need `team.settings.view` to read and `team.settings.manage` to
+change the whitelist.
+
+### Get the account whitelist
+
+```http
+GET /api/v1/ip
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "id": 3,
+    "user_id": 7,
+    "ip_address": ["203.0.113.10", "203.0.113.11"],
+    "created_at": "2026-09-01T09:00:00.000000Z",
+    "updated_at": "2026-09-20T09:00:00.000000Z"
+  }
+}
+```
+
+`data` is `null` if no IPs have been added.
+
+### Add IPs
+
+```http
+POST /api/v1/ip
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+
+{ "new_ip": ["203.0.113.12"] }
+```
+
+`new_ip` is an array of 1 to 50 single IPs (no CIDR ranges). They're **added**
+to the existing list; duplicates are ignored.
+
+```json
+{
+  "status": "success",
+  "data": { "message": "IP addresses whitelisted." }
+}
+```
+
+`PUT /api/v1/ip/{id}` with the same body also adds IPs, to the record with
+that `id`.
+
+### Remove an IP
+
+```http
+DELETE /api/v1/ip/{ip_address}
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+The path parameter is the IP address itself, for example
+`DELETE /api/v1/ip/203.0.113.12`. Returns `404` if there's no whitelist and
+`400 IP address not found` if the IP isn't on it.
+
+## Errors
+
+| HTTP | `data.error` | Cause | Fix |
+|---|---|---|---|
+| 401 | `This API key has no whitelisted IP addresses. Add at least one allowed IP before using it.` | Production request, and the key has no effective whitelist. Sandbox allows this. | [Add IPs to the key](#change-a-keys-allowed-ips). |
+| 403 | `Invalid credentials.` | The request came from an IP that isn't whitelisted. | Check your egress IP and add it. |
+| 403 | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | A whitelist change came from an API key or from outside the dashboard (since 15 October 2026). | Make the change in the dashboard. |
+| 422 | Validation errors on `allowed_ips` | Empty list, invalid IP or CIDR, range broader than /16 (IPv4) or /32 (IPv6), more than 50 entries, or duplicates. | Correct the entries. |
+| 422 | `This API key has been revoked.` | Tried to change a revoked key's IPs. | Create a new key. |
+
+## FAQ
+
+**Does the whitelist apply to dashboard sign-in?**
+No. It only applies to requests made with `X-Api-Key` / `X-Api-Secret`.
+People signing in to the dashboard can be on any network.
+
+**Can I allow any IP?**
+On **sandbox**, omit the whitelist to call from any IP. On **production**,
+no: every key needs at least one address, and `0.0.0.0/0` and ranges
+broader than /16 (IPv4) or /32 (IPv6) are rejected.
+
+**My key worked and now returns 401 or 403.**
+A `401` with no whitelisted IPs means you called production without a
+whitelist. A `403` means your server's egress IP isn't on the list (it may
+have changed). `data.error` tells you which.

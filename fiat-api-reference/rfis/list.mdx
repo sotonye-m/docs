@@ -1,0 +1,26 @@
+---
+title: "List Provider RFIs"
+description: "List compliance RFIs for your account"
+openapi: "openapi-fiat.yaml GET /business/rfis"
+---
+
+Returns RFIs raised by payment partners on your customers or transactions, newest first.
+
+```
+GET https://api.yativo.com/api/v1/business/rfis
+```
+
+| Query | Description |
+|---|---|
+| `open_only` | `1` — only RFIs that are still open |
+| `response_required` | `1` — only RFIs waiting on your response (Bridge `on_developer`, etc.) |
+| `page`, `per_page` | Standard pagination |
+
+<RequestExample>
+```bash cURL
+curl -G 'https://api.yativo.com/api/v1/business/rfis' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  --data-urlencode 'response_required=1'
+```
+</RequestExample>

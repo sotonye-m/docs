@@ -1,0 +1,81 @@
+---
+title: "Webhook event catalog"
+description: "Index of webhook event types and links to payload samples."
+---
+
+The full webhook guide — registration, signature verification, delivery logs, resend, and every payload sample — lives on [Webhooks overview](/yativo-platform/webhooks/overview).
+
+Use this page as a quick index. Every event uses the standard envelope (`event.type` + `payload`), except [gift card events](/yativo-platform/webhooks/overview#giftcardstatus_changed-different-envelope).
+
+## Payments and accounts
+
+| Event | Description |
+|---|---|
+| `deposit.created`, `deposit.updated` | Fiat pay-in created or status changed |
+| `payout.updated` | Payout status changed |
+| `virtual_account.created`, `virtual_account.updated` | Virtual account provisioned or updated |
+| `virtual_account.deleted` | Virtual account deleted |
+| `virtual_account.deposit` | Funds received in a virtual account |
+| `metadata.created`, `metadata.updated` | Transaction metadata attached or changed |
+| `tracking.created` | Tracking update on a transaction |
+
+## Customers and compliance
+
+| Event | Description |
+|---|---|
+| `customer.created`, `customer.updated` | Customer profile or KYC status changed |
+| `endorsement.updated` | One or more endorsement statuses changed — primary KYC/KYB signal |
+| `rfi.created`, `rfi.updated`, `rfi.response_required` | Compliance request for information — see [RFIs](/yativo-fiat/rfis) |
+| `user.updated` | Your business account profile or KYC status changed |
+
+## Card Checkout
+
+| Event | Description |
+|---|---|
+| `card_checkout.order.created` | Checkout order created |
+| `card_checkout.order.requires_action` | 3-D Secure or similar step required |
+| `card_checkout.order.processing` | Payment submitted, awaiting confirmation |
+| `card_checkout.order.paid` | **Payment confirmed — fulfil here** |
+| `card_checkout.order.payment_failed` | Attempt failed; buyer may retry |
+| `card_checkout.order.under_review` | Payment held for review |
+| `card_checkout.order.partially_refunded`, `card_checkout.order.refunded` | Refund processed |
+| `card_checkout.order.disputed` | Chargeback opened |
+| `card_checkout.order.expired` | Checkout link expired |
+
+See [Card Checkout webhooks](/yativo-platform/cards-and-accounts/card-checkout#4-follow-orders-with-webhooks) for a sample `card_checkout.order.paid` payload.
+
+## Stablecoin wallets
+
+| Event | Description |
+|---|---|
+| `crypto.wallet.created` | Deposit address created |
+| `wallet.deleted` | Deposit address deleted |
+| `crypto.deposit.completed` | Stablecoin deposit completed |
+
+## Virtual cards
+
+Events prefixed with `virtualcard.` — KYC, lifecycle, top-ups, settlements, declines. See [Webhooks overview — Virtual cards](/yativo-platform/webhooks/overview#virtual-cards).
+
+## Corporate cards
+
+Events prefixed with `business_spend_card.` — issuance, funding, transactions, disputes. See [Webhooks overview — Corporate cards](/yativo-platform/webhooks/overview#corporate-cards).
+
+## Platform configuration
+
+| Event | Description |
+|---|---|
+| `webhook_updated` | Webhook URL or secret changed |
+| `payin_method.enabled`, `payin_method.disabled` | Pay-in method toggled platform-wide |
+| `payout_method.enabled`, `payout_method.disabled` | Payout method toggled platform-wide |
+
+## Gift cards
+
+| Event | Description |
+|---|---|
+| `giftcard.status_changed` | **Different envelope** — no `event.type` wrapper |
+
+## Sandbox-only
+
+| Event | Description |
+|---|---|
+| `virtual_card.deposit` | Demo only — not sent in production |

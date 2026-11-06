@@ -1,0 +1,387 @@
+---
+title: "Account Recovery: 2FA and Transaction PIN"
+description: "Account Recovery: 2FA and Transaction PIN — integration guide for the Yativo API."
+---
+
+How a signed-in user recovers when they lose their authenticator app or forget
+their transaction PIN, without contacting support:
+
+| Lost | Proves identity with | Endpoint |
+|---|---|---|
+| Authenticator app (2FA) | A **recovery code** + a **passkey** | `POST /api/v1/2fa/recover` |
+| Transaction PIN | An **authenticator (2FA) code** + a **passkey** | `POST /api/v1/pin/reset` |
+
+Each reset needs two separate factors, so one stolen factor is never enough.
+This guide is for developers building the dashboard security settings.
+
+## Contents
+
+- [Before you start](#before-you-start)
+- [Two-factor authentication](#two-factor-authentication)
+  - [Turn on 2FA and save the recovery codes](#turn-on-2fa-and-save-the-recovery-codes)
+  - [Generate new recovery codes](#generate-new-recovery-codes)
+  - [Reset 2FA with a recovery code](#reset-2fa-with-a-recovery-code)
+- [Transaction PIN](#transaction-pin)
+  - [Set or change the PIN](#set-or-change-the-pin)
+  - [Verify the PIN](#verify-the-pin)
+  - [Reset a forgotten transaction PIN](#reset-a-forgotten-transaction-pin)
+- [Passkey confirmation](#passkey-confirmation)
+- [Limits](#limits)
+- [Errors](#errors)
+- [Frontend flow](#frontend-flow)
+- [Security notes](#security-notes)
+
+---
+
+## Before you start
+
+- **Base URLs:** sandbox `https://smtp.yativo.com`, production
+  `https://api.yativo.com`. All paths below include `/api/v1`.
+- **Dashboard only.** Every endpoint here needs the signed-in person's bearer
+  token. They can't be called with an API key (`403 This endpoint cannot be
+  used with an API key. ...`).
+
+  ```http
+  Authorization: Bearer <ACCESS_TOKEN>
+  ```
+
+- **Each person recovers their own account.** For a team member these
+  endpoints act on the member's own 2FA, PIN and passkeys, never the team
+  owner's. See [Team Functionality](/yativo-platform/security/team-management).
+- **A passkey is required for both resets.** A user with no passkey can't
+  reset 2FA or the PIN themselves and gets `403`. Encourage users to add a
+  passkey ([Passkey Login](/yativo-platform/security/passkey-authentication)) when they turn on 2FA.
+- Both resets work while business KYC is still pending.
+- Responses use the standard envelope:
+  `{ "status": "success" | "failed", "status_code": ..., "message": "...", "data": { ... } }`.
+  See [API Responses & Errors](/yativo-platform/api-responses-and-errors).
+
+---
+
+## Two-factor authentication
+
+### Turn on 2FA and save the recovery codes
+
+1. Get a secret and show it to the user as a QR code or text:
+
+   ```http
+   POST /api/v1/generate-2fa-secret
+   ```
+
+   ```json
+   { "status": "success", "status_code": 200, "data": { "secret": "JBSWY3DPEHPK3PXP" } }
+   ```
+
+2. The user adds it to their authenticator app and enters the current
+   6-digit code:
+
+   ```http
+   POST /api/v1/enable-2fa
+   Content-Type: application/json
+
+   { "secret": "JBSWY3DPEHPK3PXP", "otp": "123456" }
+   ```
+
+   ```json
+   {
+     "status": "success",
+     "status_code": 200,
+     "message": "Request successful",
+     "data": {
+       "message": "2FA enabled successfully",
+       "recovery_codes": [
+         "7KQ2M-X9PTD", "H4W8N-2RCZE", "0MBV6-YQ3KS", "TJ9PA-5DXWR", "8CNE2-VHM4G",
+         "Q6ZT1-BWKP7", "R2XJD-9AEN5", "5YHMC-K8TQW", "WPD3G-6ZN0B", "M1AKX-T4RVH"
+       ]
+     }
+   }
+   ```
+
+**Show the 10 recovery codes once and ask the user to save them** (download,
+print or copy to a password manager). They are never shown again. Yativo
+stores only a one-way hash of each code.
+
+Recovery codes:
+
+- are 10 characters, shown as `XXXXX-XXXXX`;
+- work **once** each;
+- ignore case, spaces and the dash; `O`, `I` and `L` are read as `0`, `1`, `1`;
+- are deleted when 2FA is turned off or reset.
+
+### Generate new recovery codes
+
+Replaces the whole set; the old codes stop working. Needs a current
+authenticator code, so it only works while the user still has their app.
+Users who turned on 2FA before recovery codes existed should do this once.
+
+```http
+POST /api/v1/2fa/recovery-codes
+Content-Type: application/json
+
+{ "otp": "123456" }
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "data": {
+    "message": "New recovery codes generated. Your previous codes no longer work.",
+    "recovery_codes": ["…10 codes…"]
+  }
+}
+```
+
+### Reset 2FA with a recovery code
+
+For a user who lost their authenticator app. They sign in with the email
+one-time code, then:
+
+1. Get a passkey challenge and sign it (see [Passkey confirmation](#passkey-confirmation)).
+2. Send one recovery code and the signed challenge:
+
+```http
+POST /api/v1/2fa/recover
+Content-Type: application/json
+
+{
+  "recovery_code": "7KQ2M-X9PTD",
+  "passkey": {
+    "id": "<base64url credential id>",
+    "rawId": "<base64url credential id>",
+    "type": "public-key",
+    "response": {
+      "authenticatorData": "<base64url>",
+      "clientDataJSON": "<base64url>",
+      "signature": "<base64url>",
+      "userHandle": "<base64url or null>"
+    }
+  }
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `recovery_code` | yes | One of the user's unused recovery codes. |
+| `passkey` | yes | The signed passkey challenge. See [Passkey confirmation](#passkey-confirmation). |
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "data": { "message": "2FA has been reset. Set it up again to keep your account protected." }
+}
+```
+
+On success:
+
+- 2FA is turned off and all remaining recovery codes are deleted;
+- the user is emailed a security notice with the time and IP address;
+- the user should turn 2FA on again straight away, which gives them a new set
+  of recovery codes.
+
+The passkey is checked first, so a recovery code is only used up once the
+passkey has passed.
+
+---
+
+## Transaction PIN
+
+The transaction PIN is a 4-digit code that confirms money movements in the
+dashboard.
+
+### Set or change the PIN
+
+```http
+POST /api/v1/pin/update
+Content-Type: application/json
+
+{ "pin": "4821", "old_pin": "1234" }
+```
+
+`old_pin` is required only when a PIN is already set. A wrong `old_pin` counts
+towards the [PIN lockout](#verify-the-pin).
+
+### Verify the PIN
+
+```http
+POST /api/v1/pin/verify
+Content-Type: application/json
+
+{ "pin": "4821" }
+```
+
+After **5 wrong PINs in 15 minutes** (from `pin/verify` or a wrong `old_pin`
+on `pin/update`), both endpoints return `429 Too many incorrect PIN attempts.
+Try again in N minutes, or reset your PIN.` until the 15 minutes pass or the
+PIN is reset. A correct PIN clears the count.
+
+### Reset a forgotten transaction PIN
+
+Needs 2FA turned on and a passkey on the account.
+
+1. Get a passkey challenge and sign it (see [Passkey confirmation](#passkey-confirmation)).
+2. Send the current authenticator code, the new PIN and the signed challenge:
+
+```http
+POST /api/v1/pin/reset
+Content-Type: application/json
+
+{
+  "otp": "123456",
+  "pin": "4821",
+  "pin_confirmation": "4821",
+  "passkey": {
+    "id": "<base64url credential id>",
+    "rawId": "<base64url credential id>",
+    "type": "public-key",
+    "response": {
+      "authenticatorData": "<base64url>",
+      "clientDataJSON": "<base64url>",
+      "signature": "<base64url>",
+      "userHandle": "<base64url or null>"
+    }
+  }
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `otp` | yes | Current 6-digit code from the authenticator app. A code can only be used once. |
+| `pin` | yes | New PIN, exactly 4 digits. |
+| `pin_confirmation` | yes | Must match `pin`. |
+| `passkey` | yes | The signed passkey challenge. |
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "data": { "message": "Transaction PIN reset successfully" }
+}
+```
+
+On success the PIN lockout is cleared and the user is emailed a security
+notice with the time and IP address.
+
+---
+
+## Passkey confirmation
+
+Both resets need a fresh passkey signature from the signed-in person.
+
+1. Get a challenge:
+
+   ```http
+   POST /api/v1/passkeys/step-up/options
+   ```
+
+   The response contains `data.public_key` (`rpId`, `challenge`, `timeout`,
+   `allowCredentials`). It returns `422 No passkeys registered for this
+   account.` when the person has no passkey.
+
+2. Sign it in the browser on a `*.yativo.com` page:
+
+   ```js
+   const assertion = await navigator.credentials.get({
+     publicKey: {
+       ...options,
+       challenge: base64urlDecode(options.challenge),
+       allowCredentials: options.allowCredentials.map((c) => ({ ...c, id: base64urlDecode(c.id) })),
+     },
+   });
+   ```
+
+3. Send it as `passkey`:
+
+   ```js
+   const passkey = {
+     id: assertion.id,
+     rawId: base64urlEncode(assertion.rawId),
+     type: assertion.type,
+     response: {
+       authenticatorData: base64urlEncode(assertion.response.authenticatorData),
+       clientDataJSON: base64urlEncode(assertion.response.clientDataJSON),
+       signature: base64urlEncode(assertion.response.signature),
+       userHandle: assertion.response.userHandle ? base64urlEncode(assertion.response.userHandle) : null,
+     },
+   };
+   ```
+
+A challenge works once and expires after 60 seconds. If a reset request fails,
+get a new challenge before retrying. More detail:
+[Passkey Login → Confirming a sensitive action](/yativo-platform/security/passkey-authentication#confirming-a-sensitive-action).
+
+---
+
+## Limits
+
+| Action | Limit |
+|---|---|
+| Wrong 2FA-reset attempts (bad passkey or recovery code) | 5 per account per 15 minutes |
+| Wrong PIN-reset attempts (bad passkey or authenticator code) | 5 per account per 15 minutes |
+| Wrong PINs (`pin/verify`, `old_pin` on `pin/update`) | 5 per account per 15 minutes |
+| `POST /2fa/recover`, `POST /pin/reset` | 5 requests per minute |
+| `POST /passkeys/step-up/options` | 10 requests per minute |
+| 2FA endpoints (`generate-2fa-secret`, `enable-2fa`, `verify-2fa`, `disable-2fa`, `2fa/recovery-codes`) | 10 requests per minute |
+| `POST /pin/verify` | 20 requests per minute |
+
+A per-minute limit returns `429 Too Many Attempts.` with a `Retry-After`
+header.
+
+---
+
+## Errors
+
+| HTTP | `data.error` | Cause & fix |
+|---|---|---|
+| `400` | `2FA is not enabled for this user` | 2FA isn't on, so there's nothing to reset or regenerate. |
+| `401` | `Invalid OTP` | Wrong authenticator code on `2fa/recovery-codes`. |
+| `401` | `Invalid recovery code` | The code is wrong or was already used. |
+| `401` | `Invalid authenticator code` | Wrong or reused authenticator code on `pin/reset`. |
+| `401` | `Passkey verification failed. Request a new passkey challenge and try again.` | The challenge expired, was already used, or the signature didn't match one of the person's passkeys. |
+| `403` | `A passkey is required to reset 2FA. Contact support to recover your account.` | No passkey on the account. |
+| `403` | `Add a passkey to reset your PIN yourself, or contact support.` | No passkey on the account. |
+| `403` | `Turn on two-factor authentication to reset your PIN yourself, or contact support.` | 2FA isn't on. |
+| `403` | `This endpoint cannot be used with an API key. ...` | Called with an API key. Use the dashboard. |
+| `422` | Validation errors (`passkey`, `pin`, `pin_confirmation`...) | A required field is missing or malformed. `pin` must be exactly 4 digits. |
+| `422` | `No passkeys registered for this account.` | From `passkeys/step-up/options`. |
+| `429` | `Too many attempts. Try again in N minutes.` | 5 failed reset attempts in 15 minutes. |
+| `429` | `Too many incorrect PIN attempts. Try again in N minutes, or reset your PIN.` | PIN lockout. |
+
+---
+
+## Frontend flow
+
+**Security settings page**
+
+- 2FA off → "Turn on 2FA" → `generate-2fa-secret` → `enable-2fa` → show the
+  recovery codes with "Download" / "Copy" and an "I've saved them" checkbox.
+- 2FA on → "Generate new recovery codes" (asks for an authenticator code).
+- No passkey → prompt "Add a passkey so you can recover your account".
+
+**"Lost your authenticator?"** (on the 2FA prompt)
+
+1. Ask for a recovery code.
+2. Call `passkeys/step-up/options`, sign with `navigator.credentials.get()`.
+3. `POST /2fa/recover` → on success, send the user to turn 2FA on again.
+
+**"Forgot your PIN?"** (on the PIN prompt)
+
+1. Ask for the new PIN twice and the current authenticator code.
+2. Call `passkeys/step-up/options`, sign.
+3. `POST /pin/reset`.
+
+---
+
+## Security notes
+
+- Recovery codes, PINs and authenticator secrets are never returned by any
+  other endpoint. Codes and PINs are stored as one-way hashes; the
+  authenticator secret is encrypted at rest.
+- A recovery code is accepted only once, and so is the authenticator code
+  sent to `pin/reset`.
+- Every reset is logged and emailed to the account owner. If a user gets an
+  email for a reset they didn't make, they should contact support at once.
+- A user who has lost both their authenticator and their recovery codes, or
+  has no passkey, can't reset 2FA or the PIN themselves and must contact
+  support.

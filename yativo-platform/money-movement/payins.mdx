@@ -1,0 +1,453 @@
+---
+title: "Payin & Payout Integration"
+description: "Payin & Payout Integration — integration guide for the Yativo API."
+---
+
+This guide covers the two core money-movement flows:
+
+- **Payin (deposits/collections)** — collect funds from a payer in a local
+  currency and credit the resulting balance to one of your wallets.
+- **Payout (withdrawals)** — send funds from your wallet to a beneficiary in a
+  supported destination country/currency.
+
+Both are driven by a **payment method** catalog: each method is tied to a
+country + currency and carries its own limits, required fields and fees.
+
+## Authentication
+
+Every endpoint below needs an authenticated request, and the account must
+have passed KYC.
+
+Server-to-server requests use your team's API key and secret:
+
+```http
+X-Api-Key: <YOUR_API_KEY>
+X-Api-Secret: <YOUR_API_SECRET>
+```
+
+The Yativo dashboard sends the signed-in user's `Authorization: Bearer <ACCESS_TOKEN>`
+instead. Since 15 October 2026, bearer tokens are only accepted from the
+dashboard, and the legacy `POST /api/v1/auth/login` (`account_id` +
+`app_secret`) flow is deprecated. Don't send a bearer token together with the
+key pair. See [Team API Keys](/yativo-platform/authentication).
+
+The only exception is the hosted-checkout channel endpoints
+(`/api/payin/channels`, `/api/payin/checkout`), which back the hosted payin
+page and are called with a `deposit_id` rather than user credentials.
+
+All responses use the standard envelope:
+`{ "status": "success" | "failed", "status_code": ..., "message": "...", "data": { ... } }`.
+On failure, `data.error` holds the reason.
+
+## Idempotency
+
+Send an `Idempotency-Key` header (any unique string, such as a UUID) on every
+`POST`, `PUT`, `PATCH` or `DELETE` so retries are safe:
+
+```http
+Idempotency-Key: 3f1c2a1e-8b7d-4c1e-9f0a-6d2b5e7c9a10
+```
+
+- Repeating a request with the same key and the same body within 60 minutes
+  returns the original response; nothing is executed twice.
+- Reusing a key with a **different** body returns `409 Idempotency key reuse
+  detected with a different request payload.`
+- Sending the same key while the first request is still running returns
+  `409 A matching request is already being processed.`
+- Responses with a `5xx` status aren't stored, so you can retry them with
+  the same key.
+
+If you don't send a key, Yativo derives one from the request body. Two
+identical requests within 60 minutes are then treated as a retry and the
+second gets the first one's response. To send two genuinely separate payouts
+with the same details, give each its own `Idempotency-Key`.
+
+## Rate limits
+
+Each account can make up to **50 read requests (`GET`) per second** and,
+separately, **20 write requests (`POST`/`PUT`/`PATCH`/`DELETE`) per second**.
+Polling payout or deposit status doesn't use up your write allowance. Over
+the limit you get `429 Too Many Requests`; wait for the number of seconds in
+the `Retry-After` header. Some endpoints have their own lower limit, which
+their guides list. Enterprise plans aren't subject to the general limit.
+
+---
+
+# Payin (Deposits)
+
+Card and bank-transfer collection that settles as USDC or EURC is **Onramp**,
+a standalone product. Use [`POST /v1/onramp`](/yativo-platform/money-movement/onramp) — it is not listed
+as a payin method and cannot be created with `POST /v1/wallet/deposits/new`.
+
+## 1. Discover payin methods
+
+```
+GET /api/v1/payment-methods/payin
+GET /api/v1/payment-methods/payin/countries
+GET /api/v1/payment-methods/payin/currency
+```
+
+Returns the payin methods available to your account. Each method includes its
+`id` (used as `gateway` when creating a deposit), `currency`, `base_currency`
+(the wallet currencies you may credit), and `minimum_deposit` /
+`maximum_deposit` limits. Filter the countries/currency helpers to build a
+country → currency → method picker.
+
+## 2. (Optional) Get a quote
+
+```
+POST /api/v1/sendmoney/quote
+```
+
+Generate a locked quote and pass its `quote_id` when creating the deposit to
+fix the amount/rate. Quotes expire; regenerate when expired.
+
+## 3. Create a deposit
+
+```
+POST /api/v1/wallet/deposits/new
+```
+
+```json
+{
+  "gateway": 42,
+  "amount": 50000,
+  "currency": "USD",
+  "return_url": "https://yourapp.com/payments/return"
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `gateway` | yes | The payin method `id` from step 1. |
+| `amount` | yes | Amount in the method's collection currency. |
+| `currency` | yes | The **wallet** currency to credit; must be one of the method's `base_currency` values, and you must already hold that wallet. |
+| `return_url` | no | Where to send the payer after a hosted checkout. |
+| `quote_id` | no | A locked quote from step 2 (overrides `amount`). |
+| `revenue_split` | no | Optional ad-hoc split object to auto-route a percentage of the credited funds on success. |
+
+A method may declare extra required fields (`required_extra_data.form_fields`)
+— e.g. payer phone/document details — which are validated on submission. Read
+them from the method record and include them in the body.
+
+The response echoes a fee/settlement breakdown and, depending on the method,
+one of:
+
+- **`deposit_url`** — a hosted checkout link where the payer selects a channel
+  and sees wire instructions (see step 4); or
+- **wire instructions** returned inline (bank name, account number, reference,
+  etc.) for a direct bank-transfer method.
+
+```json
+{
+  "success": true,
+  "deposit_url": "https://.../pay?deposit_id=dep_123",
+  "deposit_data": { "id": "dep_123", "status": "pending", "...": "..." },
+  "receive_amount": "49250 USD",
+  "exchange_rate": "1 USD = 1600.00000000 NGN",
+  "transaction_fee": "750.0000 NGN",
+  "payment_method": "...",
+  "estimate_delivery_time": "...",
+  "total_amount_due": "50000.0000 NGN"
+}
+```
+
+## 4. Hosted checkout channel selection
+
+For methods that use the hosted page, the payer's channel/network is chosen
+against the deposit:
+
+```
+GET  /api/payin/channels?country=NG&currency=NGN&amount=50000
+POST /api/payin/checkout
+```
+
+`GET channels` lists the active channels (bank transfer, mobile money, …) and,
+where relevant, their `networks`, filtered by country/currency/amount.
+`POST checkout` finalises the deposit with the payer's choice:
+
+```json
+{
+  "deposit_id": "dep_123",
+  "channel_id": "<uuid>",
+  "network_id": "<uuid>"
+}
+```
+
+## 5. Deposit completion
+
+Deposits complete asynchronously when the payer's funds settle. Rely on
+**webhooks** for the authoritative status change (see the
+[Webhook Guide](/yativo-platform/webhooks/overview#event-catalog)) — the credited wallet
+balance is updated automatically once the payin is confirmed.
+
+On sandbox you can settle a pending deposit (or fail it) without waiting
+for a provider, and credit a test wallet directly. See
+[Testing on sandbox](/yativo-platform/testing/sandbox-testing).
+
+### Get a deposit
+
+```
+GET /api/v1/wallet/deposits/{depositId}
+```
+
+Returns one of your deposits. `depositId` is the deposit's `id`
+(`deposit_data.id` in the create response, `payload.id` in `deposit.*`
+webhooks) or its `deposit_id` reference. The object is the same as an item
+from `GET /api/v1/wallet/deposits`, including `status` and `depositGateway`
+(as `deposit_gateway`).
+
+Use it to confirm a deposit before you fulfil an order: after a
+`deposit.updated` webhook, or when the payer comes back to your
+`return_url`. The query string on `return_url` is not proof of payment.
+
+| HTTP | `data.error` | When |
+|------|--------------|------|
+| 404 | `Deposit not found` | The ID isn't one of your deposits. |
+
+Team members need the **Deposits → view** permission.
+
+---
+
+# Payout (Withdrawals)
+
+A payout sends funds to a **beneficiary** using one of that beneficiary's saved
+**payout methods**. Set the beneficiary up once, then reference its payout
+method on each payout.
+
+## 1. Discover payout methods
+
+```
+GET /api/v1/payment-methods/payout
+GET /api/v1/payment-methods/payout/countries
+```
+
+Filter by `country` and `currency`. Each method includes the `id` you will use
+as `gateway_id` when saving a beneficiary payout method, plus the fields that
+method requires.
+
+### Helpers for NGN and mobile-money destinations
+
+```
+GET  /api/v1/banks/ngn
+POST /api/v1/banks/ngn/lookup
+GET  /api/v1/payout/providers?country=GH&mobile_money=true
+```
+
+- `GET /banks/ngn` lists Nigerian banks as `{ "code", "name", "logo" }`. Use
+  `code` as the bank code in an NGN beneficiary's `payment_data`.
+- `POST /banks/ngn/lookup` with `{ "account_number": "0123456789", "bank_code": "058" }`
+  returns `{ "account_number", "account_name" }` for that account, so you can
+  show the account holder's name before saving the beneficiary.
+  `account_number` must be 10 digits. An account that can't be verified
+  returns `422 Unable to verify this bank account`.
+- `GET /payout/providers` lists mobile-money providers (default) or banks
+  (`mobile_money=false`) for a destination `country` (ISO 3166-1 alpha-2), as
+  `{ "code", "name" }`.
+
+If the list can't be loaded right now these return `502`; retry later.
+
+## 2. Create a beneficiary
+
+```
+POST /api/v1/beneficiaries
+```
+
+```json
+{
+  "recipient_type": "individual",
+  "customer_name": "Jane Doe",
+  "customer_email": "jane@example.com",
+  "customer_nickname": "Jane",
+  "country": "NG",
+  "customer_address": "12 Example St, Lagos"
+}
+```
+
+Manage beneficiaries with `GET /api/v1/beneficiaries/list`,
+`GET/PUT/DELETE /api/v1/beneficiaries/{id}`, and
+`PUT /api/v1/beneficiaries/{id}/archive` · `/unarchive`.
+
+## 3. Add a payout method to the beneficiary
+
+```
+POST /api/v1/beneficiaries/payment-methods
+```
+
+```json
+{
+  "beneficiary_id": 101,
+  "gateway_id": 7,
+  "currency": "NGN",
+  "nickname": "Jane – GTBank",
+  "payment_data": {
+    "account_number": "0123456789",
+    "bank_code": "058"
+  }
+}
+```
+
+`gateway_id` is the payout method from step 1; `payment_data` carries that
+method's required destination fields. The created record's `id` is the
+**`beneficiary_details_id`** used to run a payout. List them with
+`GET /api/v1/beneficiaries/payment-methods/all`.
+
+You can only read, update or delete your own payout methods, and a payout can
+only use one of them: any other `id` returns `404` (`Record not found`) or
+`Invalid payment method configuration`.
+
+## 4. Send a single payout
+
+The standard payout endpoint is:
+
+```http
+POST /api/v1/payout/simple
+```
+
+- **Sandbox:** `https://smtp.yativo.com/api/v1/payout/simple`
+- **Production:** `https://api.yativo.com/api/v1/payout/simple`
+
+### Payload with a quote (recommended)
+
+Fix the exchange rate and fees via `POST /api/v1/exchange-rate` or `POST /api/v1/sendmoney/quote`, then submit:
+
+```json
+{
+  "payment_method_id": 18096,
+  "debit_wallet": "USD",
+  "customer_id": "d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d",
+  "quote_id": "756979af-784f-4933-9ac1-76bddbeb333d"
+}
+```
+
+### Direct payload (without quote / direct send)
+
+If you are not using a quote, provide the `amount` directly:
+
+```json
+{
+  "payment_method_id": 18096,
+  "debit_wallet": "USD",
+  "customer_id": "d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d",
+  "amount": 250.00
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `payment_method_id` | yes | The beneficiary payout method id from step 3 (integer, e.g. `18096`). Also accepts legacy alias `beneficiary_details_id`. |
+| `debit_wallet` | yes | The wallet currency to debit, e.g. `USD`. |
+| `customer_id` | yes | The customer UUID the payout is for, e.g. `d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d`. |
+| `quote_id` | conditional | Locked quote ID (UUID or int). Required if `amount` is not provided. Locks exchange rate and fee. |
+| `amount` | conditional | Amount to send. Required if `quote_id` is not provided. |
+| `beneficiary_id` | no | The owning beneficiary ID. |
+| `reference` | no | Payment reference for the recipient's bank, up to 250 characters. See the table below. |
+| `invoice` / `invoice_url` | no | Optional invoice file (`multipart/form-data`) or public URL for compliance review. |
+
+The payout debits your wallet (including fees) and submits the transfer. The
+response returns the created payout with its id and status.
+
+### Wallet payout: choose send or receive amount
+
+```
+POST /api/v1/wallet/payout
+```
+
+By default `amount` is what you send from your `debit_wallet`. Fees are added on
+top, and the customer receives `amount` converted at the payout rate. To set the
+exact amount the customer receives in the payout currency, add
+`"amount_type": "receive"`:
+
+```json
+{
+  "amount": 5000,
+  "amount_type": "receive",
+  "debit_wallet": "USD",
+  "payment_method_id": 555,
+  "customer_id": "cus_123"
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `amount_type` | no | `send` (default) or `receive`. Ignored when `quote_id` is used. |
+| `invoice` | no | Supporting invoice (PDF, PNG or JPEG, up to 15 MB): a file sent as `multipart/form-data`, or a base64 string (`data:application/pdf;base64,...` or raw base64) in JSON. It is stored privately. |
+| `invoice_url` | no | Public `http(s)` link to the supporting invoice, as an alternative to uploading `invoice`. |
+| `reference` | no | Payment reference passed to the recipient's bank (max 250 characters). Depending on the payout rail, it may be shortened or have unsupported characters removed. For example, ACH allows only 10 letters, numbers or spaces. |
+
+Every payout goes through compliance checks before it is sent. When you include
+an invoice, it is reviewed alongside the payout, so make sure its total and
+beneficiary match the payout. A payout that needs a closer look stays `pending`
+until the review is finished.
+
+In `receive` mode, the send amount and fees are calculated from the requested
+receive amount, and your wallet is debited for both. Minimum and maximum limits
+still apply. Every response includes `send_amount` (in the wallet currency),
+`customer_receive_amount` (in the payout currency), and `debit_amount` (the
+total debited, fees included). Receive mode also works with payout quotes. See
+[Payouts by Receive Amount](/yativo-platform/money-movement/payout-receive-amount).
+
+## 5. Send a batch payout
+
+```
+POST /api/v1/payout/batch
+```
+
+```json
+{
+  "payouts": [
+    { "amount": 250, "beneficiary_details_id": 555, "beneficiary_id": 101, "reference": "INV-0042" },
+    { "amount": 400, "beneficiary_details_id": 556, "beneficiary_id": 102 }
+  ]
+}
+```
+
+Each item takes `amount` (required, at least 1), `beneficiary_details_id`
+(required), and optional `beneficiary_id` and `reference` (up to 140
+characters, same rules as on a single payout).
+
+Each item is processed independently; the response reports per-item results and
+errors so a single bad row doesn't fail the whole batch.
+
+## 6. Look up payouts
+
+```
+GET /api/v1/payout/get
+GET /api/v1/payout/fetch/{payout_id}
+```
+
+Payouts also settle asynchronously — subscribe to payout webhook events for the
+authoritative final status.
+
+On sandbox you can mark a pending payout successful or failed (a failure
+refunds the debit). Pending payouts under $50 USD are also auto-completed
+every five minutes. See [Testing on sandbox](/yativo-platform/testing/sandbox-testing).
+
+---
+
+## Fees & custom pricing
+
+Fees are resolved per method from your plan tier, and a **custom pricing**
+override (when configured for your account on a given method) always takes
+priority over the default tier pricing — for both payin and payout. The fee
+breakdown is returned when you create a deposit, and debited alongside the
+amount on a payout.
+
+## Errors
+
+Validation and business errors return a non-2xx status in the standard
+envelope, with the reason in `data.error` (or, for validation errors, a map
+of field names to messages):
+
+```json
+{
+  "status": "failed",
+  "status_code": 400,
+  "message": "Request failed.",
+  "data": { "error": "..." }
+}
+```
+
+Common cases: unknown/blocked method, amount outside the method's
+min/max limits, a wallet currency you don't hold, a beneficiary/payout method
+that isn't yours, or insufficient wallet balance for a payout.

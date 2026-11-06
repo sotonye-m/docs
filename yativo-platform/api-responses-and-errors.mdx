@@ -1,0 +1,721 @@
+---
+title: "Yativo API Responses & Error Handling"
+description: "Response envelopes, error_details, validation errors, retries, and rate limits."
+---
+
+This guide explains how every Yativo API response is shaped, what each HTTP status code means, and how your integration should detect success, read error messages, retry safely and handle rate limits.
+
+This guide covers:
+
+- [Quick reference](#quick-reference)
+- [The response envelope](#the-response-envelope)
+- [Success responses](#success-responses)
+- [Unified error object (`error_details`)](#unified-error-object-error_details)
+- [Error responses](#error-responses)
+- [Validation errors](#validation-errors)
+- [Errors that don't use the envelope](#errors-that-dont-use-the-envelope)
+- [HTTP status code reference](#http-status-code-reference)
+- [Authentication & access errors](#authentication--access-errors)
+- [Account, customer & team restrictions](#account-customer--team-restrictions)
+- [Money movement errors](#money-movement-errors)
+- [Idempotency, duplicates & safe retries](#idempotency-duplicates--safe-retries)
+- [Rate limits](#rate-limits)
+- [Server & upstream errors](#server--upstream-errors)
+- [Parsing responses: a reference implementation](#parsing-responses-a-reference-implementation)
+- [Best practices](#best-practices)
+
+---
+
+## Quick reference
+
+| | |
+|---|---|
+| Content type | Always `application/json` on API routes, whatever `Accept` header you send |
+| Success marker | `"status": "success"` in the body |
+| Failure marker | `"status": "failed"` in the body, plus a `4xx`/`5xx` HTTP status |
+| Unified error object | Every failed response carries `error_details` with the same shape everywhere ([details](#unified-error-object-error_details)) |
+| Human-readable error | `error_details.message`. The older locations (`data.error`, `data.message`, field maps) are still sent ([details](#error-responses)) |
+| Validation errors | HTTP `422` (occasionally `400`) with a field-to-messages map |
+| Idempotency header | `Idempotency-Key` on `POST`, `PUT`, `PATCH`, `DELETE` |
+| Rate-limit response | HTTP `429` with a `Retry-After` header |
+
+> **Rule of thumb:** treat a response as successful only when the HTTP status is `2xx` **and** the body says `"status": "success"`. Never treat a request as successful just because the body contains `data`.
+
+---
+
+## The response envelope
+
+Almost every endpoint wraps its result in the same four-field envelope.
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | string | `"success"` or `"failed"` |
+| `status_code` | integer | The status code the platform intended for this result (see the note below) |
+| `message` | string | A short summary. Defaults to `"Request successful"`, `"Request failed."` or `"Records retrieved successfully"`; some endpoints set a more specific one, such as `"Session expired"` |
+| `data` | object, array or `null` | The payload on success, or the error details on failure |
+| `error` | object | Top-level normalized error object: `{ "code", "message", "request_id" }` |
+| `error_details` | object | Comprehensive unified error object with status, fields, retry information |
+| `pagination` | object or `null` | Only on list endpoints ([see below](#paginated-lists)) |
+
+> **Note on `status_code` vs. HTTP status:** on **failed** responses, the HTTP status always matches `status_code`. On **successful** responses, the HTTP status is always `200`, even when `status_code` in the body says `201` (created) or `204` (deleted). Read the HTTP status to tell success from failure, and use `status_code` only if you need the finer distinction.
+
+---
+
+## Success responses
+
+### Single resource or action
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "id": "...",
+    "...": "..."
+  }
+}
+```
+
+A create endpoint looks the same, but the body may carry `"status_code": 201`. The HTTP status is still `200`.
+
+A delete endpoint may return `"status_code": 204` together with a body such as `{"message": "Record deleted successfully"}` inside `data`, again with HTTP `200`. Unlike a true HTTP `204`, these responses do have a body.
+
+### Paginated lists
+
+List endpoints add a `pagination` object next to `data`:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    { "id": "...", "...": "..." }
+  ],
+  "pagination": {
+    "total": 134,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 7,
+    "next_page_url": "https://api.yativo.com/api/v1/...?page=2",
+    "prev_page_url": null
+  }
+}
+```
+
+- Request later pages with `?page=N`. Many list endpoints also accept `per_page`.
+- `next_page_url` is `null` on the last page, and `prev_page_url` is `null` on the first.
+- When a list endpoint returns everything in one go, `pagination` is `null`.
+
+### Computed fields (`include_appends`)
+
+To keep responses fast, some computed/derived attributes are left out of resource objects by default. Add `?include_appends=1` to a request to include them. Only use it when you need those fields, because it makes large responses noticeably slower.
+
+---
+
+## Unified error object (`error_details`)
+
+**Every failed response from the API carries a top-level `error_details` object with the same shape**, whichever endpoint or platform layer produced it. That includes validation failures, authentication and permission errors, unknown routes, wrong methods, rate limits, server errors and maintenance. To handle errors, read this one object. You don't need to handle each of the older shapes described below.
+
+`error_details` is added **next to** the existing fields. It doesn't replace or change any of them, so integrations that already read `data.error`, `message` or `errors` keep working unchanged.
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+```
+
+```json
+{
+  "status": "failed",
+  "status_code": 422,
+  "message": "The amount field is required.",
+  "data": {
+    "amount": ["The amount field is required."],
+    "debit_wallet": ["The debit wallet field is required."]
+  },
+  "error": {
+    "code": "invalid_argument",
+    "message": "The amount field is required.",
+    "request_id": "req_8f1c2a3b4c5d6e7f8a9b0c1d"
+  },
+  "error_details": {
+    "code": "validation_error",
+    "message": "The amount field is required.",
+    "http_status": 422,
+    "fields": {
+      "amount": ["The amount field is required."],
+      "debit_wallet": ["The debit wallet field is required."]
+    },
+    "retryable": false,
+    "retry_after": null
+  }
+}
+```
+
+### Request ID and tracing (`request_id`)
+
+Every error response returns a unique `error.request_id` string (e.g. `req_8f1c2a3b4c5d6e7f8a9b0c1d`). If you provide an `X-Request-Id` header in your request, the server uses that exact ID for correlation. Include this `request_id` whenever reporting issues to Yativo support for instant tracing in server access logs.
+
+| Field | Type | Description |
+|---|---|---|
+| `code` | string | A stable, machine-readable category derived from the HTTP status (see the table below). Safe to branch on |
+| `message` | string | The most specific human-readable explanation available. Always present and never empty. Show it to people or log it, but don't parse it |
+| `http_status` | integer | The HTTP status of the failure |
+| `fields` | object | A map of field name to a list of messages. Always present. For validation failures the keys are the request fields (nested fields use dot notation). For errors not tied to a field, it holds a single `error` key with the message, e.g. `{"error": ["Insufficient wallet balance"]}` |
+| `retryable` | boolean | `true` when retrying the same request later may succeed (`409`, `429`, `500`, `502`, `503`, `504`). Read [safe retries](#retrying-money-movement-after-an-unexpected-error) before retrying money movement |
+| `retry_after` | integer or `null` | Seconds to wait before retrying, when the response includes a `Retry-After` header (usually on `429` and `503`) |
+
+**How to detect failure:** if `error_details` is present, the request failed. Successful responses never include it.
+
+### `code` values
+
+| `code` | HTTP |
+|---|---|
+| `bad_request` | `400`, and any other `4xx` not listed here |
+| `unauthenticated` | `401` |
+| `payment_required` | `402` |
+| `forbidden` | `403` |
+| `not_found` | `404` |
+| `method_not_allowed` | `405` |
+| `conflict` | `409` |
+| `validation_error` | `411`, `422` |
+| `session_expired` | `419` |
+| `rate_limited` | `429` |
+| `server_error` | `500`, and any other `5xx` not listed here |
+| `not_implemented` | `501` |
+| `upstream_error` | `502` |
+| `service_unavailable` | `503` |
+| `upstream_timeout` | `504` |
+
+> On `5xx` responses, `error_details.message` is always a safe, generic explanation such as `"Something went wrong, please try again later"`. It never contains internal details.
+>
+> Internal database errors are never returned, whatever the status code. If one occurs, the response is a standard failure envelope with `data.error` and `error_details.message` set to `"Something went wrong, please try again later"`, and HTTP status `500`.
+
+### More examples
+
+A business-rule failure:
+
+```json
+{
+  "status": "failed",
+  "status_code": 400,
+  "message": "Request failed.",
+  "data": { "error": "Insufficient wallet balance" },
+  "error_details": {
+    "code": "bad_request",
+    "message": "Insufficient wallet balance",
+    "http_status": 400,
+    "fields": { "error": ["Insufficient wallet balance"] },
+    "retryable": false,
+    "retry_after": null
+  }
+}
+```
+
+A rate limit, from the platform layer (no envelope):
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 1
+```
+
+```json
+{
+  "message": "Too Many Attempts.",
+  "error_details": {
+    "code": "rate_limited",
+    "message": "Too Many Attempts.",
+    "http_status": 429,
+    "fields": { "error": ["Too Many Attempts."] },
+    "retryable": true,
+    "retry_after": 1
+  }
+}
+```
+
+The sections below describe the older error shapes, which are still sent alongside `error_details`.
+
+---
+
+## Error responses
+
+Failed responses use the same envelope, with `"status": "failed"` and a non-`2xx` HTTP status:
+
+```http
+HTTP/1.1 400 Bad Request
+```
+
+```json
+{
+  "status": "failed",
+  "status_code": 400,
+  "message": "Request failed.",
+  "data": {
+    "error": "Insufficient wallet balance"
+  }
+}
+```
+
+The top-level `message` is usually the generic `"Request failed."`. **The useful, specific explanation is inside `data`.** Depending on the endpoint, `data` takes one of these shapes:
+
+| Shape of `data` | Example | Where you'll see it |
+|---|---|---|
+| `{"error": "<string>"}` | `{"error": "Customer not found"}` | The most common shape: business-rule failures, not-found, auth and access errors |
+| `{"message": "<string>"}` | `{"message": "Your session has expired. Please log in again."}` | A few session and account endpoints |
+| `{"<field>": ["<msg>", ...]}` | `{"email": ["The email has already been taken."]}` | Validation failures on most endpoints ([details](#validation-errors)) |
+| `{"errors": {"<field>": ["<msg>"]}}` | `{"errors": {"amount": ["The amount must be at least 1."]}}` | Validation failures on some newer endpoints, including card checkout |
+| `["<string>", ...]` | `["No UBO found"]` | Rare; a plain list of messages |
+
+You don't need to handle these shapes yourself: the same message is always available in [`error_details.message`](#unified-error-object-error_details), and field errors in `error_details.fields`.
+
+> **Important:** build your logic on `error_details.code` (or the HTTP status) and treat message text as information for humans: show it to people or log it, but don't branch on its exact wording, because messages can change.
+
+---
+
+## Validation errors
+
+Input validation can fail in three ways, depending on the endpoint.
+
+**1. Field map inside the envelope (most endpoints)**
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+```
+
+```json
+{
+  "status": "failed",
+  "status_code": 422,
+  "message": "Request failed.",
+  "data": {
+    "customer_email": ["The customer email field is required."],
+    "customer_phone": ["The customer phone format is invalid."]
+  }
+}
+```
+
+Some older endpoints return this exact body with HTTP **`400`** instead of `422`.
+
+**2. Field map under `errors` inside the envelope**
+
+```json
+{
+  "status": "failed",
+  "status_code": 422,
+  "message": "Request failed.",
+  "data": {
+    "errors": {
+      "amount": ["The amount field is required."]
+    }
+  }
+}
+```
+
+**3. Standard validation response (no envelope)**
+
+Some endpoints return the standard framework validation response, which has **no** `status`, `status_code` or `data`:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+```
+
+```json
+{
+  "message": "The amount field is required. (and 1 more error)",
+  "errors": {
+    "amount": ["The amount field is required."],
+    "debit_wallet": ["The debit wallet field is required."]
+  }
+}
+```
+
+In every form, keys are field names (nested fields use dot notation, such as `beneficiary.account_number`), and values are arrays of messages.
+
+### Reserved words
+
+Endpoints that create or update customers, businesses, employees, profiles and KYC/KYB data reject free-text values containing reserved words. These fail with HTTP `422`:
+
+```json
+{
+  "status": "failed",
+  "status_code": 422,
+  "message": "Request failed.",
+  "data": {
+    "customer_name": ["The customer_name field contains a reserved word (test) and cannot be used."]
+  }
+}
+```
+
+- `yativo` is rejected anywhere in a value, including inside a longer word such as `MyYativoShop`.
+- `test` and `admin` are rejected as standalone words (`Test`, `test123`, `test_user`, `admin@acme.com`). Words that merely contain them, such as `Contest` or `Administrative`, are accepted.
+- URLs, data URIs and uploaded files are not checked.
+
+### Disallowed markup and HTML/XML tags
+
+To protect against XSS and prompt/markup injection, API requests containing HTML, XML, or custom tags (such as `<script>`, `<mention>`, `<iframe>`, `<div>`, etc.) in request field keys or string values are strictly rejected across the API with HTTP `422`:
+
+```json
+{
+  "status": "failed",
+  "status_code": 422,
+  "message": "The payload contains disallowed HTML or markup tags.",
+  "data": {
+    "error": {
+      "note": ["The note field contains disallowed tags or markup."]
+    }
+  },
+  "error": {
+    "code": "invalid_argument",
+    "message": "The payload contains disallowed HTML or markup tags.",
+    "request_id": "req_..."
+  }
+}
+```
+
+Password fields (`password`, `password_confirmation`, `current_password`, `old_password`) and binary file uploads are exempt.
+
+---
+
+## Errors that don't use the envelope
+
+Some errors are produced before your request reaches an endpoint, by the routing and framework layers. These return a minimal `{"message": "..."}` body with no `status` field. They still include [`error_details`](#unified-error-object-error_details):
+
+| HTTP | When | Body |
+|---|---|---|
+| `404` | The URL doesn't match any route | `{"message": "The route v1/unknown could not be found."}` |
+| `404` | A resource ID in the URL or body doesn't exist on some endpoints | `{"message": "No query results for model [...] ..."}` |
+| `405` | Wrong HTTP method for the route | `{"message": "The GET method is not supported for route v1/wallet/payout. Supported methods: POST."}` |
+| `422` | Validation (form 3 above) | `{"message": "...", "errors": {...}}` |
+| `429` | Rate limit exceeded | `{"message": "Too Many Attempts."}` |
+| `500` | Unexpected server error | `{"message": "Server Error"}` |
+| `503` | Platform maintenance | `{"message": "Service Unavailable"}` |
+
+A few endpoints use a `success` boolean instead of the envelope. The bank-transfer deposit-instruction lookup endpoints under `/payin/...` are one example:
+
+```json
+{ "success": false, "message": "Deposit not found." }
+```
+
+These responses include `error_details` too.
+
+---
+
+## HTTP status code reference
+
+| HTTP | Meaning on Yativo | Retry? |
+|---|---|---|
+| `200` | Success. Also used for creates and deletes ([see note](#the-response-envelope)) | — |
+| `400` | The request was understood but can't be carried out: a business rule failed, the balance is too low, a limit was exceeded, or a generic processing failure occurred. Also the default for many errors that have no more specific code | Only after fixing the cause, or for the generic "Something went wrong" error after checking state ([see below](#server--upstream-errors)) |
+| `401` | Not authenticated: credentials are missing, invalid or expired, or an OTP is wrong | After re-authenticating or fixing credentials |
+| `402` | A fee or balance charge required by the operation failed (card and employee-KYC endpoints) | After funding the balance |
+| `403` | Authenticated, but not allowed: KYC is pending, an IP isn't whitelisted, a role lacks permission, or the customer is banned or not endorsed | No. Fix the account or permissions first |
+| `404` | The resource doesn't exist or doesn't belong to your account, or the route doesn't exist | No |
+| `405` | Wrong HTTP method | No |
+| `409` | Conflict: an idempotency clash, a duplicate reference, or an action taken out of order | See [Idempotency](#idempotency-duplicates--safe-retries) |
+| `411` | Validation failure on the transaction-tracking endpoints (`/v1/transaction/track`, `/v1/transaction/tracking/{id}`) | After fixing input |
+| `422` | Validation failed, or a value isn't allowed | After fixing input |
+| `429` | Rate limited, or an identical operation is already in progress | Yes, after `Retry-After` |
+| `500` | Unexpected error on our side | Yes, with backoff, after checking state for money movement |
+| `501` | Feature not available yet | No |
+| `502` | A downstream processing partner failed or returned an unusable response | Yes, with backoff, after checking state |
+| `503` | Temporarily unavailable (for example, exchange rates being refreshed, or maintenance) | Yes, with backoff |
+
+---
+
+## Authentication & access errors
+
+Server-to-server requests authenticate with an `X-Api-Key` / `X-Api-Secret` pair from a whitelisted IP. Bearer tokens (JWTs) are for the Yativo dashboard. See [team-api-keys-integration.md](/yativo-platform/authentication) and [ip-whitelisting.md](/yativo-platform/security/ip-whitelisting).
+
+| HTTP | `data.error` | Cause & fix |
+|---|---|---|
+| `401` | `Unauthenticated` | No credentials, or the bearer token is invalid or expired. Send valid API key headers |
+| `401` | `Both X-Api-Key and X-Api-Secret headers are required.` | Only one of the two headers was sent |
+| `401` | `Invalid or revoked API credentials.` | Wrong key or secret, or the key was revoked. Failed attempts are recorded against your account for security monitoring |
+| `401` | `This API key's team has no owner account.` | The key's team is misconfigured. Contact support |
+| `401` | `Session expired due to inactivity. Please log in again.` | A dashboard bearer token went unused past the idle timeout (5 minutes by default) |
+| `401` | `Invalid OTP` | On 2FA-protected endpoints, the `otp` field is missing or wrong |
+| `401` | `{"message": "Your session has expired. Please log in again."}` (top-level `message`: `Session expired`) | A team-member session was invalidated. Sign in again |
+| `401` | `This API key has no whitelisted IP addresses. Add at least one allowed IP before using it.` | Production request with no allowed IPs. Sandbox allows a key with no whitelist. Add an allowed IP to the key in the dashboard |
+| `403` | `Invalid credentials.` | The calling IP isn't on the key's allow list |
+| `403` | `Unauthorized Request, IP not whitelisted` | The platform-wide IP allow list (when enabled) doesn't include your IP |
+| `403` | `Bearer tokens are only accepted from the Yativo dashboard. Server-to-server requests must use X-Api-Key and X-Api-Secret from a whitelisted IP.` | A dashboard token was used from a script or server. Switch to API keys. Enforced since **15 October 2026** |
+| `403` | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | API-key and whitelist management endpoints were called with an API key or from outside the dashboard |
+| `403` | `This endpoint cannot be used with an API key. Sign in to the Yativo dashboard instead.` | Login-security endpoints (passkeys, 2FA, PIN update and reset, app secret, account deletion) can't be called with an API key |
+| `429` | `Too many incorrect PIN attempts. Try again in N minutes, or reset your PIN.` | 5 wrong transaction PINs in 15 minutes. Wait, or [reset the PIN](/yativo-platform/business/account-recovery#reset-a-forgotten-transaction-pin) |
+| `429` | `Too many attempts. Try again in N minutes.` | 5 failed 2FA-reset or PIN-reset attempts in 15 minutes. See [Account recovery](/yativo-platform/business/account-recovery) |
+| `429` | `Too Many Attempts.` | A per-minute request limit was hit (sign-in, OTP, 2FA, PIN and rate endpoints are throttled). Retry after the `Retry-After` header |
+
+---
+
+## Account, customer & team restrictions
+
+These checks run on every authenticated request, before the endpoint itself.
+
+| HTTP | `data.error` | When |
+|---|---|---|
+| `403` | `KYC is pending, please complete the KYC process to access this feature` | Your business KYC/KYB isn't approved yet. Onboarding, profile, 2FA/PIN/passkey, OTP and team-invitation endpoints remain available |
+| `400` | `Account has been suspended. Please contact support or your account manager.` | Your account is suspended. The session is also signed out |
+| `400` | `You have no debit account. Please contact your administrator.` | Your account is on a no-debit restriction, and any request carrying an `amount` is refused |
+| `403` | `This customer has been banned from the platform.` | Any request whose `customer_id` (in the body or query) belongs to a banned customer |
+| `403` | `This customer account is not permitted to perform transactions.` | Any request whose `customer_id` belongs to a customer whose name or email contains `test` |
+| `400` | `customer is not yet approved for this service/endpoint` | Virtual-account issuance for a customer who isn't enabled for it |
+| `403` | `Customer not endorsed for this service` | The customer lacks the endorsement the endpoint requires |
+| `403` | `Your organisation is not enabled for Business Spend Cards.` / `Your account is not yet approved for Business Spend Cards. Please contact support.` | Card endpoints when your business isn't enabled or approved for cards |
+| `403` | `Your team role is read-only; only GET requests are allowed.` | A team member with the *viewer* role made a non-`GET` request |
+| `403` | `Your team role does not have access to this action.` | A team member called an endpoint that isn't mapped to any team permission |
+| `403` | `You do not have permission to perform this action.` | A team member's role lacks the permission the endpoint needs |
+
+Team members always act on behalf of the team owner's business. KYC and other account checks are evaluated against the **owner's** account, not the member's.
+
+---
+
+## Money movement errors
+
+### Payouts & transfers
+
+Payout and wallet-transfer endpoints check the quote, amount, limits and balance before any funds move. Every failure below happens **before** your wallet is debited.
+
+| HTTP | `data.error` | Fix |
+|---|---|---|
+| `400` | `Quote has expired. Please generate a new quote.` | Create a new quote |
+| `404` | `Quote not found. Please generate a new quote.` | Check `quote_id` |
+| `400` | `Invalid payment method configuration` | Check `payment_method_id` belongs to a valid beneficiary payment method |
+| `400` | `Unsupported withdrawal method` / `Unsupported withdrawal method for quotes` | The beneficiary's payout method doesn't match the quote or isn't supported |
+| `422` | `amount_type must be either send or receive` | Use `send` or `receive` |
+| `400` | `Minimum withdrawal: 25.00 USD` | The amount, including fees, is below the method's minimum (the figure is in your debit-wallet currency) |
+| `400` | `Maximum withdrawal: 10,000.00 USD` | The amount, including fees, is above the method's maximum |
+| `400` | `Currency pair error. Supported are: USD,EUR` | `debit_wallet` can't fund this payout method |
+| `400` | `Invalid exchange rate for limit validation.` | No rate is available right now. Retry later |
+| `400` | `Insufficient wallet balance` | Top up the wallet ([see the retry warning](#idempotency-duplicates--safe-retries)) |
+
+See [payin-payout-integration.md](/yativo-platform/money-movement/payins) and [payout-receive-amount.md](/yativo-platform/money-movement/payout-receive-amount) for the full payout flow.
+
+### Cards
+
+Card issuance, funding and withdrawal charge fees to your USDC balance first. If that charge fails, the request returns HTTP **`402`**:
+
+```json
+{
+  "status": "failed",
+  "status_code": 402,
+  "message": "Request failed.",
+  "data": { "error": "Unable to charge your USDC balance." }
+}
+```
+
+Other card-specific messages include `Unable to charge withdrawal fee.` (`402`) and `Unable to confirm the card balance right now. Please try again.` (`502`).
+
+### A successful response isn't final settlement
+
+A `200` from a payout, deposit or card-funding endpoint means the instruction was **accepted**, not that the money has settled. The transaction's own `status` field (for example `pending`, `processing`, `completed` or `failed`) and the corresponding [webhook](/yativo-platform/webhooks/overview) events tell you the final outcome. A transaction can be accepted and still fail later, so always confirm the final state before treating it as complete.
+
+---
+
+## Idempotency, duplicates & safe retries
+
+All authenticated `POST`, `PUT`, `PATCH` and `DELETE` requests to the core `/v1` API are protected against duplicates.
+
+### How it works
+
+1. Send a unique `Idempotency-Key` header (a UUID is ideal) with every write request.
+2. The first request with that key runs normally, and its response is stored for **60 minutes**.
+3. Any repeat with the **same key and same body** within that window returns the **stored response** unchanged, with the same status and body, without running the operation again.
+4. While the first request is still running, a repeat returns `409`.
+
+| HTTP | `data.error` | Meaning |
+|---|---|---|
+| `409` | `A matching request is already being processed. Please wait a moment and refresh.` | The original request is still in progress. Wait, then check its outcome |
+| `409` | `Idempotency-key reuse detected with a different request payload.` | You reused a key with a different body. Use a new key for a new operation |
+
+### Requests without an `Idempotency-Key`
+
+If you don't send the header, the platform deduplicates on **the exact method, path and body**. Two identical requests within 60 minutes return the first one's stored response, even if you meant them as two separate operations. To deliberately repeat an identical operation, such as two payouts of the same amount to the same beneficiary, send a different `Idempotency-Key` on each.
+
+### What gets replayed
+
+- Responses with HTTP status **below 500**, both successes **and** `4xx` errors, are stored and replayed.
+- `5xx` responses are **not** stored, so retrying after a `5xx` really does run the request again.
+
+> **Retrying after fixing a `4xx`:** if a payout fails with `Insufficient wallet balance` and you then top up, resending the identical request with the same key, or with no key, returns the stored `400` for up to 60 minutes. **Use a new `Idempotency-Key` when you retry after fixing the cause.**
+
+Replayed responses look identical to the original. No header marks them as replays.
+
+### Card endpoints
+
+On card endpoints (`/v1/spend/...`, `/v1/corporate-card/...`), your `Idempotency-Key` is also used to prevent duplicate card issuance, funding and withdrawals. Always send one.
+
+### Concurrent wallet creation
+
+Creating a crypto wallet while an identical creation is still in progress returns:
+
+```json
+{
+  "status": "failed",
+  "status_code": 429,
+  "message": "Request failed.",
+  "data": { "error": "A wallet creation request for this currency is already in progress, please try again shortly" }
+}
+```
+
+---
+
+## Rate limits
+
+| Endpoints | Limit | Keyed by |
+|---|---|---|
+| Core `/v1` API, reads (`GET`/`HEAD`) | 50 requests / second | Account |
+| Core `/v1` API, writes | 20 requests / second | Account |
+| Crypto wallet creation | 10 requests / second | Account |
+| `GET /v1/exchange-rates` | 1 request / minute (rates refresh once a minute) | Account |
+| `POST /v1/exchange-rate` | 30 requests / minute | Account |
+| `GET /v1/ip-whitelist/check`, `GET /v1/auth/login-history` | 30 requests / minute | Account |
+| Register, login, social login, magic-login completion | 10 requests / minute | IP |
+| Send/verify OTP, request magic link | 5 requests / minute | IP |
+| Referrer code validation | 30 requests / minute | IP |
+| MCP server (`/mcp`) | 60 requests / minute | Account |
+
+Reads and writes use separate buckets, so polling a transaction's status doesn't use up your write allowance. Enterprise plan accounts are exempt from the core `/v1` throughput limits.
+
+Rate-limited routes return these headers on every response:
+
+| Header | Meaning |
+|---|---|
+| `X-RateLimit-Limit` | Requests allowed in the current window |
+| `X-RateLimit-Remaining` | Requests left in the current window |
+| `Retry-After` | On a `429`: seconds to wait before retrying |
+| `X-RateLimit-Reset` | On a `429`: Unix timestamp when the window resets |
+
+A `429` from the rate limiter uses the framework shape:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 1
+```
+
+```json
+{ "message": "Too Many Attempts." }
+```
+
+Repeated wrong magic-link codes return a separate, enveloped `429`: `Too many incorrect attempts. Please request a new One time login O.T.P.`
+
+---
+
+## Server & upstream errors
+
+### The generic error
+
+The most common unexpected-failure response is:
+
+```json
+{
+  "status": "failed",
+  "status_code": 400,
+  "message": "Request failed.",
+  "data": { "error": "Something went wrong, please try again later" }
+}
+```
+
+It appears with HTTP **`400`** on most endpoints and `500` on some. It means the platform caught an unexpected problem while processing your request. Internal details are never exposed in this response.
+
+### Upstream failures
+
+When a downstream banking, card or payment partner fails, you receive `502` (or `503` when the service is temporarily unavailable) with a descriptive message, for example:
+
+- `Unable to calculate the payout quote, please retry.` (`502`)
+- `Exchange rates are temporarily unavailable, please try again shortly` (`503`)
+- `Service temporarily unavailable.` (`503`, top-level `message`: `Service Unavailable`)
+
+Some endpoints pass on the partner's own error description in `data.error`. Show it to support staff, but don't parse it.
+
+### Retrying money movement after an unexpected error
+
+For a `5xx`, or the generic `400` above, on an endpoint that moves money:
+
+1. **Don't retry blindly.** The operation may have partly gone through.
+2. Look up the transaction (by your reference or the transaction list) or wait for the [webhook](/yativo-platform/webhooks/overview).
+3. Only if no transaction exists, retry with backoff (for example 1s, 2s, 4s, 8s, capped at about 30s). Use a **new** `Idempotency-Key` for a `4xx`, or the **same** key for a `5xx`, since `5xx` responses aren't stored.
+
+Reads (`GET`) are always safe to retry.
+
+---
+
+## Parsing responses: a reference implementation
+
+Because every failure carries [`error_details`](#unified-error-object-error_details), a client needs only a few lines:
+
+```javascript
+async function callYativo(url, options = {}) {
+  const res = await fetch(url, options);
+  let body = null;
+  try { body = await res.json(); } catch { /* empty or non-JSON body */ }
+
+  const err = body?.error_details;
+  if (res.ok && !err) {
+    return {
+      ok: true,
+      httpStatus: res.status,
+      data: body?.data ?? body,
+      pagination: body?.pagination ?? null,
+    };
+  }
+
+  return {
+    ok: false,
+    httpStatus: err?.http_status ?? res.status,
+    code: err?.code ?? 'server_error',
+    message: err?.message ?? `Request failed (HTTP ${res.status})`,
+    fieldErrors: err?.fields ?? null, // { field: [messages] }; { error: [message] } when not field-specific
+    retryable: err?.retryable ?? res.status >= 500,
+    retryAfter: err?.retry_after ?? null,
+  };
+}
+```
+
+The fallbacks only apply when no JSON body came back at all, for example when a network proxy in between returned an HTML error page.
+
+Then branch on `code`:
+
+```javascript
+const r = await callYativo(`${BASE}/v1/wallet/payout`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Api-Key': KEY,
+    'X-Api-Secret': SECRET,
+    'Idempotency-Key': crypto.randomUUID(),
+  },
+  body: JSON.stringify(payload),
+});
+
+if (!r.ok) {
+  switch (r.code) {
+    case 'unauthenticated':  /* fix credentials */ break;
+    case 'forbidden':        /* KYC, IP, permission or customer restriction: don't retry */ break;
+    case 'conflict':         /* in progress or key reuse: check the outcome */ break;
+    case 'validation_error': /* show r.fieldErrors next to the form fields */ break;
+    case 'rate_limited':     /* wait r.retryAfter seconds, then retry */ break;
+    default:
+      if (r.httpStatus >= 500) { /* check the transaction state, then retry with backoff */ }
+      else { /* bad_request, payment_required, not_found…: show r.message */ }
+  }
+}
+```
+
+---
+
+## Best practices
+
+- **Read errors from `error_details`.** It has the same shape on every failure, so one handler covers the whole API. Don't read errors from the top-level `message`, which is usually just `"Request failed."`.
+- **Check the HTTP status as well as the body.** Treat a response as failed if it has a non-`2xx` status or includes `error_details`. Don't assume success just because `data` is present.
+- **Branch on `error_details.code` (or the HTTP status), not message text.** Messages are written for people and may change.
+- **Always send an `Idempotency-Key` on writes,** and use a fresh one when you retry after fixing a `4xx`.
+- **Never retry `401`, `403`, `404` or `422` unchanged.** They won't succeed until the cause is fixed.
+- **Respect `Retry-After` on `429`,** and poll status endpoints within the read limit.
+- **Treat `200` on money movement as "accepted",** and confirm the final state through the transaction status or [webhooks](/yativo-platform/webhooks/overview).
+- **Log the full response body** (HTTP status, `error_details` and `data`) when you contact support.
+- **Avoid reserved words** (`test`, `admin`, `yativo`) in customer, business and KYC fields, and never use test-named customers for live transactions.

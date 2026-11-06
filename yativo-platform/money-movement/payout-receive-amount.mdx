@@ -1,0 +1,169 @@
+---
+title: "Payouts by Receive Amount"
+description: "Payouts by Receive Amount — integration guide for the Yativo API."
+---
+
+By default, the `amount` on a payout is what you **send** from your wallet. The
+customer receives that amount converted into the payout currency. If you'd
+rather fix what the customer **receives**, for example exactly 5,000 MXN, set
+`amount_type` to `receive`. We calculate how much to send and the fees, then
+debit your wallet for both.
+
+`amount_type` is optional. Leave it out, or set it to `send`, and nothing
+changes.
+
+| `amount_type` | `amount` means | Currency of `amount` |
+|---------------|----------------|----------------------|
+| `send` (default) | What leaves your wallet, before fees | Your debit wallet (`debit_wallet` / `from_currency`) |
+| `receive` | What the customer receives | The payout currency (`to_currency`) |
+
+In both modes, fees are added on top and charged to your wallet. In `receive`
+mode the customer always gets the full requested amount.
+
+Receive mode is supported on:
+
+- `POST /api/v1/exchange-rate` (payout quotes)
+- `POST /api/v1/wallet/payout`
+
+## Option A: Quote first (recommended)
+
+A quote fixes the rate and fees for 5 minutes, so you can show the exact debit
+before you commit.
+
+### 1. Get a quote
+
+```
+POST /api/v1/exchange-rate
+```
+
+```json
+{
+  "method_type": "payout",
+  "method_id": 12,
+  "from_currency": "USD",
+  "to_currency": "MXN",
+  "amount": 5000,
+  "amount_type": "receive"
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `method_type` | yes | Must be `payout` to use `amount_type: receive`. |
+| `method_id` | yes | The payout method id. |
+| `from_currency` | yes | The wallet you'll be debited from. |
+| `to_currency` | yes | The payout currency. |
+| `amount` | yes | With `receive`: the amount the customer gets in `to_currency`. |
+| `amount_type` | no | `send` (default) or `receive`. |
+
+Response (the numbers here are only examples):
+
+```json
+{
+  "quote_id": 9876,
+  "quote_expire_at": "2026-10-01T12:05:00.000000Z",
+  "from_currency": "USD",
+  "to_currency": "MXN",
+  "rate": "18.12340000",
+  "amount": "275.88642300",
+  "amount_type": "receive",
+  "receive_amount": "5000.00000000",
+  "payout_data": {
+    "customer_sent_amount": "275.89",
+    "customer_receive_amount": "5,000.00",
+    "customer_total_amount_due": "278.39"
+  },
+  "calculator": { "...": "full fee and rate breakdown" }
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `amount` | The send amount, in `from_currency`. |
+| `receive_amount` | The amount the customer receives, in `to_currency`. Only returned in `receive` mode. |
+| `payout_data.customer_total_amount_due` | The total your wallet is debited: send amount plus fees. |
+| `quote_expire_at` | Use the quote before this time. |
+
+### 2. Create the payout with the quote
+
+Submit the payout to `/api/v1/payout/simple` (or `/api/v1/wallet/payout`):
+
+```http
+POST /api/v1/payout/simple
+```
+
+- **Sandbox:** `https://smtp.yativo.com/api/v1/payout/simple`
+- **Production:** `https://api.yativo.com/api/v1/payout/simple`
+
+```json
+{
+  "payment_method_id": 18096,
+  "debit_wallet": "USD",
+  "customer_id": "d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d",
+  "quote_id": "756979af-784f-4933-9ac1-76bddbeb333d"
+}
+```
+
+The quote supplies the amount, so you don't need to send `amount` or
+`amount_type`. Any `amount_type` you send with a `quote_id` is ignored. The
+payout method on the quote must match the beneficiary's payout method.
+
+## Option B: Pay out directly
+
+```
+POST /api/v1/wallet/payout
+Idempotency-Key: 3f1c2a1e-...
+```
+
+```json
+{
+  "amount": 5000,
+  "amount_type": "receive",
+  "payment_method_id": 555,
+  "debit_wallet": "USD",
+  "customer_id": "cus_123"
+}
+```
+
+The send amount is calculated at the current rate when the request is
+processed. Use Option A if you need to know the debit in advance.
+
+## Payout response
+
+Every `POST /api/v1/wallet/payout` response includes these fields, in either
+mode:
+
+```json
+{
+  "transaction_id": "...",
+  "payout_id": 4321,
+  "status": "pending",
+  "amount_type": "receive",
+  "send_amount": 275.886423,
+  "customer_receive_amount": 5000,
+  "debit_amount": 278.386423,
+  "currency": "MXN",
+  "fees": { "...": "full fee and rate breakdown" }
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `send_amount` | The amount sent, in the debit wallet currency, before fees. |
+| `customer_receive_amount` | The amount the customer receives, in `currency`. |
+| `debit_amount` | The total debited from your wallet, fees included. |
+
+## Same-currency payouts
+
+When the debit wallet and the payout currency are the same (for example, USD
+to USD), the send amount equals the receive amount. Fees are still added on top.
+
+## Limits and errors
+
+- The payout method's minimum and maximum limits are checked against the
+  calculated send amount, so a receive amount can be rejected for being above
+  or below a limit. The error message shows the limit in your wallet currency.
+- If your wallet balance can't cover the send amount plus fees, the request
+  fails with `Insufficient wallet balance`. Nothing is debited.
+- An `amount_type` value other than `send` or `receive` returns `422`.
+- `amount_type: receive` on a payin quote returns `422`.

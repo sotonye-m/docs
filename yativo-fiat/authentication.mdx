@@ -156,18 +156,19 @@ If your integration still calls `POST /auth/login`, it no longer works. Request 
 
 ## Idempotency
 
-Send an `Idempotency-Key` header on every `POST`, `PUT`, `PATCH` and `DELETE` request. It makes retries safe: a repeated request returns the original response and doesn't run again.
+Send an `Idempotency-Key` header on every `POST`, `PUT`, `PATCH` and `DELETE` request. Use a **new key for each distinct operation** (for example a UUID per payout).
 
 ```
 Idempotency-Key: <unique-string-per-request>
 ```
 
-Use a UUID or another value you generate once per operation, and reuse it only when retrying that operation.
+Use a UUID or another value you generate once per operation.
 
-- Yativo keeps the original response for **60 minutes**. A retry with the same key and body in that time gets the same response, including errors below `500`. A `5xx` response isn't kept, so you can retry it with the same key.
-- Reusing a key with a different body returns `409` with `Idempotency key reuse detected with a different request payload.`
-- Sending a retry while the first request is still running returns `409` with `A matching request is already being processed. Please wait a moment and refresh.`
-- If you leave the header out, Yativo treats an identical request to the same endpoint within 60 minutes as a retry, and returns the first response. To send two identical operations on purpose, such as two equal payouts, give each its own key.
+- Reusing the same key for a request that **already completed** within **60 minutes** returns `409` with `This Idempotency-Key has already been used. Use a new key for each unique request.`
+- Reusing a key with a **different body** returns `409` with `Idempotency key reuse detected with a different request payload.`
+- Sending a duplicate key while the first request is **still running** returns `409` with `A matching request is already being processed. Please wait a moment and refresh.`
+- A **`5xx` response isn't kept**, so you can retry the same key after a server error once the issue clears.
+- If you leave the header out, Yativo treats an identical request to the same endpoint within 60 minutes as a duplicate and returns `409`. To send two identical operations on purpose, such as two equal payouts, give each its own key.
 
 ```bash
 curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
@@ -191,6 +192,7 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
 | 403 | `Bearer tokens are only accepted from the Yativo dashboard. ...` | Login tokens are discontinued. Send `X-Api-Key` and `X-Api-Secret` instead. |
 | 403 | `This endpoint cannot be used with an API key. ...` | Make the change in the dashboard. |
 | 403 | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | Manage keys and IPs in **Developers → API Keys**. |
+| 409 | `This Idempotency-Key has already been used. Use a new key for each unique request.` | Generate a new `Idempotency-Key` for each operation. |
 | 409 | `Idempotency key reuse detected with a different request payload.` | Use a new `Idempotency-Key` for a new operation. |
 
 ---

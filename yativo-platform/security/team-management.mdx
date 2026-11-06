@@ -1,0 +1,148 @@
+---
+title: "Team Functionality"
+description: "Invite team members, roles, permissions, and how members use the business API."
+---
+
+A business account (the **owner**) can invite people into their business, assign them roles, and control exactly what each person can see and do — separate from the internal admin panel. This document covers the API and the authorization rules enforced server-side.
+
+## Contents
+
+- [Architecture](#architecture)
+- [Authorization model](#authorization-model)
+- [Default roles & permissions](#default-roles--permissions)
+- [Team members on the wider API](#team-members-on-the-wider-api)
+- [Team API keys](#team-api-keys)
+- [API reference](#api-reference)
+
+---
+
+## Authorization model
+
+Every `TeamController` endpoint is one of four tiers:
+
+| Tier | Rule | Helper |
+|---|---|---|
+| **Owner-only** | Only the team owner may call this — not even a permission holder. Used for anything that defines or grants access (role CRUD, role assignment), since letting a permission holder edit roles would let them escalate their own access. | `requireOwner()` |
+| **Owner or permission** | Owner always allowed; a member is allowed only if they hold the specific permission for that action. | `authorizeTeamAction()` |
+| **Membership only** | Owner or any member (regardless of role) — for read data that isn't sensitive enough to gate behind a specific permission (e.g. seeing your teammates' names, the list of role definitions). | `requireMembership()` |
+| **Self or permission** | You can always inspect your own roles/permissions; inspecting someone else's requires the owner or `team.members.view`. | `authorizeSelfOrPermission()` |
+
+A user with **no role assigned** behaves as `viewer` — read-only across business features (transactions, deposits, payouts, wallets, etc.) and cannot manage members, roles, or settings. This is enforced two ways:
+1. `acceptInvitation` assigns the `viewer` role by default when an invite doesn't specify one.
+
+Verified authorization matrix (owner / permitted member / plain viewer / outsider):
+
+| Endpoint | Owner | Permission holder | Plain viewer | Non-member |
+|---|---|---|---|---|
+| View members / roles / permissions catalog | ✅ | ✅ | ✅ | ❌ 403 |
+| View pending invitations | ✅ | ✅ (`team.members.invite`) | ❌ 403 | ❌ 403 |
+| View **another** member's roles/permissions | ✅ | ✅ (`team.members.view`) | ❌ 403 | ❌ 403 |
+| View **own** roles/permissions | ✅ | ✅ | ✅ | ❌ 403 (not a member) |
+| Invite / cancel invitation | ✅ | ✅ (`team.members.invite`) | ❌ 403 | ❌ 403 |
+| Remove a member | ✅ | ✅ (`team.members.remove`) | ❌ 403 | ❌ 403 |
+| Create / edit / delete a role | ✅ | ❌ 403 | ❌ 403 | ❌ 403 |
+| Assign / revoke a member's role | ✅ | ❌ 403 | ❌ 403 | ❌ 403 |
+
+## Default roles & permissions
+
+When a team is created, five default roles are seeded (the owner can rename, edit, delete, or add to them freely — changes are per-team only):
+
+| Role | Scope |
+|---|---|
+| `admin` | Every `team.*` permission — full control including member/role management and API keys. |
+| `manager` | Broad operational access (transactions, payouts, payments, wallets, members) but not settings/API keys/billing management. |
+| `finance` | Transactions, deposits, payouts, billing, reports. |
+| `operations` | Day-to-day transaction/payout/deposit/virtual-account operations. |
+| `viewer` (default) | Read-only: dashboard, transactions, deposits, payouts, payments, beneficiaries, virtual accounts/cards, wallets, exchange, reports, KYC, settings — **view only, no create/update/delete/manage permissions anywhere.** |
+
+Permissions are grouped for UI rendering — e.g. "Team Members" (`team.members.view`, `team.members.invite`, `team.members.remove`, `team.members.roles.assign`), "Transactions", "Payouts", "Billing & Plans", etc. Fetch the full list + groups via `GET /teams/{teamId}/permissions`.
+
+## Team members on the wider API
+
+When a team member signs in to the dashboard, API calls run in the context of the business account according to their role. Viewers can only send `GET` requests; other roles need the matching permission for each action. Routes that change the member's own credentials (PIN, passkeys, profile) always run as that member.
+
+KYC belongs to the business, not the member. Once the owner passes KYC, members can use KYC-gated endpoints within their role.
+
+## Team API keys
+
+Teams create `X-Api-Key` / `X-Api-Secret` pairs for server-to-server use. A key belongs to the team, authenticates as the **owner** (roles don't apply to keys), and must have an IP whitelist. Keys are rejected (`no_api_key`) on endpoints that change sign-in credentials or delete the account. Key management is dashboard-only and gated by `team.api-keys.view` / `.create` / `.revoke`. See [Team API Keys](/yativo-platform/authentication) and [IP Whitelisting](/yativo-platform/security/ip-whitelisting).
+
+## API reference
+
+
+### Auth (used by the portal's login/register)
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/v1/auth/register` | Create a business account. Required: `name`, `bussinessName`, `email`, `password`. |
+| `POST` | `/api/v1/auth/login/magic` | Send a one-time login code to `email` (`base_url` optional, used to build the email's link). |
+| `POST` | `/api/v1/auth/login/magic-login` | Exchange `{ email, token }` (the code) for a JWT. |
+| `POST` | `/api/v1/auth/passkeys/authenticate/options` | Passkey sign-in, step 1. See [Passkey Login](/yativo-platform/security/passkey-authentication). |
+| `POST` | `/api/v1/auth/passkeys/authenticate` | Passkey sign-in, step 2. Returns a JWT. |
+| `GET` | `/api/v1/profile` | Current user's profile. |
+
+`POST /api/v1/auth/login` (`account_id` + `app_secret`) is the deprecated legacy login; see [Team API Keys](/yativo-platform/authentication#deprecation-notice-the-legacy-login).
+
+### Current user's teams
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/my-teams` | Any authenticated user | List the teams the caller owns or belongs to, plus `current_team_id`. Auto-provisions a personal team (+ default roles) on first call if the account has none. |
+
+### Team info
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/teams/{teamId}/owner` | Membership | The team's owner. |
+| `GET` | `/api/v1/teams/{teamId}/users` | Membership | Confirmed members (excludes owner). |
+| `GET` | `/api/v1/teams/{teamId}/all-users` | Membership | Owner + members. |
+| `GET` | `/api/v1/teams/{teamId}/has-user/{userId}` | Membership | Whether a given user id is on the team. |
+| `POST` | `/api/v1/teams/{teamId}/has-user-with-email` | Membership | Body: `{ email }`. Whether that email is already a member. |
+| `DELETE` | `/api/v1/teams/{teamId}/user/{userId}` | Owner or `team.members.remove` | Remove a member from the team. |
+
+### Invitations
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/teams/{teamId}/invitations` | Owner or `team.members.invite` | List pending invitations. |
+| `POST` | `/api/v1/teams/{teamId}/invitations` | Owner or `team.members.invite` | Body: `{ name, email, role_id? }`. Creates the invite and emails the invitee. Rejects if the email is already a member or already invited. |
+| `DELETE` | `/api/v1/teams/{teamId}/invitations/{invitationId}` | Owner or `team.members.invite` | Cancel a pending invitation. |
+| `GET` | `/api/v1/team-invitations/{invitationId}` | **Public** | Preview an invitation (business name, invitee name/email) before the invitee logs in. |
+| `POST` | `/api/v1/team-invitations/{invitationId}/accept` | Authenticated, email must match the invite | Joins the team. Assigns the invite's role, or `viewer` by default if none was specified. |
+
+**The link in the invitation email** points to `GET /team-invitations/{invitationId}` on the **API host** — `https://api.yativo.com` in production and `https://smtp.yativo.com` on sandbox (`test-api.yativo.com` 404s this page). It is a signed web URL, not under `/api` and not on the dashboard SPA (`app.yativo.com`, which 404s that path). Override the origin with `TEAM_INVITE_URL` if needed. Opening it accepts the invitation immediately — no sign-in step, since the URL signature proves the invitee received the email — and shows a plain result page. If the invitee has no Yativo account yet, one is created for their invited email; they then sign in with an email one-time code. The page reports an invalid or tampered link, an invitation that no longer exists, or that the invitee is already a member. An invitee who already owns or belongs to another active team can't join a second one.
+
+### Permissions catalog
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/teams/{teamId}/permissions` | Membership | Full permission catalog + UI groups (`config('team-roles.groups')`), for rendering a permission picker. |
+
+### Roles
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/teams/{teamId}/roles` | Membership | List the team's roles (with their permissions). |
+| `GET` | `/api/v1/teams/{teamId}/roles/{roleId}` | Membership | A single role. |
+| `POST` | `/api/v1/teams/{teamId}/roles` | Owner only | Body: `{ name, permissions: [] }`. Create a role. |
+| `PUT` | `/api/v1/teams/{teamId}/roles/{roleId}` | Owner only | Body: `{ name?, permissions? }`. Update a role. |
+| `DELETE` | `/api/v1/teams/{teamId}/roles/{roleId}` | Owner only | Delete a role. |
+
+### Member role management
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/teams/{teamId}/members/{userId}/roles` | Self, or owner/`team.members.view` for others | Roles assigned to a member. |
+| `GET` | `/api/v1/teams/{teamId}/members/{userId}/permissions` | Self, or owner/`team.members.view` for others | Effective permissions for a member. |
+| `GET` | `/api/v1/teams/{teamId}/members/{userId}/has-permission/{permission}` | Self, or owner/`team.members.view` for others | Whether a member has a specific permission. |
+| `POST` | `/api/v1/teams/{teamId}/members/{userId}/roles/{roleId}` | Owner only | Assign a role to a member. |
+| `DELETE` | `/api/v1/teams/{teamId}/members/{userId}/roles/{roleId}` | Owner only | Revoke a role from a member. |
+
+### API keys (dashboard-only)
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/teams/{teamId}/api-keys` | Owner or `team.api-keys.view` | List keys (never returns secrets). |
+| `POST` | `/api/v1/teams/{teamId}/api-keys` | Owner or `team.api-keys.create` | Body: `{ label, allowed_ips[] }`. Returns the secret once. |
+| `PUT` | `/api/v1/teams/{teamId}/api-keys/{keyId}/allowed-ips` | Owner or `team.api-keys.create` | Body: `{ allowed_ips[] }`. Replaces the whitelist. |
+| `DELETE` | `/api/v1/teams/{teamId}/api-keys/{keyId}` | Owner or `team.api-keys.revoke` | Revoke (permanent). |

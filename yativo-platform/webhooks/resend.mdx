@@ -1,0 +1,377 @@
+---
+title: "Webhook resend — dashboard UI"
+description: "Webhook resend — dashboard UI — integration guide for the Yativo API."
+---
+
+This is for the Yativo dashboard (`app.yativo.com`). It covers adding a **Resend** action to the webhook delivery log so a signed-in customer can redeliver an event to their current endpoint.
+
+The API itself is documented in [Webhooks Guide → Resending an event](/yativo-platform/webhooks/overview#resending-an-event). This file is only the frontend work: where the button lives, which calls to make, how to gate it by role, and how to handle the result.
+
+---
+
+- [What to add](#what-to-add)
+- [Auth](#auth)
+- [Permissions](#permissions)
+- [Endpoints](#endpoints)
+- [List page](#list-page)
+- [Detail page](#detail-page)
+- [Resend interaction](#resend-interaction)
+- [Errors](#errors)
+- [Frontend example](#frontend-example)
+- [Checklist](#checklist)
+
+---
+
+## What to add
+
+Put this on the existing **Webhooks → Delivery log** (or **Developers → Events**) screen, not on the webhook URL settings page.
+
+| Surface | Change |
+|---|---|
+| Delivery log table | Filters for **Transaction ID**, **Event type**, and **Status**. A **Resend** action on each row, especially failed ones. Hide it when the viewer cannot manage webhooks. |
+| Delivery log detail | Same **Resend** button, plus the payload, the endpoint's response, and **Resent by** when `resend` is set. |
+| Empty / missing endpoint | If `GET /v1/business/webhook` has no URL, or resend returns “no webhook endpoint”, send the user to webhook settings to register a URL. |
+| After success | Toast “Webhook event resend has been queued”. The **original** row immediately shows who resent it (`resend`). A **new** log row appears after the delivery job runs (usually 1–2s). |
+
+Do **not** resend from the webhook URL / secret settings screen. Resend needs a delivery-log `id`, not the webhook UUID.
+
+---
+
+## Auth
+
+Dashboard calls use the signed-in person's bearer token, same as the rest of the app:
+
+```
+Authorization: Bearer <jwt>
+Accept: application/json
+```
+
+Since 15 October 2026 the token only works from the dashboard origin. Do not call these endpoints with `X-Api-Key` from the browser.
+
+Omit `Idempotency-Key` on resend. The route is excluded from the idempotency fallback so the same event can be resent more than once. A global interceptor that always sends a **new** UUID per click is fine; a reused key is not needed here.
+
+---
+
+## Permissions
+
+Team members are swapped to the business owner for these routes, then checked against [team permissions](/yativo-platform/security/team-management).
+
+| Action | Permission | Who |
+|---|---|---|
+| List and view deliveries | `team.webhooks.view` | Owner, admin, viewer |
+| Resend | `team.webhooks.manage` | Owner, admin. **Not** viewer |
+
+A viewer who clicks Resend gets `403 Your team role is read-only; only GET requests are allowed.` Hide the button instead of letting them hit that.
+
+Check before rendering:
+
+```
+GET /v1/teams/{teamId}/members/{userId}/has-permission/team.webhooks.manage
+```
+
+```json
+{ "status": "success", "data": { "has_permission": true } }
+```
+
+Owners always can; you can skip the check when `current_team_id` is the caller's own team and they are the owner.
+
+---
+
+## Endpoints
+
+Base URL: `https://api.yativo.com/api` in production, `https://smtp.yativo.com/api` on sandbox.
+
+| Method | Path | Use |
+|---|---|---|
+| `GET` | `/v1/business/events/all?per_page=15&page=1` | Delivery log, newest first. Add `transaction_id`, `type`, and `status` to find a specific event. |
+| `GET` | `/v1/business/events/show/{eventId}` | One delivery |
+| `POST` | `/v1/business/events/resend/{eventId}` | Queue a redelivery |
+| `GET` | `/v1/business/webhook` | Whether a URL is registered (`data` is an array; empty → disable Resend) |
+| `GET` | `/v1/charts/webhook-logs/success-failed` | Optional success/fail chart on the same page |
+
+`{eventId}` is the delivery log's numeric `id` (for example `981`). It is **not** `payload.id`, `payload.payload.id`, a deposit id, or the webhook UUID.
+
+`per_page` defaults to `10` if omitted.
+
+List filters (all optional, combine them):
+
+| Query | Example | Matches |
+|---|---|---|
+| `transaction_id` | `TXN-00123456` | Inner `transaction_id`, `id`, or `deposit_id` (also top-level and `data.*`). Paste a deposit id, payout id, or card transaction id. |
+| `type` | `deposit` or `deposit.updated` | `event.type` (exact or family prefix), gift-card `event`, or card `transaction_type` |
+| `status` | `failed` | Delivery result: `success` or `failed` |
+
+`type` also accepts the aliases `event` and `transaction_type`; `transaction_id` also accepts `transactionId`. Use the names in the table.
+
+Put a **Transaction ID** search and an **Event type** control (select or combobox) above the table. Suggested type options (family prefix unless noted):
+
+| Value | Matches |
+|---|---|
+| *(empty)* | All |
+| `deposit` | `deposit.created`, `deposit.updated` |
+| `payout` | `payout.updated` |
+| `virtual_account` | virtual account create/update/delete/deposit |
+| `virtualcard` | virtual card KYC, lifecycle, funding, transactions |
+| `business_spend_card` | spend-card issuance, funding, transactions |
+| `card_checkout` | Card Checkout orders |
+| `crypto` | `crypto.wallet.created`, `crypto.deposit.completed` |
+| `customer` | `customer.created`, `customer.updated` |
+| `giftcard` | `giftcard.status_changed` (uses top-level `event`, not `event.type`) |
+| `metadata` | `metadata.created`, `metadata.updated` |
+| `tracking` | `tracking.created` |
+| `endorsement` | `endorsement.updated` |
+| `user` | `user.updated` |
+
+Typing the full event name (`payout.updated`, `virtualcard.transaction.settlement`) still works. `crypto_deposit` (older crypto event) is a separate exact name — it is not under `crypto`. Keep `status` as Delivered (`success`) / Failed (`failed`) / All.
+
+Example: find a failed deposit to resend:
+
+```
+GET /v1/business/events/all?transaction_id=TXN-00123456&type=deposit&status=failed
+```
+
+---
+
+## List page
+
+`GET /v1/business/events/all` returns the standard list envelope:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": 981,
+      "user_id": 1024,
+      "url": "https://example.com/webhooks/yativo",
+      "payload": {
+        "event.type": "deposit.updated",
+        "payload": { "id": "dep_1", "transaction_id": "TXN-00123456", "status": "completed" }
+      },
+      "status": "failed",
+      "status_code": 500,
+      "response_body": "",
+      "resend": null,
+      "created_at": "2026-09-07T14:03:12.000000Z"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "per_page": 15,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+
+Suggested columns:
+
+| Column | Source |
+|---|---|
+| Time | `created_at` |
+| Event | `payload["event.type"]` (fall back to `payload.event` / `payload.event_type` — gift cards only have `event`) |
+| Endpoint | `url` (truncate, full URL on hover) |
+| Result | Badge from `status`: `success` → Delivered, `failed` → Failed |
+| HTTP | `status_code` |
+| Resent | If `resend` is set: `{by.name} · {relative time}`. If `resend.original_event_id !== id`, this row **is** a replay — link back to that id. |
+| Actions | View, and Resend if they can manage webhooks |
+
+You can highlight failed rows and still allow resend on successful ones (the customer may want a replay after they changed their handler). Resend a replay row the same way; `{eventId}` is always this row's `id`.
+
+When this delivery **is** a resend, or the original event was resent later, `resend` looks like:
+
+```json
+"resend": {
+  "original_event_id": 981,
+  "by": { "id": 12, "name": "Ada Lovelace", "email": "ada@example.com" },
+  "at": "2026-10-26T17:42:11+00:00",
+  "ip": "181.190.49.51",
+  "via": "dashboard"
+}
+```
+
+| Row | `resend` |
+|---|---|
+| Original (`id` 981), never resent | `null` |
+| Original, after someone clicked Resend | Present immediately. `original_event_id === id` |
+| New delivery from that resend (`id` 982) | Present once the job finishes. `original_event_id` is 981, not 982 |
+
+`ip` is the browser or server that clicked Resend, not a Cloudflare hop. `via` is `dashboard`, `api_key`, or `admin` — dashboard clicks are `dashboard`. Don't put this object in the outbound webhook body — it is only on our log. `user_agent` is never returned.
+
+`user_id` is the business account. Don't show it as a “customer” column in this UI.
+
+---
+
+## Detail page
+
+`GET /v1/business/events/show/{eventId}` returns one log in `data`. `404` with `Webhook event not found` means a bad id or another account's event.
+
+Show:
+
+1. Status badge, HTTP code, time, destination URL.
+2. Event name from the payload (`event.type`, else `event`).
+3. Request payload as formatted JSON. Logged payloads are already scrubbed of secrets and internal fields (older logs may show fewer fields than were sent at the time).
+4. Endpoint response body (may be empty).
+5. If `resend` is present:
+   - If `original_event_id === id`: **Last resent by** `{by.name}` at `{at}` from `{ip}`.
+   - If `original_event_id !== id`: **Replay of** delivery `{original_event_id}`, queued by `{by.name}` at `{at}`. Link to that original.
+6. **Resend** in the header, with the same confirm + loading behaviour as the table.
+
+---
+
+## Resend interaction
+
+```
+POST /v1/business/events/resend/{eventId}
+```
+
+No body.
+
+**1. Confirm.** The event is sent to whatever URL is registered **now**, signed with the **current** secret, even if `url` on the log is an old endpoint.
+
+> Resend this event to your current webhook URL? A new delivery attempt will be logged.
+
+**2. Disable the button** while the request is in flight. One click → one queue.
+
+**3. Success (`200`):**
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": { "message": "Webhook event resend has been queued" }
+}
+```
+
+Toast that message. Then:
+
+1. Reload the **original** row (or the current page). `resend` is written at click time, so **Resent by** can show before the new attempt exists.
+2. Optionally refresh again after 1–2s to pick up the new log row. Don't poll in a tight loop. The new row may still be `failed` if their endpoint is down.
+
+**4. Treat as success only when** HTTP is `2xx` **and** `status === "success"`. See [API responses](/yativo-platform/api-responses-and-errors).
+
+---
+
+## Errors
+
+| HTTP | `data.error` | UI |
+|---|---|---|
+| `404` | `Webhook event not found` | Toast and leave the log. Stale id, or they don't own it. |
+| `400` | `No webhook endpoint is configured for your account` | Toast + link to webhook settings to register a URL. |
+| `403` | `Your team role is read-only; only GET requests are allowed.` | Hide Resend; they are a viewer. |
+| `403` | `You do not have permission to perform this action.` / `Your team role does not have access to this action.` | Hide Resend; they lack `team.webhooks.manage`. |
+| `401` | Session expired | Existing sign-in redirect. |
+| `429` | Rate limited | `Retry-After` seconds; keep the button disabled until then. |
+
+---
+
+## Frontend example
+
+```js
+const API = '/api/v1'; // same origin proxy, or https://api.yativo.com/api/v1
+
+async function api(path, { method = 'GET', token, body } = {}) {
+  const res = await fetch(`${API}/${path}`, {
+    method,
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const json = await res.json();
+  if (json.status !== 'success') {
+    throw Object.assign(new Error(json.data?.error ?? json.message ?? 'Request failed'), {
+      status: res.status,
+      payload: json,
+    });
+  }
+  return json;
+}
+
+export function eventName(log) {
+  const p = log?.payload ?? {};
+  return p['event.type'] ?? p.event ?? p.event_type ?? 'unknown';
+}
+
+/** Original row that was later resent, vs a new delivery created by that resend. */
+export function isReplay(log) {
+  const origin = log?.resend?.original_event_id;
+  return origin != null && Number(origin) !== Number(log.id);
+}
+
+export async function listDeliveries(token, { page = 1, perPage = 15, transactionId, type, status } = {}) {
+  const q = new URLSearchParams({ page, per_page: perPage });
+  if (transactionId) q.set('transaction_id', transactionId);
+  if (type) q.set('type', type);
+  if (status) q.set('status', status);
+  return api(`business/events/all?${q}`, { token });
+}
+
+export async function showDelivery(token, eventId) {
+  return api(`business/events/show/${eventId}`, { token });
+}
+
+export async function resendDelivery(token, eventId) {
+  return api(`business/events/resend/${eventId}`, { method: 'POST', token });
+}
+
+export async function canResend(token, teamId, userId) {
+  const json = await api(
+    `teams/${teamId}/members/${userId}/has-permission/team.webhooks.manage`,
+    { token },
+  );
+  return Boolean(json.data?.has_permission);
+}
+
+export async function hasWebhookUrl(token) {
+  const json = await api('business/webhook', { token });
+  const rows = Array.isArray(json.data) ? json.data : json.data ? [json.data] : [];
+  return rows.some((row) => Boolean(row?.url));
+}
+```
+
+Example click handler:
+
+```js
+async function onResend(log) {
+  if (!confirm(`Resend ${eventName(log)} to your current webhook URL?`)) return;
+  setBusyId(log.id);
+  try {
+    const json = await resendDelivery(token, log.id);
+    toast.success(json.data.message);
+    await loadPage(); // original row now has resend.by / resend.at
+    setTimeout(() => loadPage(), 1500); // new attempt is usually the newest row
+  } catch (err) {
+    if (err.status === 400) {
+      toast.error(err.message, { action: { label: 'Set webhook URL', href: '/settings/webhooks' } });
+    } else {
+      toast.error(err.message);
+    }
+  } finally {
+    setBusyId(null);
+  }
+}
+```
+
+---
+
+## Checklist
+
+- [ ] Resend lives on the delivery log list and detail, using `log.id`.
+- [ ] List has Transaction ID and Event type filters (`transaction_id`, `type`), plus Delivered/Failed (`success` / `failed`).
+- [ ] Button hidden without `team.webhooks.manage` (viewers never see it).
+- [ ] Confirm dialog before POST; button disabled while in flight.
+- [ ] Success toast uses `data.message`. Original row reloads immediately so **Resent by** appears; optional 1–2s refresh for the new attempt.
+- [ ] Replay rows (`resend.original_event_id !== id`) link back to the original delivery.
+- [ ] `400` no-endpoint links to webhook URL settings; disable Resend when `GET /v1/business/webhook` has no URL.
+- [ ] `404` / `403` don't look like a server crash.
+- [ ] Event column reads `payload["event.type"]`, else `payload.event` (gift cards).
+- [ ] No `Idempotency-Key` required; don't block a second resend of the same row.
+- [ ] Detail (and optionally the table) shows `resend.by`, `resend.at`, and `resend.ip` when present.

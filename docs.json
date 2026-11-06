@@ -100,6 +100,7 @@
               "yativo-fiat/kyc",
               "yativo-fiat/sandbox-kyc",
               "yativo-fiat/kyc-frontend-guide",
+              "yativo-fiat/rfis",
               "yativo-fiat/beneficiaries"
             ]
           },
@@ -145,6 +146,73 @@
             "pages": [
               "guides/regional-payouts"
             ]
+          },
+          {
+            "group": "Platform guides",
+            "pages": [
+              "yativo-platform/introduction",
+              "yativo-platform/quickstart",
+              "yativo-platform/authentication",
+              "yativo-platform/api-responses-and-errors",
+              "yativo-platform/idempotency-and-rate-limits",
+              {
+                "group": "Money movement",
+                "pages": [
+                  "yativo-platform/money-movement/payouts",
+                  "yativo-platform/money-movement/payout-receive-amount",
+                  "yativo-platform/money-movement/payins",
+                  "yativo-platform/money-movement/onramp",
+                  "yativo-platform/money-movement/exchange-rates",
+                  "yativo-platform/money-movement/wallet-swaps",
+                  "yativo-platform/money-movement/fees"
+                ]
+              },
+              {
+                "group": "Cards and accounts",
+                "pages": [
+                  "yativo-platform/cards-and-accounts/virtual-accounts",
+                  "yativo-platform/cards-and-accounts/virtual-cards",
+                  "yativo-platform/cards-and-accounts/corporate-cards",
+                  "yativo-platform/cards-and-accounts/card-checkout"
+                ]
+              },
+              {
+                "group": "Business",
+                "pages": [
+                  "yativo-platform/business/revenue-split",
+                  "yativo-platform/business/subscriptions",
+                  "yativo-platform/business/affiliate-program",
+                  "yativo-platform/business/employee-portal",
+                  "yativo-platform/business/kyc-endorsements",
+                  "yativo-platform/business/account-recovery"
+                ]
+              },
+              {
+                "group": "Webhooks",
+                "pages": [
+                  "yativo-platform/webhooks/overview",
+                  "yativo-platform/webhooks/event-catalog",
+                  "yativo-platform/webhooks/resend"
+                ]
+              },
+              {
+                "group": "Security",
+                "pages": [
+                  "yativo-platform/security/security-policy",
+                  "yativo-platform/security/ip-whitelisting",
+                  "yativo-platform/security/team-management",
+                  "yativo-platform/security/login-history",
+                  "yativo-platform/security/passkey-authentication"
+                ]
+              },
+              {
+                "group": "Testing",
+                "pages": [
+                  "yativo-platform/testing/sandbox-testing",
+                  "yativo-platform/testing/mcp-server"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -165,6 +233,15 @@
               "fiat-api-reference/customers/get",
               "fiat-api-reference/customers/update",
               "fiat-api-reference/customers/delete"
+            ]
+          },
+          {
+            "group": "Provider RFIs",
+            "pages": [
+              "fiat-api-reference/rfis/list",
+              "fiat-api-reference/rfis/get",
+              "fiat-api-reference/rfis/draft-responses",
+              "fiat-api-reference/rfis/realtime-auth"
             ]
           },
           {

@@ -1,0 +1,588 @@
+---
+title: "Passkey Login Integration Guide"
+description: "Passkey Login Integration Guide — integration guide for the Yativo API."
+---
+
+Passkeys (WebAuthn) let people sign in to the Yativo dashboard without a
+password or email code. The device signs a one-time challenge with a private
+key held by Face ID, Touch ID, Windows Hello, a phone, or a hardware security
+key. Yativo checks the signature and returns a bearer token for the
+dashboard.
+
+This guide is for developers building the dashboard sign-in and passkey
+settings screens.
+
+> **Passkeys are for people, not servers.** The token a passkey returns only
+> works inside the dashboard (since 15 October 2026). Backends and scripts
+> must use a [team API key](/yativo-platform/authentication) instead. The old
+> `account_id` + `app_secret` login is deprecated. See
+> [Team API Keys → Deprecation notice](/yativo-platform/authentication#deprecation-notice-the-legacy-login).
+
+---
+
+- [Overview](#overview)
+- [Environments](#environments)
+- [Where passkeys work](#where-passkeys-work)
+- [Authentication](#authentication)
+- [Response envelope](#response-envelope)
+- [Registration flow](#registration-flow)
+- [Sign-in flow](#sign-in-flow)
+- [Using the token](#using-the-token)
+- [Confirming a sensitive action](#confirming-a-sensitive-action)
+- [Passkey management](#passkey-management)
+- [Errors](#errors)
+- [Frontend example](#frontend-example)
+- [Security notes](#security-notes)
+
+---
+
+## Overview
+
+Passkeys follow the [WebAuthn Level 2 standard](https://www.w3.org/TR/webauthn-2/).
+There are two flows:
+
+| Flow | Purpose | Needs a signed-in user? |
+|---|---|---|
+| **Registration** | Add a passkey to an account | Yes |
+| **Sign-in** | Exchange a signed challenge for a bearer token | No |
+
+A user has to sign in once another way (email one-time code) before they
+can register a passkey. **Every person on a team registers their own
+passkeys and signs in as themselves**: the team owner and each invited
+member have separate passkeys, and a member's passkey signs in to that
+member's own account.
+
+Dashboard sign-in options today:
+
+| Method | Endpoints |
+|---|---|
+| Email one-time code | `POST /api/v1/auth/login/magic`, then `POST /api/v1/auth/login/magic-login` |
+| Passkey | This guide |
+
+## Environments
+
+| Environment | Base URL |
+|---|---|
+| Sandbox | `https://smtp.yativo.com` |
+| Production | `https://api.yativo.com` |
+
+All paths below include `/api/v1`. Passkeys are stored per environment, so a
+passkey registered in sandbox doesn't work in production.
+
+## Where passkeys work
+
+The relying party ID (`rp.id` / `rpId`) is **`yativo.com`**. Browsers only
+allow a WebAuthn ceremony for that ID on a page served from `yativo.com` or
+one of its subdomains, such as `https://app.yativo.com`.
+
+- Run the browser part (`navigator.credentials.create()` / `.get()`) on a
+  `*.yativo.com` page. On any other origin, including `localhost`, the
+  browser rejects it with a `SecurityError`.
+- A passkey registered from one Yativo subdomain works on the others.
+
+## Authentication
+
+- **Registration and management** endpoints need the signed-in person's
+  bearer token, sent from the dashboard. They act on that person's own
+  passkeys, whatever their team role. They can't be called with an API key
+  (`403 This endpoint cannot be used with an API key. ...`).
+
+  ```http
+  Authorization: Bearer <ACCESS_TOKEN>
+  ```
+
+- **Sign-in** endpoints (`/auth/passkeys/authenticate/options` and
+  `/auth/passkeys/authenticate`) are public.
+- **Send cookies.** The challenge from each "options" call is kept in the
+  session, so the options call and the call that follows it must share the
+  session cookie. With `fetch`, set `credentials: 'include'`.
+
+## Response envelope
+
+Every endpoint returns the standard envelope. Success responses come back
+with HTTP `200`, even when the body says `"status_code": 201`, so check
+`status` in the body. Errors come back with their real HTTP status.
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": { }
+}
+```
+
+```json
+{
+  "status": "failed",
+  "status_code": 401,
+  "message": "Request failed.",
+  "data": { "error": "Passkey verification failed." }
+}
+```
+
+---
+
+## Registration flow
+
+### 1. Get registration options
+
+```http
+POST /api/v1/passkeys/register/options
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+No body is needed.
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "public_key": {
+      "rp": { "name": "Yativo", "id": "yativo.com" },
+      "user": {
+        "id": "<base64url user handle>",
+        "name": "user@example.com",
+        "displayName": "User Name"
+      },
+      "challenge": "<base64url challenge>",
+      "pubKeyCredParams": [
+        { "type": "public-key", "alg": -7 },
+        { "type": "public-key", "alg": -36 },
+        { "type": "public-key", "alg": -257 },
+        { "type": "public-key", "alg": -8 },
+        { "type": "public-key", "alg": -35 }
+      ],
+      "timeout": 60000,
+      "attestation": "none",
+      "excludeCredentials": [],
+      "authenticatorSelection": {
+        "userVerification": "required"
+      }
+    }
+  }
+}
+```
+
+- Allowed algorithms: ES256 (`-7`), ES512 (`-36`), RS256 (`-257`), EdDSA
+  (`-8`) and ES384 (`-35`).
+- `userVerification` is `required`: the device always asks for Face ID,
+  a fingerprint, or a PIN, not just a tap.
+- `excludeCredentials` lists the user's existing passkeys so the same
+  device isn't registered twice.
+
+### 2. Create the credential in the browser
+
+```js
+const credential = await navigator.credentials.create({
+  publicKey: {
+    ...options,
+    challenge: base64urlDecode(options.challenge),
+    user: { ...options.user, id: base64urlDecode(options.user.id) },
+    excludeCredentials: (options.excludeCredentials ?? []).map((c) => ({
+      ...c,
+      id: base64urlDecode(c.id),
+    })),
+  },
+});
+```
+
+### 3. Save the credential
+
+```http
+POST /api/v1/passkeys/register
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+
+{
+  "id": "<base64url credential id>",
+  "rawId": "<base64url credential id>",
+  "type": "public-key",
+  "name": "MacBook Touch ID",
+  "response": {
+    "clientDataJSON": "<base64url>",
+    "attestationObject": "<base64url>"
+  }
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | string | yes | Credential ID from `navigator.credentials.create()`. |
+| `rawId` | string | yes | `rawId`, base64url-encoded. |
+| `type` | string | yes | Always `public-key`. |
+| `name` | string | yes | Label shown in the passkey list. Up to 100 characters. |
+| `response.clientDataJSON` | string | yes | Base64url-encoded. |
+| `response.attestationObject` | string | yes | Base64url-encoded. |
+
+```json
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Request successful",
+  "data": {
+    "message": "Passkey registered successfully.",
+    "passkey_id": 42,
+    "name": "MacBook Touch ID"
+  }
+}
+```
+
+---
+
+## Sign-in flow
+
+### 1. Get sign-in options
+
+`account_id` is the user's email, **base64-encoded** (standard base64, not
+base64url).
+
+```http
+POST /api/v1/auth/passkeys/authenticate/options
+Content-Type: application/json
+
+{ "account_id": "dXNlckBleGFtcGxlLmNvbQ==" }
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "public_key": {
+      "rpId": "yativo.com",
+      "challenge": "<base64url challenge>",
+      "timeout": 60000,
+      "userVerification": "required",
+      "allowCredentials": [
+        { "type": "public-key", "id": "<base64url credential id>" }
+      ]
+    }
+  }
+}
+```
+
+### 2. Sign the challenge in the browser
+
+```js
+const assertion = await navigator.credentials.get({
+  publicKey: {
+    ...options,
+    challenge: base64urlDecode(options.challenge),
+    allowCredentials: options.allowCredentials.map((c) => ({
+      ...c,
+      id: base64urlDecode(c.id),
+    })),
+  },
+});
+```
+
+### 3. Send the signed challenge
+
+```http
+POST /api/v1/auth/passkeys/authenticate
+Content-Type: application/json
+
+{
+  "account_id": "dXNlckBleGFtcGxlLmNvbQ==",
+  "id": "<base64url credential id>",
+  "rawId": "<base64url credential id>",
+  "type": "public-key",
+  "response": {
+    "authenticatorData": "<base64url>",
+    "clientDataJSON": "<base64url>",
+    "signature": "<base64url>",
+    "userHandle": "<base64url or null>"
+  }
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `account_id` | string | yes | Same base64-encoded email as step 1. |
+| `id` | string | yes | ID of the credential that signed. |
+| `rawId` | string | yes | `rawId`, base64url-encoded. |
+| `type` | string | yes | Always `public-key`. |
+| `response.authenticatorData` | string | yes | Base64url-encoded. |
+| `response.clientDataJSON` | string | yes | Base64url-encoded. |
+| `response.signature` | string | yes | Base64url-encoded. |
+| `response.userHandle` | string or null | no | Base64url-encoded. |
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "access_token": "<JWT>",
+    "token_type": "bearer",
+    "expires_in": 84000
+  }
+}
+```
+
+`expires_in` is the token lifetime in seconds. Use the value returned rather
+than hard-coding it.
+
+## Using the token
+
+The passkey token is the same kind of token as the email one-time code
+login, and the same rules apply:
+
+- Send it as `Authorization: Bearer <access_token>`.
+- **It only works from the dashboard.** Since 15 October 2026, a request with
+  a bearer token whose `Origin` (or `Referer`) isn't `https://app.yativo.com`
+  gets `403 Bearer tokens are only accepted from the Yativo dashboard. ...`
+- **It expires after 5 minutes without a request**, even before
+  `expires_in`, with
+  `401 Session expired due to inactivity. Please log in again.` Send the
+  user back to sign in.
+- A team member's token acts on the team's account, limited by their role.
+  See [Team Functionality](/yativo-platform/security/team-management).
+
+---
+
+## Confirming a sensitive action
+
+Account-recovery actions ask the signed-in person to confirm with one of
+their passkeys: [resetting 2FA](/yativo-platform/business/account-recovery#reset-2fa-with-a-recovery-code)
+and [resetting the transaction PIN](/yativo-platform/business/account-recovery#reset-a-forgotten-transaction-pin).
+This is a "step-up" check, not a sign-in.
+
+1. Get a challenge for the signed-in person (bearer token required):
+
+   ```http
+   POST /api/v1/passkeys/step-up/options
+   Authorization: Bearer <ACCESS_TOKEN>
+   ```
+
+   The response has the same `public_key` shape as
+   [sign-in options](#1-get-sign-in-options). It returns `422 No passkeys
+   registered for this account.` when the person has no passkey. Limited to
+   10 requests per minute.
+
+2. Sign it in the browser with `navigator.credentials.get()`, exactly as in
+   [sign-in step 2](#2-sign-the-challenge-in-the-browser).
+
+3. Send the signed result with the recovery request, nested under
+   `passkey`:
+
+   ```json
+   {
+     "passkey": {
+       "id": "<base64url credential id>",
+       "rawId": "<base64url credential id>",
+       "type": "public-key",
+       "response": {
+         "authenticatorData": "<base64url>",
+         "clientDataJSON": "<base64url>",
+         "signature": "<base64url>",
+         "userHandle": "<base64url or null>"
+       }
+     }
+   }
+   ```
+
+Each challenge works once and expires after `timeout` milliseconds (60
+seconds). If the request fails, get a new challenge before retrying.
+
+---
+
+## Passkey management
+
+All management endpoints need the signed-in user's bearer token.
+
+### List passkeys
+
+```http
+GET /api/v1/passkeys
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "passkeys": [
+      {
+        "id": 42,
+        "name": "MacBook Touch ID",
+        "counter": 5,
+        "created_at": "2026-09-24T10:00:00.000000Z",
+        "updated_at": "2026-09-30T08:12:00.000000Z"
+      }
+    ]
+  }
+}
+```
+
+### Rename a passkey
+
+```http
+PUT /api/v1/passkeys/{id}
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+
+{ "name": "Work laptop" }
+```
+
+```json
+{
+  "status": "success",
+  "data": { "message": "Passkey renamed successfully." }
+}
+```
+
+### Delete a passkey
+
+```http
+DELETE /api/v1/passkeys/{id}
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+```json
+{
+  "status": "success",
+  "data": { "message": "Passkey deleted successfully." }
+}
+```
+
+---
+
+## Errors
+
+| HTTP | `data.error` | Cause | What to do |
+|---|---|---|---|
+| 404 | `No account found for that email.` | `account_id` doesn't decode to a known email. | Check the email and the base64 encoding. |
+| 422 | `No passkeys registered for this account.` | The user has no passkeys. | Offer email code sign-in, then passkey setup. |
+| 401 | `Passkey verification failed.` | Bad signature, wrong credential, or expired challenge. | Get new options and try again. |
+| 401 | `Invalid credentials.` | Account not found during sign-in. | Check `account_id`. |
+| 400 | `Account has been suspended. ...` | The account is suspended. | Contact support. |
+| 422 | `We could not verify this passkey. Please try again.` | Registration failed: the challenge expired, the credential is already registered, or the browser's origin didn't match. | Get new registration options and try again. |
+| 401 | `Session expired due to inactivity. Please log in again.` | The token wasn't used for 5 minutes. | Sign in again. |
+| 403 | `Bearer tokens are only accepted from the Yativo dashboard. ...` | Token used outside the dashboard (since 15 October 2026). | Use the dashboard, or an API key for servers. |
+| 403 | `This endpoint cannot be used with an API key. ...` | A passkey endpoint was called with `X-Api-Key`. | Call it from the dashboard with the person's own sign-in. |
+| 422 | Field errors | Missing or invalid fields. | Correct the request. |
+
+Challenges expire after 60 seconds and can only be used once. Request new
+options right before prompting the user.
+
+---
+
+## Frontend example
+
+```js
+// base64url string -> ArrayBuffer
+function base64urlDecode(str) {
+  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0)).buffer;
+}
+
+// ArrayBuffer -> base64url string
+function base64urlEncode(buffer) {
+  let str = '';
+  for (const b of new Uint8Array(buffer)) str += String.fromCharCode(b);
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+const API = 'https://api.yativo.com/api/v1';
+
+async function post(path, body, token) {
+  const res = await fetch(`${API}/${path}`, {
+    method: 'POST',
+    credentials: 'include', // the challenge lives in the session
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body ?? {}),
+  });
+  const json = await res.json();
+  if (json.status !== 'success') throw new Error(json.data?.error ?? 'Request failed');
+  return json.data;
+}
+
+// Sign in
+export async function signInWithPasskey(email) {
+  const accountId = btoa(email);
+  const { public_key: options } = await post('auth/passkeys/authenticate/options', {
+    account_id: accountId,
+  });
+
+  const assertion = await navigator.credentials.get({
+    publicKey: {
+      ...options,
+      challenge: base64urlDecode(options.challenge),
+      allowCredentials: options.allowCredentials.map((c) => ({
+        ...c,
+        id: base64urlDecode(c.id),
+      })),
+    },
+  });
+
+  const { access_token } = await post('auth/passkeys/authenticate', {
+    account_id: accountId,
+    id: assertion.id,
+    rawId: base64urlEncode(assertion.rawId),
+    type: assertion.type,
+    response: {
+      authenticatorData: base64urlEncode(assertion.response.authenticatorData),
+      clientDataJSON: base64urlEncode(assertion.response.clientDataJSON),
+      signature: base64urlEncode(assertion.response.signature),
+      userHandle: assertion.response.userHandle
+        ? base64urlEncode(assertion.response.userHandle)
+        : null,
+    },
+  });
+
+  return access_token;
+}
+
+// Register (user already signed in)
+export async function registerPasskey(token, name) {
+  const { public_key: options } = await post('passkeys/register/options', {}, token);
+
+  const credential = await navigator.credentials.create({
+    publicKey: {
+      ...options,
+      challenge: base64urlDecode(options.challenge),
+      user: { ...options.user, id: base64urlDecode(options.user.id) },
+      excludeCredentials: (options.excludeCredentials ?? []).map((c) => ({
+        ...c,
+        id: base64urlDecode(c.id),
+      })),
+    },
+  });
+
+  return post('passkeys/register', {
+    id: credential.id,
+    rawId: base64urlEncode(credential.rawId),
+    type: credential.type,
+    name,
+    response: {
+      clientDataJSON: base64urlEncode(credential.response.clientDataJSON),
+      attestationObject: base64urlEncode(credential.response.attestationObject),
+    },
+  }, token);
+}
+```
+
+Check `window.PublicKeyCredential` before showing passkey options, and
+always keep email code sign-in available as a fallback.
+
+---
+
+## Security notes
+
+- **Challenges** are single-use and expire after 60 seconds.
+- **Origin binding:** passkeys are bound to `yativo.com`, so they can't be
+  used on phishing sites on other domains.
+- **Several passkeys:** each person can register one per device. Encourage clear
+  names and removing passkeys for devices they no longer have.

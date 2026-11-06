@@ -177,7 +177,7 @@ The server tells the assistant to follow this flow and to wait for your confirma
   </Step>
 </Steps>
 
-Retrying `create-payout` with the same `idempotency_key` returns the original payout and never sends a second one. A failed payout, for example below the method's minimum, returns `isError: true` with the reason, and your wallet isn't left debited.
+Reusing the same `idempotency_key` for a payout that already completed within 60 minutes returns an error and never sends a second payout. A failed payout, for example below the method's minimum, returns `isError: true` with the reason, and your wallet isn't left debited.
 
 ### Example prompts
 
@@ -311,7 +311,7 @@ Clients that use an API key are disconnected by [revoking the key](/yativo-fiat/
     The server tells the assistant to quote first and wait for your confirmation, and MCP clients ask you to approve each `create-payout` call. Keep that prompt on.
   </Accordion>
   <Accordion title="What if the assistant retries a payout?">
-    With the same `idempotency_key` you get the original payout back, and nothing is sent twice.
+    Reusing the same `idempotency_key` for a completed payout within 60 minutes returns an error, so nothing is sent twice.
   </Accordion>
   <Accordion title="Can teammates use it?">
     Yes. Each teammate signs in with OAuth and acts on the business account with their own permissions. API keys act as the business account owner.

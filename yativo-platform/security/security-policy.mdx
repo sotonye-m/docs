@@ -1,0 +1,73 @@
+---
+title: "Yativo Security Policy"
+description: "Yativo Security Policy — integration guide for the Yativo API."
+---
+
+Yativo takes the security of our platform, payment infrastructure, and customer data seriously. This document outlines our security measures, supported API versions, and guidelines for responsibly reporting security vulnerabilities.
+
+---
+
+## Supported Versions
+
+| Version | Environment | Supported | Notes |
+|---------|-------------|-----------|-------|
+| `/api/v1` | Production (`api.yativo.com`) | :white_check_mark: | Current active API version |
+| `/api/v1` | Sandbox (`test-api.yativo.com`, `smtp.yativo.com`) | :white_check_mark: | Test environment |
+| Legacy Auth | Deprecated | :x: | Legacy `account_id` + `app_secret` deprecated in favor of Team API Keys |
+
+---
+
+## Reporting a Vulnerability
+
+If you discover a security vulnerability or potential exposure in Yativo's API, services, or web applications, please report it immediately to our security team.
+
+### How to Report
+
+- **Email:** `security@yativo.com` (or `support@yativo.com` with subject `[SECURITY VULNERABILITY]`)
+- **Include:**
+  - Description of the vulnerability and its potential impact.
+  - Step-by-step reproduction instructions or proof-of-concept (POC).
+  - Target URL, endpoint, headers, and payload samples (redacted of real sensitive customer credentials).
+  - Your contact information for coordination.
+
+### Responsible Disclosure Guidelines
+
+- Please give us reasonable time to investigate and remediate the issue before any public disclosure.
+- Do not exploit the vulnerability beyond what is strictly necessary to establish a proof of concept.
+- Do not access, modify, or destroy user data that does not belong to your test account.
+- Do not degrade platform availability, disrupt services, or execute Denial of Service (DoS) attacks.
+
+### What to Expect
+
+- **Acknowledgment:** We aim to acknowledge receipt of your report within 24 hours.
+- **Triage & Status:** We will confirm the findings and provide a status update within 72 hours.
+- **Resolution:** Critical issues will be patched with highest priority. We will notify you once the fix has been deployed.
+
+---
+
+## Security Architecture & Protections
+
+Yativo implements multiple layers of defense to protect money movement and customer records:
+
+### 1. Authentication & Access Control
+- **Server-to-Server:** Authenticated via `X-Api-Key` and `X-Api-Secret` with mandatory public IP whitelisting enforced on production.
+- **Dashboard & Human Users:** Multi-factor authentication via FIDO2/WebAuthn Passkeys and TOTP two-factor authentication (2FA). Sessions expire after idle timeouts (5 minutes by default).
+- **Least Privilege:** Granular team roles and permissions (`TEAM_FUNCTIONALITY.md`) restrict access per user and service.
+
+### 2. Payload Validation & Markup Rejection
+- All incoming write payloads are processed through global tag-filtering middleware (`BlockPayloadTagsMiddleware`). Any payload containing HTML, XML, or custom markup tags (`<script>`, `<iframe>`, `<img ...>`, custom tags) is rejected with HTTP `422 Unprocessable Entity` to prevent XSS, prompt injection, and template attacks.
+- Sensitive onboarding and KYC fields reject platform-reserved keywords (`yativo`, `test`, `admin`).
+
+### 3. Idempotency & Safe Retries
+- All mutating HTTP methods (`POST`, `PUT`, `PATCH`, `DELETE`) support the `Idempotency-Key` header with a 60-minute deduplication window to prevent duplicate transactions and race conditions.
+
+### 4. Error Hardening & Information Leak Prevention
+- Internal framework internals, SQL queries, database exception traces, and vendor paths are stripped from all API responses.
+- Database errors return a standardized `500` error envelope with a generic message and a traceable `request_id` (correlated with incoming `X-Request-Id`).
+- MCP and AI tool boundaries enforce UUID object identifiers and mask customer PII (emails, bank accounts, and national tax IDs) under default scopes.
+
+### 5. Rate Limiting & Throttling
+- Multi-tier rate limiting protects API routes:
+  - Core `/v1` reads: 50 requests/sec.
+  - Core `/v1` writes: 20 requests/sec.
+  - Authentication & sensitive operations (OTP, PIN, passkey ceremonies): strictly throttled per IP and account.

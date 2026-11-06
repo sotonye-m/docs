@@ -1,0 +1,674 @@
+---
+title: "Corporate Card Integration"
+description: "Corporate Card Integration — integration guide for the Yativo API."
+---
+
+The Corporate Card API lets a business issue and manage spend cards for its
+own employees. An **Employee** is the true card holder — created once per
+person, KYC'd, funded from a balance the business assigns to them, and then
+able to hold any number of cards with no artificial limit.
+
+All endpoints below require the same authenticated, per-business request
+context used across the rest of the API (API key + bearer token). Routes
+carry no `customer_id`/`employee_id` in the URL — both are passed as request
+fields (query string on `GET`, request body on `POST`). Every `customer_id`
+must belong to the authenticated business account, and every `employee_id`
+must belong to that same `customer_id` — requests for data outside your own
+business return `404`.
+
+## Access requirements
+
+Business Spend Cards must be enabled for your account before any of these
+endpoints can be used. Two checks apply to every Corporate Card request, and
+to the employee portal and `/api/v1/spend/*` and
+`/api/v1/business/spend-card/*` endpoints:
+
+1. **Your account is approved for Business Spend Cards.** Approval is granted
+   by Yativo — contact support to request it. Until then every request
+   returns `403`:
+   `Your account is not yet approved for Business Spend Cards. Please contact support.`
+2. **The customer holds an approved `faster_payments` endorsement.** Checked
+   for whichever customer the request targets — directly via `customer_id`,
+   or through an `employee_id` or `card_id` that belongs to it. Otherwise:
+   `This customer does not have an approved Faster Payments endorsement.` (`403`)
+
+Requests that don't name a customer (for example, an unfiltered card list)
+only need check 1.
+
+Access is also blocked (`403`) while the employee is `suspended` or
+`terminated`, the customer is banned, or your user account is suspended.
+
+## Concepts
+
+- **Customer** — the business's own registered customer record (already used
+  elsewhere in the API for KYC, virtual accounts, etc). Corporate Card is
+  layered on top of an existing, fully-KYC'd customer.
+- **Employee** — the card holder. One employee can hold multiple cards.
+  Created explicitly via the Employees endpoints below, or automatically the
+  first time a card is requested for a customer that has none yet.
+- **Employee KYC** — a lightweight KYC record captured per employee
+  (identity, address, government ID, payslip/work contract, proof of
+  address) required before a card can be fully activated for spend.
+- **Memo / Invoice** — a note and/or invoice an employee attaches to their
+  card activity, which the business then approves or rejects.
+- **USDC balance** — the business's own funding wallet. Funding an
+  employee's card balance debits this wallet; withdrawing credits it back.
+  Every [fee](#fees) is also charged to this balance.
+- **Employee card balance** — the money an employee can spend. It belongs to
+  the employee, and every card they hold spends from it. You fund and
+  withdraw it; the employee can only view it (see the
+  [Employee Portal](/yativo-platform/business/employee-portal)). It exists once the
+  employee's first card is issued.
+- **Reserve** — a minimum amount that must stay in your USDC balance at all
+  times while your account is approved for Business Spend Cards. See
+  [Reserve](#reserve).
+- **Corporate Card wallet** — a dedicated USDC (Solana) deposit address a
+  business can provision once to fund its USDC balance by depositing crypto
+  directly, separate from any other wallets on the account.
+
+## Customers
+
+### Create a customer
+
+```
+POST /api/v1/customer
+```
+
+Required fields: `customer_name`, `customer_email`, `customer_phone`,
+`customer_type` (`individual` or `business`), `customer_country`.
+
+Before the customer can be used for Corporate Cards it also needs an approved
+`faster_payments` endorsement — see [Access requirements](#access-requirements).
+
+---
+
+## Employees
+
+### Create an employee
+
+```
+POST /api/v1/corporate-card/employees
+```
+
+```json
+{
+  "customer_id": "cus_123",
+  "full_name": "Jane Doe",
+  "email": "jane@example.com",
+  "dob": "1990-04-12",
+  "occupation": "Operations Manager",
+  "metadata": { "department": "Finance", "employee_number": "EMP-0042" }
+}
+```
+
+**Fields**
+
+| Field | Required | Description |
+|---|---|---|
+| `customer_id` | Yes | The customer this employee belongs to. |
+| `full_name` | Yes | Display name (max 191 chars). |
+| `email` | No | Contact email. |
+| `dob` | No | Date of birth (`YYYY-MM-DD`). |
+| `occupation` | No | Job title / occupation (max 191 chars). |
+| `metadata` | No | Arbitrary JSON object for extra fields (department, employee number, etc.). |
+
+**Selfie image (optional)** — supply one of:
+
+| Field | How to send | Notes |
+|---|---|---|
+| `selfie_image` | `multipart/form-data` file, or a base64 string (`data:image/png;base64,...` or raw base64) | jpeg / jpg / png / webp, max 10 MB |
+| `selfie_image_url` | JSON string | Pre-hosted URL stored as-is |
+
+When both are present the uploaded file takes precedence. Omit both to skip.
+Uploaded selfies are stored privately; see [Private document links](#private-document-links).
+The upload happens before the employee is created: if it fails, the request
+returns `502` (`Unable to upload the selfie image. Please try again.`) and no
+employee is created, so it is safe to retry.
+
+### Update an employee
+
+```
+PUT  /api/v1/corporate-card/employees/{employee_id}
+PATCH /api/v1/corporate-card/employees/{employee_id}
+```
+
+All fields are optional — send only the ones you want to change:
+
+```json
+{
+  "full_name": "Jane Smith",
+  "email": "jane.smith@example.com",
+  "dob": "1990-04-12",
+  "occupation": "Senior Manager",
+  "status": "active",
+  "metadata": { "department": "Finance", "cost_center": "CC-007" }
+}
+```
+
+**Updatable fields**
+
+| Field | Values / format |
+|---|---|
+| `full_name` | string, max 191 |
+| `email` | valid email, max 191 |
+| `dob` | `YYYY-MM-DD` |
+| `occupation` | string, max 191 |
+| `status` | `active`, `suspended`, or `terminated` |
+| `metadata` | JSON object — replaces the existing value entirely |
+| `selfie_image` | `multipart/form-data` file or base64 string (jpeg/jpg/png/webp, max 10 MB) |
+| `selfie_image_url` | Pre-hosted URL string — ignored if `selfie_image` file is also sent |
+
+A failed selfie upload returns `502` and leaves the employee unchanged.
+
+### List employees
+
+```
+GET /api/v1/corporate-card/employees
+```
+
+Returns every employee across all of your customers, newest first. Each
+employee includes its `customer` (`customer_id`, `customer_name`,
+`customer_email`) and `cards_count`. Optional query filters:
+
+| Parameter | Description |
+|---|---|
+| `customer_id` | Only this customer's employees |
+| `status` | `active`, `suspended` or `terminated` |
+| `kyc_status` | `not_started`, `submitted`, `approved` or `rejected` |
+| `search` | Matches full name or email |
+| `has_cards` | `1` for employees with at least one card, `0` for none |
+| `with_balance` | `1` to add each employee's live `card_balance` (see [Employee card balance](#employee-card-balance)). This makes the request slower, so use it only on pages that show balances. |
+
+### Get an employee
+
+```
+GET /api/v1/corporate-card/employees/{employee_id}
+```
+
+Returns the employee record including its `metadata` and current `kyc` sub-object.
+
+### Terminate an employee
+
+```
+DELETE /api/v1/corporate-card/employees/{employee_id}
+```
+
+Sets `status` to `terminated`, suspends all cards held by that employee, and
+soft-deletes the record. This action is not reversible via the API.
+
+## Employee KYC
+
+### Submit or update KYC
+
+```
+POST /api/v1/corporate-card/employees/kyc
+```
+
+`employee_id` is a required field in the request body (multipart or JSON),
+alongside the KYC data. Accepts either `multipart/form-data` with file
+fields, or JSON with hosted URLs — both are supported for each document:
+
+| Field | File field | URL field | Required |
+|---|---|---|---|
+| Government ID | `gov_id_image` | `gov_id_image_url` | No |
+| Payslip / work contract | `payslip` | `payslip_url` | No |
+| Proof of address | `proof_of_address` | `proof_of_address_url` | No |
+
+All three document fields are optional — supply at least the file or the URL
+for any document you want to attach; omit both to skip it. A file field also
+accepts a base64 string (`data:<type>;base64,...` or raw base64) instead of a
+multipart file. Accepted types: images (jpg, png, webp, gif, heic), PDF, Word,
+Excel, CSV and plain text; max 10 MB. The type is detected from the file's
+content, not its name. If a file upload fails, the request returns `422` naming
+the field (e.g. `Unable to upload gov_id_image. Please try again.`).
+
+### Private document links
+
+Uploaded selfies and KYC documents are stored privately. The URL saved on the
+employee is a Yativo link (`https://<api-host>/files/private/...`) that only
+opens for your account (bearer token) or Yativo staff. To display one in a
+browser (`<img>`, new tab), exchange it for a 15-minute signed link:
+
+```
+POST /api/v1/files/sign
+{ "url": "https://<api-host>/files/private/..." }
+```
+
+The response is `{ "url": "<signed link>", "expires_in": 900 }`. Only your own
+files can be signed; anything else returns `404`.
+
+Required identity/address fields: `employee_id`, `full_name`, `id_type`,
+`id_number`, `dob`, `street`, `city`, `postal_code`, `gov_id_type`,
+`gov_id_number`.
+
+Optional identity/address fields: `state_id`, `country_id`, `nationality`,
+`occupation`.
+
+- `country_id` — the country's ISO2 code (e.g. `US`), taken from the `iso2`
+  field of the countries list below. Despite its name, this is **not** the
+  numeric country `id`.
+- `nationality` — also an ISO2 code (e.g. `NG`).
+- `state_id` — the numeric `id` of a state from the states list below. An
+  unknown `state_id` is rejected with `422 Invalid state_id.`
+
+**KYC fee.** The first KYC submission for each employee charges the
+`employee_kyc` fee to your **USDC balance** (Business Spend Card wallet only —
+this wallet is not used for payouts, swaps, or other products). Resubmissions
+and updates for the same employee are free. If the fee can't be charged the
+request returns `402`, the KYC is not saved, and the error explains that you
+need sufficient USDC to pay the employee KYC fee (for example:
+`Insufficient USDC balance to pay the employee KYC fee (0.50 USD). Fund your
+Business Spend Card wallet and try again.`).
+
+### Looking up countries and states
+
+Use these endpoints to populate country and state pickers and to resolve the
+values sent in the KYC request. They are public, need no authentication, and
+return cached reference data.
+
+```
+GET /api/v1/locations/countries
+GET /api/v1/locations/states/{country_id}
+```
+
+`{country_id}` here is the numeric `id` from the countries list (e.g. `101`),
+not the ISO2 code. `GET /api/v1/locations/states` without a country returns
+every state and is not recommended, as the response is large.
+
+Example — list countries:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": 1,
+      "name": "afghanistan",
+      "iso2": "AF",
+      "iso3": "AFG",
+      "calling_code": "+93",
+      "currency_code": "AFN",
+      "postal_code_format": "\\A\\d{4}\\Z",
+      "status": "active"
+    }
+  ]
+}
+```
+
+Example — list states for a country:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "id": 1,
+      "country_id": 101,
+      "name": "andaman and nicobar islands",
+      "status": "active",
+      "country": { "id": 101, "name": "india", "iso2": "IN", "iso3": "IND" }
+    }
+  ]
+}
+```
+
+Typical flow: fetch countries, and from the one the employee picks send its
+`iso2` as `country_id` in the KYC request. Then fetch
+`/states/{id}` with that country's numeric `id`, and send the chosen state's
+`id` as `state_id`.
+
+### Get KYC status
+
+```
+GET /api/v1/corporate-card/employees/{employee_id}/kyc
+```
+
+Returns `status` (`pending`, `approved`, `rejected`) and, when rejected, a
+`reject_reason`. KYC approval/rejection itself is performed internally after
+review — it is not a customer-facing action.
+
+## Memos / Invoices
+
+Employees (or the business, on an employee's behalf) can attach a memo
+and/or invoice to card activity, which the business then approves or
+rejects.
+
+```
+POST /api/v1/corporate-card/employees/memos
+GET  /api/v1/corporate-card/employees/{employee_id}/memos
+POST /api/v1/corporate-card/employees/memos/{memo_id}/approve
+POST /api/v1/corporate-card/employees/memos/{memo_id}/reject
+```
+
+`POST .../memos` requires `employee_id` in the body, plus `note` (text), and
+either an `invoice` file upload or an `invoice_url`, plus an optional
+`card_id` to tie the memo to a specific card. Rejecting a memo requires a
+`reject_reason`. A failed invoice upload returns `502`
+(`Unable to upload the invoice. Please try again.`) and no memo is created.
+
+## Employee card balance
+
+Each employee has one card balance that all of their cards spend from. You
+manage it; employees can view theirs in the employee portal but can't
+move it.
+
+### Get an employee's card balance
+
+```
+GET /api/v1/corporate-card/employees/{employee_id}/balance
+```
+
+```json
+{
+  "employee_id": "emp_456",
+  "currency": "USD",
+  "has_cardholder": true,
+  "available_balance": 420.50,
+  "ledger_balance": 450.00,
+  "balance_unavailable": false,
+  "accounts": [
+    { "account_id": "8f0c...", "primary": true, "available_balance": 420.50, "ledger_balance": 450.00, "card_count": 2 }
+  ]
+}
+```
+
+- `available_balance` is what the employee can spend right now.
+  `ledger_balance` also includes authorizations that haven't settled yet.
+- `has_cardholder` is `false` until the employee's first card is issued.
+  Until then the balance is zero and can't be funded.
+- `balance_unavailable` is `true` if the balance couldn't be read in full
+  right now. Retry later.
+- `accounts` usually has a single entry. Employees whose cards were issued
+  before employee card balances existed can have more than one; the totals
+  above cover all of them.
+
+### Fund or withdraw
+
+```
+POST /api/v1/corporate-card/employees/balance
+```
+
+```json
+{ "employee_id": "emp_456", "action": "fund", "amount": 500.00 }
+```
+
+| Field | Description |
+|---|---|
+| `employee_id` | Required. Must belong to one of your customers. |
+| `action` | Required. `fund` or `withdraw`. |
+| `amount` | Required. At least `0.01`. |
+| `account_id` | Optional. One of the employee's `accounts[].account_id`. Defaults to the primary account. |
+
+- **Fund** debits your USDC balance and credits the employee's card
+  balance. It can't use the [reserve](#reserve).
+- **Withdraw** moves money from the employee's card balance back to your
+  USDC balance and charges the `card_withdrawal` fee. It is refused with
+  `422` if it exceeds the employee's available balance. Withdrawing
+  everything doesn't close any cards.
+- An employee with no card yet returns `404`.
+- Send an `Idempotency-Key` header to make retries safe.
+
+The response is the employee's updated card balance, in the same shape as
+`GET .../balance`.
+
+## Cards
+
+```
+POST /api/v1/corporate-card/employees/cards
+GET  /api/v1/corporate-card/employees/cards?customer_id=cus_123
+```
+
+`POST .../cards` requires `customer_id` in the body. `employee_id` is
+optional: pass it to issue the card to a specific employee (it must already
+belong to that `customer_id`); omit it and the API resolves — or, the first
+time, creates — that customer's employee automatically. Either way, an
+employee can hold any number of cards, with no per-employee limit.
+
+**Issuance fees** are charged to your USDC balance before the card is
+requested, and refunded automatically if the card can't be issued:
+
+| Card | Fees charged |
+|---|---|
+| An employee's **first** virtual card | None — free |
+| Any further virtual card for that employee | `virtual_card_create` |
+| Physical card | `physical_card_create` + `physical_card_shipping` |
+| First card for a **business**-type customer | `customer_kyb` as well, once per customer |
+
+Terminated or deleted virtual cards still count towards "first", so
+terminating and reissuing a card is not free. If a fee can't be charged the
+request returns `402` and no card is issued. Cards an employee creates for
+themselves in the employee portal follow the same rules and are charged to
+your balance.
+
+`GET .../cards` returns every card you own: cards issued by your account,
+and any card belonging to one of your customers or to an employee of one of
+your customers. It accepts optional `customer_id` and `employee_id` query
+filters, plus `status`.
+
+### Managing an employee's cards
+
+You can see and manage every card that belongs to your customers and their
+employees (you → customer → employee → card), including cards an employee
+created for themselves in the employee portal.
+Cards are referenced by `card_id` (the opaque id returned in card responses).
+
+```
+GET  /api/v1/corporate-card/employees/cards/{card_id}
+POST /api/v1/corporate-card/employees/cards/status
+POST /api/v1/corporate-card/employees/cards/pin
+PUT  /api/v1/corporate-card/employees/cards/limits
+```
+
+- `.../{card_id}` returns a single card.
+- To view full card details, call `GET /api/v1/spend/cards/{card_id}/widget-token`.
+  It returns `{"iframe": "<url>"}`, a short-lived link to a secure page
+  showing the full card number, expiry and CVV. Embed it as an
+  `<iframe src>`; request a new one each time.
+- `status`, `pin` and `limits` take `customer_id` and `card_id` in the
+  body, plus: `action` (`activate`, `suspend`, `terminate`) for status;
+  `pin` for PIN; a `limits` array for limits.
+- To add or remove money, use the employee's
+  [card balance](#employee-card-balance), which all of their cards share.
+
+The same operations are also available under `/api/v1/spend/cards`
+(`POST /spend/cards`, `GET /spend/cards`, `POST /spend/cards/status`,
+`POST /spend/cards/pin`, `PUT /spend/cards/limits`) with identical fields
+and behaviour. `POST /spend/cards/wallet` (fund or withdraw by `card_id`)
+remains for existing integrations. New integrations should use the
+[employee card balance](#employee-card-balance) instead.
+
+Every endpoint only sees cards you own. A `card_id` that belongs to another
+account returns `404`.
+
+## Card transactions & disputes
+
+Every card authorization is recorded in your transaction history, where you
+can add notes, attach receipts, and raise disputes. `transaction_id` in the
+`business_spend_card.transaction.*` webhooks is the `id` used here.
+On sandbox you can simulate a real spend-card authorization (it is written to
+the card's activity history) with
+`POST /api/v1/sandbox/spend-cards/{cardId}/simulate`, or send a sample event
+without creating a record with `POST /api/v1/demo/webhook/spendcard`. See
+[Testing on sandbox](/yativo-platform/testing/sandbox-testing).
+
+```
+GET    /api/v1/business/spend-card/transactions
+GET    /api/v1/business/spend-card/transactions/{id}
+POST   /api/v1/business/spend-card/transactions/{id}/dispute
+POST   /api/v1/business/spend-card/transactions/{id}/notes
+DELETE /api/v1/business/spend-card/notes/{noteId}
+POST   /api/v1/business/spend-card/transactions/{id}/invoices
+GET    /api/v1/business/spend-card/invoices/{invoiceId}/download
+DELETE /api/v1/business/spend-card/invoices/{invoiceId}
+```
+
+- The list accepts optional `status` and `card_id` filters. A single
+  transaction includes its `notes` and `invoices`.
+- Notes take `{ "note": "..." }`. Invoices are `multipart/form-data` with an
+  `invoice` file (jpg, jpeg, png or pdf, max 10 MB). Every file is
+  virus-scanned before it is stored, and a file that fails the scan is
+  rejected with `422`.
+
+### Raise a dispute
+
+```
+POST /api/v1/business/spend-card/transactions/{id}/dispute
+```
+
+```json
+{ "reason": "Duplicate charge — merchant billed twice" }
+```
+
+`reason` is required (max 500 characters). Raising a dispute charges the
+`dispute` fee to your USDC balance, marks the transaction as disputed, and
+sends a `business_spend_card.transaction.disputed` webhook. Our operations
+team then files the dispute with the card network.
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "transaction_id": "c234cf50-662c-4eed-8a34-27fbb1fd4294",
+    "disputed_at": "2026-09-30T10:15:00.000000Z",
+    "fee": 3.00
+  }
+}
+```
+
+| Status | When |
+|---|---|
+| `402` | The dispute fee couldn't be charged. The transaction is not disputed. |
+| `404` | The transaction isn't one of yours. |
+| `409` | `This transaction has already been disputed.` |
+
+A transaction can also be disputed by customer with
+`POST /api/v1/spend/cards/transactions/{transaction_id}/dispute`, which takes
+`customer_id` and `reason` in the body and behaves the same way.
+
+## Corporate Card funding wallet (USDC deposits)
+
+A business can provision a dedicated Solana/USDC deposit address to top up
+its USDC balance directly, separate from any other crypto wallets on the
+account.
+
+```
+POST /api/v1/corporate-card/wallet
+GET  /api/v1/corporate-card/wallet
+```
+
+Both take `customer_id` (body on `POST`, query string on `GET`) so the
+request can be authorized against a customer you own. The wallet itself is
+**per business**, not per customer — every customer on the same account
+shares one Solana/USDC deposit address. `POST` is idempotent; calling it
+again, even with a different `customer_id`, returns that same wallet. `GET`
+returns the wallet address and status, plus your balance split into what is
+reserved and what you can spend:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "wallet": { "...": "..." },
+    "usdc_balance": 3500.00,
+    "usdc_reserved_balance": 2000.00,
+    "usdc_available_balance": 1500.00
+  }
+}
+```
+
+All three balances are in **USD** (major units, two decimal places), not ledger cents.
+
+| Field | Meaning |
+|---|---|
+| `usdc_balance` | Total USDC balance (USD). |
+| `usdc_reserved_balance` | The [reserve](#reserve) that must stay in the balance. `0` if your account isn't approved for Business Spend Cards. |
+| `usdc_available_balance` | `usdc_balance − usdc_reserved_balance`, never below `0`. The amount you can spend on **Business Spend Card** actions (card funding, employee balance assignment, fees). It is **not** a payout or general-purpose wallet — selecting `usdc` as `debit_wallet` on other products returns `Invalid wallet selected.` |
+
+Deposits to this address are detected automatically and credited to the
+business's USDC balance — no manual reconciliation is required. They do
+not load any employee card; assign balance with
+`POST /api/v1/corporate-card/employees/balance` or from the dashboard.
+
+Only send **USDC on Solana** to this address. Always read the current
+`wallet.wallet_address` from `GET /api/v1/corporate-card/wallet` before
+depositing rather than reusing a stored copy: Yativo may move a wallet to a
+new address. When that happens, deposits that still arrive at the previous
+address continue to be credited, but new deposits should go to the current
+one. The wallet object contains `wallet_address`, `wallet_currency`
+(`USDC_SOL`) and `wallet_status`.
+
+## Reserve
+
+While your account is approved for Business Spend Cards, a minimum amount
+must stay in your USDC balance at all times. The default is **2,000 USD**;
+Yativo may agree a different amount for your account.
+
+- The reserve **can't be spent** — card balance funding and other spend-card
+  debits stop at it (payouts and transfers cannot use the USDC wallet at all).
+- **Fees can use it.** That is what it is held for, so a fee is still charged
+  when your available balance is zero.
+- A debit that would go below the reserve returns an error such as:
+  `Insufficient available balance. A minimum balance of 2,000.00 USD must be kept in your USDC balance for Business Spend Cards; 150.00 USD is available to spend.`
+- If access is revoked, the reserve is released.
+
+Use `usdc_available_balance` from `GET /api/v1/corporate-card/wallet` to see
+how much you can spend.
+
+## Fees
+
+All Business Spend Card fees are charged to your USDC balance. Amounts come
+from your pricing agreement; contact your account manager for your rates.
+Each fee is charged at most once per event, so retries and repeated webhooks
+never double-charge.
+
+| Fee | When it's charged |
+|---|---|
+| `monthly_subscription` | Once per calendar month while your account is approved. |
+| `customer_kyb` | Once per business-type customer, when its first card is issued. |
+| `employee_kyc` | Once per employee, on the first KYC submission. |
+| `virtual_card_create` | Each virtual card after an employee's first (the first is free). |
+| `physical_card_create` | Each physical card. |
+| `physical_card_shipping` | Each physical card. |
+| `authorization_domestic` | Each approved domestic authorization. May be waived above a set amount. |
+| `authorization_cross_border` | Each approved cross-border authorization. May be waived above a set amount. |
+| `cross_border_transaction` | A percentage of each approved cross-border authorization, on top of the authorization fee. |
+| `reversal` | Each reversed authorization. |
+| `dispute` | Each dispute you raise. |
+| `card_withdrawal` | Each withdrawal from an employee's card balance back to your USDC balance. |
+
+A transaction is cross-border when the merchant is outside the card's home
+country or, if the merchant country isn't known, when it is in a currency
+other than the card's home currency.
+
+Fees you trigger through the API (card issuance, KYC, disputes, withdrawals)
+are charged before the action runs: if the fee can't be charged the request
+returns `402` and nothing happens. Fees triggered by card activity or the
+monthly cycle are retried automatically if your balance can't cover them
+when they fall due.
+
+## Errors
+
+All endpoints return the standard API error envelope on failure.
+
+| Status | Meaning |
+|---|---|
+| `402` | A fee couldn't be charged, or a debit would go below the [reserve](#reserve). |
+| `403` | Business Spend Cards aren't enabled for your account or the customer (see [Access requirements](#access-requirements)), or the employee, customer or account is blocked. |
+| `404` | A `customer_id`/`employee_id`/`card_id` doesn't resolve to data owned by the authenticated business. |
+| `409` | The transaction has already been disputed. |
+| `422` | Validation error, or a rejected document or invoice upload. |
+| `502` | A file upload failed, or the card service couldn't complete the request. Retry the request. |
+
+When the card service rejects a request, `data.error` gives the reason (for
+example an invalid date of birth). When it can't complete the request at all,
+you get `502` with `The card service could not complete this request right
+now. Please try again later.` Responses never include the card service's raw
+response.

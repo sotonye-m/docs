@@ -1,0 +1,391 @@
+---
+title: "Employee Portal Integration"
+description: "Employee Portal Integration — integration guide for the Yativo API."
+---
+
+The Employee Portal lets an **Employee** (a Corporate Card holder) log in on
+their own and self-service the things that belong to them: their cards and the
+memos/invoices on their own card transactions. It is a separate authentication
+surface from the business/customer API — an employee authenticates as
+themselves, with a dedicated bearer token, and can only ever see or act on
+their own data.
+
+Employees are created and KYC'd by the owning business (see the Corporate Card
+Integration guide). An employee can **never** self-register here; they can only
+log in once the business has created them.
+
+All portal endpoints are under `/api/v1/employee`. Authenticated endpoints
+require the employee bearer token in the `Authorization` header:
+
+```
+Authorization: Bearer <employee_access_token>
+```
+
+## Access & blocking
+
+An employee's access is automatically blocked — login is refused and every
+authenticated call returns `403` — whenever:
+
+- the employee's own status is `suspended` or `terminated`; or
+- the owning customer is banned; or
+- the owning user account is suspended.
+
+When any of these is true the response body carries the reason, e.g.
+`{ "message": "Owning user account is suspended." }`.
+
+The employee's organisation must also be enabled for Business Spend Cards:
+the owning business must be approved by Yativo, and the employee's customer
+must hold an approved `faster_payments` endorsement (see the Corporate Card
+Integration guide). Until both are true, every authenticated call returns
+`403` with `Your organisation is not enabled for Business Spend Cards.`
+Login itself still succeeds, so show this message rather than treating it
+as a login failure.
+
+---
+
+## Authentication (magic link / OTP)
+
+Passwordless login: the employee requests a one-time code by email, then
+exchanges it for a bearer token.
+
+### Request a login code
+
+```
+POST /api/v1/employee/auth/magic
+```
+
+```json
+{
+  "email": "jane@company.com"
+}
+```
+
+The employee is emailed a one-time code (no link): 8 letters and digits shown
+as `XXXX-XXXX` (for example `7KQ2-M9PT`). The response is always the same
+whether or not the email matches a real employee (so the endpoint can't be
+used to discover who is an employee):
+
+```json
+{
+  "message": "If that email belongs to an employee, a one-time login code has been sent."
+}
+```
+
+### Exchange the code for a token
+
+```
+POST /api/v1/employee/auth/magic-login
+```
+
+```json
+{
+  "email": "jane@company.com",
+  "token": "7KQ2-M9PT"
+}
+```
+
+Enter the code as shown. Case, spaces and the dash don't matter, and the
+look-alike letters `O`, `I` and `L` are read as `0`, `1` and `1`. Codes:
+
+- expire **10 minutes** after they are issued;
+- work **once**: requesting a new code replaces the old one;
+- allow **5 wrong attempts**, after which the code is cancelled and the
+  employee must request a new one (`429` `Too many incorrect attempts. Please
+  request a new login code.`).
+
+Requesting codes is limited to 3 per email every 15 minutes (further requests
+get the same response but send nothing) and 5 per minute per IP. Signing in is
+limited to 10 attempts per minute per IP.
+
+On success:
+
+```json
+{
+  "employee_id": "emp_...",
+  "full_name": "Jane Doe",
+  "email": "jane@company.com",
+  "status": "active",
+  "kyc_status": "approved",
+  "access_token": "<jwt>",
+  "token_type": "bearer",
+  "expires_in": 3600
+}
+```
+
+Invalid or expired codes return `The one-time login code is invalid or has
+expired.`
+
+### Current employee
+
+```
+GET /api/v1/employee/me
+```
+
+Returns the authenticated employee with their KYC and owning customer.
+
+### Log out
+
+```
+POST /api/v1/employee/auth/logout
+```
+
+Invalidates the current token.
+
+---
+
+## Card balance
+
+```
+GET /api/v1/employee/balance
+```
+
+The employee's spendable balance, shared by all of their cards. It is
+read-only here: the organisation that manages the employee adds and removes
+funds.
+
+```json
+{
+  "employee_id": "emp_456",
+  "currency": "USD",
+  "has_cardholder": true,
+  "available_balance": 420.50,
+  "ledger_balance": 450.00,
+  "balance_unavailable": false,
+  "accounts": [
+    { "account_id": "8f0c...", "primary": true, "available_balance": 420.50, "ledger_balance": 450.00, "card_count": 2 }
+  ]
+}
+```
+
+Show `available_balance` as the amount the employee can spend.
+`ledger_balance` also includes card payments that haven't settled yet.
+`has_cardholder` is `false` until the employee's first card is issued. If
+`balance_unavailable` is `true`, the figures may be incomplete; retry
+shortly.
+
+---
+
+## Cards
+
+Full lifecycle management, scoped to the employee's own cards. A card is
+referenced by its `card_id` (the opaque id returned in card responses).
+
+The account that owns the employee's customer can also see and manage every
+one of these cards, including viewing full card details, through the Corporate
+Card API (`/api/v1/corporate-card/employees/cards` and
+`/api/v1/spend/cards/{card_id}/widget-token`).
+
+### List my cards
+
+```
+GET /api/v1/employee/cards
+```
+
+Optional query: `status`. Returns a paginated list of the employee's cards.
+
+### Get a card
+
+```
+GET /api/v1/employee/cards/{card_id}
+```
+
+### View full card details (secure widget)
+
+```
+GET /api/v1/employee/cards/{card_id}/widget-token
+```
+
+Returns a short-lived link to a secure page that displays the full card number,
+expiry and CVV:
+
+```json
+{
+  "status": "success",
+  "data": { "iframe": "https://.../api/v1/spend/cards/widget/view/..." }
+}
+```
+
+Embed `data.iframe` as an `<iframe src>` or open it in a new tab. The link is
+short-lived — request a new one each time
+the card details are shown. Sensitive card data never passes through your
+servers.
+
+### Create a card
+
+```
+POST /api/v1/employee/cards
+```
+
+```json
+{
+  "card_type": "Virtual"
+}
+```
+
+`card_type` is optional (`Virtual` or `Physical`, default `Virtual`). The card
+is always issued to the authenticated employee under their own customer — no
+`customer_id`/`employee_id` is accepted from the client. Card issuance follows
+the platform's standard eligibility and KYC rules.
+
+Card fees are paid by the employee's organisation, not the employee. An
+employee's first virtual card is free; further virtual cards and every
+physical card carry a fee. If the organisation's balance can't cover it, the
+request returns `402` and no card is issued. Deleted cards still count, so
+deleting a card and creating a new one is not free.
+
+### Freeze / unfreeze a card
+
+```
+POST /api/v1/employee/cards/{card_id}/status
+```
+
+```json
+{
+  "action": "suspend"
+}
+```
+
+`action` is `suspend` (freeze) or `activate` (unfreeze). Terminating a card is
+done through the delete endpoint below.
+
+### Update spend limits
+
+```
+PUT /api/v1/employee/cards/{card_id}/limits
+```
+
+```json
+{
+  "limits": [
+    { "operationName": "SPENDINGLIMIT", "timeUnit": "Monthly", "amountLimit": 2000 }
+  ]
+}
+```
+
+### Set / change PIN
+
+```
+POST /api/v1/employee/cards/{card_id}/pin
+```
+
+```json
+{
+  "pin": "1234"
+}
+```
+
+### Delete a card
+
+```
+DELETE /api/v1/employee/cards/{card_id}
+```
+
+Terminates the card so it can no longer spend, then removes it from the
+employee's list. The card record and its transaction history are retained
+(soft delete) so past transactions and their memos/invoices remain accessible.
+
+---
+
+## Transactions, memos & invoices
+
+The employee sees the transaction history for their own cards and can attach a
+memo (note) and/or one or more invoices to each transaction.
+
+### List my transactions
+
+```
+GET /api/v1/employee/transactions
+```
+
+Optional query: `status`, `card_id`. Each transaction includes `notes_count`
+and `invoices_count`.
+
+### Get a transaction
+
+```
+GET /api/v1/employee/transactions/{transaction_id}
+```
+
+Returns the transaction with its `notes` and `invoices`.
+
+### Add a memo (note)
+
+```
+POST /api/v1/employee/transactions/{transaction_id}/notes
+```
+
+```json
+{
+  "note": "Client dinner — March board meeting"
+}
+```
+
+### Delete a memo
+
+```
+DELETE /api/v1/employee/notes/{note_id}
+```
+
+### Attach an invoice
+
+```
+POST /api/v1/employee/transactions/{transaction_id}/invoices
+```
+
+Multipart form-data with an `invoice` file. Allowed types: `jpg`, `jpeg`,
+`png`, `pdf`; max 10 MB. Every file is virus-scanned before it is stored;
+files that fail the scan are rejected with `422`. The file is stored privately
+(never at a public address). The response includes a `url` for downloading the
+stored invoice through the endpoint below.
+
+### Download an invoice
+
+```
+GET /api/v1/employee/invoices/{invoice_id}/download
+```
+
+Streams the invoice back as a file download (`Content-Disposition: attachment`),
+with the content type detected from the file itself.
+
+### Delete an invoice
+
+```
+DELETE /api/v1/employee/invoices/{invoice_id}
+```
+
+### Private documents (KYC, selfie)
+
+Document links on the employee (`selfie_image`, and `gov_id_image_url`,
+`payslip_url`, `proof_of_address_url` on `kyc`) are private Yativo links of the
+form `https://<api-host>/files/private/...`. They open with the employee's
+bearer token. To show one in an `<img>` tag or open it in a new tab, exchange
+it for a 15-minute signed link:
+
+```
+POST /api/v1/employee/files/sign
+```
+
+```json
+{ "url": "https://<api-host>/files/private/employee-kyc/.../<id>.png" }
+```
+
+```json
+{ "url": "https://<api-host>/files/private/...?expires=...&signature=...", "expires_in": 900 }
+```
+
+Only the employee's own files can be signed; anything else returns `404`.
+
+---
+
+## Errors
+
+Errors follow the same envelope used across the API:
+
+```json
+{ "message": "..." }
+```
+
+Common statuses: `401` (missing/invalid token), `402` (the organisation's
+balance can't cover a card fee), `403` (blocked employee, or the organisation
+isn't enabled for Business Spend Cards), `404` (a card/transaction/note/invoice
+that isn't the employee's), `422` (validation or a rejected upload).

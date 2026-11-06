@@ -1,0 +1,704 @@
+---
+title: "Virtual Account and Transactions Integration (MoiPayWay)"
+description: "Virtual Account and Transactions Integration (MoiPayWay) — integration guide for the Yativo API."
+---
+
+This documentation covers:
+- Virtual account listing
+- Updating and expiring NGN virtual accounts
+- Virtual account transaction history
+- Transactions index
+- Transaction details for payins (payment links) and payouts
+
+All sample payloads below are anonymized for safe sharing.
+
+## Environments
+
+- Sandbox API: `https://smtp.yativo.com`
+- Sandbox (alternate host): `https://smtp.yativo.com`
+- Production API: `https://api.yativo.com`
+
+On sandbox you can simulate an inbound deposit onto a virtual account (credits
+the wallet and sends `virtual_account.deposit`) without waiting for a bank.
+See [Testing on sandbox](/yativo-platform/testing/sandbox-testing).
+
+## Authentication
+
+All business endpoints need an authenticated request.
+
+Server-to-server requests use your team's API key and secret:
+
+```http
+X-Api-Key: <YOUR_API_KEY>
+X-Api-Secret: <YOUR_API_SECRET>
+```
+
+The Yativo dashboard sends the signed-in user's `Authorization: Bearer <ACCESS_TOKEN>`
+instead. Since 15 October 2026, bearer tokens are only accepted from the
+dashboard, and the legacy `POST /api/v1/auth/login` (`account_id` +
+`app_secret`) flow is deprecated. Don't send a bearer token together with the
+key pair. See [Team API Keys](/yativo-platform/authentication).
+
+---
+
+## 1) List Virtual Accounts
+
+### Endpoint
+
+```http
+GET /api/v1/business/virtual-account
+```
+
+### Sample Response (Anonymized)
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "account_id": "VA_ACC_UUID_001",
+      "user_id": 999,
+      "currency": "USD",
+      "account_info": {
+        "country": null,
+        "currency": "USD",
+        "account_type": "checking",
+        "bank_address": "123 Example Street, Example City, EX 10001",
+        "account_number": "<ACCOUNT_NUMBER>",
+        "bank_name": "Example Bank",
+        "routing_number": "<ROUTING_NUMBER>",
+        "account_name": "ANONYMIZED BUSINESS LTD"
+      },
+      "created_at": "2026-04-10T10:00:00.000000Z",
+      "account_number": "<ACCOUNT_NUMBER>",
+      "customer_id": "CUST_UUID_001"
+    }
+  ],
+  "pagination": {
+    "total": 11,
+    "per_page": 10,
+    "current_page": 1,
+    "last_page": 2,
+    "next_page_url": "https://api.yativo.com/api/v1/business/virtual-account?page=2",
+    "prev_page_url": null
+  }
+}
+```
+
+### Response Key Table
+
+| Key | Type | Description |
+|---|---|---|
+| status | string | API status result (for example, `success`). |
+| status_code | number | HTTP-like status code in body. |
+| message | string | Human-readable result message. |
+| data | array | List of virtual account records. |
+| data[].account_id | string | Internal virtual account identifier. |
+| data[].user_id | number | Owner user id. |
+| data[].currency | string | Virtual account currency. |
+| data[].account_info | object | Banking details for receiving funds. |
+| data[].account_info.country | string/null | Country when available. |
+| data[].account_info.currency | string | Currency for this receiving account. |
+| data[].account_info.account_type | string | Account rail/type (for example `checking`, `iban`). |
+| data[].account_info.bank_address | string | Receiving bank address. |
+| data[].account_info.account_number | string | Virtual account number/IBAN/reference. |
+| data[].account_info.bank_name | string | Receiving bank name. |
+| data[].account_info.routing_number | string/null | Bank routing/BIC/SWIFT style code when available. |
+| data[].account_info.bank_code | string/null | Local bank code where applicable. |
+| data[].account_info.account_name | string | Name on receiving account. |
+| data[].created_at | string | Record creation timestamp (UTC). |
+| data[].account_number | string | Flattened account number for quick access. |
+| data[].customer_id | string/null | Linked customer id if assigned. |
+| pagination | object | Pagination metadata. |
+| pagination.total | number | Total records count. |
+| pagination.per_page | number | Records returned per page. |
+| pagination.current_page | number | Current page index. |
+| pagination.last_page | number | Last page index. |
+| pagination.next_page_url | string/null | URL for next page. |
+| pagination.prev_page_url | string/null | URL for previous page. |
+
+---
+
+## 1a) Update or Expire an NGN Virtual Account
+
+These two endpoints only work on **NGN** virtual accounts. Any other currency
+returns `422` (`Updating is not supported for this account` /
+`Expiring is not supported for this account`).
+
+### Update
+
+```http
+PUT /api/v1/business/virtual-account/update/{account_id}
+Content-Type: application/json
+
+{
+  "account_name": "ANONYMIZED BUSINESS LTD",
+  "expected_amount": 150000
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `account_name` | no | New name on the account, up to 100 characters. |
+| `expected_amount` | no | Lock the account to accept only this exact NGN amount. Send `null` to remove the lock. |
+
+Send at least one of the two fields, otherwise the request returns `422`.
+The response is the updated virtual account record; the new values also
+appear in `account_info` (`account_name`, `expected_amount`).
+
+### Expire
+
+```http
+POST /api/v1/business/virtual-account/expire/{account_id}
+```
+
+Permanently stops the account from accepting funds. The account record and
+its transaction history are kept, and its `status` becomes `expired`. This
+can't be undone. Calling it on an account that is already expired returns
+`200` with the message `Virtual account already expired`.
+
+Deleting an NGN account with
+`DELETE /api/v1/business/virtual-account/delete-virtual-account/{account_id}`
+also expires it first.
+
+A successful delete returns the deleted `account_id` and sends a
+`virtual_account.deleted` webhook. An ID that doesn't exist or isn't yours
+returns `404` (`Account with the provided ID does not exists`).
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": { "message": "Virtual account deleted successfully", "account_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }
+}
+```
+
+| HTTP | `data.error` | Cause |
+|---|---|---|
+| 404 | `Invalid account ID supplied` | The account doesn't exist or isn't yours. |
+| 422 | `... is not supported for this account` | The account isn't an NGN account. |
+| 400 | `Unable to update virtual account, please try again later` / `Unable to expire virtual account, please try again later` | The change couldn't be applied. Retry later. |
+
+---
+
+## 2) Virtual Account Transaction History
+
+### Endpoint
+
+```http
+POST /api/v1/business/virtual-account/history/{account_number}
+```
+
+### Important Crediting Notes
+
+- `currency` + `amount`: value credited to the wallet.
+- `amount_recevied` (API spelling): amount originally sent by sender.
+- `sender_information`: payer account and identity details.
+- `transaction_fee`: your own platform fee.
+- If `amount_recevied` is greater than `amount`, the difference can come from rail/provider deductions (for example, FedWire fees) before settlement.
+
+### Wallet Settlement Rules
+
+- GBP virtual account (Faster Payments) settles into USD wallet.
+- `MXNUSD` virtual account accepts MXN over SPEI and settles into USD wallet.
+- `COPUSD` virtual account accepts COP over Bre-B and settles into USD wallet.
+- EUR virtual account accepts EUR and settles in EUR only.
+- NGN virtual account accepts NGN and settles in NGN.
+
+For accounts that settle into USD, the deposit is converted at the prevailing
+rate when it is credited. `amount_recevied` shows what the sender paid in the
+local currency, and `amount` shows the USD credited.
+
+### Sample USD History Response (Anonymized)
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": 10001,
+      "user_id": "999",
+      "deposit_id": "DEP_UUID_USD_001",
+      "currency": "USD",
+      "amount": "24.85",
+      "account_number": "<USD_ACCOUNT_NUMBER>",
+      "status": "success",
+      "created_at": "2026-04-10T06:09:37.000000Z",
+      "updated_at": "2026-04-10T06:09:37.000000Z",
+      "deleted_at": null,
+      "transaction_fee": null,
+      "customer_received": null,
+      "customer_credited": null,
+      "meta": null,
+      "customer_id": "CUST_UUID_001",
+      "amount_recevied": "50",
+      "sender_information": {
+        "Details": {
+          "AccountNumber": "<SENDER_ACCOUNT_NUMBER>",
+          "Type": "FiatPaymentMethodBankDisplay"
+        },
+        "FullName": "ANONYMIZED SENDER INC"
+      }
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "per_page": 10,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+
+### Sample EUR History Response (Anonymized)
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": 10002,
+      "user_id": "999",
+      "deposit_id": "DEP_UUID_EUR_001",
+      "currency": "EUR",
+      "amount": "7.99",
+      "account_number": "<EUR_IBAN>",
+      "status": "success",
+      "created_at": "2026-04-10T05:50:36.000000Z",
+      "updated_at": "2026-04-10T05:50:36.000000Z",
+      "deleted_at": null,
+      "transaction_fee": null,
+      "customer_received": null,
+      "customer_credited": null,
+      "meta": null,
+      "customer_id": "CUST_UUID_001",
+      "amount_recevied": "10",
+      "sender_information": {
+        "Details": {
+          "AccountNumber": "<SENDER_IBAN>",
+          "BankCode": "<BANK_CODE>",
+          "Type": "FiatPaymentMethodBankDisplay"
+        },
+        "FullName": "ANONYMIZED INDIVIDUAL"
+      }
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "per_page": 10,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+
+### Response Key Table
+
+| Key | Type | Description |
+|---|---|---|
+| status | string | API status result. |
+| status_code | number | HTTP-like status code in body. |
+| message | string | Human-readable status message. |
+| data | array | History entries for the specified virtual account. |
+| data[].id | number | History row id. |
+| data[].user_id | string/number | Owner user id. |
+| data[].deposit_id | string | Deposit transaction identifier. |
+| data[].currency | string | Wallet credit currency. |
+| data[].amount | string/number | Amount credited to wallet. |
+| data[].account_number | string | Virtual account number that received payment. |
+| data[].status | string | Deposit processing state. |
+| data[].created_at | string | Creation timestamp (UTC). |
+| data[].updated_at | string | Last update timestamp (UTC). |
+| data[].deleted_at | string/null | Soft-delete timestamp if deleted. |
+| data[].transaction_fee | string/number/null | Platform fee charged by your side. |
+| data[].customer_received | string/number/null | Amount sender-side recipient value where supplied. |
+| data[].customer_credited | string/number/null | Credited value marker where supplied. |
+| data[].meta | object/null | Additional provider metadata. |
+| data[].customer_id | string/null | Linked customer id. |
+| data[].amount_recevied | string/number/null | Original sent amount (API field name is intentionally misspelled). |
+| data[].sender_information | object/null | Sender identity/payment source metadata. |
+| data[].sender_information.Details | object | Structured sender payment method details. |
+| data[].sender_information.Details.AccountNumber | string | Sender account number/IBAN reference. |
+| data[].sender_information.Details.BankCode | string | Sender bank code/SWIFT/BIC (if present). |
+| data[].sender_information.Details.Type | string | Sender payment detail type. |
+| data[].sender_information.FullName | string | Sender legal/display name. |
+| pagination | object | Pagination metadata. |
+| pagination.total | number | Total records count. |
+| pagination.per_page | number | Records per page. |
+| pagination.current_page | number | Current page index. |
+| pagination.last_page | number | Last page index. |
+| pagination.next_page_url | string/null | Next page URL. |
+| pagination.prev_page_url | string/null | Previous page URL. |
+
+---
+
+## 3) Transactions Index
+
+### Endpoint
+
+```http
+GET /api/v1/business/transactions/index
+```
+
+### Purpose
+
+Returns all account transactions (for example: crypto deposits, payins, payouts), paginated.
+
+### Sample Response (Anonymized)
+
+```json
+{
+  "data": [
+    {
+      "id": 7001,
+      "transaction_id": "TXN_UUID_001",
+      "transaction_type": "deposit",
+      "transaction_status": "expired",
+      "transaction_amount": 100,
+      "transaction_currency": "USD",
+      "base_currency": "USD",
+      "transaction_memo": "payin",
+      "transaction_purpose": "Deposit",
+      "created_at": "2026-01-19T13:37:26.000000Z",
+      "user": {
+        "name": "ANONYMIZED USER"
+      },
+      "transaction_swap_details": null,
+      "payin_method": {
+        "method_name": "N/A"
+      },
+      "exchange_data": {
+        "PayoutMethod": {
+          "method_name": "N/A"
+        },
+        "total_amount": {
+          "wallet_currency": 100
+        },
+        "customer_receive_amount": {
+          "payout_currency": 100
+        }
+      },
+      "beneficiary": {
+        "payment_data": {
+          "beneficiary": null
+        },
+        "nickname": "N/A"
+      },
+      "payment_info": {
+        "customer_receive_amount": 100
+      },
+      "checkout_url": {
+        "checkouturl": "https://checkout.yativo.com/process-payin/TXN_UUID_001/paynow",
+        "created_at": "2026-01-19T13:37:26.000000Z",
+        "expiration_time": 1440
+      }
+    }
+  ],
+  "links": {
+    "first": "https://api.yativo.com/api/v1/business/transactions/index?page=1",
+    "last": null,
+    "prev": null,
+    "next": "https://api.yativo.com/api/v1/business/transactions/index?page=2"
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "path": "https://api.yativo.com/api/v1/business/transactions/index",
+    "per_page": 10,
+    "to": 10
+  }
+}
+```
+
+### Response Key Table
+
+| Key | Type | Description |
+|---|---|---|
+| data | array | Paginated transaction list. |
+| data[].id | number | Internal transaction row id. |
+| data[].transaction_id | string | External/business transaction id. |
+| data[].transaction_type | string | Type (for example `deposit`, `payout`, `crypto`). |
+| data[].transaction_status | string | Current processing status. |
+| data[].transaction_amount | number | Transaction amount entered for that flow. |
+| data[].transaction_currency | string | Transaction currency. |
+| data[].base_currency | string | Debited/primary wallet currency. |
+| data[].transaction_memo | string | Transaction memo tag. |
+| data[].transaction_purpose | string | Business purpose label. |
+| data[].created_at | string | Creation timestamp (UTC). |
+| data[].user.name | string | Account holder display name. |
+| data[].transaction_swap_details | object/null | FX/swap details if any. |
+| data[].payin_method.method_name | string | Origin method label. |
+| data[].exchange_data | object | Normalized amount/method summary. |
+| data[].beneficiary | object | Beneficiary metadata snapshot. |
+| data[].payment_info | object | Additional payment payload details. |
+| data[].checkout_url | object/null | Checkout/payment link metadata for payins. |
+| links | object | Pagination links object. |
+| links.first | string | First page URL. |
+| links.last | string/null | Last page URL if known. |
+| links.prev | string/null | Previous page URL. |
+| links.next | string/null | Next page URL. |
+| meta | object | Pagination metadata. |
+| meta.current_page | number | Current page number. |
+| meta.from | number | First item index on current page. |
+| meta.path | string | Endpoint path used for pagination. |
+| meta.per_page | number | Items per page. |
+| meta.to | number | Last item index on current page. |
+
+---
+
+## 4) Transaction Details by ID
+
+### Endpoint
+
+```http
+GET /api/v1/business/transaction/show/:id
+```
+
+Use this endpoint to fetch a single transaction in full detail.
+
+### Sample Payin (Payment Link) Response (Anonymized)
+
+```json
+{
+  "id": 8008,
+  "user_id": "USER_ID",
+  "transaction_beneficiary_id": "BENEFICIARY_ID",
+  "transaction_id": "TRANSACTION_UUID",
+  "transaction_amount": "5000",
+  "transaction_status": "expired",
+  "transaction_type": "deposit",
+  "transaction_memo": "payin",
+  "transaction_purpose": "Deposit",
+  "transaction_payin_details": [
+    {
+      "currency": "CLP",
+      "deposit_currency": "USD",
+      "amount": 5000,
+      "gateway": 22,
+      "receive_amount": 4,
+      "customer_id": "CUSTOMER_UUID",
+      "id": "TRANSACTION_UUID",
+      "updated_at": "TIMESTAMP",
+      "created_at": "TIMESTAMP"
+    },
+    {
+      "code": 200,
+      "payment_token": "PAYMENT_TOKEN",
+      "payment_url": "https://payments.example.com/?id=PAYMENT_TOKEN"
+    }
+  ],
+  "transaction_currency": "CLP",
+  "exchange_data": {
+    "fixed_fee": 943.3,
+    "float_fee": 150,
+    "total_fees": 1093.3,
+    "exchange_rate": 943.296,
+    "deposit_amount": 5000,
+    "percentage_fee": 150,
+    "credited_amount": 4.14
+  },
+  "payment_gateway": {
+    "id": 22,
+    "method_name": "Bank Transfer",
+    "gateway": "PROVIDER_NAME",
+    "country": "CHL",
+    "currency": "CLP",
+    "minimum_deposit": "2000",
+    "maximum_deposit": "7000000",
+    "expiration_time": "15"
+  },
+  "payment_info": {
+    "id": "TRANSACTION_UUID",
+    "user_id": "USER_ID",
+    "amount": 5000,
+    "gateway": "22",
+    "currency": "CLP",
+    "created_at": "TIMESTAMP",
+    "updated_at": "TIMESTAMP",
+    "status": "expired",
+    "deposit_currency": "USD",
+    "receive_amount": 4,
+    "customer_id": "CUSTOMER_UUID"
+  },
+  "checkout_url": {
+    "transaction_id": "8008",
+    "checkouturl": "https://checkout.yativo.com/process-payin/TRANSACTION_UUID/paynow",
+    "created_at": "TIMESTAMP",
+    "expiration_time": "15"
+  },
+  "user": {
+    "id": "USER_ID",
+    "email": "anonymized.user@example.com",
+    "google2fa_enabled": true,
+    "is_business": false,
+    "membership_id": "MEMBERSHIP_ID",
+    "kyc_status": "approved",
+    "last_login_at": "TIMESTAMP",
+    "user_type": "business"
+  },
+  "customer": {
+    "customer_id": "CUSTOMER_UUID",
+    "customer_name": "ANONYMIZED CUSTOMER",
+    "customer_email": "anonymized.customer@example.com",
+    "customer_phone": "<REDACTED_PHONE>",
+    "customer_country": "COUNTRY_CODE",
+    "customer_status": "active"
+  }
+}
+```
+
+### Sample Payout Response (Anonymized)
+
+```json
+{
+  "id": 7944,
+  "user_id": 18,
+  "transaction_beneficiary_id": "3321",
+  "transaction_id": "9154",
+  "idempotency_key": "IDEMPOTENCY_KEY_HEX",
+  "transaction_amount": "300.00",
+  "transaction_status": "completed",
+  "transaction_type": "Payout",
+  "transaction_memo": "payout",
+  "transaction_purpose": "Withdrawal",
+  "transaction_payout_details": {
+    "payout_data": {
+      "user_id": 18,
+      "amount": "300.00",
+      "currency": "NGN",
+      "beneficiary_id": 3321,
+      "status": "processing",
+      "created_at": "2026-01-12T14:22:10.000000Z",
+      "updated_at": "2026-01-12T14:23:05.000000Z",
+      "payout_id": "PAYOUT_UUID",
+      "customer_id": "CUSTOMER_UUID",
+      "debit_wallet": "USD",
+      "debit_amount": "307.50",
+      "send_amount": "300.00",
+      "customer_receive_amount": "420500.75",
+      "payment_gateway_id": "QUOTE_ID",
+      "client_transaction_id": "CLIENT_TXN_ID",
+      "beneficiary": {
+        "id": 3321,
+        "gateway_id": 902,
+        "nickname": "ANONYMIZED BENEFICIARY",
+        "currency": "NGN",
+        "payment_data": {
+          "type": "BANK",
+          "bankCode": "000013",
+          "accountNumber": "<BENEFICIARY_ACCOUNT_NUMBER>"
+        },
+        "created_at": "2026-01-12T14:20:00.000000Z"
+      }
+    },
+    "gateway_response": {
+      "id": "GATEWAY_RESP_UUID",
+      "status": "quote",
+      "settlementCurrency": "NGN",
+      "quoteId": "QUOTE_ID",
+      "settlementAmount": 420500.75,
+      "btcRate": 68500.1234,
+      "exchangeRate": 1401.75,
+      "expiryTimeStamp": 1776000000,
+      "amount": 296.75,
+      "satAmount": 435000,
+      "expiresInText": "This quote expires in 15 minutes",
+      "quoteText": "NGN 420,500.75 will be settled for this transaction"
+    }
+  },
+  "created_at": "2026-01-12T14:22:10.000000Z",
+  "customer_id": "CUSTOMER_UUID",
+  "transaction_currency": "NGN",
+  "base_currency": "USD",
+  "secondary_currency": "NGN",
+  "payment_info": {
+    "user_id": 18,
+    "amount": "300.00",
+    "currency": "NGN",
+    "beneficiary_id": 3321,
+    "status": "completed",
+    "created_at": "2026-01-12T14:22:10.000000Z",
+    "updated_at": "2026-01-12T14:25:00.000000Z",
+    "payout_id": "PAYOUT_UUID",
+    "customer_id": "CUSTOMER_UUID",
+    "debit_wallet": "USD",
+    "debit_amount": "307.50",
+    "send_amount": "300.00",
+    "customer_receive_amount": "420500.75",
+    "payment_gateway_id": "QUOTE_ID",
+    "client_transaction_id": "CLIENT_TXN_ID"
+  },
+  "user": {
+    "id": 18,
+    "email": "anonymized.user@example.com",
+    "google2fa_enabled": true,
+    "is_business": true,
+    "membership_id": "MEMBERSHIP_ID",
+    "kyc_status": "approved",
+    "last_login_at": "TIMESTAMP",
+    "user_type": "business"
+  },
+  "customer": {
+    "customer_id": "CUSTOMER_UUID",
+    "customer_name": "ANONYMIZED CUSTOMER",
+    "customer_email": "anonymized.customer@example.com",
+    "customer_phone": "<REDACTED_PHONE>",
+    "customer_country": "NG",
+    "customer_status": "active"
+  }
+}
+```
+
+### Response Key Table (Transaction Details)
+
+| Key | Type | Description |
+|---|---|---|
+| id | number | Transaction row id. |
+| user_id | string/number | Owner user id. |
+| transaction_beneficiary_id | string | Beneficiary id attached to this transaction (if applicable). |
+| transaction_id | string | Public/reference transaction id. |
+| idempotency_key | string | Client idempotency hash for payout safety (payout flows). |
+| transaction_amount | string/number | Transaction amount input. |
+| transaction_status | string | Transaction processing status. |
+| transaction_type | string | Flow type (`deposit`, `payout`, etc.). |
+| transaction_memo | string | Internal memo classification. |
+| transaction_purpose | string | Business purpose classification. |
+| transaction_payin_details | array | Payin-specific provider payload and payment link metadata. |
+| transaction_payout_details | object | Payout-specific provider payload and quote metadata. |
+| transaction_currency | string | User-facing transaction currency. |
+| base_currency | string | Debited wallet/base currency. |
+| secondary_currency | string | Secondary settlement currency if present. |
+| exchange_data | object | Fee/rate and credited amount breakdown (payins). |
+| payment_gateway | object | Payment gateway metadata used for payin. |
+| payment_info | object | Canonical payment record stored for this transaction. |
+| checkout_url | object/null | Checkout URL block for payment links. |
+| created_at | string | Transaction creation timestamp. |
+| user | object | Snapshot of user profile fields. |
+| customer | object | Snapshot of customer profile fields. |
+| customer.customer_id | string | Customer identifier. |
+| customer.customer_name | string | Customer display/legal name. |
+| customer.customer_email | string | Customer email. |
+| customer.customer_phone | string | Customer phone number. |
+| customer.customer_country | string | Customer country code. |
+| customer.customer_status | string | Customer state (`active`, etc.). |
+
+---
+
+## Notes for Integrators
+
+- Keep `amount` and `amount_recevied` separate in your UI and reconciliation logic.
+- Treat `amount` as wallet credit.
+- Treat `amount_recevied` as sender-side transfer value.
+- Show `transaction_fee` as your own platform fee.
+- Rail/provider fee deductions (for example FedWire) can explain differences between sent and credited amounts.

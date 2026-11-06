@@ -1,0 +1,202 @@
+---
+title: "KYC & endorsements"
+description: "Endorsement resubmission for individual and business customers."
+---
+
+For full KYC and KYB submission flows, lookup endpoints, and endorsement tracking, see [KYC / KYB verification](/yativo-fiat/kyc).
+
+This page focuses on **resubmitting one endorsement** on the main API without re-running every other endorsement on the customer.
+
+## Environments
+
+| Environment | Base URL |
+|---|---|
+| Production API | `https://api.yativo.com/api/v1` |
+| Sandbox API | `https://smtp.yativo.com/api/v1` |
+
+Authenticate with your team's API key pair (`X-Api-Key` and `X-Api-Secret`). See [Authentication](/yativo-platform/authentication).
+
+## Response envelope
+
+Every endpoint returns the standard envelope:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": { }
+}
+```
+
+```json
+{
+  "status": "failed",
+  "status_code": 422,
+  "message": "Request failed.",
+  "data": { "error": "..." }
+}
+```
+
+## Endorsements you can resubmit (main API)
+
+An **endorsement** is one capability a customer can be verified for. These endorsements support resubmission through `POST /customer/kyc/resubmit/{customer_id}/{endorsement}` today:
+
+| Endorsement | Description |
+|---|---|
+| `base` | Base identity verification |
+| `sepa` | Euro-area bank transfers |
+| `spei` | Mexican peso bank transfers |
+| `faster_payments` | Faster local bank transfers |
+| `naira` | Nigerian naira collection account |
+| `virtual_card` | Virtual card issuance eligibility |
+| `asian` | Asia-region verification |
+| `brazil` | Brazilian real transfers |
+| `card_checkout` | Selling by card through [Card Checkout](/yativo-platform/cards-and-accounts/card-checkout). Also accepts **business** customers. If your account doesn't have Card Checkout yet, access is requested for you and the customer waits (`202`, `awaiting_business_access: true`) until it's approved. |
+
+Other endorsement names exist on a customer's profile (for example `cobo_pobo`, `native`, `eurde`, `usd_latam`, `eur_latam`) but don't support resubmission through this endpoint yet. Calling it with one of those returns `422`.
+
+## Resubmit an endorsement
+
+```http
+POST /api/v1/customer/kyc/resubmit/{customerId}/{endorsement}
+X-Api-Key: <YOUR_API_KEY>
+X-Api-Secret: <YOUR_API_SECRET>
+Accept: application/json
+```
+
+| Path parameter | Type | Description |
+|---|---|---|
+| `customerId` | string | The customer's `customer_id` |
+| `endorsement` | string | One of the endorsement values above |
+
+This applies to **individual** customers only, except `card_checkout`, which accepts business customers too.
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/kyc/resubmit/c586066b-0f29-468f-b775-15483871a202/faster_payments' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: resubmit-fp-001'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": { "message": "KYC resubmission for \"faster_payments\" queued." }
+}
+```
+
+```json Card checkout — access not enabled yet
+{
+  "status": "success",
+  "status_code": 202,
+  "message": "Card checkout access has been requested for this business. This request continues automatically once it is approved.",
+  "data": {
+    "customer_id": "4f0c1e1a-0f29-468f-b775-15483871a202",
+    "endorsement_status": "pending",
+    "awaiting_business_access": true
+  }
+}
+```
+</ResponseExample>
+
+A `200` means the resubmission was accepted and queued. It does **not** mean verification finished. Watch [`endorsement.updated`](/yativo-fiat/webhooks#endorsementupdated) or read `GET /customer/{customer_id}`.
+
+## Checking the result
+
+```http
+GET /api/v1/customer/{customerId}
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "customer_id": "cus_9f1c2a3b",
+    "endorsement": [
+      {
+        "service": "Faster payments",
+        "status": "submitted",
+        "hosted_kyc_url": null,
+        "errors": null,
+        "metadata": {
+          "last_resubmission": {
+            "success": true,
+            "message": "Submitted for verification.",
+            "at": "2026-09-16T18:04:22+00:00"
+          }
+        },
+        "updated": "Sep 16, 2026 18:04"
+      }
+    ]
+  }
+}
+```
+
+- `status` moves through `not_started` → `submitted` → `under_review` → `approved` / `declined` / `rejected`.
+- `metadata.last_resubmission` reflects the outcome of your most recent resubmission call. `success: false` there means the resubmission itself couldn't be processed, not that verification was declined.
+- `service` is title-cased (for example `"Faster payments"`). Compare against the lowercase form you sent (`faster_payments`).
+
+| `last_resubmission.message` when `success` is `false` | Meaning |
+|---|---|
+| `Identity document and selfie are required before resubmission.` | Upload both before retrying. |
+| `Verification has not been started for this customer yet.` | Complete initial verification for this endorsement first. |
+| `Submission failed.` | Transient error — safe to retry. |
+
+## Error responses
+
+| Status | Body `data.error` | Cause |
+|---|---|---|
+| `404` | `Customer not found` | No customer with that `customer_id` on your account. |
+| `404` | `Individual KYC submission not found` | Customer exists but has no KYC data on file yet. |
+| `422` | `This endpoint only supports individual customers` | `customerId` belongs to a business customer (not `card_checkout`). |
+| `422` | `Unknown endorsement "...". Valid endorsements: ...` | `endorsement` isn't recognized. |
+| `422` | `Resubmission for "..." is not supported yet.` | Recognized endorsement that doesn't support resubmission yet. |
+
+## Integration example
+
+<RequestExample>
+```javascript Node.js
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'https://api.yativo.com/api/v1',
+  headers: {
+    Accept: 'application/json',
+    'X-Api-Key': process.env.YATIVO_API_KEY,
+    'X-Api-Secret': process.env.YATIVO_API_SECRET,
+  },
+});
+
+await api.post(`customer/kyc/resubmit/${customerId}/faster_payments`);
+
+const { data } = await api.get(`customer/${customerId}`);
+const endorsement = data.data.endorsement.find(
+  (e) => e.service.toLowerCase() === 'faster payments',
+);
+console.log(endorsement.status);
+```
+</RequestExample>
+
+## KYC platform resubmit (individual or business)
+
+For any endorsement, including `cobo_pobo`, `native`, `eurde`, and LATAM rails, use the KYC platform:
+
+```
+POST https://kyc.yativo.com/api/kyc/endorsements/{customer_id}/{service}/resubmit
+```
+
+See [Resubmit one endorsement](/yativo-fiat/kyc#on-the-kyc-platform-individual-or-business) for status codes and rate limits.
+
+## Notes
+
+- Resubmission affects **one** endorsement only.
+- Calling this repeatedly for an endorsement that's already `approved` won't downgrade an existing approval purely from this call succeeding.
+- Resubmission runs on a background queue; expect status changes within seconds to a couple of minutes.

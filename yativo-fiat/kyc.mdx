@@ -795,6 +795,7 @@ You don't request endorsements directly. Which ones are attempted depends on you
 | `usd_latam`, `eur_latam` | Once `brazil` is approved | Nothing extra |
 | `virtual_card` | With an ID front image (not needed for tax-ID types such as `bvn` or `nin`) | Cardholder name, date of birth, ID number, email, phone and address. For a business, the associated person with the highest `ownership_percentage` is the cardholder |
 | `naira` | A Nigerian person with a BVN: individuals with `bvn`, businesses registered in Nigeria or with a Nigerian associated person who has a `bvn` entry in `identifying_information` | The BVN must match a real record. The person also needs an email, a phone and a date of birth showing they're 18 or older. For a business, the account opens in the company's name |
+| `card_checkout` | When you submit the customer's card-checkout endorsement (individual or business) | Card Checkout selling eligibility. Requires Card Checkout on your account; see [Card Checkout](/yativo-platform/cards-and-accounts/card-checkout) |
 
 Three endorsements reject outright instead of waiting in `under_review`:
 
@@ -818,6 +819,7 @@ If an endorsement can't be submitted at all, because a required document or fiel
 | A payout method | The endorsement for that method. A payout without it fails with `This customer isn't enabled for this payout method yet.` |
 | Corporate cards | `cobo_pobo` |
 | Virtual cards | `virtual_card` |
+| Card Checkout (merchant selling) | `card_checkout` |
 
 ```bash cURL
 curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/currencies-and-endorsements' \
@@ -909,7 +911,7 @@ After a customer updates their ID document or selfie, re-run verification for on
 POST https://api.yativo.com/api/v1/customer/kyc/resubmit/{customer_id}/{endorsement}
 ```
 
-`endorsement` is one of `base`, `sepa`, `spei`, `faster_payments`, `naira`, `virtual_card`, `asian` or `brazil`. This works for individual customers only. For a business, or for `cobo_pobo`, `native`, `eurde`, `usd_latam` or `eur_latam`, use the KYC platform endpoint below.
+`endorsement` is one of `base`, `sepa`, `spei`, `faster_payments`, `naira`, `virtual_card`, `asian`, `brazil` or `card_checkout`. This works for **individual** customers only, except `card_checkout`, which also accepts **business** customers. For other endorsements (`cobo_pobo`, `native`, `eurde`, `usd_latam`, `eur_latam`), or to resubmit any endorsement for a business customer other than `card_checkout`, use the KYC platform endpoint below.
 
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer/kyc/resubmit/c586066b-0f29-468f-b775-15483871a202/faster_payments' \
@@ -927,7 +929,20 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/kyc/resubmit/c586066b-0f29-
 }
 ```
 
-A `200` means the resubmission was queued, not that verification finished. Watch for `endorsement.updated`, or check the endorsement's `status` with `GET /customer/{customer_id}`. Its `metadata.last_resubmission` shows whether the resubmission itself could be processed:
+```json Card checkout — account access pending
+{
+  "status": "success",
+  "status_code": 202,
+  "message": "Card checkout access has been requested for this business. This request continues automatically once it is approved.",
+  "data": {
+    "customer_id": "4f0c1e1a-0f29-468f-b775-15483871a202",
+    "endorsement_status": "pending",
+    "awaiting_business_access": true
+  }
+}
+```
+
+A `200` means the resubmission was queued, not that verification finished. For `card_checkout`, a `202` with `awaiting_business_access: true` means Card Checkout isn't enabled on your account yet; Yativo filed the access request and will continue automatically when it's approved. Watch for `endorsement.updated`, or check the endorsement's `status` with `GET /customer/{customer_id}`. Its `metadata.last_resubmission` shows whether the resubmission itself could be processed:
 
 | `last_resubmission.message` when `success` is `false` | Meaning |
 |---|---|
@@ -939,7 +954,7 @@ A `200` means the resubmission was queued, not that verification finished. Watch
 |---|---|---|
 | `404` | `Customer not found` | No customer with that ID on your account |
 | `404` | `Individual KYC submission not found` | The customer has no KYC data yet |
-| `422` | `This endpoint only supports individual customers` | The customer is a business |
+| `422` | `This endpoint only supports individual customers` | The customer is a business (not `card_checkout`) |
 | `422` | `Unknown endorsement "...". Valid endorsements: ...` | `endorsement` isn't supported |
 
 `service` in the customer's `endorsement` list is title-cased, for example `"Faster payments"`. Compare it with the lowercase form you sent.
@@ -983,6 +998,7 @@ Each endorsement unlocks one service. Its status is the verification result for 
 | `asian` | Asian region payments |
 | `native` | Native payment rails |
 | `cobo_pobo` | Collection / payment-on-behalf-of. Also required for [corporate cards](/yativo-fiat/sandbox-corporate-cards) |
+| `card_checkout` | Card Checkout — accept card payments as a sub-merchant |
 
 ### Endorsement statuses
 

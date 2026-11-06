@@ -1,0 +1,150 @@
+---
+title: "Quickstart Guide"
+description: "Start integrating with Yativo in under 5 minutes using API keys and sandbox endpoints."
+---
+
+This guide gets you up and running with Yativo's sandbox environment, from obtaining test credentials to executing a payout and setting up webhooks.
+
+## 1. Obtain Team API Keys
+
+Sign in to the [Yativo Dashboard](https://app.yativo.com) (or sandbox dashboard) and navigate to **Settings → API Keys**.
+
+Create a new API Key pair:
+- **`X-Api-Key`**: A public identifier (`yativo_pk_...`).
+- **`X-Api-Secret`**: A secret token (`yativo_sk_...`). Keep this private and never expose it in client-side code.
+
+<Note>
+In production, you must whitelist your backend server's public IP address before making requests. In the sandbox (`https://smtp.yativo.com`), IP whitelisting is optional.
+</Note>
+
+---
+
+## 2. Authenticate Your Requests
+
+Pass your API credentials as HTTP headers in every request:
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://smtp.yativo.com/api/v1/payment-methods/payout" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Accept: application/json"
+```
+
+```javascript Node.js
+const axios = require('axios');
+
+const client = axios.create({
+  baseURL: 'https://smtp.yativo.com/api/v1',
+  headers: {
+    'X-Api-Key': process.env.YATIVO_API_KEY,
+    'X-Api-Secret': process.env.YATIVO_API_SECRET,
+    'Content-Type': 'application/json',
+  },
+});
+
+async function getPayoutMethods() {
+  const { data } = await client.get('/payment-methods/payout');
+  console.log(data);
+}
+```
+
+```php PHP
+$client = new \GuzzleHttp\Client([
+    'base_uri' => 'https://smtp.yativo.com/api/v1/',
+    'headers' => [
+        'X-Api-Key' => env('YATIVO_API_KEY'),
+        'X-Api-Secret' => env('YATIVO_API_SECRET'),
+        'Accept' => 'application/json',
+    ]
+]);
+
+$response = $client->get('payment-methods/payout');
+$data = json_decode($response->getBody(), true);
+```
+
+```python Python
+import os
+import requests
+
+headers = {
+    "X-Api-Key": os.environ["YATIVO_API_KEY"],
+    "X-Api-Secret": os.environ["YATIVO_API_SECRET"],
+    "Accept": "application/json"
+}
+
+response = requests.get("https://smtp.yativo.com/api/v1/payment-methods/payout", headers=headers)
+print(response.json())
+```
+
+</CodeGroup>
+
+---
+
+## 3. Create a Customer and Beneficiary
+
+Before disbursing a payout, register a customer and add a destination payout method (e.g., recipient bank account or mobile wallet):
+
+```bash cURL
+curl -X POST "https://smtp.yativo.com/api/v1/beneficiaries/payment-methods" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "beneficiary_id": 101,
+    "gateway_id": 7,
+    "currency": "USD",
+    "nickname": "Primary Account",
+    "payment_data": {
+      "account_number": "123456789",
+      "routing_number": "021000021"
+    }
+  }'
+```
+
+The response returns a `payment_method_id` (e.g. `18096`).
+
+---
+
+## 4. Execute a Payout
+
+The standard payout endpoint is `POST /api/v1/payout/simple`:
+
+```bash cURL
+curl -X POST "https://smtp.yativo.com/api/v1/payout/simple" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 3f1c2a1e-8b7d-4c1e-9f0a-6d2b5e7c9a10" \
+  -d '{
+    "payment_method_id": 18096,
+    "debit_wallet": "USD",
+    "customer_id": "d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d",
+    "quote_id": "756979af-784f-4933-9ac1-76bddbeb333d"
+  }'
+```
+
+<Tip>
+You can specify a locked `quote_id` to guarantee rates and fees, or pass `"amount": 250.00` directly.
+</Tip>
+
+---
+
+## 5. Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Payouts Documentation" icon="paper-plane" href="/yativo-platform/money-movement/payouts">
+    Learn about single and batch payouts, quotes, and delivery rails.
+  </Card>
+  <Card title="Webhook Integration" icon="bolt" href="/yativo-platform/webhooks/overview">
+    Configure automated listeners to react to status updates.
+  </Card>
+  <Card title="Sandbox Simulation" icon="flask" href="/yativo-platform/testing/sandbox-testing">
+    Simulate deposits and payouts on the sandbox environment.
+  </Card>
+  <Card title="Team & IP Security" icon="shield-halved" href="/yativo-platform/security/ip-whitelisting">
+    Harden your production credentials with IP whitelists and permissions.
+  </Card>
+</CardGroup>
+

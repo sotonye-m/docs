@@ -1,0 +1,505 @@
+---
+title: "Yativo MCP Server"
+description: "Yativo MCP Server — integration guide for the Yativo API."
+---
+
+This guide is for developers and business users who want an AI assistant or
+agent to work with their Yativo account. Supported clients include claude.ai,
+Claude Code, Claude Desktop, Cursor, VS Code and other MCP clients.
+
+The Yativo MCP server gives the assistant **read-only** tools to check
+balances, payouts, deposits, beneficiaries and payout methods. It can't
+quote or send payouts, move money or change anything on your account. Use
+the dashboard or the REST API for that.
+
+- [Environments](#environments)
+- [Authentication](#authentication)
+- [Connecting a client](#connecting-a-client)
+  - [claude.ai (web, desktop and mobile)](#claudeai-web-desktop-and-mobile)
+  - [Claude Code](#claude-code)
+  - [Claude Desktop (API key)](#claude-desktop-api-key)
+  - [Cursor](#cursor)
+  - [VS Code](#vs-code)
+  - [Any other client](#any-other-client)
+- [Tools](#tools)
+- [Example prompts](#example-prompts)
+- [Calling the server directly](#calling-the-server-directly)
+- [Errors](#errors)
+- [Rate limits](#rate-limits)
+- [Managing connected apps](#managing-connected-apps)
+- [Security best practices](#security-best-practices)
+- [FAQ](#faq)
+
+---
+
+## Environments
+
+Sandbox and production each have their own MCP server:
+
+| Environment | MCP endpoint | Server name (`serverInfo.name`) |
+|---|---|---|
+| Sandbox | `https://smtp.yativo.com/mcp` | `yativo-mcp` (v1.0.0) |
+| Sandbox (alternate host) | `https://smtp.yativo.com/mcp` | `yativo-mcp` (v1.0.0) |
+| Production | `https://api.yativo.com/mcp` | `yativo-mcp` (v1.0.0) |
+
+The two environments are completely separate:
+
+- Sandbox API keys, OAuth connections, balances and payouts do not exist in
+  production, and production ones do not exist in sandbox.
+- Sandbox data is test data. Production data is your real account.
+- You can connect both in the same client. Give them different names, such
+  as `yativo-sandbox` and `yativo`, so you can always tell them apart.
+
+The server informs the assistant whether it is connected to Sandbox or
+Production via its system instructions.
+
+The server uses the MCP **Streamable HTTP** transport. Every request is a
+JSON-RPC `POST` to the endpoint. `GET` and `DELETE` return
+`405 Method Not Allowed`.
+
+## Authentication
+
+You can sign in to the MCP server in either of two ways:
+
+| Method | Best for | How |
+|---|---|---|
+| **OAuth sign-in** | claude.ai and other clients with a "Connect" button | Add the server URL. The client opens a Yativo sign-in page, and you approve access. |
+| **API key and secret** | Claude Code, Cursor, VS Code, scripts | Send the `X-Api-Key` and `X-Api-Secret` headers on every request. |
+
+Both methods act on the same business account, and both follow your
+[team permissions](/yativo-platform/security/team-management). A team member who can't view
+payouts in the dashboard can't view them through MCP either.
+
+**OAuth sign-in** works like this:
+
+1. You enter your Yativo account email.
+2. You enter the 6-digit code we send to that email.
+3. If you use two-factor authentication, you also enter the code from your
+   authenticator app.
+4. You review what the app will be able to do and click **Allow access**.
+
+The approval screen appears every time an app connects, even if you
+approved it before. Sign-in codes expire after 10 minutes, and a code is
+invalidated after 5 wrong attempts.
+
+Access tokens last **15 minutes**, and your client renews them automatically
+with the refresh token for up to 30 days. You can revoke an app at any time.
+See [Managing connected apps](#managing-connected-apps).
+
+**API keys** are created as described in
+[Team API Keys](/yativo-platform/authentication), and the
+same rules apply to MCP requests. Create a **separate key** for each
+assistant or machine. You can then revoke one without breaking your other
+integrations.
+
+## Connecting a client
+
+The examples below use the production URL. For sandbox, use
+`https://smtp.yativo.com/mcp` and a sandbox key.
+
+### claude.ai (web, desktop and mobile)
+
+1. In claude.ai, open **Settings → Connectors → Add custom connector**.
+2. Name it **Yativo**, or **Yativo Sandbox**, and enter the MCP endpoint URL.
+3. Click **Connect**. A Yativo sign-in page opens.
+4. Sign in with your email code, and your 2FA code if you use 2FA, then
+   click **Allow access**.
+
+The connector then works in claude.ai on the web, in the Claude desktop app
+and in the Claude mobile apps. On Team and Enterprise plans, an owner may
+need to add the connector for the organization first.
+
+### Claude Code
+
+With OAuth (Claude Code opens the sign-in page in your browser):
+
+```bash
+claude mcp add --transport http yativo https://api.yativo.com/mcp
+```
+
+Then run `/mcp` inside Claude Code, select `yativo` and choose
+**Authenticate**.
+
+With an API key:
+
+```bash
+claude mcp add --transport http yativo https://api.yativo.com/mcp \
+  --header "X-Api-Key: yativo_pk_..." \
+  --header "X-Api-Secret: yativo_sk_..."
+```
+
+To add sandbox alongside production:
+
+```bash
+claude mcp add --transport http yativo-sandbox https://smtp.yativo.com/mcp \
+  --header "X-Api-Key: yativo_pk_sandbox..." \
+  --header "X-Api-Secret: yativo_sk_sandbox..."
+```
+
+### Claude Desktop (API key)
+
+The simplest option is to add Yativo as a connector in claude.ai (see
+above). It then appears in Claude Desktop automatically.
+
+To use an API key instead, go through the `mcp-remote` bridge, which requires
+Node.js 18 or later. Add this to `claude_desktop_config.json`
+(**Settings → Developer → Edit Config**):
+
+```json
+{
+  "mcpServers": {
+    "yativo": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://api.yativo.com/mcp",
+        "--header", "X-Api-Key:${YATIVO_API_KEY}",
+        "--header", "X-Api-Secret:${YATIVO_API_SECRET}"
+      ],
+      "env": {
+        "YATIVO_API_KEY": "yativo_pk_...",
+        "YATIVO_API_SECRET": "yativo_sk_..."
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop after saving.
+
+### Cursor
+
+Add this to `~/.cursor/mcp.json`, or to `.cursor/mcp.json` in a project:
+
+```json
+{
+  "mcpServers": {
+    "yativo": {
+      "url": "https://api.yativo.com/mcp",
+      "headers": {
+        "X-Api-Key": "yativo_pk_...",
+        "X-Api-Secret": "yativo_sk_..."
+      }
+    }
+  }
+}
+```
+
+To sign in with OAuth instead, leave out `headers`. Cursor then opens the
+Yativo sign-in page.
+
+### VS Code
+
+Add this to `.vscode/mcp.json`. VS Code prompts for the secret once and
+keeps it in secure storage:
+
+```json
+{
+  "inputs": [
+    { "id": "yativo-key", "type": "promptString", "description": "Yativo API key" },
+    { "id": "yativo-secret", "type": "promptString", "description": "Yativo API secret", "password": true }
+  ],
+  "servers": {
+    "yativo": {
+      "type": "http",
+      "url": "https://api.yativo.com/mcp",
+      "headers": {
+        "X-Api-Key": "${input:yativo-key}",
+        "X-Api-Secret": "${input:yativo-secret}"
+      }
+    }
+  }
+}
+```
+
+To sign in with OAuth instead, leave out `headers` and `inputs`.
+
+### Any other client
+
+Any client that supports the **Streamable HTTP** transport can connect. It
+can either send the two API-key headers, or follow the MCP OAuth flow. The
+server advertises OAuth through
+`/.well-known/oauth-protected-resource/mcp` and supports dynamic client
+registration and PKCE (S256).
+
+## Tools
+
+| Tool | What it does | Arguments | Changes data? |
+|---|---|---|---|
+| `get-wallet-balances` | Returns each wallet's currency and balance, plus the combined balance in USD | none | No |
+| `list-payouts` | Lists payouts, newest first | `status`, `currency`, `page`, `per_page` | No |
+| `get-payout` | Returns one payout, with its beneficiary | `payout_id` (required UUID) | No |
+| `list-deposits` | Lists deposits, newest first | `status`, `currency`, `customer_id`, `page`, `per_page` | No |
+| `get-deposit` | Returns one deposit | `deposit_id` (required UUID) | No |
+| `list-beneficiaries` | Lists saved beneficiaries (archived ones excluded), with their payment methods | `search` (min 3 chars), `page`, `per_page` | No |
+| `list-payout-methods` | Lists active payout methods | `country` (ISO-3166 alpha-3, e.g. `CHL`), `currency` (e.g. `CLP`) | No |
+
+Every tool is marked `readOnlyHint: true`. None of them moves money or
+changes your account.
+
+Each tool returns a JSON document as text content.
+
+### `get-wallet-balances`
+
+Balances are in **major units**, so `1250.5` means 1,250.50.
+
+```json
+{
+  "wallets": [
+    { "currency": "USD", "name": "USD", "balance": 1250.5, "usd_equivalent": 1250.5 },
+    { "currency": "CLP", "name": "CLP", "balance": 480000, "usd_equivalent": 507.12 }
+  ],
+  "total_balance_usd": 1757.62
+}
+```
+
+`usd_equivalent` uses a live reference rate and is for display only. It is
+`null` if no rate is available for that currency.
+
+### List tools
+
+`list-payouts`, `list-deposits` and `list-beneficiaries` are paginated. The
+default page size is 15 and the maximum is 50.
+
+```json
+{
+  "data": [ { "...": "one object per payout / deposit / beneficiary" } ],
+  "pagination": { "current_page": 1, "per_page": 15, "total": 42, "last_page": 3 }
+}
+```
+
+Each item has the same fields as the matching REST endpoint, minus internal
+references (provider ids, ledger ids and request fingerprints), which the
+server never returns:
+
+| Tool | Same shape as |
+|---|---|
+| `list-payouts`, `get-payout` | `GET /api/v1/wallet/payout/{id}` |
+| `list-deposits`, `get-deposit` | `GET /api/v1/wallet/deposits` items |
+| `list-beneficiaries` | `GET /api/v1/beneficiaries/list` items |
+| `list-payout-methods` | `GET /api/v1/payment-methods/payout` |
+
+### PII Protection & Identifier Safety
+
+- **Public UUID boundary:** All object IDs exposed through MCP (`payout_id`, `deposit_id`) are UUIDs. Internal integer primary keys are strictly rejected at the tool boundary.
+- **Beneficiary PII Masking:** Under default MCP scopes (`mcp:use`), sensitive beneficiary personal identifiable information is automatically redacted:
+  - Email addresses are masked (e.g. `j***@e***.com`).
+  - Bank account numbers, IBANs, CLABEs, phone numbers and crypto addresses are masked to the last 4 digits (`****1234`).
+  - National/tax IDs (RUC, RUT, CPF, DNI, SSN, etc.) and physical street address lines are omitted.
+
+## Example prompts
+
+- "What's my current Yativo balance in each currency?"
+- "Show my last 10 payouts that failed and summarise why."
+- "Did the deposit `9b1f...` complete?"
+- "Which payout methods do you support for CLP?"
+- "Which Yativo environment are you connected to?"
+
+## Calling the server directly
+
+You can test the server without an AI client. Send one JSON-RPC request per
+`POST`:
+
+```bash
+# 1. Handshake
+curl -s https://smtp.yativo.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "X-Api-Key: yativo_pk_..." \
+  -H "X-Api-Secret: yativo_sk_..." \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1.0"}}}'
+
+# 2. List tools
+curl -s https://smtp.yativo.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -H "X-Api-Key: yativo_pk_..." \
+  -H "X-Api-Secret: yativo_sk_..." \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+
+# 3. Call a tool
+curl -s https://smtp.yativo.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -H "X-Api-Key: yativo_pk_..." \
+  -H "X-Api-Secret: yativo_sk_..." \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list-payouts","arguments":{"status":"failed","per_page":5}}}'
+```
+
+A successful tool call returns:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [ { "type": "text", "text": "{\"data\":[...],\"pagination\":{...}}" } ],
+    "isError": false
+  }
+}
+```
+
+The `initialize` response's `serverInfo.name` is `yativo-mcp` (version `1.0.0`).
+The environment context (Sandbox vs. Production) is indicated in the server's instructions.
+
+## Errors
+
+Authentication errors are returned **before** the request reaches the MCP
+server. They are plain HTTP responses in the standard Yativo error format,
+not JSON-RPC:
+
+| HTTP | `data.error` | Cause |
+|---|---|---|
+| `401` | `Both X-Api-Key and X-Api-Secret headers are required.` | Only one of the two headers was sent. |
+| `401` | `Invalid or revoked API credentials.` | The key doesn't exist, has been revoked, or the secret is wrong. It may also belong to the other environment. |
+| `401` | `Unauthenticated` | No credentials were sent, or the OAuth token expired or was disconnected. |
+| `429` | — | Rate limit exceeded. See [Rate limits](#rate-limits). |
+
+Every `401` includes a `WWW-Authenticate` header that points to the
+server's OAuth metadata. OAuth clients use it to start or renew sign-in
+automatically.
+
+```json
+{
+  "status": "failed",
+  "status_code": 401,
+  "message": "Request failed.",
+  "data": { "error": "Invalid or revoked API credentials." }
+}
+```
+
+Once a request is authenticated, errors from a tool come back as a normal
+JSON-RPC result with `isError: true`. The assistant sees the message and can
+act on it:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "result": {
+    "content": [ { "type": "text", "text": "Payout not found." } ],
+    "isError": true
+  }
+}
+```
+
+Arguments that fail validation, such as `per_page` above 50, also return
+`isError: true`, with the validation message as the text. The server returns a
+JSON-RPC `error` object only for protocol problems such as an unknown tool
+name or malformed JSON.
+
+## Rate limits
+
+Each account can make **60 MCP requests per minute**. Every `tools/call`,
+`tools/list` and `initialize` counts toward the limit. Above it, the server
+returns `429 Too Many Requests` with a `Retry-After` header.
+
+## Managing connected apps
+
+Apps that connected with OAuth are managed through the REST API. The
+endpoints use the environment's usual base URL (`https://api.yativo.com/api/v1`
+or `https://smtp.yativo.com/api/v1`) and the same authentication as any
+other endpoint.
+
+Connections belong to the person who approved them. These endpoints always
+list and revoke **your own** connections, even when you are a team member.
+
+They take the dashboard bearer token. Since **15 October 2026** a bearer token
+is accepted only from the Yativo dashboard (`https://app.yativo.com`), so call
+them from the dashboard; the `curl` examples below show the request shape.
+
+### List connected apps
+
+`GET /mcp/connections`
+
+```bash
+curl -s https://api.yativo.com/api/v1/mcp/connections \
+  -H "Authorization: Bearer <token>"
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "client_id": "a2dcf5e2-ae51-4873-97b8-f294151b53ea",
+      "name": "Claude",
+      "scopes": ["mcp:use"],
+      "connected_at": "2026-09-29T16:20:11.000000Z",
+      "last_authorized_at": "2026-09-29T16:41:37.000000Z"
+    }
+  ]
+}
+```
+
+An app appears in the list while it still has access, meaning it holds an
+unexpired access token or a refresh token that can still be used.
+
+### Revoke a connected app
+
+`DELETE /mcp/connections/{client_id}`
+
+```bash
+curl -s -X DELETE https://api.yativo.com/api/v1/mcp/connections/a2dcf5e2-ae51-4873-97b8-f294151b53ea \
+  -H "Authorization: Bearer <token>"
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Connection revoked. The app can no longer access this account.",
+  "data": { "client_id": "a2dcf5e2-ae51-4873-97b8-f294151b53ea", "revoked": true }
+}
+```
+
+Revoking takes effect immediately. The app's access token stops working and
+its refresh token can't be renewed. To reconnect, the app has to go through
+sign-in and approval again. A `client_id` with no active connection returns
+`404 Connection not found`.
+
+API-key connections are managed from your API keys instead. Revoking a key
+disconnects every client that uses it.
+
+## Security best practices
+
+- **Try it in sandbox first.** Connect the sandbox endpoint, then connect
+  production.
+- **Use team permissions.** A team member without permission to view
+  payouts, deposits or beneficiaries can't view them through MCP either.
+  Connect assistants as members with the least access they need.
+- **Use one key or connection per assistant or machine.** Label API keys,
+  e.g. "Cursor – Ana's laptop", and disconnect apps you no longer use.
+- **Keep secrets out of repositories.** Use environment variables, VS Code
+  `inputs`, OAuth sign-in, or your client's secret storage.
+- **Treat tool output as sensitive.** Beneficiary data includes names,
+  emails and saved bank details. Only connect AI apps your company allows to
+  process that data.
+
+## FAQ
+
+**Can the assistant send money?**
+No. The MCP server is read-only. Quoting and sending payouts require the
+dashboard or the REST API.
+
+**Can a team member use it?**
+Yes. Team members sign in with OAuth and act on the team's business account
+with their own permissions. API keys act as the team owner. A dashboard
+session token (`Authorization: Bearer <token>`) also works, but since
+**15 October 2026** only from the Yativo dashboard (`https://app.yativo.com`);
+AI apps and scripts must use OAuth or an API key from a whitelisted IP.
+
+**Which data can the assistant see?**
+Only data for the account you signed in to, or that owns the API key: its
+wallets, payouts, deposits and beneficiaries, plus the public list of payout
+methods.
+
+**How do I know if I'm on sandbox or production?**
+The server identifies its environment in its instructions. You can also ask the assistant "Which Yativo environment are you connected to?".
+
+**Can I use a sandbox key on production, or the other way round?**
+No. Each environment only accepts its own keys and OAuth connections.

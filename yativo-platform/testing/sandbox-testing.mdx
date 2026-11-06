@@ -1,0 +1,249 @@
+---
+title: "Testing on sandbox"
+description: "Testing on sandbox — integration guide for the Yativo API."
+---
+
+Sandbox is a separate Yativo environment. Keys, customers, balances and
+webhooks never mix with production. Use it to settle test payins and payouts,
+credit a wallet, and fire the same webhooks your live integration will see.
+
+**Base URL:** `https://smtp.yativo.com`
+
+These helpers run only on `https://smtp.yativo.com`. Calling them on
+`api.yativo.com`, `office.yativo.com`, or any other host on the production
+server returns the same generic `404 Not found` as an unknown route. The
+handler also refuses the request when this process is the production
+server, so a Host-header spoof cannot credit or settle.
+
+## Authentication
+
+Same as every other business endpoint:
+
+```http
+X-Api-Key: <YOUR_SANDBOX_API_KEY>
+X-Api-Secret: <YOUR_SANDBOX_API_SECRET>
+```
+
+See [Team API Keys](/yativo-platform/authentication). An IP whitelist is
+**optional** on sandbox. Production keys still need one — a production
+request with no whitelist is `401`.
+
+---
+
+## Sandbox simulation endpoints
+
+All of the helpers below live only on sandbox. Production returns the same
+generic `404 Not found` as an unknown route.
+
+| Endpoint | What it does |
+|----------|----------------|
+| [`POST /api/v1/wallet/sandbox/topup`](#1-credit-a-test-wallet) | Credit test funds to a wallet you already have. |
+| [`POST /api/v1/sandbox/transactions/{id}/succeed`](#2-mark-a-payin-or-payout-success-or-fail) | Settle a pending payin or payout as success. |
+| [`POST /api/v1/sandbox/transactions/{id}/fail`](#2-mark-a-payin-or-payout-success-or-fail) | Settle a pending payin or payout as failed. |
+| [`POST /api/v1/business/virtual-account/create`](#3-virtual-account-creation-on-sandbox) | Issue simulated virtual accounts for any currency with dummy data. |
+| [`POST /api/v1/sandbox/virtual-accounts/{accountId}/simulate-deposit`](#4-simulate-a-virtual-account-deposit) | Credit (or fail) a deposit into one of your virtual accounts. |
+| [`POST /api/v1/sandbox/virtual-cards/{cardId}/simulate`](#5-simulate-a-virtual-card-event) | Fire a `virtualcard.*` event on one of your cards. |
+| [`POST /api/v1/sandbox/spend-cards/{cardId}/simulate`](#6-simulate-a-spend-card-event) | Fire a `business_spend_card.*` event on one of your spend cards. |
+| [`POST /api/v1/demo/webhook/{type}`](#7-sample-webhooks-without-creating-records) | Send a signed sample event without creating a record. |
+
+---
+
+## 1. Credit a test wallet
+
+```
+POST /api/v1/wallet/sandbox/topup
+```
+
+```json
+{ "currency": "USD", "amount": 100 }
+```
+
+`amount` is in major units (100 credits 100.00). The wallet must already
+exist. USDC and OUSD stay blocked by their wallet guards.
+
+Send an `Idempotency-Key` if a retry should not add the funds twice. Without
+one, repeating the same body credits again — that is how you add more test
+funds.
+
+---
+
+## 2. Mark a payin or payout success or fail
+
+Create the deposit or payout with the normal endpoints, then settle it:
+
+```
+POST /api/v1/sandbox/transactions/{id}/succeed
+POST /api/v1/sandbox/transactions/{id}/fail
+```
+
+`{id}` is the deposit id, payout id, or the `transaction_id` from the
+transaction record. Only your own pending records can be settled.
+
+Succeeding a **deposit** credits the wallet the same way a real settlement
+does, and sends `deposit.updated`. Succeeding a **payout** marks it complete
+and sends `payout.updated`.
+
+Failing a pending deposit marks it `failed` (no credit). Failing a pending
+payout marks it `failed` and refunds the debit. A deposit that has already
+been credited, or a payout that has already completed, cannot be moved
+backwards (`409`).
+
+```bash
+curl -X POST https://smtp.yativo.com/api/v1/sandbox/transactions/dep_123/succeed \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET"
+```
+
+```bash
+curl -X POST https://smtp.yativo.com/api/v1/sandbox/transactions/payout_123/fail \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "reason": "insufficient_funds" }'
+```
+
+Pending payouts under **$50 USD** are also auto-completed every five minutes
+on sandbox; larger pending payouts are auto-failed. Use the endpoints above
+when you want a specific outcome immediately.
+
+---
+
+## 3. Virtual account creation on sandbox
+
+On sandbox, virtual account creation automatically provisions simulated virtual accounts for any supported currency (`USD`, `EUR`, `GBP`, `MXN`, `COP`, `NGN`, etc.) with dummy banking details, without calling external banking partners:
+
+```
+POST /api/v1/business/virtual-account/create
+```
+
+```json
+{
+  "currency": "USD",
+  "customer_id": "cus_123"
+}
+```
+
+The response returns a full dummy account with routing number, bank address, and account number. You can immediately use this account's `account_id` or `account_number` to test deposits via the simulation endpoint below.
+
+---
+
+## 4. Simulate a virtual account deposit
+
+```
+POST /api/v1/sandbox/virtual-accounts/{accountId}/simulate-deposit
+```
+
+`{accountId}` is the virtual account's `account_id` or `account_number`.
+The account must belong to you. Sandbox simulations do not charge VA fees.
+
+```json
+{
+  "amount": 250,
+  "outcome": "success",
+  "sender": {
+    "name": "Jane Doe",
+    "bank": "Sandbox Bank",
+    "account_number": "1234567890"
+  }
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `amount` | yes | Major units in the account's currency. |
+| `outcome` | no | `success` (default) credits the wallet and sends `virtual_account.deposit`. `fail` creates a failed deposit and sends the same event with `status: failed`. |
+| `sender` | no | Optional payer details included on the deposit and webhook. |
+
+---
+
+## 5. Simulate a virtual card event
+
+```
+POST /api/v1/sandbox/virtual-cards/{cardId}/simulate
+```
+
+The card must belong to your business. This updates local card status where
+the event would in production (for example a decline increments failed
+attempts) and sends the matching `virtualcard.*` webhook. It never calls
+the card issuer.
+
+```json
+{
+  "event": "virtualcard.transaction.settlement",
+  "amount": 12.5,
+  "outcome": "success"
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `event` | no | Any documented `virtualcard.*` event. Defaults to `virtualcard.transaction.settlement`, or `virtualcard.transaction.declined` when `outcome` is `fail`. |
+| `amount` | no | Major units. Default `4.5`. |
+| `outcome` | no | `success` or `fail`. Ignored when `event` is set. |
+| `transaction_type` | no | For contactless / refund / cross-border variants. |
+| `reason` | no | Optional decline reason. |
+
+See [Virtual card events](/yativo-platform/webhooks/overview#virtual-card-events-virtualcard).
+
+---
+
+## 6. Simulate a spend card event
+
+```
+POST /api/v1/sandbox/spend-cards/{cardId}/simulate
+```
+
+The card must belong to your business. Transaction events are written to the
+spend-card activity history and sent as `business_spend_card.transaction.*`.
+Lifecycle events (`created`, `funded`, `suspended`, …) only send the webhook.
+
+```json
+{
+  "event": "business_spend_card.transaction.approved",
+  "amount": 19.99,
+  "description": "Sandbox coffee"
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `event` | no | Any documented `business_spend_card.*` event. Defaults to `business_spend_card.transaction.approved`, or `.declined` when `outcome` is `fail`. |
+| `amount` | no | Major units. Default `9.99`. |
+| `outcome` | no | `success` or `fail`. Ignored when `event` is set. |
+| `description` | no | Shown on the simulated transaction. |
+
+See [Spend card events](/yativo-platform/webhooks/overview#business-spend-card-events-business_spend_card).
+
+---
+
+## 7. Sample webhooks without creating records
+
+When you only need to exercise your webhook handler, send a signed sample
+to your registered URL:
+
+```
+POST /api/v1/demo/webhook/{type}
+```
+
+`{type}` can be a legacy slug (`payin`, `payout`, `virtual_account`, `rfi`), a
+documented event name (`virtualcard.topup.completed`, `rfi.created`), or a family alias
+(`virtualcard`, `spendcard`, `card_checkout`).
+
+These samples do **not** credit a wallet or change a record. Prefer the
+simulate endpoints above when you need the object to exist afterwards.
+
+Full catalog and examples: [Testing your integration on sandbox](/yativo-platform/webhooks/overview#testing-your-integration-on-sandbox).
+
+---
+
+## Errors
+
+| HTTP | `data.error` | When |
+|------|--------------|------|
+| 404 | `Not found` | Called on production, or the request host is not a sandbox host. |
+| 404 | `Transaction not found` / `Virtual account not found` / `Virtual card not found` / `Spend card not found` | The id is not yours. |
+| 409 | A successful deposit cannot be marked failed… | The record is already in a terminal state that sandbox will not reverse. |
+
+Team members need the matching permission: **Transactions → create** to
+settle payins/payouts, **Deposits → create** to simulate a VA deposit,
+**Virtual cards → manage** to simulate a card event.

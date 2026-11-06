@@ -1,0 +1,199 @@
+---
+title: "Compliance RFIs (requests for information)"
+description: "List compliance RFIs, save draft answers, submit replies, and subscribe to live updates"
+---
+
+When a payment partner needs more information about a customer, payment, or transfer, Yativo records an **RFI** (request for information) on your account. You can list RFIs, save draft answers, and submit a complete reply from your own UI or workflow.
+
+<Warning>
+  Answers you save or submit through the API are **reviewed by Yativo** before anything is sent upstream. Yativo operations submits approved responses from the internal RFI workspace.
+</Warning>
+
+API responses do not include upstream provider names, provider-side ids, or provider dashboard links.
+
+## Environments
+
+| Environment | Base URL |
+|---|---|
+| Production | `https://api.yativo.com/api/v1` |
+| Sandbox | `https://smtp.yativo.com/api/v1` |
+
+Authenticate with `X-Api-Key` and `X-Api-Secret`. Team members need `team.kyc.view` to read RFIs and `team.kyc.submit` to save or submit answers.
+
+## Webhooks
+
+When an RFI is created or its state changes, Yativo posts to your webhook URL:
+
+- `rfi.created` — new RFI
+- `rfi.updated` — status change
+- `rfi.response_required` — open and waiting on you
+
+See [RFI webhook payloads](/yativo-fiat/webhooks#rfi-events-rficreated-rfiupdated-rfiresponse_required).
+
+---
+
+## List RFIs
+
+```
+GET /business/rfis
+```
+
+Query: `open_only=1`, `response_required=1`
+
+<RequestExample>
+```bash cURL
+curl -G 'https://api.yativo.com/api/v1/business/rfis' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  --data-urlencode 'open_only=1'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "current_page": 1,
+    "data": [
+      {
+        "id": 42,
+        "status": "action_required",
+        "category": "kyc",
+        "summary": "Source of Funds",
+        "instructions": "Please describe your e-commerce resale activities…",
+        "amount": null,
+        "currency": null,
+        "deadline": "2026-12-04T04:59:59+00:00",
+        "requested_items": [
+          {
+            "id": "2095d3da-2761-4d30-93e6-b46018bf576a",
+            "status": "requested",
+            "content": "Source of Funds",
+            "response_types": ["text", "free_text_explanation", "document_list"]
+          }
+        ],
+        "draft_responses": {},
+        "draft_responses_at": null,
+        "submitted_at": null,
+        "is_open": true,
+        "response_required": true,
+        "related_transaction": null,
+        "customer_id": "8127b2aa-30ed-4444-8ec2-cd1cc9bdd860",
+        "customer": {
+          "customer_id": "8127b2aa-30ed-4444-8ec2-cd1cc9bdd860",
+          "customer_name": "Jane Doe",
+          "customer_email": "jane@example.com",
+          "customer_phone": "+15551234567",
+          "customer_type": "individual"
+        },
+        "created_at": "2026-10-30T09:15:24+00:00",
+        "updated_at": "2026-10-30T09:15:24+00:00"
+      }
+    ]
+  }
+}
+```
+</ResponseExample>
+
+### `status` values
+
+| Value | Meaning |
+|---|---|
+| `action_required` | Your team should submit answers |
+| `under_review` | With Yativo or compliance review |
+| `closed` | No further action |
+
+---
+
+## Show RFI
+
+```
+GET /business/rfis/{id}
+```
+
+`id` is Yativo's internal RFI id (same as `payload.id` in webhooks). Returns one object with the same shape as a list row.
+
+---
+
+## Save draft responses
+
+```
+PUT /business/rfis/{id}/draft-responses
+```
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://api.yativo.com/api/v1/business/rfis/42/draft-responses' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: rfi-draft-001' \
+  -d '{
+    "responses": {
+      "2095d3da-2761-4d30-93e6-b46018bf576a": {
+        "text": "E-commerce reseller",
+        "free_text_explanation": "I sell consumer electronics on eBay to retail buyers.",
+        "document_list": [
+          {
+            "file": "data:application/pdf;base64,JVBERi0xLjQK…",
+            "description": "Bank statement"
+          }
+        ]
+      }
+    }
+  }'
+```
+</RequestExample>
+
+Keys must match `requested_items[].id`. Each item accepts only the field names listed in that item's `response_types`.
+
+| `response_types` | JSON field | Shape |
+|---|---|---|
+| `text` | `text` | string |
+| `free_text_explanation` | `free_text_explanation` | string |
+| `date` | `date` | ISO date string |
+| `boolean` | `boolean` | boolean |
+| `text_list` | `text_list` | string array |
+| `address` | `address` | object (`street_line_1`, `country`, …) |
+| `document_list` | `document_list` | array of `{ "file": "data:…;base64,…", "description": "…" }` on write (PDF/images only, max 24 MB per file); reads return `file_attached: true` instead of base64 |
+| `identifying_information_list` | `identifying_information_list` | array of ID objects |
+
+Partial updates merge with the existing draft; omitting `document_list` keeps previously saved documents.
+
+After save, the response matches **Show RFI** with `draft_responses` populated and `draft_responses_at` set. Document bytes are not echoed on GET — only `file_attached` and `description`.
+
+---
+
+## Submit RFI reply
+
+```
+POST /business/rfis/{id}/responses
+```
+
+Same JSON body as **Save draft responses**, but **every** `requested_items[]` entry must be answered with at least one valid field for that item's `response_types`. Merges with any existing draft.
+
+On success, `responses_submitted_at` is set and `draft_responses` holds the full reply. Yativo reviews before anything is sent upstream.
+
+Returns `422` if any item is missing or incomplete.
+
+---
+
+## Realtime updates
+
+```
+POST /business/rfis/{id}/realtime/auth
+```
+
+Returns `{ "channel": "rfi:42", "token": { ... } }`. Subscribe to event name `rfi` on that channel. Each message includes `event` (`created`, `updated`, `draft_updated`, `merchant_responded`, `submitted_to_provider`) plus the same merchant-safe RFI object as the REST API.
+
+---
+
+## API reference
+
+| Action | Method & path |
+|---|---|
+| [List RFIs](/fiat-api-reference/rfis/list) | `GET /business/rfis` |
+| [Get RFI](/fiat-api-reference/rfis/get) | `GET /business/rfis/{id}` |
+| [Save draft](/fiat-api-reference/rfis/draft-responses) | `PUT /business/rfis/{id}/draft-responses` |
+| [Realtime auth](/fiat-api-reference/rfis/realtime-auth) | `POST /business/rfis/{id}/realtime/auth` |

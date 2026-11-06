@@ -1,0 +1,176 @@
+---
+title: "Login History"
+description: "Login History — integration guide for the Yativo API."
+---
+
+`GET /v1/auth/login-history` returns the sign-ins to your account, newest first. Each entry includes the IP address, the device, where the IP is located and, when something looks unusual, the reasons it was flagged.
+
+Use it to show your users a "recent activity" screen, or to check for logins you don't recognise.
+
+---
+
+## Environments
+
+| Environment | Base URL |
+|---|---|
+| Sandbox | `https://smtp.yativo.com/api/v1` |
+| Production | `https://api.yativo.com/api/v1` |
+
+## Request
+
+```http
+GET /v1/auth/login-history?status=successful&per_page=20
+Authorization: Bearer <token>
+```
+
+API-key authentication works too. A team member sees their own logins, not the account owner's.
+
+| Query parameter | Required | Description |
+|---|---|---|
+| `status` | No | `successful`, `failed`, or `active` (sessions that are still signed in). Omit to get every entry. |
+| `ip` | No | Only entries from this IP address. |
+| `flagged` | No | `true` to return only entries the system marked as suspicious. |
+| `from` | No | Start date, `YYYY-MM-DD` (inclusive). |
+| `to` | No | End date, `YYYY-MM-DD` (inclusive). |
+| `per_page` | No | Entries per page, 1–100. Defaults to `20`. |
+| `page` | No | Page number. Defaults to `1`. |
+
+## Rate limit
+
+You can call this endpoint **30 times per minute**. After that you get `429 Too Many Requests`. The `Retry-After` header tells you how many seconds to wait.
+
+## Response
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": 4821,
+      "ip_address": "181.190.49.51",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36",
+      "auth_method": "password",
+      "device": {
+        "name": "Chrome on macOS",
+        "browser": "Chrome",
+        "platform": "macOS",
+        "type": "desktop"
+      },
+      "location": {
+        "query": "181.190.49.51",
+        "continent": "South America",
+        "continentCode": "SA",
+        "country": "Chile",
+        "countryCode": "CL",
+        "region": "RM",
+        "regionName": "Santiago Metropolitan",
+        "city": "Santiago",
+        "district": "",
+        "zip": "34033",
+        "lat": -33.4521,
+        "lon": -70.6536,
+        "timezone": "America/Santiago",
+        "offset": -10800,
+        "currency": "CLP",
+        "isp": "Gtd Internet S.A.",
+        "org": "Manquehuenet",
+        "as": "AS14259 Gtd Internet S.A.",
+        "asname": "Gtd Internet S.A.",
+        "mobile": false,
+        "proxy": false,
+        "hosting": false
+      },
+      "login_successful": true,
+      "is_active": true,
+      "is_trusted": false,
+      "login_at": "2026-10-01T12:00:00+00:00",
+      "logout_at": null,
+      "last_activity_at": "2026-10-01T12:14:09+00:00",
+      "suspicious": true,
+      "risk_level": "medium",
+      "risk_score": 35,
+      "flags": [
+        { "code": "new_country", "message": "First login from CL." }
+      ]
+    }
+  ],
+  "pagination": {
+    "total": 57,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 3,
+    "next_page_url": "https://api.yativo.com/api/v1/auth/login-history?page=2",
+    "prev_page_url": null
+  }
+}
+```
+
+### Entry fields
+
+| Field | Description |
+|---|---|
+| `id` | ID of the login entry. |
+| `ip_address` | IP address the login came from. |
+| `user_agent` | The browser or client's user-agent string. |
+| `auth_method` | How the user signed in: `password`, `magic_link`, `passkey`, `social`, or `api_key`. |
+| `device` | Browser, platform and device type, worked out from the user agent. `type` is `desktop`, `mobile`, `tablet`, or `automated` (a script or API tool). |
+| `location` | Where the IP address is located. See [Location](#location). `null` when the location is not known. |
+| `login_successful` | `false` for a failed attempt, such as a wrong password. |
+| `is_active` | `true` while the session is still signed in. |
+| `is_trusted` | `true` if the device has been marked as trusted. |
+| `login_at` / `logout_at` / `last_activity_at` | ISO 8601 timestamps, UTC. `logout_at` is `null` until the session ends. |
+| `suspicious` | `true` when `risk_level` is `medium` or `high`. |
+| `risk_level` | `low`, `medium` (score 25–49) or `high` (score 50 or more). |
+| `risk_score` | 0–100. The sum of the weights of the flags below, capped at 100. |
+| `flags` | Why the entry was flagged. Empty when nothing looked unusual. |
+
+### Location
+
+`location` describes the IP address, not the user's exact position. Treat it as approximate: city-level results can be off, and VPNs and mobile networks often appear in a different city or country.
+
+| Field | Description |
+|---|---|
+| `query` | The IP address that was looked up. |
+| `continent`, `continentCode` | Continent name and two-letter code, e.g. `South America`, `SA`. |
+| `country`, `countryCode` | Country name and ISO 3166-1 alpha-2 code, e.g. `Chile`, `CL`. |
+| `region`, `regionName` | Region or state code and name. |
+| `city`, `district`, `zip` | City, district and postal code. May be empty strings. |
+| `lat`, `lon` | Approximate coordinates. |
+| `timezone` | IANA time zone, e.g. `America/Santiago`. |
+| `offset` | That time zone's current UTC offset, in seconds. |
+| `currency` | Local currency code, e.g. `CLP`. |
+| `isp`, `org` | Internet provider and the organisation using the IP. |
+| `as`, `asname` | The network's autonomous system number and name. |
+| `mobile` | `true` if the IP belongs to a mobile network. |
+| `proxy` | `true` if the IP is a known proxy, VPN or Tor exit node. |
+| `hosting` | `true` if the IP belongs to a hosting provider or data centre, which usually means a server rather than a person's device. |
+
+`location` is `null` when:
+
+- the IP is private or reserved, such as `192.168.x.x` or `10.x.x.x`;
+- the location could not be looked up when the user signed in;
+- the entry was recorded before location lookups were added.
+
+### Flags
+
+| Code | Weight | Meaning |
+|---|---|---|
+| `flagged_by_system` | 50 | The system marked the attempt as suspicious when it happened, e.g. after repeated failed attempts. |
+| `preceded_by_failed_attempts` | 40 | 3 or more failed attempts in the 30 minutes before this successful login. |
+| `new_country` | 35 | The first successful login from this country. |
+| `new_ip` | 25 | The first successful login from this IP address. |
+| `new_device` | 20 | The first successful login from this browser or device. |
+| `failed_login` | 15 | The attempt failed. `message` says why when known, e.g. `Invalid password`. |
+| `automated_client` | 15 | The user agent looks like a script or API tool rather than a browser or app. This is normal for API integrations. |
+
+`new_ip`, `new_device` and `new_country` compare against all of the account's earlier successful logins, not only the current page. They never appear on the account's first login.
+
+## Errors
+
+| Status | When |
+|---|---|
+| `401` | Missing or invalid credentials. |
+| `429` | More than 30 requests in a minute. |
+| `400` | The request could not be completed, for example because `from` or `to` is not a valid date. Check the parameters and try again. |

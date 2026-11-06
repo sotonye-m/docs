@@ -263,6 +263,8 @@ Every payload includes `customer_id` and a `customer` object, so you know whose 
 | `payout.updated` | A payout changes status |
 | `customer.created`, `customer.updated` | A customer is created, or their profile or KYC status changes |
 | `endorsement.updated` | A customer's endorsement status changes. This is how you learn KYC and KYB results |
+| `rfi.created`, `rfi.updated`, `rfi.response_required` | A compliance request for information is opened, updated, or needs your response |
+| `card_checkout.order.*` | A Card Checkout order changes status, is refunded, or disputed |
 | `virtual_account.created`, `virtual_account.updated` | A virtual account is provisioned or updated |
 | `virtual_account.deleted` | You delete a virtual account |
 | `virtual_account.deposit` | Funds land in a virtual account |
@@ -503,6 +505,110 @@ Only the fields above are sent. KYC documents and identity numbers are never inc
 ```
 
 `endorsements` is the customer's full current list, not only the one that changed. Compare it with your stored copy. This is the only event that reports KYC and KYB results. A service is available when its endorsement is `approved`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
+
+### RFI events (`rfi.created`, `rfi.updated`, `rfi.response_required`)
+
+Sent when Yativo records a compliance **request for information** on a customer or transaction tied to your account. Payloads do not include upstream provider names or provider-side identifiers.
+
+| Event | When |
+|---|---|
+| `rfi.created` | A new RFI is recorded for your business |
+| `rfi.updated` | Status changes (for example moved to review or closed) |
+| `rfi.response_required` | Open and waiting on your team (`status` is `action_required`) |
+
+A new RFI that already needs your action may send `rfi.created` and `rfi.response_required` in quick succession. Use `payload.id` (Yativo RFI id) for idempotency.
+
+```json
+{
+  "event.type": "rfi.created",
+  "payload": {
+    "id": 42,
+    "status": "action_required",
+    "category": "kyc",
+    "summary": "Source of Funds",
+    "instructions": "Please describe your e-commerce resale activities…",
+    "amount": null,
+    "currency": null,
+    "deadline": "2026-12-04T04:59:59+00:00",
+    "requested_items": [
+      {
+        "id": "2095d3da-2761-4d30-93e6-b46018bf576a",
+        "status": "requested",
+        "content": "Source of Funds",
+        "response_types": ["text", "free_text_explanation", "document_list"]
+      }
+    ],
+    "draft_responses": {},
+    "draft_responses_at": null,
+    "submitted_at": null,
+    "is_open": true,
+    "response_required": true,
+    "related_transaction": {
+      "type": "deposit",
+      "id": "dep_abc123"
+    },
+    "customer_id": "8127b2aa-30ed-4444-8ec2-cd1cc9bdd860",
+    "customer": {
+      "customer_id": "8127b2aa-30ed-4444-8ec2-cd1cc9bdd860",
+      "customer_name": "Jane Doe",
+      "customer_email": "jane@example.com",
+      "customer_phone": "+15551234567",
+      "customer_type": "individual"
+    },
+    "created_at": "2026-10-30T09:15:24+00:00",
+    "updated_at": "2026-10-30T09:15:24+00:00",
+    "links": {
+      "documentation": "https://docs.yativo.com/yativo-fiat/rfis"
+    }
+  }
+}
+```
+
+Save draft answers with `PUT /business/rfis/{id}/draft-responses`. See [Provider RFIs](/yativo-fiat/rfis).
+
+Sandbox: `POST /demo/webhook/rfi` (optional body `event`: `rfi.created`, `rfi.updated`, `rfi.response_required`).
+
+### Card Checkout events (`card_checkout.order.*`)
+
+One event for every change in a Card Checkout order. **Only `card_checkout.order.paid` means the buyer paid** — do not rely on the browser redirect alone.
+
+| Event | When |
+|---|---|
+| `card_checkout.order.created` | The order was created |
+| `card_checkout.order.requires_action` | The buyer's bank asked for verification (3-D Secure) |
+| `card_checkout.order.processing` | A payment was submitted; waiting for confirmation |
+| `card_checkout.order.paid` | Payment confirmed. Fulfil the order now |
+| `card_checkout.order.payment_failed` | An attempt failed. The buyer can retry on the same link |
+| `card_checkout.order.under_review` | Payment received but held for manual review |
+| `card_checkout.order.partially_refunded`, `card_checkout.order.refunded` | Part or all of the payment was refunded |
+| `card_checkout.order.disputed` | The buyer opened a chargeback |
+| `card_checkout.order.expired` | The link expired before payment |
+
+```json
+{
+  "event.type": "card_checkout.order.paid",
+  "payload": {
+    "id": "cco_7wq2k9x0m3c8v1b5n6z4l2j8h0g4f6d1",
+    "customer_id": "4f0c1e1a-0f29-468f-b775-15483871a202",
+    "reference": "INV-10023",
+    "description": "Pro plan — 1 month",
+    "status": "paid",
+    "currency": "USD",
+    "amount": "49.99",
+    "platform_fee": "2.05",
+    "reserve": "0.00",
+    "net_amount": "47.94",
+    "refunded_amount": "0.00",
+    "disputed_amount": "0.00",
+    "metadata": { "plan": "pro" },
+    "paid_at": "2026-10-08T14:05:00+00:00",
+    "created_at": "2026-10-08T14:00:00+00:00",
+    "updated_at": "2026-10-08T14:05:00+00:00"
+  }
+}
+```
+
+See [Card Checkout](/yativo-platform/cards-and-accounts/card-checkout). Sandbox: `POST /demo/webhook/card_checkout` (defaults to `card_checkout.order.paid`).
 
 ---
 

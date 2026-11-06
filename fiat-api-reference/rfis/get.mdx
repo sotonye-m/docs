@@ -1,0 +1,19 @@
+---
+title: "Get Provider RFI"
+description: "Retrieve one RFI with requested items and any saved draft"
+openapi: "openapi-fiat.yaml GET /business/rfis/{id}"
+---
+
+```
+GET https://api.yativo.com/api/v1/business/rfis/{id}
+```
+
+The response includes `requested_items`, `draft_responses`, business/customer context, and flags such as `response_required`. You only see RFIs belonging to your account.
+
+<RequestExample>
+```bash cURL
+curl 'https://api.yativo.com/api/v1/business/rfis/42' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>

@@ -73,7 +73,7 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -d '{ ... }'
 ```
 
-A retry with the same key and body within 60 minutes returns the original response without running the operation again. See [Idempotency](/yativo-fiat/authentication#idempotency) for the full rules.
+Reusing a key for a completed request within 60 minutes returns `409 Conflict`. See [Idempotency](/yativo-fiat/authentication#idempotency) for the full rules.
 
 ---
 

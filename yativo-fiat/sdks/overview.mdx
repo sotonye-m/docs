@@ -126,6 +126,7 @@ These errors look the same in every SDK.
 | `401` *This API key has no whitelisted IP addresses.* | Production request, and the key has no server addresses yet. Sandbox allows this. | Add your server's IP to the key in **Developers → API Keys**. |
 | `403` *This IP address is not allowed to use this API key.* | The request came from a server that isn't on the key's list. | Find the address with `curl https://checkip.amazonaws.com` and add it. |
 | `403` *This endpoint cannot be used with an API key.* | Some account settings can only be changed in the dashboard. | Use [app.yativo.com](https://app.yativo.com). |
+| `409` *This Idempotency-Key has already been used. Use a new key for each unique request.* | The key was already used for a completed request within 60 minutes. | Generate a new key for each payment or payout. |
 | `409` *Idempotency key reuse detected with a different request payload.* | An idempotency key was reused for a different operation. | Use a new key for each new payment or payout. |
 | `422` with field errors | Something in the request is missing or wrong. | Read the error's fields. Each says what to fix. |
 | `429` or `5xx` | Too many requests, or a temporary problem. | The SDK already retried. Try again shortly. |

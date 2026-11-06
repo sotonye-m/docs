@@ -1,0 +1,549 @@
+---
+title: "Affiliate / Referral API Integration Guide"
+description: "Affiliate / Referral API Integration Guide — integration guide for the Yativo API."
+---
+
+This documentation covers the customer-facing Affiliate API: getting a user's
+referral code, capturing a referral at signup, and displaying a user's
+referred customers and commission earnings.
+
+All sample payloads below are anonymized for safe sharing.
+
+## Environments
+
+- Sandbox API: `https://smtp.yativo.com`
+- Production API: `https://api.yativo.com`
+
+## Authentication
+
+All Affiliate endpoints need an authenticated request.
+
+Server-to-server requests use your team's API key and secret:
+
+```http
+X-Api-Key: <YOUR_API_KEY>
+X-Api-Secret: <YOUR_API_SECRET>
+```
+
+The Yativo dashboard sends the signed-in user's `Authorization: Bearer <ACCESS_TOKEN>`
+instead. Since 15 October 2026, bearer tokens are only accepted from the
+dashboard, and the legacy `POST /api/v1/auth/login` (`account_id` +
+`app_secret`) flow is deprecated. Don't send a bearer token together with the
+key pair. See [Team API Keys](/yativo-platform/authentication).
+
+Note: unlike most other business endpoints, the Affiliate endpoints do
+**not** require KYC to be complete — a user can see their referral code and
+share it before finishing verification.
+
+---
+
+## Response Envelope
+
+Every endpoint returns one of two shapes.
+
+**Non-paginated success/error** (`profile` endpoint, `register`,
+`validate-referrer-code`):
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": { }
+}
+```
+
+```json
+{
+  "status": "failed",
+  "status_code": 400,
+  "message": "Request failed.",
+  "data": { "error": "Invalid referral code." }
+}
+```
+
+**Paginated list** (`referrals`, `commissions`):
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [ ],
+  "pagination": {
+    "total": 11,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+
+> **Gotcha — HTTP status on success is always `200`.** The `status_code`
+> field inside the JSON body is decorative and may show `201` etc.; the
+> actual HTTP response status for every successful call is `200`. Error
+> responses *do* use a real, meaningful HTTP status (`400`, `422`, `500`,
+> …), matching `status_code` in the body. So: branch on the `status` field
+> ("success" vs "failed"), not on the raw HTTP status code, for success
+> handling — but you can trust a non-2xx HTTP status as a genuine error.
+
+> **Gotcha — decimal fields are strings.** `signup_bonus_amount`,
+> `percentage_rate`, `amount`, `basis_amount`, `rate_applied` are all
+> serialized as strings (e.g. `"5.50"`, `"10.00"`), not JSON numbers,
+> because they're MySQL `decimal` columns. Run them through
+> `parseFloat()` / `Number()` before doing arithmetic or formatting.
+
+---
+
+## 1) Capture a Referral at Signup
+
+There's no dedicated "join as affiliate" endpoint — every user is lazily
+enrolled as an affiliate the first time they (or their referrer) touch the
+Affiliate API. What the frontend needs to do is **pass the referral code
+through at signup**.
+
+### 1a. Validate a referral code (optional, unauthenticated)
+
+Call this as soon as you have a `?ref=CODE` value in the URL (e.g. someone
+landed on your signup page via a shared referral link), to show a "Referred
+by a friend ✓" confirmation before the user finishes the form.
+
+```http
+POST /api/v1/auth/validate-referrer-code
+Content-Type: application/json
+
+{
+  "referred_by": "AB12CD34"
+}
+```
+
+Success:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Referrer found",
+  "data": { "is_valid_referrer": true }
+}
+```
+
+Invalid/unknown code (HTTP 400):
+
+```json
+{
+  "status": "failed",
+  "status_code": 400,
+  "message": "Request failed.",
+  "data": { "error": "Referrer not found", "is_valid_referrer": false }
+}
+```
+
+There are two separate ways a user can actually register — pick whichever
+your signup flow uses. Both accept the referral code; it's never validated
+strictly at this step, so an invalid or mistyped code is silently ignored
+and registration still succeeds either way. Use step 1a beforehand if you
+want to give the user feedback on an invalid code *before* they submit.
+
+### 1b. Path A — Standard (email + password) registration
+
+One call, pass the code as `referral_code`.
+
+```http
+POST /api/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "bussinessName": "Jane Doe",
+  "email": "jane@example.com",
+  "password": "••••••••",
+  "referral_code": "AB12CD34"
+}
+```
+
+### 1c. Path B — Magic-link (passwordless) login/registration
+
+This is a two-step flow, and the **same two calls now handle both signup
+and returning-user login** — there's no separate "complete registration"
+step anymore (`POST /api/v1/auth/register/complete/{token}` still exists in
+the codebase but is unused by the current frontend; it may return in the
+future for a richer post-signup profile form). The referral code is only
+ever passed on the **second** call.
+
+**Step 1 — request the OTP / magic link.** This creates a bare user record
+under the hood if the email doesn't exist yet, and emails them a one-time
+code / link either way. It does **not** take a referral code.
+
+```http
+POST /api/v1/auth/login/magic
+Content-Type: application/json
+
+{
+  "email": "jane@example.com",
+  "base_url": "https://app.yativo.com/magic-login"
+}
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "message": "We have sent you a One time login O.T.P, Please check your email."
+  }
+}
+```
+
+If the email already belongs to an existing user, the response also
+includes `"is_registered": true`. You can use that to tailor the UI copy
+("Welcome back" vs. "Welcome"), but it's purely advisory — you don't need
+to branch to a different endpoint for step 2 below; both new and returning
+users complete the same way.
+
+**Step 2 — verify the OTP.** The user opens the emailed link or enters the
+OTP; the frontend submits it to this endpoint, passing the referral code as
+`referred_by`. This logs the user in (creating their session/JWT) whether
+they're brand new or returning.
+
+```http
+POST /api/v1/auth/login/magic-login
+Content-Type: application/json
+
+{
+  "email": "jane@example.com",
+  "token": "48213",
+  "referred_by": "AB12CD34"
+}
+```
+
+`token` is the 5-digit OTP the user received by email (also embeddable in
+the magic-link URL as `?magic=<token>`). It expires 10 minutes after being
+issued, and works only once. After 5 wrong attempts the code is invalidated
+and the endpoint returns `429`. The user then has to request a new code from
+`POST /api/v1/auth/login/magic`. Both endpoints are rate-limited per IP
+address: 5 code requests and 10 login attempts per minute.
+
+> **Always safe to pass `referred_by` here, even for a returning user.**
+> The backend only ever attaches a referral for an account that has never
+> set a real password and has never logged in before — i.e. a genuinely
+> brand-new signup completing its very first login. If the email belongs to
+> an existing customer, `referred_by` is silently ignored: no referral row
+> is created and no signup bonus is paid, no matter what's in the request.
+> You don't need to conditionally omit the field based on `is_registered`.
+
+---
+
+## 2) Get My Affiliate Profile
+
+Returns (and lazily creates, on first call) the authenticated user's
+affiliate profile: their referral code, current commission settings, and
+referral count. Call this to render the "Refer a friend" / affiliate
+dashboard page.
+
+### Endpoint
+
+```http
+GET /api/v1/affiliate/profile
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+### Sample Response
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "profile": {
+      "id": 42,
+      "user_id": 1001,
+      "referral_code": "AB12CD34",
+      "status": "active",
+      "commission_mode": null,
+      "signup_bonus_amount": null,
+      "signup_bonus_currency": null,
+      "percentage_rate": null,
+      "notes": null,
+      "suspended_at": null,
+      "created_at": "2026-08-01T10:00:00.000000Z",
+      "updated_at": "2026-08-01T10:00:00.000000Z"
+    },
+    "effective_settings": {
+      "commission_mode": "percentage",
+      "signup_bonus_amount": "0.00",
+      "signup_bonus_currency": "usd",
+      "percentage_rate": "2.50",
+      "eligible_transaction_types": null,
+      "eligible_transaction_statuses": ["success", "successful", "completed"],
+      "min_transaction_amount_for_commission": null,
+      "is_enabled": true
+    },
+    "referral_count": 3
+  }
+}
+```
+
+### Field Notes
+
+| Field | Description |
+|---|---|
+| `profile.status` | `active` or `suspended`. A suspended affiliate stops earning new commissions; existing ones are unaffected. |
+| `profile.commission_mode` / `signup_bonus_amount` / `signup_bonus_currency` / `percentage_rate` | Per-affiliate **overrides** set by an admin. `null` means "inherit the platform default" — always read `effective_settings` for the values that actually apply, not these raw override fields. |
+| `effective_settings.commission_mode` | One of `signup_bonus`, `percentage`, or `both` — this affiliate's actual active commission model, after applying overrides/defaults. |
+| `effective_settings.percentage_rate` | The % of a referred user's eligible transaction amount this affiliate currently earns (if mode includes `percentage`). |
+| `effective_settings.signup_bonus_amount` / `signup_bonus_currency` | The one-time bonus this affiliate earns per successful referral (if mode includes `signup_bonus`). |
+| `effective_settings.is_enabled` | Global kill switch. If `false`, no new commissions are being paid platform-wide regardless of mode. |
+| `referral_count` | Total number of users this affiliate has referred (all-time, regardless of commission status). |
+
+Build the shareable referral link client-side, e.g.
+`https://app.yativo.com/signup?ref={referral_code}`, and have your signup
+page read `?ref=` into the `referral_code` field described in §1.
+
+---
+
+## 3) List My Referred Users
+
+Paginated list of users the authenticated user has referred, most recent
+first.
+
+### Endpoint
+
+```http
+GET /api/v1/affiliate/referrals?per_page=20&page=1
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+### Sample Response
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": 501,
+      "affiliate_id": 42,
+      "referrer_user_id": 1001,
+      "referred_user_id": 1050,
+      "referral_code_used": "AB12CD34",
+      "signup_bonus_status": "credited",
+      "signup_bonus_credited_at": "2026-08-10T09:15:00.000000Z",
+      "referred_at": "2026-08-10T09:14:55.000000Z",
+      "created_at": "2026-08-10T09:14:55.000000Z",
+      "updated_at": "2026-08-10T09:15:00.000000Z",
+      "referred_user": {
+        "id": 1050,
+        "name": "John Smith",
+        "email": "j***@example.com",
+        "created_at": "2026-08-10T09:14:55.000000Z"
+      }
+    }
+  ],
+  "pagination": {
+    "total": 3,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+
+### `signup_bonus_status` values
+
+| Value | Meaning |
+|---|---|
+| `pending` | Referral captured, signup bonus not yet processed. |
+| `credited` | Signup bonus successfully paid to the referrer's wallet. |
+| `skipped` | No signup bonus is configured for this affiliate (mode doesn't include it, or amount is 0). |
+| `skipped_suspended` | Affiliate was suspended when the bonus would have been paid — permanently skipped, not retried on reactivation. |
+| `failed` | Bonus was configured but the wallet credit failed; see admin for details. |
+
+---
+
+## 4) List My Commission History
+
+Paginated ledger of every commission (signup bonuses and percentage
+payouts) the authenticated user has earned as an affiliate, most recent
+first. Use this to render an earnings history / payout log.
+
+### Endpoint
+
+```http
+GET /api/v1/affiliate/commissions?per_page=20&page=1
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+### Sample Response
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": 9001,
+      "affiliate_id": 42,
+      "referral_id": 501,
+      "referred_user_id": 1050,
+      "commission_type": "percentage",
+      "source_transaction_record_id": "b3f1e2a0-....-....-....-............",
+      "rate_applied": "2.50",
+      "basis_amount": "500.00",
+      "amount": "12.50",
+      "currency": "usd",
+      "status": "credited",
+      "credited_at": "2026-08-15T14:02:11.000000Z",
+      "created_at": "2026-08-15T14:02:10.000000Z",
+      "updated_at": "2026-08-15T14:02:11.000000Z"
+    },
+    {
+      "id": 9000,
+      "affiliate_id": 42,
+      "referral_id": 501,
+      "referred_user_id": 1050,
+      "commission_type": "signup_bonus",
+      "source_transaction_record_id": null,
+      "rate_applied": null,
+      "basis_amount": null,
+      "amount": "5.00",
+      "currency": "usd",
+      "status": "credited",
+      "credited_at": "2026-08-10T09:15:00.000000Z",
+      "created_at": "2026-08-10T09:15:00.000000Z",
+      "updated_at": "2026-08-10T09:15:00.000000Z"
+    }
+  ],
+  "pagination": {
+    "total": 2,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+
+### `commission_type` values
+
+| Value | Meaning |
+|---|---|
+| `signup_bonus` | One-time bonus for a successful referral. `source_transaction_record_id`, `rate_applied`, `basis_amount` are always `null`. |
+| `percentage` | A cut of a referred user's completed transaction. `basis_amount` is the transaction amount the % was applied to; `rate_applied` is the % used at the time (a historical snapshot — it won't change even if the affiliate's rate changes later). |
+
+### `status` values
+
+| Value | Meaning |
+|---|---|
+| `pending` | Row created, payout not yet processed. |
+| `credited` | Successfully paid into the affiliate's wallet — `amount`/`currency` reflects what landed. |
+| `failed` | Payout attempt failed (e.g. wallet issue). Not automatically retried. |
+| `skipped_suspended` | Affiliate was suspended at the time; no payout occurred. `amount` is `0`. |
+| `reversed` | Manually reversed by an admin. |
+
+`currency` is the currency the commission was paid in — for `percentage`
+type this is always the same currency as the underlying referred-user
+transaction (no FX conversion is performed).
+
+---
+
+## End-to-End Example (JavaScript)
+
+```js
+const API_BASE = 'https://smtp.yativo.com/api/v1';
+
+// 1. On the signup page, if the URL has ?ref=CODE, check it's valid.
+async function checkReferralCode(code) {
+  const res = await fetch(`${API_BASE}/auth/validate-referrer-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ referred_by: code }),
+  });
+  const json = await res.json();
+  return json.status === 'success' && json.data.is_valid_referrer === true;
+}
+
+// 2a. Path A — standard registration; backend ignores bad codes.
+async function register(formData, referralCode) {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...formData, referral_code: referralCode }),
+  });
+  return res.json();
+}
+
+// 2b. Path B — magic-link login/signup (two steps; same calls for both).
+async function requestMagicLink(email) {
+  const res = await fetch(`${API_BASE}/auth/login/magic`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, base_url: 'https://app.yativo.com/magic-login' }),
+  });
+  const { data } = await res.json();
+  return data.is_registered === true; // advisory only — informs UI copy, not which endpoint to call next
+}
+
+// Safe to always pass referralCode here — the backend ignores it for an
+// existing customer and only attaches it for a genuinely new signup.
+async function verifyMagicLink(email, otpToken, referralCode) {
+  const res = await fetch(`${API_BASE}/auth/login/magic-login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, token: otpToken, referred_by: referralCode }),
+  });
+  return res.json();
+}
+
+// 3. On the logged-in user's "Refer a friend" page.
+async function getMyAffiliateProfile(token) {
+  const res = await fetch(`${API_BASE}/affiliate/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const { data } = await res.json();
+
+  const shareLink = `https://app.yativo.com/signup?ref=${data.profile.referral_code}`;
+  const rate = parseFloat(data.effective_settings.percentage_rate);
+
+  return { shareLink, rate, referralCount: data.referral_count };
+}
+
+// 4. Paginated referrals / commissions.
+async function getMyReferrals(token, page = 1) {
+  const res = await fetch(`${API_BASE}/affiliate/referrals?page=${page}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.json(); // { data: [...], pagination: {...} }
+}
+
+async function getMyCommissions(token, page = 1) {
+  const res = await fetch(`${API_BASE}/affiliate/commissions?page=${page}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.json(); // { data: [...], pagination: {...} }
+}
+```
+
+---
+
+## Quick Reference
+
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/api/v1/auth/validate-referrer-code` | None | Check a referral code is valid before signup. |
+| `POST` | `/api/v1/auth/register` | None | Path A: standard registration; accepts optional `referral_code`. |
+| `POST` | `/api/v1/auth/login/magic` | None | Path B step 1: request OTP / magic link, creates a bare user record if new. No referral param. |
+| `POST` | `/api/v1/auth/login/magic-login` | None | Path B step 2: verify OTP, log in. Handles both new signups and returning users; accepts optional `referred_by`, which only ever takes effect for a genuinely new signup. |
+| `POST` | `/api/v1/auth/register/complete/{token}` | None | Unused by the current frontend (kept for possible future use). Same referral rule as above would apply if reintroduced. |
+| `GET` | `/api/v1/affiliate/profile` | Bearer | Get/create my referral code + effective commission settings. |
+| `GET` | `/api/v1/affiliate/referrals` | Bearer | Paginated list of users I've referred. |
+| `GET` | `/api/v1/affiliate/commissions` | Bearer | Paginated commission earnings ledger. |

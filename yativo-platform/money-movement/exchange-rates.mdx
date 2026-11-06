@@ -1,0 +1,75 @@
+---
+title: "Exchange Rates"
+description: "Exchange Rates — integration guide for the Yativo API."
+---
+
+`GET /v1/exchange-rates` returns the current exchange rate for every wallet currency Yativo supports, so you can show live rates to your own customers.
+
+Rates are indicative market rates. They refresh about once a minute and do not include fees. To price a specific payin or payout with fees applied, use `POST /v1/exchange-rate` (see [Payin & Payout Integration](/yativo-platform/money-movement/payins)).
+
+---
+
+## Environments
+
+| Environment | Base URL |
+|---|---|
+| Sandbox | `https://smtp.yativo.com/api/v1` |
+| Production | `https://api.yativo.com/api/v1` |
+
+## Request
+
+```http
+GET /v1/exchange-rates?base=USD
+Authorization: Bearer <token>
+```
+
+API-key authentication works too. Team members need the **Exchange → view** permission (`team.exchange.view`).
+
+| Query parameter | Required | Description |
+|---|---|---|
+| `base` | No | The currency the rates are quoted against. Must be a supported wallet currency. Defaults to `USD`. |
+
+## Rate limit
+
+You can call this endpoint **once per minute** per account. Further calls in the same minute get `429 Too Many Requests`; the `Retry-After` header says how many seconds to wait. The rates only refresh once a minute, so polling faster would not return newer data.
+
+## Response
+
+Each rate means **1 `base` = `rate` units of that currency**.
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "base": "USD",
+    "rates": {
+      "ARS": 1185.5,
+      "BRL": 5.4321,
+      "EUR": 0.9187,
+      "MXN": 18.6024,
+      "USD": 1
+    },
+    "updated_at": "2026-10-01T12:00:00+00:00"
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `base` | The base currency you asked for. |
+| `rates` | One entry per supported wallet currency. A value of `null` means no rate is available for that currency right now. |
+| `updated_at` | When the rates were last refreshed (ISO 8601, UTC). |
+
+To convert an amount from the base currency: `amount × rate`. To convert back to the base currency: `amount ÷ rate`.
+
+## Errors
+
+| Status | When |
+|---|---|
+| `401` | Missing or invalid credentials. |
+| `403` | A team member without `team.exchange.view`. |
+| `422` | `base` is not a supported wallet currency. The error lists the allowed values. |
+| `429` | More than one request in a minute. |
+| `503` | Rates are temporarily unavailable. Try again shortly. |

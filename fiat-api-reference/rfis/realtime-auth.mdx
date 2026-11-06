@@ -1,0 +1,40 @@
+---
+title: "RFI Realtime Auth (Ably)"
+description: "Get an Ably token to subscribe to RFI updates"
+openapi: "openapi-fiat.yaml POST /business/rfis/{id}/realtime/auth"
+---
+
+Returns a short-lived Ably token and channel name (`rfi:{id}`). Subscribe to the **`rfi`** event name for payloads when the RFI is created, updated, draft-saved, or submitted to the provider.
+
+```
+POST https://api.yativo.com/api/v1/business/rfis/{id}/realtime/auth
+```
+
+Requires Ably to be enabled on the Yativo environment (`ABLY_API_KEY`).
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/business/rfis/42/realtime/auth' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: rfi-rt-42'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "data": {
+    "channel": "rfi:42",
+    "token": {
+      "token": "…",
+      "expires": 1730000000000,
+      "capability": "{\"rfi:42\":[\"subscribe\"]}"
+    }
+  }
+}
+```
+</ResponseExample>
+
+See [Provider RFIs guide](/yativo-fiat/rfis) for the recommended client flow.

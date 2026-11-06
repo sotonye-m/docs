@@ -28,9 +28,9 @@ info:
     Some plans set their own limit. Enterprise plans have no general limit.
 
     **Idempotency**
-    Send an `Idempotency-Key` header on every `POST`, `PUT`, `PATCH` and `DELETE` request. A retry with
-    the same key and body within 60 minutes returns the original response without running again.
-    Reusing a key with a different body returns `409`.
+    Send an `Idempotency-Key` header on every `POST`, `PUT`, `PATCH` and `DELETE` request. Use a new
+    key for each distinct operation. Reusing a key for a completed request within 60 minutes returns
+    `409`. Reusing a key with a different body also returns `409`.
 
     **KYC endpoints** are hosted on a separate platform at `https://kyc.yativo.com`. They are
     documented here for completeness but use that base URL, not the main API base.
@@ -753,6 +753,100 @@ components:
         prev_page_url:
           type: string
           nullable: true
+
+    ProviderRfiDraftRequest:
+      type: object
+      required: [responses]
+      properties:
+        responses:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: true
+          description: Map of Bridge requested_item id to response fields (e.g. free_text_explanation).
+    ProviderRfi:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        provider:
+          type: string
+          example: bridge
+        provider_rfi_id:
+          type: string
+          description: Provider's RFI uuid.
+        state:
+          type: string
+          example: on_developer
+        response_required:
+          type: boolean
+        requested_items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        draft_responses:
+          type: object
+          nullable: true
+          additionalProperties:
+            type: object
+            additionalProperties: true
+        draft_responses_at:
+          type: string
+          format: date-time
+          nullable: true
+        submitted_to_provider_at:
+          type: string
+          format: date-time
+          nullable: true
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        dashboard_url:
+          type: string
+          nullable: true
+    ProviderRfiResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        status_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ProviderRfi'
+    PaginatedProviderRfiList:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderRfi'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    ProviderRfiRealtimeAuthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            channel:
+              type: string
+              example: rfi:42
+            token:
+              type: object
+              additionalProperties: true
 
     # ── Auth ──────────────────────────────────────────────────────────────────
     # ── Customer ──────────────────────────────────────────────────────────────
@@ -2670,9 +2764,11 @@ paths:
       tags: [KYC / KYB]
       summary: Resubmit Endorsement
       description: |
-        Re-run verification for one endorsement of an individual customer, for example after they
-        update their ID document or selfie. Other endorsements aren't affected. A `200` means the
-        resubmission was queued. Watch `endorsement.updated` for the result.
+        Re-run verification for one endorsement, for example after the customer updates an ID
+        document or selfie. Other endorsements aren't affected. Works for individual customers;
+        `card_checkout` also accepts business customers. A `200` means the resubmission was queued.
+        For `card_checkout` when Card Checkout isn't enabled on your account yet, the response is
+        `202` with `awaiting_business_access: true`. Watch `endorsement.updated` for the result.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - name: customerId
@@ -2685,7 +2781,7 @@ paths:
           description: The endorsement to re-run. Case doesn't matter, so `SEPA` and `sepa` both work.
           schema:
             type: string
-            enum: [base, sepa, spei, faster_payments, naira, virtual_card, asian, brazil]
+            enum: [base, sepa, spei, faster_payments, naira, virtual_card, asian, brazil, card_checkout]
       responses:
         '200':
           description: Resubmission queued
@@ -2701,6 +2797,24 @@ paths:
                     type: object
                     properties:
                       message: {type: string, example: 'KYC resubmission for "faster_payments" queued.'}
+        '202':
+          description: Card Checkout access requested (card_checkout only)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, example: success}
+                  status_code: {type: integer, example: 202}
+                  message:
+                    type: string
+                    example: Card checkout access has been requested for this business. This request continues automatically once it is approved.
+                  data:
+                    type: object
+                    properties:
+                      customer_id: {type: string}
+                      endorsement_status: {type: string, example: pending}
+                      awaiting_business_access: {type: boolean, example: true}
         '404':
           description: Customer not found, or no KYC submission yet
           content:
@@ -9455,6 +9569,125 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       summary: Upload File
+  /business/rfis:
+    get:
+      tags:
+      - Provider RFIs
+      summary: List Provider RFIs
+      description: |
+        Lists compliance RFIs for your account. Draft answers saved via the API are not sent to the provider automatically.
+        See [Provider RFIs](/yativo-fiat/rfis).
+      parameters:
+      - name: open_only
+        in: query
+        schema:
+          type: boolean
+        description: When true, return only open RFIs.
+      - name: response_required
+        in: query
+        schema:
+          type: boolean
+        description: When true, return only RFIs waiting on your response.
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: per_page
+        in: query
+        schema:
+          type: integer
+          default: 20
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProviderRfiList'
+  /business/rfis/{id}:
+    get:
+      tags:
+      - Provider RFIs
+      summary: Get Provider RFI
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Yativo internal RFI id.
+      responses:
+        '200':
+          description: RFI detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderRfiResponse'
+        '404':
+          description: Not found or not on your account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /business/rfis/{id}/draft-responses:
+    put:
+      tags:
+      - Provider RFIs
+      summary: Save RFI Draft Responses
+      description: Stores draft answers for ops review. Does not submit to the payment provider.
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderRfiDraftRequest'
+      responses:
+        '200':
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderRfiResponse'
+        '422':
+          description: RFI closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /business/rfis/{id}/realtime/auth:
+    post:
+      tags:
+      - Provider RFIs
+      summary: RFI Realtime Auth
+      description: Returns an Ably token to subscribe to channel `rfi:{id}` (event name `rfi`).
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderRfiRealtimeAuthResponse'
+        '503':
+          description: Realtime not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 tags:
   - name: Customers
@@ -9499,3 +9732,5 @@ tags:
     description: Endpoints that exist only on the sandbox host. Production refuses them.
   - name: Developer
     description: Webhook event inspection.
+  - name: Provider RFIs
+    description: Compliance requests from payment partners; save draft answers via API (not auto-submitted).

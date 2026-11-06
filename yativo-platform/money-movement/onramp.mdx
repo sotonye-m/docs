@@ -1,0 +1,99 @@
+---
+title: "Onramp"
+description: "Onramp — integration guide for the Yativo API."
+---
+
+Onramp lets a customer pay by card or bank transfer and settle USDC or EURC
+to your Yativo wallet. It is a **standalone product** — it is not a payin
+method, and it is not created with `POST /v1/wallet/deposits/new`.
+
+Customer pays fiat → Circle’s Arc widget → USDC/EURC lands on the collection
+wallet → we credit **the amount received**. If they pay less than the
+checkout amount, the deposit is `incomplete` and the webhook says so.
+
+- [Create a checkout](#create-a-checkout)
+- [List methods](#list-methods)
+- [Read an onramp](#read-an-onramp)
+- [Webhooks](#webhooks)
+
+---
+
+## Create a checkout
+
+```
+POST /v1/onramp
+```
+
+```json
+{
+  "amount": 100,
+  "currency": "USD",
+  "customer_id": "cus_8d2f4a1b",
+  "return_url": "https://yourapp.com/payments/return"
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `amount` | yes | Fiat the customer should pay. |
+| `currency` | yes | `USD`, `GBP`, or `EUR`. USD and GBP settle as USDC. EUR settles as EURC. You must already hold that wallet. |
+| `customer_id` | no | Payer on your account. |
+| `return_url` | no | Where to send the payer after checkout. |
+| `revenue_split` | no | Same optional split object as a deposit. |
+
+**Response `200`**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "checkout_url": "https://checkout.yativo.com/process-payin/...",
+    "onramp": {
+      "id": "5b1e6b2a-df3d-4a9a-8e93-6c9f4a2b7e10",
+      "amount": 100,
+      "currency": "USD",
+      "status": "pending"
+    },
+    "payment_info": {
+      "send_amount": "100 USD",
+      "receive_amount": "98 USD",
+      "transaction_fee": "2 USD",
+      "settles_as": "USDC on Arc"
+    }
+  }
+}
+```
+
+Send the payer to `checkout_url`. Do not create this through payin methods.
+
+## List methods
+
+```
+GET /v1/onramp/methods
+```
+
+Returns the currencies you can collect, with min/max amounts.
+
+## Read an onramp
+
+```
+GET /v1/onramp
+GET /v1/onramp/{id}
+```
+
+`status` is `pending`, `processing`, `success`, `incomplete`, `failed`, `cancelled`, or `expired`.
+
+## Webhooks
+
+The same `deposit.created` / `deposit.updated` events as other deposits. After
+settlement the payload includes:
+
+| Field | Meaning |
+|---|---|
+| `amount` | Checkout amount requested |
+| `amount_paid` | Amount actually received |
+| `receive_amount` | Wallet credit after fees, based on `amount_paid` |
+| `incomplete_payment` | `true` when they paid less than `amount` |
+| `status` | `incomplete` or `success` |
+
+See [Webhooks](/yativo-platform/webhooks/overview#depositcreated--depositupdated).

@@ -1,0 +1,632 @@
+---
+title: "Revenue Split (Per-Deposit Auto-Withdrawal) API Integration Guide"
+description: "Revenue Split (Per-Deposit Auto-Withdrawal) API Integration Guide — integration guide for the Yativo API."
+---
+
+This documents the Revenue Split feature: attaching optional instructions to
+a **single deposit** so that, once that specific deposit succeeds, part of
+it is automatically routed to another destination — either an internal
+Yativo account's wallet (a "sub-account") or one of your saved payout
+beneficiaries (bank account / crypto address).
+
+**There is no standing, account-level configuration.** You decide per
+deposit, on the deposit-creation call itself, whether to split it at all,
+and if so, how much and to whom. Two deposits from the same account can use
+two completely different destinations, or no split at all — nothing carries
+over between them.
+
+**Two ways to size the split:**
+- `split_type: "percentage"` (default) — split off a percentage of the
+  deposit's credited amount, capped by the platform's `max_split_percentage`
+  (§1).
+- `split_type: "fixed"` — split off a fixed amount in the deposit's own
+  currency, via `fixed_amount`. Must be less than or equal to the deposit's
+  net credited amount — if it isn't, deposit creation is rejected up front
+  (§2 errors) rather than letting the deposit succeed with a split that can
+  never actually clear.
+
+All sample payloads below are anonymized for safe sharing.
+
+## Environments
+
+- Sandbox API: `https://smtp.yativo.com`
+- Production API: `https://api.yativo.com`
+
+## Authentication
+
+Every endpoint needs an authenticated request, and the account must have
+passed KYC.
+
+Server-to-server requests use your team's API key and secret:
+
+```http
+X-Api-Key: <YOUR_API_KEY>
+X-Api-Secret: <YOUR_API_SECRET>
+```
+
+The Yativo dashboard sends the signed-in user's `Authorization: Bearer <ACCESS_TOKEN>`
+instead. Since 15 October 2026, bearer tokens are only accepted from the
+dashboard, and the legacy `POST /api/v1/auth/login` (`account_id` +
+`app_secret`) flow is deprecated. Don't send a bearer token together with the
+key pair. See [Team API Keys](/yativo-platform/authentication).
+
+---
+
+## How It Works
+
+1. You create a deposit as usual (`POST /api/v1/wallet/deposits/new`), and
+   attach an optional `revenue_split` object to that same request body.
+2. If present, it's validated immediately (destination ownership, percentage
+   range/cap) — an invalid `revenue_split` payload rejects the whole
+   deposit-creation call before anything is created.
+3. The deposit proceeds through its normal payment flow (checkout URL, wire
+   instructions, etc. — unchanged). **Splitting never happens at creation
+   time.**
+4. Once — and only once — that specific deposit's status flips to `success`
+   (confirmed by the payment provider), the requested percentage is:
+   - **transferred instantly** to another Yativo account's wallet
+     (`destination_type: internal_wallet`), or
+   - **paid out** to one of your saved beneficiaries
+     (`destination_type: beneficiary`) — through the exact same payout
+     pipeline as `POST /api/v1/wallet/payout`, so normal processing times
+     for that beneficiary's rail apply.
+5. The attempt (successful, failed, or skipped) is recorded and visible via
+   `GET /api/v1/revenue-split/executions`.
+
+You keep the remainder of the deposit in your own wallet as usual — a split
+only ever moves the percentage you requested for that one deposit, never
+the whole amount, and never anything from any other deposit.
+
+### Important constraints
+
+- **Opt-in, per deposit.** Omit `revenue_split` entirely and nothing
+  changes about that deposit — 100% of it lands in your wallet as normal.
+  There's nothing to "turn off" elsewhere; just don't send it.
+- **No FX conversion.** A `beneficiary` split pays out in the same currency
+  the deposit is credited in. If your beneficiary's rail requires a
+  different settlement currency, use the regular manual withdrawal flow
+  instead for that leg.
+- **The beneficiary must belong to you.** `beneficiary_payment_method_id`
+  must reference a payment method already saved under your own account
+  (from `POST /api/v1/beneficiary/form/create` or the withdrawal
+  beneficiary endpoints).
+- **The sub-account must be a different Yativo account.** An
+  `internal_wallet` split's `destination_user_id` cannot be your own
+  `user_id` — it's another Yativo platform account, not one of your own
+  `Customer` records.
+- **Percentage is capped platform-wide.** An admin sets a maximum
+  `split_percentage` any single deposit is allowed to request (default
+  100%). `GET /api/v1/revenue-split/settings` tells you the current cap.
+- **Only deposits you actively create can be split.** This only applies to
+  deposits created through `POST /api/v1/wallet/deposits/new` (the endpoint
+  documented below). Funds that arrive passively into a standing virtual
+  account or crypto wallet address — i.e. you never called an API to
+  create that specific incoming payment — have no `revenue_split` to
+  attach and are never split.
+- **Idempotent and safe on retries.** A given deposit only ever triggers its
+  split once — repeated webhook deliveries or status re-saves for the same
+  deposit will not double-split it.
+
+---
+
+## Response Envelope
+
+Every endpoint returns one of two shapes.
+
+**Non-paginated success/error:**
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": { }
+}
+```
+
+```json
+{
+  "status": "failed",
+  "status_code": 400,
+  "message": "Request failed.",
+  "data": { "error": "revenue_split.destination_user_id cannot be your own account." }
+}
+```
+
+**Paginated list** (`executions`):
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [ ],
+  "pagination": {
+    "total": 3,
+    "per_page": 10,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+
+> **Gotcha — HTTP status on success is always `200`.** The `status_code`
+> field inside the JSON body is decorative (may show `201`, etc.); branch on
+> the `status` field ("success" vs "failed"), not the raw HTTP status, to
+> detect success. Error responses do use a real, meaningful HTTP status.
+
+> **Gotcha — decimal fields are strings.** `split_percentage`,
+> `source_amount`, `fixed_amount`, `split_amount`, `payout_fee_amount`,
+> `net_payout_amount` are MySQL `decimal` columns and are serialized as
+> strings (e.g. `"5.00"`), not JSON numbers. Run them through
+> `parseFloat()` / `Number()` before doing arithmetic.
+
+---
+
+## 1) Check Platform Settings
+
+Read-only. Tells you whether the feature is enabled, and the maximum
+percentage any single deposit's split can request.
+
+### Endpoint
+
+```http
+GET /api/v1/revenue-split/settings
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+### Sample Response
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "is_enabled": true,
+    "max_split_percentage": "100.00",
+    "min_deposit_amount": null,
+    "eligible_currencies": null
+  }
+}
+```
+
+`eligible_currencies: null` means every currency is eligible. If it's an
+array (e.g. `["USD", "EUR"]`), a `revenue_split` on a deposit in any other
+currency is silently never executed (the deposit itself still succeeds
+normally).
+
+---
+
+## 2) Create a Deposit With a Revenue Split
+
+### Endpoint
+
+```http
+POST /api/v1/wallet/deposits/new
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+```
+
+This is the normal deposit-creation endpoint — `gateway`, `amount`,
+`currency`, `customer_id`, `return_url`, and any gateway-specific fields all
+work exactly as they do without a split. `revenue_split` is the only new,
+fully optional field.
+
+### Request Body — Split to an Internal Sub-Account
+
+```json
+{
+  "gateway": "12",
+  "amount": 500,
+  "currency": "ARS",
+  "customer_id": "CUS-00123",
+  "revenue_split": {
+    "destination_type": "internal_wallet",
+    "destination_user_id": 1042,
+    "split_percentage": 20,
+    "label": "Holding account share"
+  }
+}
+```
+
+### Request Body — Split to an External Beneficiary
+
+```json
+{
+  "gateway": "12",
+  "amount": 500,
+  "currency": "ARS",
+  "revenue_split": {
+    "destination_type": "beneficiary",
+    "beneficiary_payment_method_id": 87,
+    "split_percentage": 30,
+    "label": "Partner payout"
+  }
+}
+```
+
+### Request Body — Fixed Amount Instead of a Percentage
+
+```json
+{
+  "gateway": "12",
+  "amount": 500,
+  "currency": "ARS",
+  "revenue_split": {
+    "destination_type": "beneficiary",
+    "beneficiary_payment_method_id": 87,
+    "split_type": "fixed",
+    "fixed_amount": 50,
+    "payout_fee_payer": "beneficiary",
+    "label": "Flat partner fee"
+  }
+}
+```
+
+`fixed_amount` is in the deposit's own currency (`ARS` here) and must be
+`<=` the deposit's net credited amount (`calc.credited_amount` — the amount
+*after* deposit fees, not the raw `amount` you sent). Requesting a fixed
+amount larger than that always fails deposit creation with a 400 (§2
+errors) — it can never be satisfied by retrying.
+
+### Request Body — No Split (unchanged, existing behavior)
+
+```json
+{
+  "gateway": "12",
+  "amount": 500,
+  "currency": "ARS"
+}
+```
+
+### `revenue_split` fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `destination_type` | string | Yes | `internal_wallet` or `beneficiary`. |
+| `destination_user_id` | integer | Required if `internal_wallet` | The Yativo user ID of the account receiving funds. Cannot be your own ID. |
+| `beneficiary_payment_method_id` | integer | Required if `beneficiary` | The ID of one of your own saved beneficiary payment methods. |
+| `split_type` | string | No | `percentage` (default) or `fixed`. Determines whether `split_percentage` or `fixed_amount` is used. |
+| `split_percentage` | number | Required if `split_type` is `percentage` (or omitted) | `0.01`–`100`, and cannot exceed the platform's `max_split_percentage` (§1). The percentage of this deposit's credited amount to split off. |
+| `fixed_amount` | number | Required if `split_type` is `fixed` | A flat amount, in the deposit's own currency, to split off. Must be `> 0` and `<=` the deposit's net credited amount. |
+| `payout_fee_payer` | string | No, `beneficiary` splits only | `platform` (default) or `beneficiary`. Who absorbs the payout gateway fee — `platform` debits `split amount + fee` from your wallet and pays the beneficiary the full split amount; `beneficiary` debits exactly the split amount and nets the fee out of what the beneficiary receives. Ignored for `internal_wallet` splits (no payout gateway involved). |
+| `customer_id` | string | No | One of your own customer records to associate the split/execution with, for your own reconciliation. Must belong to your account. |
+| `label` | string | No | A note for yourself; shown in admin and execution history, and used as the transfer/payout description. |
+
+### Sample Response
+
+Identical to a normal deposit-creation response, plus an echoed
+`revenue_split` block confirming what was captured:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "deposit_url": "https://checkout.yativo.com/callback/checkout/eyJpdiI6Ii4uLg==",
+    "deposit_data": {
+      "id": "3f9c1a2e-....-....-....-............",
+      "currency": "ARS",
+      "amount": 500,
+      "receive_amount": 486.25,
+      "status": "pending",
+      "customer_id": "CUS-00123"
+    },
+    "payment_info": {
+      "send_amount": "500.0000 ARS",
+      "receive_amount": "486.25 ARS",
+      "transaction_fee": "13.7500 ARS",
+      "payment_method": "DEBIN (ARG)"
+    },
+    "revenue_split": {
+      "destination_type": "beneficiary",
+      "split_percentage": 30,
+      "label": "Partner payout",
+      "destination_user_id": null,
+      "beneficiary_payment_method_id": 87
+    }
+  }
+}
+```
+
+Redirect the payer to `deposit_url` (or show the returned wire/QR/reference
+instructions) so they can actually complete payment, same as always.
+
+### Errors
+
+Sent back as a normal deposit-creation error — the deposit is **not**
+created at all if `revenue_split` fails validation:
+
+| Error | HTTP | Cause |
+|---|---|---|
+| `revenue_split.destination_type must be internal_wallet or beneficiary.` | 400 | Missing or invalid `destination_type`. |
+| `revenue_split.split_type must be percentage or fixed.` | 400 | Invalid `split_type`. |
+| `revenue_split.split_percentage must be between 0.01 and 100.` | 400 | Out-of-range percentage (`split_type: "percentage"`). |
+| `revenue_split.split_percentage cannot exceed the platform maximum of 100%.` | 400 | Exceeds the admin-configured cap — check §1. |
+| `revenue_split.fixed_amount must be greater than 0.` | 400 | Missing/non-positive `fixed_amount` (`split_type: "fixed"`). |
+| `revenue_split.destination_user_id cannot be your own account.` | 400 | You tried to split to yourself. |
+| `revenue_split destination user not found.` | 400 | `destination_user_id` doesn't match a Yativo account. |
+| `revenue_split.beneficiary_payment_method_id is required for a beneficiary split.` | 400 | Missing beneficiary reference. |
+| `revenue_split beneficiary not found or does not belong to your account.` | 400 | The beneficiary doesn't exist or belongs to a different user. |
+| `revenue_split.customer_id not found or does not belong to your account.` | 400 | `customer_id` doesn't match one of your own customers. |
+| `revenue_split.payout_fee_payer must be platform or beneficiary.` | 400 | Invalid `payout_fee_payer`. |
+| `Revenue splitting is currently disabled platform-wide.` | 400 | Admin kill switch is off — see §1's `is_enabled`. |
+
+After that field-level validation passes, the split is also **previewed**
+against the deposit's actual computed credited amount before the deposit is
+created (simulating the eventual payout's fees and the destination
+gateway's min/max limits), so a split that could never clear isn't allowed
+to exist as a "pending forever" liability:
+
+| Response | HTTP | Cause |
+|---|---|---|
+| `{"error": "fixed split amount (X) exceeds the deposit's net received amount (Y)."}` | 400 | `fixed_amount` is bigger than what this specific deposit nets out to (deposit-specific — not a fixed validation range, so it can't be checked at the field-level step above). |
+| `{"message": "Computed split payout is below the destination gateway minimum.", "data": {"quote": { ... }}}` | 400 | The beneficiary split, after fees, nets below that payout gateway's `minimum_withdrawal`. |
+| `{"message": "Computed split payout exceeds the destination gateway maximum.", "data": {"quote": { ... }}}` | 400 | The beneficiary split, after fees, nets above that payout gateway's `maximum_withdrawal`. |
+| `{"error": "Unable to calculate the payout quote, please retry."}` | 502 | The fee/FX calculator itself failed (transient upstream issue) — not a problem with your input; safe to retry as-is. |
+
+---
+
+## 3) Wait for the Deposit to Complete
+
+**Creating the deposit never credits your wallet, and never executes the
+split, by itself.** Every payin rail is asynchronous: the deposit is
+created `pending`/`processing`, and only flips to `success` once the
+payment provider confirms funds landed — which Yativo receives via that
+provider's own webhook. The split fires at that exact `success` transition,
+the same moment your own wallet gets credited.
+
+Poll for the transition:
+
+```http
+GET /api/v1/wallet/deposits?customer_id=CUS-00123
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": "3f9c1a2e-....-....-....-............",
+      "currency": "ARS",
+      "amount": 500,
+      "receive_amount": 486.25,
+      "status": "success",
+      "customer_id": "CUS-00123",
+      "created_at": "2026-08-26T12:00:00.000000Z"
+    }
+  ],
+  "pagination": { "total": 1, "per_page": 15, "current_page": 1, "last_page": 1, "next_page_url": null, "prev_page_url": null }
+}
+```
+
+`status` is one of `pending`, `processing`, `success`, `failed`,
+`cancelled`, `expired`. The instant it flips to `success`, check §4 below —
+the resulting split execution is already there.
+
+---
+
+## 4) List Split Execution History
+
+Paginated audit log of every split that's run (or was skipped) on your
+deposits, most recent first. Use this to reconcile "where did the rest of
+my deposit go" or to confirm a specific deposit's split actually landed.
+
+### Endpoint
+
+```http
+GET /api/v1/revenue-split/executions?status=completed&per_page=20&page=1
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+### Sample Response
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Records retrieved successfully",
+  "data": [
+    {
+      "id": 231,
+      "user_id": 1001,
+      "source_deposit_id": "3f9c1a2e-....-....-....-............",
+      "withdraw_id": "9c2e4a10-....-....-....-............",
+      "currency": "ARS",
+      "source_amount": "486.25",
+      "split_type": "percentage",
+      "split_percentage": "30.00",
+      "fixed_amount": null,
+      "split_amount": "145.88",
+      "payout_fee_payer": "platform",
+      "payout_fee_amount": "3.20",
+      "net_payout_amount": "145.88",
+      "label": "Partner payout",
+      "customer_id": null,
+      "destination_type": "beneficiary",
+      "destination_user_id": null,
+      "beneficiary_payment_method_id": 87,
+      "status": "completed",
+      "failure_reason": null,
+      "completed_at": "2026-08-26T12:05:12.000000Z",
+      "created_at": "2026-08-26T12:05:10.000000Z"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "per_page": 20,
+    "current_page": 1,
+    "last_page": 1,
+    "next_page_url": null,
+    "prev_page_url": null
+  }
+}
+```
+
+`source_deposit_id` matches the `id` from the deposit-creation response
+(`deposit_data.id`) — that's how you tie an execution back to the deposit
+that triggered it. `source_amount` is the deposit's credited amount the
+percentage was applied to; `split_amount` is what actually moved.
+
+### `status` values
+
+| Value | Meaning |
+|---|---|
+| `pending` | Row created, still processing (should be momentary). |
+| `completed` | Funds landed at the destination — wallet credit confirmed for `internal_wallet`, payout accepted by the gateway for `beneficiary`. |
+| `failed` | The transfer/payout attempt failed; see `failure_reason`. For a `beneficiary` split, any amount already debited from your wallet for this attempt is automatically refunded back to you — a `failed` execution never leaves you short. |
+| `skipped` | The deposit succeeded but the split didn't run — e.g. the computed amount was zero, or the deposit fell below the platform's minimum. See `failure_reason`. |
+
+---
+
+## End-to-End Example (JavaScript)
+
+```js
+const API_BASE = 'https://smtp.yativo.com/api/v1';
+
+async function authedFetch(path, token, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {}),
+    },
+  });
+  return res.json();
+}
+
+// 1. Check the platform cap before showing a percentage input.
+async function getRevenueSplitSettings(token) {
+  const { data } = await authedFetch('/revenue-split/settings', token);
+  return data; // { is_enabled, max_split_percentage, ... }
+}
+
+// 2. Pick a payin method.
+async function listPayinMethods(token, country, currency) {
+  const params = new URLSearchParams({ ...(country && { country }), ...(currency && { currency }) });
+  const { data } = await authedFetch(`/payment-methods/payin?${params}`, token);
+  return data;
+}
+
+// 3a. Create a deposit that auto-withdraws 25% to a saved bank beneficiary.
+async function createDepositWithBeneficiarySplit(token, { gatewayId, amount, currency, beneficiaryPaymentMethodId }) {
+  const { data } = await authedFetch('/wallet/deposits/new', token, {
+    method: 'POST',
+    body: JSON.stringify({
+      gateway: gatewayId,
+      amount,
+      currency,
+      revenue_split: {
+        destination_type: 'beneficiary',
+        beneficiary_payment_method_id: beneficiaryPaymentMethodId,
+        split_percentage: 25,
+        label: 'Auto-withdraw 25%',
+      },
+    }),
+  });
+  return data; // { deposit_url, deposit_data: { id, status: 'pending', ... }, payment_info, revenue_split }
+}
+
+// 3a-2. Or split off a flat amount instead of a percentage — must be <=
+// the deposit's net credited amount, or deposit creation is rejected (400).
+async function createDepositWithFixedBeneficiarySplit(token, { gatewayId, amount, currency, beneficiaryPaymentMethodId, fixedAmount }) {
+  const { data } = await authedFetch('/wallet/deposits/new', token, {
+    method: 'POST',
+    body: JSON.stringify({
+      gateway: gatewayId,
+      amount,
+      currency,
+      revenue_split: {
+        destination_type: 'beneficiary',
+        beneficiary_payment_method_id: beneficiaryPaymentMethodId,
+        split_type: 'fixed',
+        fixed_amount: fixedAmount,
+        payout_fee_payer: 'beneficiary',
+        label: 'Flat partner fee',
+      },
+    }),
+  });
+  return data;
+}
+
+// 3b. Create a deposit that moves 10% to a sub-account's wallet instead.
+async function createDepositWithInternalSplit(token, { gatewayId, amount, currency, destinationUserId }) {
+  const { data } = await authedFetch('/wallet/deposits/new', token, {
+    method: 'POST',
+    body: JSON.stringify({
+      gateway: gatewayId,
+      amount,
+      currency,
+      revenue_split: {
+        destination_type: 'internal_wallet',
+        destination_user_id: destinationUserId,
+        split_percentage: 10,
+        label: 'Send 10% to holding account',
+      },
+    }),
+  });
+  return data;
+}
+
+// 3c. Or just create a plain deposit — omit revenue_split entirely.
+async function createPlainDeposit(token, { gatewayId, amount, currency }) {
+  const { data } = await authedFetch('/wallet/deposits/new', token, {
+    method: 'POST',
+    body: JSON.stringify({ gateway: gatewayId, amount, currency }),
+  });
+  return data;
+}
+
+// 4. Poll until the deposit clears — the split (if any) has already run by
+// the time status flips to 'success'.
+async function waitForDepositSuccess(token, depositId, { intervalMs = 5000, timeoutMs = 5 * 60 * 1000 } = {}) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const { data } = await authedFetch('/wallet/deposits', token);
+    const deposit = data.find((d) => d.id === depositId);
+    if (deposit && ['success', 'failed', 'cancelled', 'expired'].includes(deposit.status)) {
+      return deposit;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  throw new Error('Timed out waiting for deposit to settle');
+}
+
+// 5. Confirm what happened to a specific deposit's split.
+async function getSplitExecutionForDeposit(token, depositId) {
+  const { data } = await authedFetch('/revenue-split/executions?per_page=50', token);
+  return data.find((execution) => execution.source_deposit_id === depositId) ?? null;
+}
+```
+
+---
+
+## Quick Reference
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/v1/revenue-split/settings` | Read-only platform constraints (enabled, max %, eligible currencies). |
+| `POST` | `/api/v1/wallet/deposits/new` | Create a deposit; pass an optional `revenue_split` object to split it. |
+| `GET` | `/api/v1/wallet/deposits` | List/poll your deposits — watch `status` flip to `success`. |
+| `GET` | `/api/v1/revenue-split/executions` | Paginated audit log of every split attempt. |
+
+---
+
+## Admin
+
+Platform admins manage the global guardrails and oversee every business's
+split executions from the admin panel:
+
+- **Default Settings** — `/admin/revenue-split-settings` — enable/disable
+  the feature globally, set the max split percentage any deposit can
+  request, minimum deposit amount, and eligible currencies.
+- **Executions** — `/admin/revenue-split-executions` — the full audit trail
+  across every business, filterable by status and business.

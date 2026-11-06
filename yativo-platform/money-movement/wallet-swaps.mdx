@@ -1,0 +1,178 @@
+---
+title: "Wallet Swap Integration"
+description: "Wallet Swap Integration — integration guide for the Yativo API."
+---
+
+Swap balance between your own wallets — for example, move funds from your
+USD balance into your USDC balance. Rates and fees are set by Yativo per
+currency pair; only the pairs listed by `GET /wallet/swap/pairs` are
+available, and more may be added over time.
+
+All endpoints use the standard authenticated request context (API key +
+bearer token) and live under `/api/v1/wallet/swap`. Amounts in requests and
+responses are in **major units** (`100.50` means 100.50), not cents.
+
+## How a swap is priced
+
+The fee is charged in the currency you swap **from**, and is taken off
+before conversion:
+
+```
+fee      = fixed_fee + amount × percent_fee / 100   (then clamped to min_fee / max_fee)
+received = (amount − fee) × rate                    (rounded down to the destination's precision)
+```
+
+You are debited `amount` in total. For example, swapping 100 USD to USDC at a
+rate of `0.998` with a 0.50 fixed fee and a 1% fee:
+
+- fee = 0.50 + 1.00 = 1.50 USD
+- received = (100 − 1.50) × 0.998 = 98.30 USDC
+
+Always call [quote](#get-a-quote) first to show the exact figures — rates and
+fees can change.
+
+## List available pairs
+
+```
+GET /api/v1/wallet/swap/pairs
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    {
+      "from_currency": "USD",
+      "to_currency": "USDC",
+      "rate": 0.998,
+      "fixed_fee": 0.5,
+      "percent_fee": 1,
+      "min_fee": null,
+      "max_fee": null,
+      "min_amount": 10,
+      "max_amount": 50000
+    }
+  ]
+}
+```
+
+Pairs are one-directional: USD → USDC and USDC → USD are separate pairs with
+their own rate and fees. `null` means no limit.
+
+## Get a quote
+
+```
+POST /api/v1/wallet/swap/quote
+```
+
+```json
+{ "from_currency": "USD", "to_currency": "USDC", "amount": 100 }
+```
+
+Prices the swap without moving any money:
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "from_currency": "USD",
+    "to_currency": "USDC",
+    "from_amount": 100,
+    "fee": 1.5,
+    "net_amount": 98.5,
+    "rate": 0.998,
+    "to_amount": 98.3,
+    "available_balance": 2500
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `from_amount` | Total that will be debited, fee included. |
+| `fee` | Fee, in `from_currency`. |
+| `net_amount` | `from_amount − fee` — the amount converted. |
+| `to_amount` | What will be credited, in `to_currency`. |
+| `available_balance` | Your current `from_currency` balance. |
+
+## Swap
+
+```
+POST /api/v1/wallet/swap
+Idempotency-Key: 6f1c2a4e-swap-0001
+```
+
+```json
+{ "from_currency": "USD", "to_currency": "USDC", "amount": 100 }
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `from_currency` | Yes | Wallet to debit, e.g. `USD`. |
+| `to_currency` | Yes | Wallet to credit, e.g. `USDC`. Must differ from `from_currency`. |
+| `amount` | Yes | Amount to debit, fee included. Must be greater than `0`. |
+| `idempotency_key` | No | Alternative to the `Idempotency-Key` header (max 100 chars). |
+
+Send an idempotency key so a retried request can't swap twice: repeating a
+key returns the original swap instead of creating a new one. The debit and
+credit happen together — if either fails, neither is applied. If you don't
+have a wallet in `to_currency` yet, it is created for you.
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "reference": "198b5eae-dc13-48f2-bb4f-d3dc9ac50f52",
+    "from_currency": "USD",
+    "to_currency": "USDC",
+    "from_amount": 100,
+    "fee": 1.5,
+    "rate": 0.998,
+    "to_amount": 98.3,
+    "status": "completed",
+    "created_at": "2026-09-30T10:20:00+00:00"
+  }
+}
+```
+
+Each swap also appears in your transaction history as two entries of type
+`swap` — the debit and the credit.
+
+## Swap history
+
+```
+GET /api/v1/wallet/swap
+GET /api/v1/wallet/swap/{reference}
+```
+
+The list is paginated, newest first, and accepts `per_page`. Each item has the
+same shape as the swap response above.
+
+## Errors
+
+Errors use the standard envelope. Swap and quote validation failures return
+`422` with a message such as:
+
+| Message | Cause |
+|---|---|
+| `Swapping USD to EUR is not available.` | No active pair for that direction. |
+| `Minimum swap amount is 10 USD.` / `Maximum swap amount is 50000 USD.` | Amount is outside the pair's limits. |
+| `You don't have a USD wallet.` | You have no wallet in `from_currency`. |
+| `Amount is too small to cover the swap fee.` | The fee is equal to or more than the amount. |
+| `Insufficient funds.` | Your `from_currency` balance is too low. |
+| `Insufficient available balance. A minimum balance of … must be kept in your USDC balance …` | Swapping out of USDC would go below your Business Spend Card reserve. |
+
+`GET /wallet/swap/{reference}` returns `404` for a reference that isn't yours.
+
+## Team members
+
+Team members need the **wallets view** permission to list pairs, get quotes
+and see history, and **wallets manage** to execute a swap. Members with the
+read-only `viewer` role can list pairs and history but can't request quotes
+or swap, since both are `POST` requests.

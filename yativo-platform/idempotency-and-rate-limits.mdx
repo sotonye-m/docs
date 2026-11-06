@@ -1,0 +1,79 @@
+---
+title: "Idempotency & Rate Limits"
+description: "Safe retry mechanics using Idempotency-Key and multi-tier rate limiting thresholds."
+---
+
+## Idempotency
+
+To prevent duplicate transactions, double billing, or race conditions during network retries, Yativo supports the standard `Idempotency-Key` HTTP header on all mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`).
+
+```http
+POST /api/v1/payout/simple HTTP/1.1
+Host: smtp.yativo.com
+X-Api-Key: yativo_pk_...
+X-Api-Secret: yativo_sk_...
+Idempotency-Key: 3f1c2a1e-8b7d-4c1e-9f0a-6d2b5e7c9a10
+Content-Type: application/json
+```
+
+### Idempotency Behavior
+
+- **Key reuse within 60 minutes:** Reusing the same `Idempotency-Key` for any request that already completed within 60 minutes returns HTTP `409 Conflict`:
+  ```json
+  {
+    "status": "failed",
+    "status_code": 409,
+    "message": "This Idempotency-Key has already been used. Use a new key for each unique request."
+  }
+  ```
+  Generate a fresh `Idempotency-Key` for every new operation. Retries of an in-flight request should wait for the first call to finish or use the same key only while the first attempt has not yet completed successfully.
+- **Payload mismatch:** Reusing an `Idempotency-Key` with a different request payload returns HTTP `409 Conflict`:
+  ```json
+  {
+    "status": "failed",
+    "status_code": 409,
+    "message": "Idempotency key reuse detected with a different request payload."
+  }
+  ```
+- **In-flight concurrent request:** Sending a duplicate key while the first transaction is still actively processing returns HTTP `409 Conflict`:
+  ```json
+  {
+    "status": "failed",
+    "status_code": 409,
+    "message": "A matching request is already being processed."
+  }
+  ```
+- **Transient server errors (5xx):** 5xx responses are not cached, allowing you to retry the request with the same idempotency key once the network issue clears.
+- **Implicit keys:** If you do not supply an `Idempotency-Key`, Yativo automatically computes a cryptographic SHA-256 fingerprint from the request payload to guard against immediate double-submissions.
+
+---
+
+## Rate Limits
+
+Yativo enforces rate limits per account to preserve high availability and platform resilience.
+
+| Category | HTTP Methods | Default Allowance | Notes |
+|----------|--------------|-------------------|-------|
+| **Read Operations** | `GET` | **50 requests / sec** | Polling transaction status, balances, beneficiaries |
+| **Write Operations** | `POST`, `PUT`, `PATCH`, `DELETE` | **20 requests / sec** | Initiating payouts, deposits, cards, swaps |
+
+### Handling Rate Limits
+
+When your request rate exceeds the threshold, the API responds with HTTP `429 Too Many Requests`:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 3
+Content-Type: application/json
+
+{
+  "status": "failed",
+  "status_code": 429,
+  "message": "Too Many Requests"
+}
+```
+
+<Tip>
+Inspect the `Retry-After` response header to determine how many seconds to pause before sending your next request. Enterprise accounts can request customized throughput limits.
+</Tip>
+

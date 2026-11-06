@@ -1,0 +1,58 @@
+---
+title: "Virtual Accounts"
+description: "Issue dedicated bank account numbers in USD, EUR, GBP, MXN, COP, and NGN."
+---
+
+Yativo allows you to create dedicated virtual accounts in multiple currencies for your customers or business operations. Funds sent to these account numbers settle directly into your wallet.
+
+## 1. Create a Virtual Account
+
+```http
+POST /api/v1/business/virtual-account/create
+```
+
+```json
+{
+  "currency": "USD",
+  "customer_id": "cus_123"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "account_id": "va_9a8b7c6",
+    "currency": "USD",
+    "account_number": "1002938475",
+    "routing_number": "021000021",
+    "bank_name": "Evolve Bank & Trust",
+    "bank_address": "6015 Primacy Pkwy, Memphis, TN",
+    "status": "active"
+  }
+}
+```
+
+---
+
+## 2. Supported Currencies & Rails
+
+| Currency | Account Rail | Identifiers Provided |
+|----------|--------------|----------------------|
+| **USD** | ACH / Fedwire | Account Number, Routing Number (ABA) |
+| **EUR** | SEPA / SEPA Instant | IBAN, BIC/Swift |
+| **GBP** | Faster Payments / BACS | Account Number, Sort Code |
+| **MXN** | SPEI | CLABE (18 digits) |
+| **COP** | ACH Colombia | Account Number, Bank Name |
+| **NGN** | NIBSS Instant Payments | Account Number, Bank Name |
+
+---
+
+## 3. Receiving Deposits
+
+When an external sender wires funds to a virtual account:
+1. Yativo automatically credits your corresponding currency wallet.
+2. A `virtual_account.deposit` webhook event is emitted with deposit metadata and the transaction reference.
+

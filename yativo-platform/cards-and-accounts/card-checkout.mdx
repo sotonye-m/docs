@@ -1,0 +1,736 @@
+---
+title: "Card Checkout Integration"
+description: "Verify selling customers, create checkout orders, webhooks, refunds, and sandbox testing."
+---
+
+Card Checkout lets your customers accept debit and credit card payments on a
+secure, Yativo-hosted checkout page. Each of your customers that sells is
+verified once through its `card_checkout` endorsement. You then create orders
+for it through the API, send the buyer to the returned `checkout_url`, and
+receive a webhook for every change in the order.
+
+Each card payment lands on the **selling customer's own** connected business account (`biz_…` from card-checkout onboarding).
+
+Yativo collects its fee from the seller's account (processor fee, plus 1%, plus a
+fixed fee). The rest stays on the customer's account. Open the withdrawal page
+for that customer with
+`POST /v1/card-checkout/customers/{customer_id}/withdrawal`.
+
+- [Before you start](#before-you-start)
+- [How it works](#how-it-works)
+- [1. Endorse the customers who sell](#1-endorse-the-customers-who-sell)
+- [2. Create a checkout order](#2-create-a-checkout-order)
+- [3. Send the buyer to the checkout page](#3-send-the-buyer-to-the-checkout-page)
+- [4. Follow orders with webhooks](#4-follow-orders-with-webhooks)
+- [Read orders](#read-orders)
+- [Order statuses](#order-statuses)
+- [Your balance](#your-balance)
+- [Fees, settlement and reserves](#fees-settlement-and-reserves)
+- [Refunds and disputes](#refunds-and-disputes)
+- [Errors](#errors)
+- [Testing](#testing)
+
+---
+
+## Before you start
+
+**Card Checkout must be enabled for your account.** Request access with
+[`POST /v1/card-checkout/account/request-access`](#request-access); our team
+reviews the request. Submitting a customer's endorsement before then also files
+the request for you (see [Before your account is enabled](#before-your-account-is-enabled)).
+Until access is approved, the other endpoints below return `403` with
+`code: card_checkout_not_enabled`. Your pricing (fee, settlement delay, reserve
+and currencies) is set when access is granted and is shown by
+[`GET /v1/card-checkout/account`](#check-your-account).
+
+### Request access
+
+```http
+POST /v1/card-checkout/account/request-access
+Content-Type: application/json
+
+{ "note": "We sell online courses to customers in the US and EU." }
+```
+
+`note` is optional (max 1000 characters): tell us what you sell and to whom.
+The response is your account object with `access_status: "requested"` (HTTP
+`202`). Sending the request again while it is open changes nothing. If access is
+already enabled you get `200` with `access_status: "enabled"`.
+
+The status codes in this guide are the `status_code` in the response envelope.
+
+| `access_status` | Meaning |
+|---|---|
+| `requested` | Waiting for review. |
+| `enabled` | Approved. Endorse the customers who will sell next. |
+| `declined` | Not approved. You can send a new request with more detail. |
+| `disabled` | Access was turned off. Contact support, or send a new request. |
+
+Every request needs your API credentials, and your Yativo account must have
+passed KYC:
+
+```http
+X-Api-Key: <YOUR_API_KEY>
+X-Api-Secret: <YOUR_API_SECRET>
+```
+
+Send an `Idempotency-Key` header on every `POST` so a retried request is never
+executed twice. See [Payin & Payout Integration → Idempotency](/yativo-platform/money-movement/payins#idempotency).
+
+All responses use the standard envelope:
+`{ "status": "success" | "failed", "status_code": ..., "message": "...", "data": { ... } }`.
+
+Amounts in requests and responses are **decimal strings in major units**
+(`"49.99"`). Currency codes are ISO 4217; only **USD** is enabled today.
+
+---
+
+## How it works
+
+```
+Your server ──POST /v1/card-checkout/customers/{id}/endorsement──▶ Yativo  (once per selling customer)
+Customer    ──▶ onboarding_url ──▶ confirms details, adds ID / company documents
+Your server ◀── webhook endorsement.updated (card_checkout: approved) ── Yativo
+
+Your server ──POST /v1/card-checkout/orders { customer_id, amount }──▶ Yativo  (amount fixed here)
+Your server ◀──────── checkout_url ──────────── Yativo
+Buyer       ──▶ checkout_url ──▶ pays by card (3-D Secure if the bank asks)
+Your server ◀── webhook card_checkout.order.paid ── Yativo   (fulfil here)
+Yativo      ── the order's net amount ──▶ your balance, recorded against the customer
+```
+
+- The amount is set when **you** create the order. The buyer cannot change it.
+- Card details are entered in secure, isolated fields; they never reach your
+  servers or ours.
+- **Only the `card_checkout.order.paid` webhook means the payment was made.**
+  The buyer's browser being redirected to your `success_url` is not proof of
+  payment: browsers close, redirects fail, and URLs can be typed by hand.
+
+---
+
+## 1. Endorse the customers who sell
+
+Each of your customers that sells by card must be
+verified first. This is the customer's `card_checkout` endorsement, next to its
+other endorsements. Individual and business customers can both be endorsed.
+
+### Submit the endorsement
+
+```http
+POST /v1/card-checkout/customers/{customer_id}/endorsement
+```
+
+No body. What the customer already gave Yativo is used straight away:
+
+- **Business customer:** its KYB submission (legal name, entity type, tax and
+  registration numbers, registered address, and the signer among its associated
+  persons) is sent for verification. The customer then uploads the company
+  documents on the onboarding page.
+- **Individual customer:** its KYC submission (name, date of birth, address,
+  phone, ID document) is sent for verification when its ID photos and a selfie
+  are on file. Otherwise the customer confirms the prefilled details and adds
+  the photos on the onboarding page.
+
+```json
+{
+  "status": "success",
+  "status_code": 202,
+  "message": "Endorsement submitted",
+  "data": {
+    "customer_id": "4f0c1e1a-…",
+    "customer_type": "business",
+    "endorsement_status": "pending",
+    "verification_status": "pending",
+    "can_accept_payments": false,
+    "onboarding_url": "https://…/onboarding/…?expires=…&signature=…",
+    "onboarding_url_expires_at": "2026-10-16T14:00:00+00:00"
+  }
+}
+```
+
+Send the customer to `onboarding_url`. It opens a Yativo-hosted page showing
+only the form for the customer's type, prefilled with what is on file:
+
+- **Individual:** confirm the details, add a government ID and a selfie.
+- **Business:** confirm the company details, then upload the company documents
+  and the representative's ID in a secure step embedded in the same page.
+
+If the review needs more (a clearer photo, an extra detail), the same page
+lists each item and takes the answers and uploads.
+
+You can also submit the endorsement with the customer endpoint you already use
+for other endorsements:
+`POST /v1/customer/kyc/resubmit/{customer_id}/card_checkout` (see
+[KYC endorsement resubmission](/yativo-fiat/kyc#resubmit-one-endorsement); for
+`card_checkout` it accepts business customers too).
+
+Submitting again is safe: an approved customer is left as it is, and nothing
+already sent is sent twice.
+
+### Before your account is enabled
+
+A customer can ask for card checkout before your account has access. In that
+case the endorsement request is held instead of refused:
+
+- If you never requested access, the request is filed for you
+  (`access_status` becomes `requested`) and the note says which customer asked.
+- The customer's `card_checkout` endorsement is set to `pending`, with
+  `metadata.awaiting_business_access: true` and an `errors` entry explaining
+  that access was requested. You receive the usual `endorsement.updated` webhook.
+- The response is `202`:
+
+```json
+{
+  "status": "success",
+  "status_code": 202,
+  "message": "Card checkout access has been requested for this business. This request continues automatically once it is approved.",
+  "data": {
+    "customer_id": "4f0c1e1a-…",
+    "endorsement_status": "pending",
+    "awaiting_business_access": true
+  }
+}
+```
+
+When our team enables your account, every waiting customer is submitted
+automatically and you get `endorsement.updated` webhooks as they progress. You
+don't need to call the endpoint again.
+
+If your access request was **declined**, the endorsement request returns `403`
+with `code: card_checkout_access_declined`. Send a new
+[access request](#request-access) with more detail first.
+
+### Follow the endorsement
+
+The `card_checkout` endorsement appears with the customer's other endorsements
+on the customer object (`GET /v1/customer/{customer_id}`), and
+every change sends you the usual `endorsement.updated` webhook. While there is
+something for the customer to do, `hosted_kyc_url` holds the onboarding link;
+it is renewed automatically whenever you read the endorsements, so the one you
+get always works.
+
+You can also read it on its own:
+
+```http
+GET /v1/card-checkout/customers/{customer_id}
+```
+
+The response has the same shape as the submit response.
+
+| `endorsement_status` | Meaning |
+|---|---|
+| `not_started` | Not submitted yet. |
+| `submitted` | Received; the verification is being prepared. |
+| `pending` | Waiting for the customer: send them to `onboarding_url`. `message` says what's missing. |
+| `under_review` | Everything was sent; under review, usually within 3 business days. |
+| `approved` | The customer can sell. `can_accept_payments` is `true`. |
+| `rejected` | Not approved, or the customer's account was suspended. Contact support. |
+
+### A fresh onboarding link
+
+```http
+POST /v1/card-checkout/customers/{customer_id}/onboarding
+Content-Type: application/json
+
+{ "return_url": "https://app.example.com/done", "refresh_url": "https://app.example.com/link-expired" }
+```
+
+Both fields are optional https URLs: `return_url` is the "Back to app" link on
+the page, `refresh_url` is where the customer lands once this link has expired.
+Returns `{ "customer_id", "endorsement_status", "onboarding_url", "expires_at" }`.
+This link is valid for 2 hours.
+
+### Or verify a business customer through the API (your own form)
+
+**1. Get the form, prefilled from the customer's KYB**
+
+```http
+GET /v1/card-checkout/customers/{customer_id}/verification
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "kind": "business",
+    "verification": { "verification_status": "pending" },
+    "prefill": {
+      "business_name": "Acme LLC",
+      "business_structure": "single_member_llc",
+      "business_tax_identification_number": "12-3456789",
+      "business_website": "https://acme.example",
+      "country": "US",
+      "place_of_incorporation": "DE",
+      "address": { "line1": "1 Corp Way", "line2": null, "city": "Dover", "state": "DE", "postal_code": "19901" },
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "date_of_birth": "1985-04-12",
+      "tax_identification_number": null
+    },
+    "missing_fields": [],
+    "business_structures": ["single_member_llc", "multi_member_llc", "private_corporation", "…"]
+  }
+}
+```
+
+For an individual customer `kind` is `individual` and `prefill` holds the
+person's details; individuals add their ID photos and selfie on the onboarding
+page. The tax identification number is never prefilled.
+
+**2. Submit corrections** (business customers)
+
+```http
+POST /v1/card-checkout/customers/{customer_id}/verification
+Content-Type: application/json
+```
+
+Any field you leave out is taken from `prefill`. A field you send overrides it.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `kind` | string | yes | Always `business`. |
+| `business_name` | string | yes, unless prefilled | Legal business name. |
+| `country` | ISO 3166-1 alpha-2 | yes, unless prefilled | Country of incorporation, e.g. `US`. |
+| `business_structure` | string | no | Legal entity structure, e.g. `private_corporation`. Must be valid for `country`; omit it for countries with no structures. |
+| `business_tax_identification_number` | string | no | EIN (US), Business Number (CA), Company Number (UK). |
+| `place_of_incorporation` | string | no | State or region of incorporation, e.g. `DE`. |
+| `business_website` | URL | no | The business's own site or social page. |
+| `address[line1]`, `address[line2]`, `address[city]`, `address[state]`, `address[postal_code]` | string | no | Registered business address. |
+| `first_name` | string | yes, unless prefilled | Business representative's first name. |
+| `last_name` | string | yes, unless prefilled | Business representative's last name. |
+| `date_of_birth` | `YYYY-MM-DD` | no | Representative's date of birth (18 or older). |
+| `tax_identification_number` | string | no | Representative's personal tax ID (SSN in the US). Sent once; Yativo does not store it. |
+
+Returns `201`:
+
+```json
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Verification submitted",
+  "data": {
+    "verification_status": "action_required",
+    "information_requested": [
+      { "id": "inrqi_…", "requirement": "business_verification_document", "type": "files", "label": "Company Verification Document" },
+      { "id": "inrqi_…", "requirement": "identity_document", "type": "id_document", "label": "Identity Document", "options": ["PASSPORT", "DRIVERS"] }
+    ]
+  }
+}
+```
+
+| `verification_status` | Meaning |
+|---|---|
+| `not_started` | Nothing submitted yet. |
+| `pending` | Submitted; for a business, the company documents are still to be uploaded on the onboarding page. |
+| `processing` | Automated checks running. |
+| `action_required` | Answer the items in `information_requested` (step 3). |
+| `manual_review` | Under review, usually within 3 business days. Nothing to do. |
+| `approved` | Verified. |
+| `rejected` | Not approved. Contact support. |
+
+**3. Answer what the review asks for** (any customer)
+
+Each item in `information_requested` is one thing to collect:
+
+| Field | Description |
+|---|---|
+| `id` | Send it back with the answer. |
+| `requirement` | What is needed, e.g. `business_verification_document`, `identity_document`, `ein`, `business_phone_number`. |
+| `type` | How to answer: `files`, `id_document`, `text`, `text_with_files`, `date`, `phone`, `select` or `address`. |
+| `label` | Text to show the user. |
+| `options` | Allowed values for a `select` item; accepted ID types for an `id_document` item. |
+| `multiple` | `true` when a `select` item takes several values. |
+| `optional` | `true` when the item can be skipped. |
+| `files_allowed` | `true` when a text answer can carry supporting documents. |
+| `errors` | Why a previous answer was rejected. Fix it and answer again. |
+
+```http
+POST /v1/card-checkout/customers/{customer_id}/verification/information
+Content-Type: multipart/form-data
+```
+
+| Item `type` | Send |
+|---|---|
+| `files` | `uploads[<id>][files][]`: one file per page, in order. If the item has `options`, also `answers[<id>][value]`, the document you are sending. |
+| `id_document` | `answers[<id>][document_type]` (one of `options`), the files `uploads[<id>][documents][<slot>]`, and optionally `answers[<id>][issuing_country]` and `answers[<id>][document_number]`. |
+| `text`, `date`, `phone` | `answers[<id>][value]`. Dates are `YYYY-MM-DD`; phone numbers include the country code (`+12125550123`). |
+| `text_with_files` | `answers[<id>][value]`, plus optional `uploads[<id>][files][]`. |
+| `select` | `answers[<id>][value]`, or `answers[<id>][values][]` when `multiple` is `true`. |
+| `address` | `answers[<id>][address][line1]`, `[line2]`, `[city]`, `[state]`, `[postal_code]`, `[country]`. No PO boxes. |
+
+ID document slots:
+
+| `document_type` | Slots |
+|---|---|
+| `PASSPORT` | `passport_front` |
+| `ID_CARD` | `id_card_front`, `id_card_back` |
+| `DRIVERS` | `drivers_front`, `drivers_back` |
+| `RESIDENCE_PERMIT` | `residence_permit_front`, `residence_permit_back` |
+
+Files are JPG, PNG or PDF, up to 10 MB each and 10 per item (a `selfie` must be
+JPG or PNG). Yativo forwards them for review and does not keep them.
+
+You can answer some items now and the rest later; answered items leave the
+list. Everything is checked before anything is sent, so one bad answer sends
+nothing. The response has the same shape as the submit response.
+
+Errors from these endpoints:
+
+| Status | Code | When |
+|---|---|---|
+| 404 | `customer_not_found` | Not one of your customers. |
+| 409 | `endorsement_not_submitted` | Submit the `card_checkout` endorsement first. |
+| 409 | `already_verified` | The customer is already verified. |
+| 409 | `verification_not_started` | Nothing submitted yet to answer. |
+| 409 | `nothing_requested` | Nothing is needed right now. |
+| 422 | `use_onboarding_page` | Individual customers add their ID and selfie on the onboarding page. |
+| 422 | `missing_fields` | A required detail isn't on file and wasn't sent. |
+| 422 | `invalid_business_structure` | `business_structure` isn't valid for `country`. |
+| 422 | `verification_refused` | A detail was rejected; the message says which. |
+| 422 | — | `errors` keyed `answers.<id>` says what to fix. |
+| 502 | `provider_unavailable` | Temporarily unavailable; retry. |
+
+#### Business structures
+
+| Country | `business_structure` values |
+|---|---|
+| `US` | `single_member_llc`, `multi_member_llc`, `private_corporation`, `private_partnership`, `public_corporation`, `public_partnership`, `sole_proprietorship`, `unincorporated_association`, `incorporated_non_profit`, `unincorporated_non_profit` |
+| `CA` | `private_corporation`, `public_corporation`, `private_partnership`, `sole_proprietorship`, `registered_charity` |
+| `GB` | `private_corporation`, `incorporated_partnership`, `unincorporated_partnership`, `incorporated_non_profit`, `unincorporated_non_profit` |
+| `AU` | `public_corporation`, `private_corporation`, `sole_proprietorship`, `private_partnership`, `trust`, `unincorporated_association` |
+| `NZ` | `public_corporation`, `private_corporation`, `sole_proprietorship`, `private_partnership`, `trust` |
+| `DE` | `private_corporation`, `public_corporation`, `incorporated_partnership`, `unincorporated_partnership`, `incorporated_non_profit`, `unincorporated_non_profit` |
+| `NL` | `incorporated_partnership`, `unincorporated_partnership`, `public_corporation`, `private_corporation`, `sole_proprietorship` |
+| `AT`, `BE`, `BG`, `CH`, `CY`, `CZ`, `DK`, `EE`, `ES`, `FI`, `FR`, `GI`, `GR`, `HR`, `HU`, `IE`, `IT`, `LI`, `LT`, `LU`, `LV`, `MT`, `NO`, `PL`, `PT`, `RO`, `SE`, `SI`, `SK` | `incorporated_partnership`, `unincorporated_partnership`, `public_corporation`, `private_corporation` |
+| `AE` | `llc`, `sole_establishment`, `free_zone_llc`, `free_zone_establishment` |
+| `HK` | `private_company`, `private_partnership`, `sole_proprietorship`, `incorporated_non_profit`, `unincorporated_non_profit` |
+| `SG` | `sole_proprietorship`, `private_partnership`, `private_company`, `public_company` |
+| `TH` | `private_corporation`, `incorporated_partnership`, `unincorporated_partnership`, `sole_proprietorship` |
+| `JP` | `sole_proprietorship` |
+
+Other countries have no structures: send `business_name` and omit
+`business_structure`.
+
+---
+
+## 2. Create a checkout order
+
+```http
+POST /v1/card-checkout/orders
+Content-Type: application/json
+Idempotency-Key: 3f1c2a1e-8b7d-4c1e-9f0a-6d2b5e7c9a10
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `customer_id` | string | yes | Your customer that is selling. Its `card_checkout` endorsement must be `approved`. |
+| `amount` | string | yes | Amount to charge, e.g. `"49.99"`. |
+| `currency` | string | yes | `USD`. |
+| `description` | string | yes | What the buyer is paying for (shown on the checkout page, max 255). |
+| `reference` | string | no | Your own order id. Unique per account (letters, digits, `._:-/`, max 100). |
+| `customer_email` | string | no | The **buyer's** email; pre-fills the checkout form. |
+| `customer_name` | string | no | The **buyer's** name; pre-fills the checkout form. |
+| `success_url` | https URL | no | "Continue" link shown after a successful payment. |
+| `cancel_url` | https URL | no | "Return to seller" link shown on the checkout page. |
+| `metadata` | object | no | Up to 20 string values, returned on the order and in webhooks. |
+| `payment_methods` | string[] | no | Limit this checkout to some payment methods, e.g. `["card", "apple_pay"]`. Each must be in the `payment_methods` list from [`GET /v1/card-checkout/account`](#your-balance). Leave it out to offer every enabled method. |
+
+```bash
+curl -X POST https://api.yativo.com/api/v1/card-checkout/orders \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "customer_id": "4f0c1e1a-…",
+        "amount": "49.99",
+        "currency": "USD",
+        "description": "Pro plan — 1 month",
+        "reference": "INV-10023",
+        "customer_email": "ada@example.com",
+        "success_url": "https://shop.example.com/thanks",
+        "cancel_url": "https://shop.example.com/cart",
+        "metadata": { "plan": "pro" }
+      }'
+```
+
+**Response `201`**
+
+```json
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "Checkout created",
+  "data": {
+    "id": "cco_7wq2k9x0m3c8v1b5n6z4l2j8h0g4f6d1",
+    "customer_id": "4f0c1e1a-…",
+    "reference": "INV-10023",
+    "description": "Pro plan — 1 month",
+    "status": "pending",
+    "currency": "USD",
+    "amount": "49.99",
+    "platform_fee": "2.05",
+    "reserve": "0.00",
+    "net_amount": "47.94",
+    "refunded_amount": "0.00",
+    "disputed_amount": "0.00",
+    "checkout_url": "https://pay.yativo.com/card/cco_7wq2…?expires=…&signature=…",
+    "metadata": { "plan": "pro" },
+    "expires_at": "2026-10-08T15:00:00+00:00",
+    "created_at": "2026-10-08T14:00:00+00:00",
+    "updated_at": "2026-10-08T14:00:00+00:00"
+  }
+}
+```
+
+- `platform_fee`, `reserve` and `net_amount` are fixed when the order is created.
+  Pricing changes made later don't affect existing orders.
+- The checkout link expires after 60 minutes (`expires_at`). Create a new order
+  if the customer comes back later.
+- A `reference` you've already used returns `409` with `code: duplicate_reference`.
+- A `payment_methods` entry that isn't enabled returns `422` with
+  `code: payment_method_not_enabled`. When you limit the methods, the order
+  includes them as `payment_methods`.
+- A customer whose endorsement isn't approved returns `403` with
+  `code: customer_not_endorsed`; another business's customer returns `404`.
+
+---
+
+## 3. Send the buyer to the checkout page
+
+Redirect the buyer to `checkout_url` exactly as returned. Don't change it:
+the URL is signed, and any edit makes it invalid.
+
+On the checkout page, which shows your customer as the seller, the buyer:
+
+1. enters their email, name and billing address, then their card details;
+2. completes 3-D Secure if their bank asks for it;
+3. lands on a receipt page showing the confirmed result, with a link to your
+   `success_url` if you set one.
+
+The page supports light and dark mode and works on mobile.
+
+> **Buyer activity log.** To protect you and your customers from fraud, the
+> checkout page records the buyer's actions on the page, device and browser
+> details, IP address and approximate location. The page tells the buyer
+> this. The log is used for fraud review and dispute evidence.
+
+---
+
+## 4. Follow orders with webhooks
+
+Card Checkout events go to the webhook URL you registered (see the
+[Webhooks Guide](/yativo-platform/webhooks/overview)), signed in the same way as every other event.
+You get one for **every change** in an order's status, and for every refund or
+dispute amount change:
+
+| Event | When |
+|---|---|
+| `card_checkout.order.created` | The order was created. |
+| `card_checkout.order.requires_action` | The buyer's bank asked for verification (3-D Secure). |
+| `card_checkout.order.processing` | A payment was submitted; waiting for confirmation. |
+| `card_checkout.order.paid` | Payment confirmed. **Fulfil the order now.** |
+| `card_checkout.order.payment_failed` | An attempt failed. The buyer can still retry on the same link. |
+| `card_checkout.order.under_review` | Payment received but held for manual review. |
+| `card_checkout.order.partially_refunded`, `card_checkout.order.refunded` | Part or all of the payment was refunded. |
+| `card_checkout.order.disputed` | The buyer opened a chargeback. |
+| `card_checkout.order.expired` | The link expired before payment. |
+
+The payload is the order, including the `customer_id` that sold it:
+
+```json
+{
+  "event.type": "card_checkout.order.paid",
+  "payload": {
+    "id": "cco_7wq2k9x0m3c8v1b5n6z4l2j8h0g4f6d1",
+    "customer_id": "4f0c1e1a-…",
+    "reference": "INV-10023",
+    "description": "Pro plan — 1 month",
+    "status": "paid",
+    "currency": "USD",
+    "amount": "49.99",
+    "platform_fee": "2.05",
+    "reserve": "0.00",
+    "net_amount": "47.94",
+    "refunded_amount": "0.00",
+    "disputed_amount": "0.00",
+    "metadata": { "plan": "pro" },
+    "paid_at": "2026-10-08T14:05:00+00:00",
+    "created_at": "2026-10-08T14:00:00+00:00",
+    "updated_at": "2026-10-08T14:05:00+00:00"
+  }
+}
+```
+
+Make your handler idempotent. You may receive an event more than once, and
+events can arrive out of order. When in doubt, read the order with
+[`GET /v1/card-checkout/orders/{id}`](#read-orders) and act on its `status`.
+
+On sandbox you can send a sample Card Checkout event to your registered URL
+without creating an order: `POST /api/v1/demo/webhook/card_checkout` (defaults to
+`card_checkout.order.paid`) or `POST /api/v1/demo/webhook/card_checkout.order.expired`.
+See [Testing on sandbox](/yativo-platform/testing/sandbox-testing).
+
+---
+
+## Read orders
+
+```http
+GET /v1/card-checkout/orders/{id}
+GET /v1/card-checkout/orders?status=paid&customer_id=4f0c1e1a-…&reference=INV-10023&per_page=20
+```
+
+`GET /orders/{id}` returns the same object as above. While the order can still
+be paid, it also includes a fresh `checkout_url`. You can only read your own
+orders; any other id returns `404`.
+
+The list response is paginated:
+`{ "data": [ …orders… ], "pagination": { "current_page", "per_page", "total", "last_page" } }`.
+
+---
+
+## Order statuses
+
+| Status | Meaning | Buyer can pay? |
+|---|---|---|
+| `pending` | Waiting for the buyer. | yes |
+| `requires_action` | The buyer's bank asked for verification (3-D Secure). | yes |
+| `processing` | Payment submitted; waiting for final confirmation. | no |
+| `failed` | The last attempt was declined. | yes (retry) |
+| `paid` | Payment confirmed. | — |
+| `partially_refunded` / `refunded` | Part or all of the payment was refunded. | — |
+| `disputed` | A chargeback is open or was lost. | — |
+| `review` | Payment received but held for manual review; not credited to your balance. | — |
+| `expired` | The link expired before payment. | no |
+
+---
+
+## Your balance
+
+```http
+GET /v1/card-checkout/account
+```
+
+```json
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "enabled": true,
+    "access_status": "enabled",
+    "currencies": ["USD"],
+    "payment_methods": ["card", "apple_pay", "google_pay"],
+    "pricing": {
+      "fee_percent": 3.5,
+      "fee_fixed": "0.30",
+      "reserve_percent": 0,
+      "settlement_delay_days": 0
+    },
+    "balance": { "currency": "USD", "available": "120.50", "on_hold": "35.00", "total": "155.50" },
+    "balance_by_customer": [
+      { "customer_id": "4f0c1e1a-…", "available": "100.00", "on_hold": "35.00", "total": "135.00" },
+      { "customer_id": "9b2d7c44-…", "available": "20.50", "on_hold": "0.00", "total": "20.50" }
+    ]
+  }
+}
+```
+
+`balance` is what Yativo owes you from your customers' card sales:
+
+| Field | Meaning |
+|---|---|
+| `available` | Settled: past the settlement delay and reserve period. Negative if a refund or dispute is owed. |
+| `on_hold` | Still in the settlement delay or reserve period. |
+| `total` | `available` + `on_hold`. |
+
+`balance_by_customer` splits it by the customer whose sales it came from
+(`customer_id` is `null` for amounts not tied to a customer). Use it to settle
+with your customers.
+
+The customer's own money stays on their Whop account. To let them withdraw it:
+
+```bash
+curl -X POST https://api.yativo.com/api/v1/card-checkout/customers/CUSTOMER_ID/withdrawal \
+  -H "Authorization: Bearer $YATIVO_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"return_url":"https://merchant.example/done","refresh_url":"https://merchant.example/refresh"}'
+```
+
+The response includes `withdrawal_url` (Whop's hosted payouts portal). Send the
+customer there. `return_url` and `refresh_url` are optional and must be https
+when you send them. The customer must already have a submitted `card_checkout`
+endorsement.
+
+When the endorsement is **approved**, list/read endpoints also expose a
+long-lived signed link on the checkout domain as `whop_withdrawal_url` (on the
+endorsement and on `GET /v1/card-checkout/customers/{id}`). Opening it redirects
+into Whop so the customer can manage payouts on their connected `biz_…` account.
+Renew it with `POST …/withdrawal` if you need a fresh Whop URL directly.
+
+---
+
+## Fees, settlement and reserves
+
+For every paid order:
+
+```
+platform_fee = amount × fee_percent + fee_fixed      (capped at the amount)
+reserve      = (amount − platform_fee) × reserve_percent
+net_amount   = amount − platform_fee − reserve
+```
+
+- **Settlement delay.** `net_amount` is added to your balance, against the
+  selling customer, as soon as the payment is confirmed, and becomes
+  `available` after `settlement_delay_days` (often 0). Until then it counts as
+  `on_hold`.
+- **Reserve.** If your account has a reserve, that part becomes `available`
+  after a fixed period.
+
+---
+
+## Refunds and disputes
+
+Refunds and chargebacks come out of your balance, against the customer that
+made the sale:
+
+- The refunded or disputed amount is deducted from your balance. If that makes
+  the balance negative, your next sales cover it.
+- **Disputes:** the disputed amount is deducted when the dispute opens. If you
+  win, it is credited back. Pre-dispute inquiries don't move funds.
+- The full refunded amount is deducted. The platform fee on a refunded order is
+  not returned.
+
+---
+
+## Errors
+
+| HTTP | `data.code` | Meaning |
+|---|---|---|
+| 403 | `card_checkout_not_enabled` | Card Checkout isn't enabled for your account. |
+| 403 | `card_checkout_access_declined` | A customer endorsement was requested, but your access request was declined. Send a new access request. |
+| 403 | `merchant_not_enabled` | Access was disabled. |
+| 403 | `customer_not_endorsed` | The customer's `card_checkout` endorsement isn't approved yet. |
+| 404 | `customer_not_found` | Not one of your customers. |
+| 409 | `duplicate_reference` | `reference` already used. |
+| 422 | `currency_not_supported` | Currency not enabled for your account. |
+| 422 | `amount_out_of_range` | Amount outside the allowed minimum/maximum. |
+| 422 | `payment_method_not_enabled` | A `payment_methods` entry isn't enabled for card checkout. |
+| 422 | — | Validation failed; see `data.errors`. |
+| 503 | — | Onboarding links are temporarily unavailable; retry. |
+
+---
+
+## Testing
+
+Use your sandbox credentials and these test cards:
+
+| Card number | Result |
+|---|---|
+| `4242 4242 4242 4242` | Payment succeeds |
+| `4000 0000 0000 0002` | Payment is declined |
+| `5385 3083 6013 5181` | Requires 3-D Secure (password `Checkout1!`) |
+
+Use any future expiry date, any 3-digit CVC and any billing address.

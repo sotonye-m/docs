@@ -37,7 +37,7 @@ Send an `Idempotency-Key` header on every `POST`, `PUT`, `PATCH` and `DELETE` re
 Idempotency-Key: your-unique-key-here
 ```
 
-Use a UUID or a deterministic string based on the operation (e.g. `payout-{customer_id}-{timestamp}`). Keys are scoped to your account. A retry with the same key and body within 60 minutes returns the original response. Reusing a key with a different body returns `409`. See [Idempotency](/yativo-fiat/authentication#idempotency).
+Use a UUID or a deterministic string based on the operation (e.g. `payout-{customer_id}-{timestamp}`). Keys are scoped to your account. Reusing a key for a completed request within 60 minutes returns `409`. Reusing a key with a different body also returns `409`. See [Idempotency](/yativo-fiat/authentication#idempotency).
 
 ## Rate limits
 
