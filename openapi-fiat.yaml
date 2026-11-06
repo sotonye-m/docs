@@ -829,22 +829,6 @@ components:
             $ref: '#/components/schemas/ProviderRfi'
         pagination:
           $ref: '#/components/schemas/Pagination'
-    ProviderRfiRealtimeAuthResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: success
-        data:
-          type: object
-          properties:
-            channel:
-              type: string
-              example: rfi:42
-            token:
-              type: object
-              additionalProperties: true
-
     # ── Auth ──────────────────────────────────────────────────────────────────
     # ── Customer ──────────────────────────────────────────────────────────────
     Customer:
@@ -9631,8 +9615,8 @@ paths:
     put:
       tags:
       - RFIs
-      summary: Save RFI Draft Responses
-      description: Stores draft answers for ops review. Does not submit answers upstream automatically.
+      summary: Reply to RFI
+      description: Submit or update answers for an open RFI. Yativo reviews before anything is sent upstream.
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
       - name: id
@@ -9659,33 +9643,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /business/rfis/{id}/realtime/auth:
-    post:
-      tags:
-      - RFIs
-      summary: RFI Realtime Auth
-      description: Returns an Ably token to subscribe to channel `rfi:{id}` (event name `rfi`).
-      parameters:
-      - $ref: '#/components/parameters/IdempotencyKey'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          description: Token issued
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProviderRfiRealtimeAuthResponse'
-        '503':
-          description: Realtime not configured
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
 tags:
   - name: Customers
     description: Create and manage customer profiles.

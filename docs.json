@@ -239,8 +239,7 @@
             "pages": [
               "fiat-api-reference/rfis/list",
               "fiat-api-reference/rfis/get",
-              "fiat-api-reference/rfis/draft-responses",
-              "fiat-api-reference/rfis/realtime-auth"
+              "fiat-api-reference/rfis/reply-to-rfi"
             ]
           },
           {
@@ -574,6 +573,14 @@
     {
       "source": "/yativo-platform/authentication",
       "destination": "/yativo-fiat/authentication"
+    },
+    {
+      "source": "/fiat-api-reference/rfis/draft-responses",
+      "destination": "/fiat-api-reference/rfis/reply-to-rfi"
+    },
+    {
+      "source": "/fiat-api-reference/rfis/realtime-auth",
+      "destination": "/yativo-fiat/rfis"
     },
     {
       "source": "/yativo-fiat/gift-cards",

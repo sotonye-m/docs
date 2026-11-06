@@ -1,10 +1,10 @@
 ---
-title: "Save RFI Draft Responses"
-description: "Store draft answers for ops review (not submitted upstream automatically)"
+title: "Reply to RFI"
+description: "Send answers for an open RFI (reviewed by Yativo before submission upstream)"
 openapi: "openapi-fiat.yaml PUT /business/rfis/{id}/draft-responses"
 ---
 
-Saves or replaces the full draft map for an open RFI. **Does not** submit answers upstream automatically.
+Submit or update your answers for an open RFI. You can send a partial reply (merged into any existing answers) or answer every requested item in one call. Yativo reviews before anything is sent upstream.
 
 ```
 PUT https://api.yativo.com/api/v1/business/rfis/{id}/draft-responses
@@ -16,7 +16,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/business/rfis/42/draft-responses' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: rfi-draft-42-v1' \
+  -H 'Idempotency-Key: rfi-reply-42-v1' \
   -d '{
     "responses": {
       "523bc014-8d2e-4d0b-b5fc-5ea407168f7d": {
