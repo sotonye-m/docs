@@ -1,10 +1,10 @@
 ---
 title: "Save RFI Draft Responses"
-description: "Store draft answers for ops review (not sent to the provider)"
+description: "Store draft answers for ops review (not submitted upstream automatically)"
 openapi: "openapi-fiat.yaml PUT /business/rfis/{id}/draft-responses"
 ---
 
-Saves or replaces the full draft map for an open RFI. **Does not** call the provider.
+Saves or replaces the full draft map for an open RFI. **Does not** submit answers upstream automatically.
 
 ```
 PUT https://api.yativo.com/api/v1/business/rfis/{id}/draft-responses

@@ -4,7 +4,7 @@ description: "Get an Ably token to subscribe to RFI updates"
 openapi: "openapi-fiat.yaml POST /business/rfis/{id}/realtime/auth"
 ---
 
-Returns a short-lived Ably token and channel name (`rfi:{id}`). Subscribe to the **`rfi`** event name for payloads when the RFI is created, updated, draft-saved, or submitted to the provider.
+Returns a short-lived Ably token and channel name (`rfi:{id}`). Subscribe to the **`rfi`** event name for payloads when the RFI is created, updated, draft-saved, or finalized after Yativo review.
 
 ```
 POST https://api.yativo.com/api/v1/business/rfis/{id}/realtime/auth
@@ -37,4 +37,4 @@ curl -X POST 'https://api.yativo.com/api/v1/business/rfis/42/realtime/auth' \
 ```
 </ResponseExample>
 
-See [Provider RFIs guide](/yativo-fiat/rfis) for the recommended client flow.
+See [Compliance RFIs](/yativo-fiat/rfis) for the recommended client flow.

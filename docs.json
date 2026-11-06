@@ -152,7 +152,6 @@
             "pages": [
               "yativo-platform/introduction",
               "yativo-platform/quickstart",
-              "yativo-platform/authentication",
               "yativo-platform/api-responses-and-errors",
               "yativo-platform/idempotency-and-rate-limits",
               {
@@ -236,7 +235,7 @@
             ]
           },
           {
-            "group": "Provider RFIs",
+            "group": "Compliance RFIs",
             "pages": [
               "fiat-api-reference/rfis/list",
               "fiat-api-reference/rfis/get",
@@ -570,6 +569,10 @@
     },
     {
       "source": "/fiat-api-reference/auth/token",
+      "destination": "/yativo-fiat/authentication"
+    },
+    {
+      "source": "/yativo-platform/authentication",
       "destination": "/yativo-fiat/authentication"
     },
     {

@@ -1,5 +1,5 @@
 ---
-title: "List Provider RFIs"
+title: "List RFIs"
 description: "List compliance RFIs for your account"
 openapi: "openapi-fiat.yaml GET /business/rfis"
 ---
@@ -13,7 +13,7 @@ GET https://api.yativo.com/api/v1/business/rfis
 | Query | Description |
 |---|---|
 | `open_only` | `1` — only RFIs that are still open |
-| `response_required` | `1` — only RFIs waiting on your response (Bridge `on_developer`, etc.) |
+| `response_required` | `1` — only RFIs waiting on your response |
 | `page`, `per_page` | Standard pagination |
 
 <RequestExample>

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Sync Yativo-gcloud/api-guide/*.md into Mintlify yativo-platform/*.mdx."""
+"""Sync Yativo-gcloud/api-guide/*.md into Mintlify yativo-platform/*.mdx.
+
+Do NOT map team-api-keys-integration.md — that integration guide is intentionally
+omitted from the public site (use yativo-fiat/authentication and yativo-fiat/api-keys).
+Restore only if the docs owner explicitly asks.
+"""
 
 from __future__ import annotations
 
@@ -29,7 +34,7 @@ MAPPING: dict[str, str | None] = {
     "sandbox-testing.md": "testing/sandbox-testing.mdx",
     "SECURITY.md": "security/security-policy.mdx",
     "subscriptions.md": "business/subscriptions.mdx",
-    "team-api-keys-integration.md": "authentication.mdx",
+    # team-api-keys-integration.md — intentionally not synced (see module docstring)
     "virtual-card-integration.md": "cards-and-accounts/virtual-cards.mdx",
     "wallet-swap-integration.md": "money-movement/wallet-swaps.mdx",
     "webhook-guide.md": "webhooks/overview.mdx",
@@ -38,7 +43,7 @@ MAPPING: dict[str, str | None] = {
 }
 
 LINK_MAP = {
-    "team-api-keys-integration.md": "/yativo-platform/authentication",
+    "team-api-keys-integration.md": "/yativo-fiat/authentication",
     "TEAM_FUNCTIONALITY.md": "/yativo-platform/security/team-management",
     "ip-whitelisting.md": "/yativo-platform/security/ip-whitelisting",
     "passkey-login-integration.md": "/yativo-platform/security/passkey-authentication",

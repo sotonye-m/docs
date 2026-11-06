@@ -9,7 +9,7 @@ When a payment partner needs more information about a customer, payment, or tran
   Answers you save or submit through the API are **reviewed by Yativo** before anything is sent upstream. Yativo operations submits approved responses from the internal RFI workspace.
 </Warning>
 
-API responses do not include upstream provider names, provider-side ids, or provider dashboard links.
+API responses do not include upstream partner names, external reference ids, or third-party dashboard links.
 
 ## Environments
 
@@ -185,7 +185,7 @@ Returns `422` if any item is missing or incomplete.
 POST /business/rfis/{id}/realtime/auth
 ```
 
-Returns `{ "channel": "rfi:42", "token": { ... } }`. Subscribe to event name `rfi` on that channel. Each message includes `event` (`created`, `updated`, `draft_updated`, `merchant_responded`, `submitted_to_provider`) plus the same merchant-safe RFI object as the REST API.
+Returns `{ "channel": "rfi:42", "token": { ... } }`. Subscribe to event name `rfi` on that channel. Each message includes `event` (`created`, `updated`, `draft_updated`, `merchant_responded`, `submitted_to_provider`) plus the same RFI object as the REST API (no upstream-only fields).
 
 ---
 

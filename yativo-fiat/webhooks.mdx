@@ -508,7 +508,7 @@ Only the fields above are sent. KYC documents and identity numbers are never inc
 
 ### RFI events (`rfi.created`, `rfi.updated`, `rfi.response_required`)
 
-Sent when Yativo records a compliance **request for information** on a customer or transaction tied to your account. Payloads do not include upstream provider names or provider-side identifiers.
+Sent when Yativo records a compliance **request for information** on a customer or transaction tied to your account. Payloads do not include upstream partner names or external reference identifiers.
 
 | Event | When |
 |---|---|
@@ -564,7 +564,7 @@ A new RFI that already needs your action may send `rfi.created` and `rfi.respons
 }
 ```
 
-Save draft answers with `PUT /business/rfis/{id}/draft-responses`. See [Provider RFIs](/yativo-fiat/rfis).
+Save draft answers with `PUT /business/rfis/{id}/draft-responses`. See [Compliance RFIs](/yativo-fiat/rfis).
 
 Sandbox: `POST /demo/webhook/rfi` (optional body `event`: `rfi.created`, `rfi.updated`, `rfi.response_required`).
 

@@ -19,6 +19,7 @@ The page files still exist and are still reachable by URL. Only the menu entry i
 
 | Date | Menu | What's hidden | Why |
 |---|---|---|---|
+| 2026-11-06 | Platform guides → Authentication | `yativo-platform/authentication` (Team API Keys integration guide from `api-guide/team-api-keys-integration.md`) | Duplicate of Fiat auth docs; do not re-sync or republish unless the docs owner asks. Redirect `/yativo-platform/authentication` → `/yativo-fiat/authentication` |
 | 2026-10-21 | Yativo Crypto tab | The whole tab | Crypto docs disabled for now |
 | 2026-10-21 | Crypto API References tab | The whole tab | Crypto docs disabled for now |
 | 2026-10-21 | Fiat API References → Beneficiaries | Create, List, Get, Update, Delete, Archive and Unarchive Beneficiary (`fiat-api-reference/beneficiaries/{create,list,get,update,delete,archive,unarchive}`) | Beneficiaries are now just saved payment methods. Nothing links a payment method to a separate beneficiary record |

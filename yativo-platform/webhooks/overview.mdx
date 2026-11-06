@@ -301,7 +301,7 @@ Every event includes a `customer` object, so you never need a second API call to
 | [`metadata.created` / `metadata.updated`](#metadatacreated--metadataupdated) | Metadata is attached to, or edited on, a transaction |
 | [`tracking.created`](#trackingcreated) | A tracking update is posted against a transaction |
 | [`endorsement.updated`](#endorsementupdated) | A customer's KYC endorsement status changes |
-| [`rfi.created`](#rfi-events) / [`rfi.updated`](#rfi-events) / [`rfi.response_required`](#rfi-events) | A provider compliance RFI is opened, changes state, or needs your response |
+| [`rfi.created`](#rfi-events) / [`rfi.updated`](#rfi-events) / [`rfi.response_required`](#rfi-events) | A compliance RFI is opened, changes state, or needs your response |
 | [`user.updated`](#userupdated) | Your account name, email, membership id or KYC status changes |
 | [`webhook_updated`](#webhook_updated) | You create or replace your webhook (delivery test) |
 | [`payin_method.enabled` / `.disabled`](#payin_methodenabled--payin_methoddisabled) | A pay-in method is turned on or off platform-wide |
@@ -618,7 +618,7 @@ Sent when a customer's KYC endorsement status changes, for example when they're 
 
 ### RFI events (`rfi.created`, `rfi.updated`, `rfi.response_required`)
 
-Sent when Yativo records a **compliance request for information** on a customer or transaction tied to your account. Payloads do **not** include upstream provider names, provider-side ids, or provider dashboard URLs.
+Sent when Yativo records a **compliance request for information** on a customer or transaction tied to your account. Payloads do **not** include upstream partner names, external reference ids, or third-party dashboard URLs.
 
 | Event | When |
 |---|---|

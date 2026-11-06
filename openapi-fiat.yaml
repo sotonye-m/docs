@@ -763,19 +763,16 @@ components:
           additionalProperties:
             type: object
             additionalProperties: true
-          description: Map of Bridge requested_item id to response fields (e.g. free_text_explanation).
+          description: Map of `requested_items[].id` to response fields (e.g. free_text_explanation).
     ProviderRfi:
       type: object
       properties:
         id:
           type: integer
           example: 42
-        provider:
-          type: string
-          example: bridge
         provider_rfi_id:
           type: string
-          description: Provider's RFI uuid.
+          description: External reference uuid for the RFI, when present.
         state:
           type: string
           example: on_developer
@@ -9572,11 +9569,11 @@ paths:
   /business/rfis:
     get:
       tags:
-      - Provider RFIs
-      summary: List Provider RFIs
+      - RFIs
+      summary: List RFIs
       description: |
-        Lists compliance RFIs for your account. Draft answers saved via the API are not sent to the provider automatically.
-        See [Provider RFIs](/yativo-fiat/rfis).
+        Lists compliance RFIs for your account. Draft answers saved via the API are not submitted upstream automatically.
+        See [Compliance RFIs](/yativo-fiat/rfis).
       parameters:
       - name: open_only
         in: query
@@ -9608,8 +9605,8 @@ paths:
   /business/rfis/{id}:
     get:
       tags:
-      - Provider RFIs
-      summary: Get Provider RFI
+      - RFIs
+      summary: Get RFI
       parameters:
       - name: id
         in: path
@@ -9633,9 +9630,9 @@ paths:
   /business/rfis/{id}/draft-responses:
     put:
       tags:
-      - Provider RFIs
+      - RFIs
       summary: Save RFI Draft Responses
-      description: Stores draft answers for ops review. Does not submit to the payment provider.
+      description: Stores draft answers for ops review. Does not submit answers upstream automatically.
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
       - name: id
@@ -9665,7 +9662,7 @@ paths:
   /business/rfis/{id}/realtime/auth:
     post:
       tags:
-      - Provider RFIs
+      - RFIs
       summary: RFI Realtime Auth
       description: Returns an Ably token to subscribe to channel `rfi:{id}` (event name `rfi`).
       parameters:
@@ -9732,5 +9729,5 @@ tags:
     description: Endpoints that exist only on the sandbox host. Production refuses them.
   - name: Developer
     description: Webhook event inspection.
-  - name: Provider RFIs
-    description: Compliance requests from payment partners; save draft answers via API (not auto-submitted).
+  - name: RFIs
+    description: Compliance requests for information; save draft answers via API (not auto-submitted upstream).

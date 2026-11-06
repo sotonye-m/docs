@@ -65,7 +65,7 @@ KYC belongs to the business, not the member. Once the owner passes KYC, members 
 
 ## Team API keys
 
-Teams create `X-Api-Key` / `X-Api-Secret` pairs for server-to-server use. A key belongs to the team, authenticates as the **owner** (roles don't apply to keys), and must have an IP whitelist. Keys are rejected (`no_api_key`) on endpoints that change sign-in credentials or delete the account. Key management is dashboard-only and gated by `team.api-keys.view` / `.create` / `.revoke`. See [Team API Keys](/yativo-platform/authentication) and [IP Whitelisting](/yativo-platform/security/ip-whitelisting).
+Teams create `X-Api-Key` / `X-Api-Secret` pairs for server-to-server use. A key belongs to the team, authenticates as the **owner** (roles don't apply to keys), and must have an IP whitelist. Keys are rejected (`no_api_key`) on endpoints that change sign-in credentials or delete the account. Key management is dashboard-only and gated by `team.api-keys.view` / `.create` / `.revoke`. See [Authentication](/yativo-fiat/authentication) and [IP Whitelisting](/yativo-platform/security/ip-whitelisting).
 
 ## API reference
 
@@ -81,7 +81,7 @@ Teams create `X-Api-Key` / `X-Api-Secret` pairs for server-to-server use. A key 
 | `POST` | `/api/v1/auth/passkeys/authenticate` | Passkey sign-in, step 2. Returns a JWT. |
 | `GET` | `/api/v1/profile` | Current user's profile. |
 
-`POST /api/v1/auth/login` (`account_id` + `app_secret`) is the deprecated legacy login; see [Team API Keys](/yativo-platform/authentication#deprecation-notice-the-legacy-login).
+`POST /api/v1/auth/login` (`account_id` + `app_secret`) is the deprecated legacy login; see [Authentication](/yativo-fiat/authentication#move-from-login-tokens-to-api-keys).
 
 ### Current user's teams
 
