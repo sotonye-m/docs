@@ -3,7 +3,8 @@ info:
   title: Yativo Fiat API
   description: |
     The Yativo Fiat API enables businesses to manage customers, run KYC/KYB, send and receive
-    cross-border payments, issue virtual accounts and virtual cards, manage beneficiaries, and more.
+    cross-border payments, issue virtual accounts and virtual cards, accept card payments through
+    Card Checkout, manage beneficiaries, and more.
 
     **Base URLs**
     | Environment | URL |

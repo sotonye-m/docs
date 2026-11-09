@@ -3,7 +3,7 @@ title: "Fiat API References"
 description: "Complete API reference for the Yativo Fiat payment platform"
 ---
 
-The Yativo Fiat API enables you to send and receive money globally, manage virtual accounts, perform currency exchange, and verify customer identities. All endpoints return JSON responses.
+The Yativo Fiat API enables you to send and receive money globally, manage virtual accounts, perform currency exchange, verify customer identities, and let your customers sell by card through Card Checkout. All endpoints return JSON responses.
 
 ## Base URLs
 
@@ -131,6 +131,47 @@ Every failed response also includes two objects with the same shape for every en
 A `5xx` response's `message` is always generic. It never contains internal details.
 
 Successful responses always return HTTP `200`. `status_code` in the body can be `201` or `202`, for example when a resource was created or accepted for review.
+
+## Card Checkout
+
+Let your customers sell by debit and credit card on a Yativo-hosted checkout page. Request access, verify each selling customer, create orders, and follow them with `card_checkout.order.*` webhooks. See the [Card Checkout guide](/yativo-fiat/card-checkout).
+
+<CardGroup cols={2}>
+  <Card title="Request access" icon="unlock" href="/fiat-api-reference/card-checkout/request-access">
+    Enable Card Checkout on your account, then read pricing and balance.
+  </Card>
+  <Card title="Verify selling customers" icon="user-check" href="/fiat-api-reference/card-checkout/customers-endorsement">
+    Submit each customer's `card_checkout` endorsement and send them to onboarding.
+  </Card>
+  <Card title="Create an order" icon="credit-card" href="/fiat-api-reference/card-checkout/orders-create">
+    Set the amount, get a `checkout_url`, and send the buyer to pay.
+  </Card>
+  <Card title="Withdrawals" icon="building-columns" href="/fiat-api-reference/card-checkout/payouts-create">
+    Let a selling customer withdraw cleared funds to a saved destination.
+  </Card>
+</CardGroup>
+
+| Action | Method & path |
+|---|---|
+| [Request access](/fiat-api-reference/card-checkout/request-access) | `POST /card-checkout/account/request-access` |
+| [Get account](/fiat-api-reference/card-checkout/account) | `GET /card-checkout/account` |
+| [Submit endorsement](/fiat-api-reference/card-checkout/customers-endorsement) | `POST /card-checkout/customers/{customer_id}/endorsement` |
+| [Get selling customer](/fiat-api-reference/card-checkout/customers-get) | `GET /card-checkout/customers/{customer_id}` |
+| [Create onboarding link](/fiat-api-reference/card-checkout/customers-onboarding) | `POST /card-checkout/customers/{customer_id}/onboarding` |
+| [Create withdrawal link](/fiat-api-reference/card-checkout/customers-withdrawal) | `POST /card-checkout/customers/{customer_id}/withdrawal` |
+| [List payout methods](/fiat-api-reference/card-checkout/payout-methods-list) | `GET /card-checkout/customers/{customer_id}/payout-methods` |
+| [Update payout method](/fiat-api-reference/card-checkout/payout-methods-update) | `PATCH /card-checkout/customers/{customer_id}/payout-methods/{method_id}` |
+| [Delete payout method](/fiat-api-reference/card-checkout/payout-methods-delete) | `DELETE /card-checkout/customers/{customer_id}/payout-methods/{method_id}` |
+| [Create withdrawal](/fiat-api-reference/card-checkout/payouts-create) | `POST /card-checkout/customers/{customer_id}/payouts` |
+| [List withdrawals](/fiat-api-reference/card-checkout/payouts-list) | `GET /card-checkout/customers/{customer_id}/payouts` |
+| [Get withdrawal](/fiat-api-reference/card-checkout/payouts-get) | `GET /card-checkout/customers/{customer_id}/payouts/{payout_id}` |
+| [Cancel withdrawal](/fiat-api-reference/card-checkout/payouts-cancel) | `POST /card-checkout/customers/{customer_id}/payouts/{payout_id}/cancel` |
+| [Get verification form](/fiat-api-reference/card-checkout/verification-get) | `GET /card-checkout/customers/{customer_id}/verification` |
+| [Submit business verification](/fiat-api-reference/card-checkout/verification-submit) | `POST /card-checkout/customers/{customer_id}/verification` |
+| [Answer verification items](/fiat-api-reference/card-checkout/verification-information) | `POST /card-checkout/customers/{customer_id}/verification/information` |
+| [Create order](/fiat-api-reference/card-checkout/orders-create) | `POST /card-checkout/orders` |
+| [List orders](/fiat-api-reference/card-checkout/orders-list) | `GET /card-checkout/orders` |
+| [Get order](/fiat-api-reference/card-checkout/orders-get) | `GET /card-checkout/orders/{id}` |
 
 ## KYC platform
 
