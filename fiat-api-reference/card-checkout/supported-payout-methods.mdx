@@ -1,0 +1,19 @@
+---
+title: "List supported payout methods"
+description: "Rails this customer may save, including required field ids"
+openapi: "openapi-fiat.yaml GET /card-checkout/customers/{customer_id}/supported-payout-methods"
+---
+
+Pass `supported_payout_method_id` to include `required_fields`. Use those `fld_…` ids as keys in [Create payout method](/fiat-api-reference/card-checkout/payout-methods-create).
+
+See [Let a customer withdraw their sales](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales).
+
+<RequestExample>
+```bash cURL
+curl -G 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/supported-payout-methods' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  --data-urlencode 'country=US' \
+  --data-urlencode 'supported_payout_method_id=podst_ach'
+```
+</RequestExample>

@@ -1,22 +1,6 @@
 ---
 title: "Create withdrawal link"
-description: "Open a page where a customer adds a payout destination and withdraws cleared funds"
-openapi: "openapi-fiat.yaml POST /card-checkout/customers/{customer_id}/withdrawal"
+description: "Removed. Save a payout destination with POST /card-checkout/customers/{customer_id}/payout-methods"
 ---
 
-Send the customer to `withdrawal_url` to add a payout destination and withdraw **cleared** Card Checkout funds (`available` on Yativo). Pending and reserved amounts cannot be withdrawn.
-
-They need a submitted `card_checkout` endorsement, or the request returns `409` with `code: endorsement_not_submitted`.
-
-See [Let a customer withdraw their sales](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales).
-
-<RequestExample>
-```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/withdrawal' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
-  -H 'Idempotency-Key: 9e2d6a14-5c3b-4f8e-a7d1-0b4c2e6f8a35' \
-  -H 'Content-Type: application/json' \
-  -d '{ "return_url": "https://app.example.com/done", "refresh_url": "https://app.example.com/refresh" }'
-```
-</RequestExample>
+This page moved. Save payout details with [Create payout method](/fiat-api-reference/card-checkout/payout-methods-create), then withdraw with [Create withdrawal](/fiat-api-reference/card-checkout/payouts-create).

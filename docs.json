@@ -335,13 +335,14 @@
                 "pages": [
                   "fiat-api-reference/card-checkout/customers-endorsement",
                   "fiat-api-reference/card-checkout/customers-get",
-                  "fiat-api-reference/card-checkout/customers-onboarding",
-                  "fiat-api-reference/card-checkout/customers-withdrawal"
+                  "fiat-api-reference/card-checkout/customers-onboarding"
                 ]
               },
               {
                 "group": "Withdrawals",
                 "pages": [
+                  "fiat-api-reference/card-checkout/supported-payout-methods",
+                  "fiat-api-reference/card-checkout/payout-methods-create",
                   "fiat-api-reference/card-checkout/payout-methods-list",
                   "fiat-api-reference/card-checkout/payout-methods-update",
                   "fiat-api-reference/card-checkout/payout-methods-delete",
@@ -774,6 +775,10 @@
     {
       "source": "/fiat-api-reference/virtual-cards/activate",
       "destination": "/fiat-api-reference/virtual-cards/create"
+    },
+    {
+      "source": "/fiat-api-reference/card-checkout/customers-withdrawal",
+      "destination": "/fiat-api-reference/card-checkout/payout-methods-create"
     }
   ],
   "description": "Yativo developer docs: APIs and guides for cross-border fiat payments, payouts and virtual accounts, plus multi-chain crypto wallets, cards, swaps and AI agent integrations."

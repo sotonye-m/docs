@@ -414,20 +414,34 @@ Each customer can only manage their own payout destinations and can only withdra
 
 #### Add a payout destination
 
-Send the customer to the hosted withdrawal page to add bank details. Yativo does not store the account number.
+List the rails this customer may use, then save bank details. Yativo does not store the account number.
 
 ```bash
-curl -X POST 'https://api.yativo.com/api/v1/card-checkout/customers/CUSTOMER_ID/withdrawal' \
+# 1. Required field ids for a method (fld_…)
+curl -G 'https://api.yativo.com/api/v1/card-checkout/customers/CUSTOMER_ID/supported-payout-methods' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  --data-urlencode 'country=US' \
+  --data-urlencode 'supported_payout_method_id=podst_ach'
+
+# 2. Save the destination for this customer
+curl -X POST 'https://api.yativo.com/api/v1/card-checkout/customers/CUSTOMER_ID/payout-methods' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Idempotency-Key: 9e2d6a14-5c3b-4f8e-a7d1-0b4c2e6f8a35' \
   -H 'Content-Type: application/json' \
-  -d '{ "return_url": "https://app.example.com/done", "refresh_url": "https://app.example.com/refresh" }'
+  -d '{
+    "supported_payout_method_id": "podst_ach",
+    "nickname": "Ops checking",
+    "fields": {
+      "fld_bank_account_number": "8825310472",
+      "fld_bank_routing_number": "111000025",
+      "fld_bank_account_type": "checking"
+    }
+  }'
 ```
 
-The response has `customer_id`, `withdrawal_url` and `expires_at`. Send the customer to `withdrawal_url`. They can save a destination there and also submit an amount. `return_url` and `refresh_url` are optional and must be `https`. The customer needs a submitted `card_checkout` endorsement, or the request returns `409` with `code: endorsement_not_submitted`.
-
-When the endorsement is `approved`, `GET /card-checkout/customers/{customer_id}` also includes `whop_withdrawal_url`, a longer-lived signed link to the same page.
+`fields` is keyed by the `fld_…` ids from step 1. The customer must have an approved `card_checkout` endorsement.
 
 List saved destinations with `GET /card-checkout/customers/{customer_id}/payout-methods`. Update a nickname or default with `PATCH …/payout-methods/{method_id}`. Remove one with `DELETE …/payout-methods/{method_id}`. A method that belongs to another customer returns `404` with `code: payout_method_not_found`.
 
@@ -485,7 +499,8 @@ Refunds and chargebacks come out of the balance of the customer that made the sa
 | [Submit endorsement](/fiat-api-reference/card-checkout/customers-endorsement) | `POST /card-checkout/customers/{customer_id}/endorsement` |
 | [Get selling customer](/fiat-api-reference/card-checkout/customers-get) | `GET /card-checkout/customers/{customer_id}` |
 | [Create onboarding link](/fiat-api-reference/card-checkout/customers-onboarding) | `POST /card-checkout/customers/{customer_id}/onboarding` |
-| [Create withdrawal link](/fiat-api-reference/card-checkout/customers-withdrawal) | `POST /card-checkout/customers/{customer_id}/withdrawal` |
+| [List supported payout methods](/fiat-api-reference/card-checkout/supported-payout-methods) | `GET /card-checkout/customers/{customer_id}/supported-payout-methods` |
+| [Create payout method](/fiat-api-reference/card-checkout/payout-methods-create) | `POST /card-checkout/customers/{customer_id}/payout-methods` |
 | [List payout methods](/fiat-api-reference/card-checkout/payout-methods-list) | `GET /card-checkout/customers/{customer_id}/payout-methods` |
 | [Update payout method](/fiat-api-reference/card-checkout/payout-methods-update) | `PATCH /card-checkout/customers/{customer_id}/payout-methods/{method_id}` |
 | [Delete payout method](/fiat-api-reference/card-checkout/payout-methods-delete) | `DELETE /card-checkout/customers/{customer_id}/payout-methods/{method_id}` |
@@ -521,6 +536,7 @@ Card Checkout errors include a `code` in `data` next to the message. See [Error 
 | `422` | `amount_out_of_range` | Amount outside the allowed minimum or maximum |
 | `422` | `amount_exceeds_available` | Amount is above the customer's cleared (`available`) balance |
 | `422` | `payout_method_not_found` | That payout destination is not this customer's |
+| `422` | `payout_method_rejected` | Those payout details could not be saved |
 | `422` | `payout_refused` | The withdrawal was refused |
 | `422` | `payment_method_not_enabled` | A `payment_methods` entry isn't enabled |
 | `422` | `use_onboarding_page` | Individual customers add their ID and selfie on the onboarding page |

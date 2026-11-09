@@ -4,7 +4,7 @@ description: "Read a customer's card_checkout endorsement"
 openapi: "openapi-fiat.yaml GET /card-checkout/customers/{customer_id}"
 ---
 
-Same shape as the submit-endorsement response. When the endorsement has not been submitted, `endorsement_status` is `not_started`. When it is `approved`, the response includes `balance` (`available`, `pending`, `reserved`) and `whop_withdrawal_url`. Only `available` can be withdrawn.
+Same shape as the submit-endorsement response. When the endorsement has not been submitted, `endorsement_status` is `not_started`. When it is `approved`, the response includes `balance` (`available`, `pending`, `reserved`). Only `available` can be withdrawn.
 
 ```
 GET https://api.yativo.com/api/v1/card-checkout/customers/{customer_id}

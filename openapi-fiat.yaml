@@ -1322,13 +1322,6 @@ components:
         onboarding_url_expires_at:
           type: string
           format: date-time
-        whop_withdrawal_url:
-          type: string
-          format: uri
-          description: Long-lived signed link to the customer's withdrawal page. Present when the endorsement is `approved`.
-        whop_withdrawal_url_expires_at:
-          type: string
-          format: date-time
         balance:
           $ref: '#/components/schemas/CardCheckoutCustomerBalance'
         message:
@@ -1764,6 +1757,62 @@ components:
           nullable: true
           example: ACH Bank Deposit
 
+    CardCheckoutRequiredField:
+      type: object
+      properties:
+        id:
+          type: string
+          example: fld_bank_account_number
+          description: Stable field id. Use it as a key in `fields` when you save a method.
+        label:
+          type: string
+          example: Account number
+        type:
+          type: string
+          example: bank_account_number
+        input_type:
+          type: string
+          example: text
+        required:
+          type: boolean
+        sensitive:
+          type: boolean
+        placeholder:
+          type: string
+          nullable: true
+        options:
+          type: array
+          nullable: true
+          items:
+            type: string
+        validation:
+          type: string
+          nullable: true
+          example: "^[0-9]{4,17}$"
+
+    CardCheckoutSupportedPayoutMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          example: podst_ach
+        name:
+          type: string
+          example: ACH Bank Deposit
+        delivery_type:
+          type: string
+          nullable: true
+          example: bank_deposit
+        supports_standard_delivery:
+          type: boolean
+        supports_instant_delivery:
+          type: boolean
+        required_fields:
+          type: array
+          description: Present when you pass `supported_payout_method_id`.
+          items:
+            $ref: '#/components/schemas/CardCheckoutRequiredField'
+
     CardCheckoutPayout:
       type: object
       properties:
@@ -1831,7 +1880,7 @@ components:
               type: string
               example: card_checkout_not_enabled
               description: |
-                Common values: `card_checkout_not_enabled`, `card_checkout_access_declined`, `merchant_not_enabled`, `customer_not_endorsed`, `customer_not_found`, `duplicate_reference`, `endorsement_not_submitted`, `endorsement_not_approved`, `already_verified`, `verification_not_started`, `nothing_requested`, `currency_not_supported`, `amount_out_of_range`, `amount_exceeds_available`, `no_payout_method`, `payout_method_not_found`, `payout_not_found`, `payout_not_cancelable`, `payout_refused`, `payment_method_not_enabled`, `use_onboarding_page`, `missing_fields`, `invalid_business_structure`, `verification_refused`, `provider_unavailable`.
+                Common values: `card_checkout_not_enabled`, `card_checkout_access_declined`, `merchant_not_enabled`, `customer_not_endorsed`, `customer_not_found`, `duplicate_reference`, `endorsement_not_submitted`, `endorsement_not_approved`, `already_verified`, `verification_not_started`, `nothing_requested`, `currency_not_supported`, `amount_out_of_range`, `amount_exceeds_available`, `no_payout_method`, `payout_method_not_found`, `payout_method_rejected`, `payout_method_fields_required`, `payout_not_found`, `payout_not_cancelable`, `payout_refused`, `payment_method_not_enabled`, `use_onboarding_page`, `missing_fields`, `invalid_business_structure`, `verification_refused`, `provider_unavailable`.
         error:
           $ref: '#/components/schemas/ErrorSummary'
         error_details:
@@ -6548,7 +6597,7 @@ paths:
       description: |
         The customer's `card_checkout` endorsement. Same shape as the submit-endorsement response.
 
-        When the endorsement has not been submitted, `endorsement_status` is `not_started`. When it is `approved`, the response includes `balance` and `whop_withdrawal_url`. Only `balance.available` (cleared on Yativo) can be withdrawn.
+        When the endorsement has not been submitted, `endorsement_status` is `not_started`. When it is `approved`, the response includes `balance`. Only `balance.available` (cleared on Yativo) can be withdrawn.
 
         See [Card Checkout](/yativo-fiat/card-checkout#follow-the-endorsement).
       parameters:
@@ -6710,34 +6759,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/CardCheckoutError'
 
-  /card-checkout/customers/{customer_id}/withdrawal:
-    post:
+  /card-checkout/customers/{customer_id}/supported-payout-methods:
+    get:
       tags: [Card Checkout]
-      summary: Create withdrawal link
+      summary: List supported payout methods
       description: |
-        A hosted page where this customer adds a payout destination and withdraws **cleared** Card Checkout funds (`available` on Yativo). Pending and reserved amounts cannot be withdrawn.
-
-        `return_url` and `refresh_url` are optional HTTPS URLs. The customer needs a submitted `card_checkout` endorsement.
-
-        When the endorsement is `approved`, `GET /card-checkout/customers/{customer_id}` also includes `whop_withdrawal_url`, a longer-lived signed link to the same page.
+        Rails this customer may save. Pass `supported_payout_method_id` to include `required_fields` (`fld_…` ids). Field ids are stable; use them as keys in `POST …/payout-methods`.
 
         See [Card Checkout](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales).
       parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
         - name: customer_id
           in: path
           required: true
           schema:
             type: string
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CardCheckoutAccountLinkRequest'
+        - name: country
+          in: query
+          schema:
+            type: string
+            example: US
+          description: ISO 3166-1 alpha-2. Defaults to the customer's country.
+        - name: supported_payout_method_id
+          in: query
+          schema:
+            type: string
+            example: podst_ach
+          description: Include `required_fields` for this method.
       responses:
         '200':
-          description: Withdrawal link
+          description: Supported payout methods
           content:
             application/json:
               schema:
@@ -6753,7 +6803,17 @@ paths:
                     type: string
                     example: Request successful
                   data:
-                    $ref: '#/components/schemas/CardCheckoutWithdrawal'
+                    type: object
+                    properties:
+                      customer_id:
+                        type: string
+                      country:
+                        type: string
+                        example: US
+                      supported_payout_methods:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CardCheckoutSupportedPayoutMethod'
         '403':
           description: Card Checkout is not enabled
           content:
@@ -6766,25 +6826,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CardCheckoutError'
-        '409':
-          description: "Submit the `card_checkout` endorsement first (`code: endorsement_not_submitted`)"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CardCheckoutError'
-        '502':
-          description: Could not open the withdrawal page. Retry shortly.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CardCheckoutError'
 
   /card-checkout/customers/{customer_id}/payout-methods:
     get:
       tags: [Card Checkout]
       summary: List payout methods
       description: |
-        Saved payout destinations this customer added on the withdrawal page. Masked; full account numbers are never returned.
+        Saved payout destinations this customer added. Masked; full account numbers are never returned.
 
         Only this customer's methods are returned. Another customer's method id is not listed.
 
@@ -6829,6 +6877,97 @@ paths:
                 $ref: '#/components/schemas/CardCheckoutError'
         '404':
           description: Not one of your customers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardCheckoutError'
+    post:
+      tags: [Card Checkout]
+      summary: Create payout method
+      description: |
+        Save a bank account this customer can be paid out to. Sensitive details are vaulted in transit and never stored by Yativo.
+
+        `supported_payout_method_id` and `fields` come from `GET …/supported-payout-methods`. The method is saved on this customer only.
+
+        See [Card Checkout](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales).
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supported_payout_method_id, fields]
+              properties:
+                supported_payout_method_id:
+                  type: string
+                  example: podst_ach
+                  description: From `GET …/supported-payout-methods`.
+                fields:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Required field values, keyed by `fld_…` ids. Never returned later.
+                  example:
+                    fld_bank_account_number: "8825310472"
+                    fld_bank_routing_number: "111000025"
+                    fld_bank_account_type: checking
+                nickname:
+                  type: string
+                  maxLength: 80
+                  example: Ops checking
+                is_default:
+                  type: boolean
+                  description: Defaults to true when this is the customer's first method.
+                destination_currency:
+                  type: string
+                  example: usd
+                  description: Defaults to `usd`.
+      responses:
+        '201':
+          description: Payout destination saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Payout destination saved
+                  data:
+                    $ref: '#/components/schemas/CardCheckoutPayoutMethod'
+        '403':
+          description: Card Checkout is not enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardCheckoutError'
+        '404':
+          description: Not one of your customers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardCheckoutError'
+        '409':
+          description: "Endorsement not approved (`code: endorsement_not_submitted`, `endorsement_not_approved`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardCheckoutError'
+        '422':
+          description: "Those details could not be saved (`code: payout_method_rejected`, `payout_method_fields_required`)"
           content:
             application/json:
               schema:

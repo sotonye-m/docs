@@ -13,9 +13,9 @@ Each card payment lands on the **selling customer's own** connected business acc
 
 Yativo collects its fee from the seller's account (processor fee, plus 1%, plus a
 fixed fee). The rest stays on the customer's account. They can withdraw **only
-the amount that has cleared on Yativo** (`available`). Open the withdrawal page
-with `POST /v1/card-checkout/customers/{customer_id}/withdrawal`, or withdraw
-available funds with `POST /v1/card-checkout/customers/{customer_id}/payouts`.
+the amount that has cleared on Yativo** (`available`). Save a payout destination
+with `POST /v1/card-checkout/customers/{customer_id}/payout-methods`, then
+withdraw with `POST /v1/card-checkout/customers/{customer_id}/payouts`.
 
 - [Before you start](#before-you-start)
 - [How it works](#how-it-works)
@@ -672,25 +672,25 @@ An amount above `available` returns `422` with `code: amount_exceeds_available`
 and the current `balance`. Each customer can only manage their own payout
 destinations and can only withdraw to those destinations.
 
-Send the customer to the hosted page to add bank details (never stored by
-Yativo). They can also submit an amount there:
+Save bank details for this customer through the API (never stored by Yativo):
 
 ```bash
-curl -X POST https://api.yativo.com/api/v1/card-checkout/customers/CUSTOMER_ID/withdrawal \
+curl -G https://api.yativo.com/api/v1/card-checkout/customers/CUSTOMER_ID/supported-payout-methods \
   -H "X-Api-Key: $YATIVO_API_KEY" \
   -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  --data-urlencode "country=US" \
+  --data-urlencode "supported_payout_method_id=podst_ach"
+
+curl -X POST https://api.yativo.com/api/v1/card-checkout/customers/CUSTOMER_ID/payout-methods \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Idempotency-Key: 9e2d6a14-5c3b-4f8e-a7d1-0b4c2e6f8a35" \
   -H "Content-Type: application/json" \
-  -d '{"return_url":"https://merchant.example/done","refresh_url":"https://merchant.example/refresh"}'
+  -d '{"supported_payout_method_id":"podst_ach","nickname":"Ops checking","fields":{"fld_bank_account_number":"8825310472","fld_bank_routing_number":"111000025","fld_bank_account_type":"checking"}}'
 ```
 
-The response includes `withdrawal_url`. `return_url` and `refresh_url` are
-optional and must be https. The customer must already have a submitted
-`card_checkout` endorsement.
-
-When the endorsement is **approved**, list/read endpoints also expose a
-long-lived signed link as `whop_withdrawal_url` (on the endorsement and on
-`GET /v1/card-checkout/customers/{id}`). Renew it with `POST …/withdrawal` if
-you need a fresh URL.
+The customer must already have an approved `card_checkout` endorsement.
+`fields` is keyed by the `fld_…` ids from `GET …/supported-payout-methods`.
 
 After a destination is saved, withdraw cleared funds:
 

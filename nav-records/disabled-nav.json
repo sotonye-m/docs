@@ -18,6 +18,13 @@
     },
     {
       "removed": "pages",
+      "from": "Fiat API References > Card Checkout > Selling customers",
+      "pages": [
+        "fiat-api-reference/card-checkout/customers-withdrawal"
+      ]
+    },
+    {
+      "removed": "pages",
       "from": "Fiat API References > Beneficiaries",
       "pages": [
         "fiat-api-reference/beneficiaries/create",

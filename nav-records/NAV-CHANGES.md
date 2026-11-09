@@ -39,6 +39,7 @@ The page files still exist and are still reachable by URL. Only the menu entry i
 | 2026-10-26 | Get Send Money Quote | `POST /sendmoney/quote` | `/fiat-api-reference/payments/send-money-quote` → `/fiat-api-reference/payments/exchange-rate` |
 | 2026-10-26 | Add Transfer Purpose | `POST /sendmoney/purpose` | `/fiat-api-reference/payments/send-money-purpose` → `/fiat-api-reference/payments/payout` |
 | 2026-10-26 | Activate Customer for Virtual Cards | `POST /customer/virtual/cards/activate`. Issue a card with `POST /customer/virtual/cards/create` | `/fiat-api-reference/virtual-cards/activate` → `/fiat-api-reference/virtual-cards/create` |
+| 2026-11-09 | Create withdrawal link | `POST /card-checkout/customers/{customer_id}/withdrawal`. Integrators save payout details with `POST /card-checkout/customers/{id}/payout-methods` | `/fiat-api-reference/card-checkout/customers-withdrawal` → `/fiat-api-reference/card-checkout/payout-methods-create` |
 
 ## Renamed
 
