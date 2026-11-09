@@ -1,0 +1,22 @@
+---
+title: "Submit endorsement"
+description: "Verify a customer so it can sell by card"
+openapi: "openapi-fiat.yaml POST /card-checkout/customers/{customer_id}/endorsement"
+---
+
+No body. Yativo reuses the customer's KYC or KYB. Send them to `onboarding_url`.
+
+If the customer asks before your account has access, the request is held (`202`, `awaiting_business_access: true`) and an access request is filed for you.
+
+You can also submit with [`POST /customer/kyc/resubmit/{customer_id}/card_checkout`](/fiat-api-reference/kyc/resubmit-endorsement).
+
+See [Submit the endorsement](/yativo-fiat/card-checkout#submit-the-endorsement).
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/endorsement' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 1a2b3c4d-5e6f-7890-abcd-ef1234567890'
+```
+</RequestExample>

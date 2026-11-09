@@ -1,0 +1,17 @@
+---
+title: "Get verification form"
+description: "Prefill, missing fields and allowed business structures"
+openapi: "openapi-fiat.yaml GET /card-checkout/customers/{customer_id}/verification"
+---
+
+Use this when you collect business details in your own app. Individual customers add their ID and selfie on the onboarding page. The tax identification number is never prefilled.
+
+See [Verify a business customer with your own form](/yativo-fiat/card-checkout#or-verify-a-business-customer-with-your-own-form).
+
+<RequestExample>
+```bash cURL
+curl 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/verification' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>

@@ -12,9 +12,10 @@ receive a webhook for every change in the order.
 Each card payment lands on the **selling customer's own** connected business account (`biz_…` from card-checkout onboarding).
 
 Yativo collects its fee from the seller's account (processor fee, plus 1%, plus a
-fixed fee). The rest stays on the customer's account. Open the withdrawal page
-for that customer with
-`POST /v1/card-checkout/customers/{customer_id}/withdrawal`.
+fixed fee). The rest stays on the customer's account. They can withdraw **only
+the amount that has cleared on Yativo** (`available`). Open the withdrawal page
+with `POST /v1/card-checkout/customers/{customer_id}/withdrawal`, or withdraw
+available funds with `POST /v1/card-checkout/customers/{customer_id}/payouts`.
 
 - [Before you start](#before-you-start)
 - [How it works](#how-it-works)
@@ -650,25 +651,61 @@ GET /v1/card-checkout/account
 (`customer_id` is `null` for amounts not tied to a customer). Use it to settle
 with your customers.
 
-The customer's own money stays on their Whop account. To let them withdraw it:
+The customer's own money stays on their connected account. They can withdraw
+**only Yativo `available`** for that customer — funds that have cleared the
+business-day hold and any retention. Pending and reserved amounts cannot be
+withdrawn.
+
+`GET /v1/card-checkout/customers/{id}` includes `balance` when the endorsement
+is `approved`:
+
+| Field | Meaning |
+|---|---|
+| `available` | Cleared on Yativo. This is the maximum they can withdraw. |
+| `pending` | Still in the clearing window. Not withdrawable. |
+| `reserved` | Retention still held after clearing. Not withdrawable. |
+| `on_hold` | `pending` + `reserved`. |
+| `total` | `available` + `on_hold`. |
+| `next_available_at` | When the next pending amount becomes `available`. |
+
+An amount above `available` returns `422` with `code: amount_exceeds_available`
+and the current `balance`. Each customer can only manage their own payout
+destinations and can only withdraw to those destinations.
+
+Send the customer to the hosted page to add bank details (never stored by
+Yativo). They can also submit an amount there:
 
 ```bash
 curl -X POST https://api.yativo.com/api/v1/card-checkout/customers/CUSTOMER_ID/withdrawal \
-  -H "Authorization: Bearer $YATIVO_SECRET" \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"return_url":"https://merchant.example/done","refresh_url":"https://merchant.example/refresh"}'
 ```
 
-The response includes `withdrawal_url` (Whop's hosted payouts portal). Send the
-customer there. `return_url` and `refresh_url` are optional and must be https
-when you send them. The customer must already have a submitted `card_checkout`
-endorsement.
+The response includes `withdrawal_url`. `return_url` and `refresh_url` are
+optional and must be https. The customer must already have a submitted
+`card_checkout` endorsement.
 
 When the endorsement is **approved**, list/read endpoints also expose a
-long-lived signed link on the checkout domain as `whop_withdrawal_url` (on the
-endorsement and on `GET /v1/card-checkout/customers/{id}`). Opening it redirects
-into Whop so the customer can manage payouts on their connected `biz_…` account.
-Renew it with `POST …/withdrawal` if you need a fresh Whop URL directly.
+long-lived signed link as `whop_withdrawal_url` (on the endorsement and on
+`GET /v1/card-checkout/customers/{id}`). Renew it with `POST …/withdrawal` if
+you need a fresh URL.
+
+After a destination is saved, withdraw cleared funds:
+
+```bash
+curl -X POST https://api.yativo.com/api/v1/card-checkout/customers/CUSTOMER_ID/payouts \
+  -H "X-Api-Key: $YATIVO_API_KEY" \
+  -H "X-Api-Secret: $YATIVO_API_SECRET" \
+  -H "Idempotency-Key: withdraw-2026-11-09-1" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":"50.00"}'
+```
+
+`payout_method_id` is optional and must already appear on
+`GET …/payout-methods` for that customer. List withdrawals with
+`GET …/payouts`. Cancel an in-flight one with `POST …/payouts/{id}/cancel`.
 
 ---
 
@@ -685,9 +722,9 @@ net_amount   = amount − platform_fee − reserve
 - **Settlement delay.** `net_amount` is added to your balance, against the
   selling customer, as soon as the payment is confirmed, and becomes
   `available` after `settlement_delay_days` (often 0). Until then it counts as
-  `on_hold`.
-- **Reserve.** If your account has a reserve, that part becomes `available`
-  after a fixed period.
+  `on_hold` / `pending` and cannot be withdrawn.
+- **Reserve.** If your account has a reserve, that part is `reserved` until
+  the retention period ends. It cannot be withdrawn until then.
 
 ---
 
@@ -715,8 +752,12 @@ made the sale:
 | 403 | `customer_not_endorsed` | The customer's `card_checkout` endorsement isn't approved yet. |
 | 404 | `customer_not_found` | Not one of your customers. |
 | 409 | `duplicate_reference` | `reference` already used. |
+| 409 | `endorsement_not_approved` | The customer must finish verification before withdrawing. |
+| 409 | `no_payout_method` | The customer has no saved payout destination. |
 | 422 | `currency_not_supported` | Currency not enabled for your account. |
 | 422 | `amount_out_of_range` | Amount outside the allowed minimum/maximum. |
+| 422 | `amount_exceeds_available` | Amount is above the customer's cleared (`available`) balance. |
+| 422 | `payout_method_not_found` | That payout destination is not this customer's. |
 | 422 | `payment_method_not_enabled` | A `payment_methods` entry isn't enabled for card checkout. |
 | 422 | — | Validation failed; see `data.errors`. |
 | 503 | — | Onboarding links are temporarily unavailable; retry. |

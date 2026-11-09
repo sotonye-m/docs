@@ -1,0 +1,21 @@
+---
+title: "Get account"
+description: "Read your Card Checkout access, pricing, payment methods and balance"
+openapi: "openapi-fiat.yaml GET /card-checkout/account"
+---
+
+Returns `enabled`, `access_status`, `currencies`, `payment_methods`, `pricing`, `balance` and `balance_by_customer`.
+
+```
+GET https://api.yativo.com/api/v1/card-checkout/account
+```
+
+See [Your account and balance](/yativo-fiat/card-checkout#your-account-and-balance).
+
+<RequestExample>
+```bash cURL
+curl 'https://api.yativo.com/api/v1/card-checkout/account' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>

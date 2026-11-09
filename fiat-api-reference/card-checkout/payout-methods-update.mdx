@@ -1,0 +1,20 @@
+---
+title: "Update payout method"
+description: "Change the nickname or default flag on a destination this customer saved"
+openapi: "openapi-fiat.yaml PATCH /card-checkout/customers/{customer_id}/payout-methods/{method_id}"
+---
+
+Destination fields (account numbers) cannot be rewritten. A method that does not belong to this customer returns `404` with `code: payout_method_not_found`.
+
+See [Let a customer withdraw their sales](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales).
+
+<RequestExample>
+```bash cURL
+curl -X PATCH 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/payout-methods/potk_1a2b3c4d' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 9e2d6a14-5c3b-4f8e-a7d1-0b4c2e6f8a35' \
+  -H 'Content-Type: application/json' \
+  -d '{ "nickname": "Ops checking", "is_default": true }'
+```
+</RequestExample>

@@ -1,0 +1,22 @@
+---
+title: "Create withdrawal"
+description: "Withdraw this customer's cleared Card Checkout balance to a saved destination"
+openapi: "openapi-fiat.yaml POST /card-checkout/customers/{customer_id}/payouts"
+---
+
+The cap is Yativo `available`. Pending and reserved funds cannot be withdrawn. An amount above `available` returns `422` with `code: amount_exceeds_available` and the current `balance`.
+
+`payout_method_id` must already appear on this customer's `GET …/payout-methods` list.
+
+See [Let a customer withdraw their sales](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales).
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/payouts' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: withdraw-2026-11-09-1' \
+  -H 'Content-Type: application/json' \
+  -d '{ "amount": "50.00" }'
+```
+</RequestExample>

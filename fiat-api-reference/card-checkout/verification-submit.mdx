@@ -1,0 +1,25 @@
+---
+title: "Submit business verification"
+description: "Send a business customer's details, overriding the prefill where you pass a field"
+openapi: "openapi-fiat.yaml POST /card-checkout/customers/{customer_id}/verification"
+---
+
+`kind` is always `business`. Any field you leave out is taken from `prefill`. Individual customers return `422` with `code: use_onboarding_page`.
+
+See [Verify a business customer with your own form](/yativo-fiat/card-checkout#or-verify-a-business-customer-with-your-own-form).
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/verification' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 2d8a1c4e-9f3b-4a7c-8e1d-6b5f0a2c9d11' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "kind": "business",
+    "business_name": "Acme LLC",
+    "country": "US",
+    "business_structure": "private_corporation"
+  }'
+```
+</RequestExample>

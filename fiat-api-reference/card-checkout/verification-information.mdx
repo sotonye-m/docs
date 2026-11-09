@@ -1,0 +1,9 @@
+---
+title: "Answer verification items"
+description: "Reply to information_requested as multipart form data"
+openapi: "openapi-fiat.yaml POST /card-checkout/customers/{customer_id}/verification/information"
+---
+
+Send `multipart/form-data`, one answer per item in `information_requested`. You can answer some items now and the rest later. Everything is checked before anything is sent, so one bad answer sends nothing.
+
+See [Verify a business customer with your own form](/yativo-fiat/card-checkout#or-verify-a-business-customer-with-your-own-form).

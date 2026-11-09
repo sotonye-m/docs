@@ -1,0 +1,17 @@
+---
+title: "Get withdrawal"
+description: "Read one of this customer's Card Checkout withdrawals"
+openapi: "openapi-fiat.yaml GET /card-checkout/customers/{customer_id}/payouts/{payout_id}"
+---
+
+Another customer's payout id returns `404` with `code: payout_not_found`.
+
+See [Let a customer withdraw their sales](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales).
+
+<RequestExample>
+```bash cURL
+curl 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/payouts/ccw_7wq2k9x0m3c8v1b5n6z4l2j8h0' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>

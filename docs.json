@@ -321,6 +321,55 @@
             ]
           },
           {
+            "group": "Card Checkout",
+            "pages": [
+              {
+                "group": "Account",
+                "pages": [
+                  "fiat-api-reference/card-checkout/request-access",
+                  "fiat-api-reference/card-checkout/account"
+                ]
+              },
+              {
+                "group": "Selling customers",
+                "pages": [
+                  "fiat-api-reference/card-checkout/customers-endorsement",
+                  "fiat-api-reference/card-checkout/customers-get",
+                  "fiat-api-reference/card-checkout/customers-onboarding",
+                  "fiat-api-reference/card-checkout/customers-withdrawal"
+                ]
+              },
+              {
+                "group": "Withdrawals",
+                "pages": [
+                  "fiat-api-reference/card-checkout/payout-methods-list",
+                  "fiat-api-reference/card-checkout/payout-methods-update",
+                  "fiat-api-reference/card-checkout/payout-methods-delete",
+                  "fiat-api-reference/card-checkout/payouts-create",
+                  "fiat-api-reference/card-checkout/payouts-list",
+                  "fiat-api-reference/card-checkout/payouts-get",
+                  "fiat-api-reference/card-checkout/payouts-cancel"
+                ]
+              },
+              {
+                "group": "Verification",
+                "pages": [
+                  "fiat-api-reference/card-checkout/verification-get",
+                  "fiat-api-reference/card-checkout/verification-submit",
+                  "fiat-api-reference/card-checkout/verification-information"
+                ]
+              },
+              {
+                "group": "Orders",
+                "pages": [
+                  "fiat-api-reference/card-checkout/orders-create",
+                  "fiat-api-reference/card-checkout/orders-list",
+                  "fiat-api-reference/card-checkout/orders-get"
+                ]
+              }
+            ]
+          },
+          {
             "group": "Deposits",
             "pages": [
               "fiat-api-reference/deposits/create",

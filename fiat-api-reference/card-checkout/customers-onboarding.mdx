@@ -1,0 +1,20 @@
+---
+title: "Create onboarding link"
+description: "Issue a fresh onboarding URL for a selling customer"
+openapi: "openapi-fiat.yaml POST /card-checkout/customers/{customer_id}/onboarding"
+---
+
+The link is valid for 2 hours. `return_url` is the Back to app link. `refresh_url` is where the customer lands after the link expires.
+
+See [Get a fresh onboarding link](/yativo-fiat/card-checkout#get-a-fresh-onboarding-link).
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/onboarding' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 0c4f9e1d-2a7b-4e3c-8d6f-5b1a9c2e7f40' \
+  -H 'Content-Type: application/json' \
+  -d '{ "return_url": "https://app.example.com/done", "refresh_url": "https://app.example.com/link-expired" }'
+```
+</RequestExample>

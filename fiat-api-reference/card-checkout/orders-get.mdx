@@ -1,0 +1,17 @@
+---
+title: "Get order"
+description: "Read one Card Checkout order by id"
+openapi: "openapi-fiat.yaml GET /card-checkout/orders/{id}"
+---
+
+While the order can still be paid it includes a fresh `checkout_url`. Another account's order returns `404`.
+
+See [Read orders](/yativo-fiat/card-checkout#read-orders).
+
+<RequestExample>
+```bash cURL
+curl 'https://api.yativo.com/api/v1/card-checkout/orders/cco_7wq2k9x0m3c8v1b5n6z4l2j8h0g4f6d1' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>

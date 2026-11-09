@@ -1,0 +1,18 @@
+---
+title: "Cancel withdrawal"
+description: "Cancel an in-flight Card Checkout withdrawal for this customer"
+openapi: "openapi-fiat.yaml POST /card-checkout/customers/{customer_id}/payouts/{payout_id}/cancel"
+---
+
+The amount returns to `available`. Another customer's payout id returns `404` with `code: payout_not_found`. A completed or already-failed withdrawal returns `409` with `code: payout_not_cancelable`.
+
+See [Let a customer withdraw their sales](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales).
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/card-checkout/customers/4f0c1e1a-8d2b-4c7e-9b1a-3e5f6a7b8c9d/payouts/ccw_7wq2k9x0m3c8v1b5n6z4l2j8h0/cancel' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 9e2d6a14-5c3b-4f8e-a7d1-0b4c2e6f8a35'
+```
+</RequestExample>

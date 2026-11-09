@@ -1,0 +1,26 @@
+---
+title: "Request access"
+description: "Ask for Card Checkout to be enabled on your account"
+openapi: "openapi-fiat.yaml POST /card-checkout/account/request-access"
+---
+
+Until access is approved, every other Card Checkout endpoint returns `403` with `code: card_checkout_not_enabled`.
+
+```
+POST https://api.yativo.com/api/v1/card-checkout/account/request-access
+```
+
+`note` is optional (up to 1,000 characters): tell us what your customers sell and to whom. Sending the request again while it is open changes nothing.
+
+See [Card Checkout](/yativo-fiat/card-checkout#request-access).
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/card-checkout/account/request-access' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Idempotency-Key: 7b0f3c52-1e4d-4f7a-9a51-2f6c8d0e4b13' \
+  -H 'Content-Type: application/json' \
+  -d '{ "note": "We sell online courses to customers in the US and EU." }'
+```
+</RequestExample>

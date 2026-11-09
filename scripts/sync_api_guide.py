@@ -147,6 +147,22 @@ def sanitize(text: str, source_name: str) -> str:
             "Each card payment lands on the **selling customer's own** connected business account (`biz_…` from card-checkout onboarding).\n\n",
             text,
         )
+        text = text.replace(
+            "The customer's own money stays on their Whop account.",
+            "The customer's own money stays on their connected account.",
+        )
+        text = text.replace(
+            "The response includes `withdrawal_url` (Whop's hosted payouts portal). Send the\ncustomer there.",
+            "The response includes `withdrawal_url`. Send the customer there.",
+        )
+        text = text.replace(
+            "Opening it redirects\ninto Whop so the customer can manage payouts on their connected `biz_…` account.\nRenew it with `POST …/withdrawal` if you need a fresh Whop URL directly.",
+            "Opening it sends the customer to the payouts page for their connected `biz_…` account.\nRenew it with `POST …/withdrawal` if you need a fresh URL.",
+        )
+        text = text.replace(
+            '  -H "Authorization: Bearer $YATIVO_SECRET" \\',
+            '  -H "X-Api-Key: $YATIVO_API_KEY" \\\n  -H "X-Api-Secret: $YATIVO_API_SECRET" \\',
+        )
 
     if source_name == "TEAM_FUNCTIONALITY.md":
         # Drop internal architecture section

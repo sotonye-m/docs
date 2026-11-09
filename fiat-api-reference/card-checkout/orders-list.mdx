@@ -1,0 +1,19 @@
+---
+title: "List orders"
+description: "List your Card Checkout orders, newest first"
+openapi: "openapi-fiat.yaml GET /card-checkout/orders"
+---
+
+Filter with `status`, `customer_id` and `reference`. `data` holds the orders and `pagination` has `current_page`, `per_page`, `total` and `last_page`.
+
+See [Read orders](/yativo-fiat/card-checkout#read-orders).
+
+<RequestExample>
+```bash cURL
+curl -G 'https://api.yativo.com/api/v1/card-checkout/orders' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  --data-urlencode 'status=paid' \
+  --data-urlencode 'per_page=20'
+```
+</RequestExample>
