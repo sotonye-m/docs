@@ -12,5 +12,26 @@ ai-knowledge-base/
 # Record of menus hidden from navigation (not a docs page)
 nav-records/
 
+# Yativo Crypto — unpublished. Pages stay on disk; old URLs redirect in docs.json.
+# Leading slashes keep these at the repo root so they don't hide yativo-fiat/sdks or fiat-api-reference/sandbox.
+/yativo-crypto/
+/api-reference/
+/sandbox/
+/sdks/
+/extensions/
+/openapi-crypto.yaml
+/guides/overview.mdx
+/guides/accept-crypto-payments.mdx
+/guides/payment-gateway.mdx
+/guides/agentic-wallets.mdx
+/guides/send-crypto.mdx
+/guides/issue-crypto-cards.mdx
+/guides/b2b-card-issuer.mdx
+/guides/card-issuer-webhooks.mdx
+/guides/card-issuer-withdrawal.mdx
+/guides/swap-tokens.mdx
+/guides/webhook-integration.mdx
+/guides/sdk-quickstart.mdx
+
 # Mintlify agent workflows (not documentation pages)
 .mintlify/

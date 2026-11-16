@@ -681,31 +681,31 @@
     },
     {
       "source": "/api-reference/authentication/login",
-      "destination": "/yativo-crypto/authentication"
+      "destination": "/yativo-fiat/authentication"
     },
     {
       "source": "/api-reference/authentication/register",
-      "destination": "/yativo-crypto/authentication"
+      "destination": "/yativo-fiat/authentication"
     },
     {
       "source": "/yativo/authentication",
-      "destination": "/yativo-crypto/authentication"
+      "destination": "/yativo-fiat/authentication"
     },
     {
       "source": "/yativo/2fa",
-      "destination": "/yativo-crypto/authentication"
+      "destination": "/yativo-fiat/authentication"
     },
     {
       "source": "/yativo/quickstart",
-      "destination": "/yativo-crypto/quickstart"
+      "destination": "/yativo-fiat/quickstart"
     },
     {
       "source": "/yativo/api-keys",
-      "destination": "/yativo-crypto/api-keys"
+      "destination": "/yativo-fiat/api-keys"
     },
     {
       "source": "/yativo/subscriptions",
-      "destination": "/yativo-crypto/subscriptions"
+      "destination": "/yativo-fiat/plans"
     },
     {
       "source": "/yativo/notifications",
@@ -713,23 +713,91 @@
     },
     {
       "source": "/api-reference/authentication/verify-otp",
-      "destination": "/api-reference/api-keys/token"
+      "destination": "/yativo-fiat/authentication"
     },
     {
       "source": "/api-reference/authentication/refresh",
-      "destination": "/api-reference/api-keys/token"
+      "destination": "/yativo-fiat/authentication"
     },
     {
       "source": "/sdks/:slug*",
-      "destination": "/yativo-crypto/quickstart"
+      "destination": "/yativo-fiat/sdks/overview"
     },
     {
       "source": "/extensions/:slug*",
-      "destination": "/yativo-crypto/quickstart"
+      "destination": "/yativo/introduction"
     },
     {
       "source": "/guides/sdk-quickstart",
-      "destination": "/yativo-crypto/quickstart"
+      "destination": "/yativo-fiat/sdks/overview"
+    },
+    {
+      "source": "/yativo-crypto",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/yativo-crypto/:slug*",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/api-reference",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/api-reference/:slug*",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/sandbox",
+      "destination": "/yativo-fiat/sandbox"
+    },
+    {
+      "source": "/sandbox/:slug*",
+      "destination": "/yativo-fiat/sandbox"
+    },
+    {
+      "source": "/guides/overview",
+      "destination": "/yativo-platform/introduction"
+    },
+    {
+      "source": "/guides/accept-crypto-payments",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/guides/payment-gateway",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/guides/agentic-wallets",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/guides/send-crypto",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/guides/issue-crypto-cards",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/guides/b2b-card-issuer",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/guides/card-issuer-webhooks",
+      "destination": "/yativo-fiat/webhooks"
+    },
+    {
+      "source": "/guides/card-issuer-withdrawal",
+      "destination": "/yativo-fiat/introduction"
+    },
+    {
+      "source": "/guides/swap-tokens",
+      "destination": "/yativo-fiat/swap"
+    },
+    {
+      "source": "/guides/webhook-integration",
+      "destination": "/yativo-fiat/webhooks"
     },
     {
       "source": "/fiat-api-reference/developer/logs",
@@ -784,5 +852,5 @@
       "destination": "/fiat-api-reference/card-checkout/payout-methods-create"
     }
   ],
-  "description": "Yativo developer docs: APIs and guides for cross-border fiat payments, payouts and virtual accounts, plus multi-chain crypto wallets, cards, swaps and AI agent integrations."
+  "description": "Yativo developer docs: APIs and guides for cross-border fiat payments, payouts and virtual accounts."
 }

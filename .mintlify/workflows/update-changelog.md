@@ -29,7 +29,7 @@ Skip the push when the only changes are:
 Read `AGENTS.md` and the current month's `<Update>` in `yativo/changelog.mdx`. Match that voice: second person, one sentence per bullet, a bold lead-in, and a link to the page that documents the change.
 
 - Put the bullet under the current month. If that `<Update>` does not exist, add one at the top with `label` set to the month and year, for example `October 2026`.
-- File Fiat changes under `### Yativo Fiat`, crypto changes under `### Yativo Crypto`, and docs-only corrections under `### Docs`.
+- File Fiat changes under `### Yativo Fiat` and docs-only corrections under `### Docs`. Do not add Yativo Crypto changelog entries — those docs are unpublished.
 - Do not name third-party providers, banks, or internal services.
 - Do not edit older months.
 - If an open pull request from this workflow already covers this push, add the bullet there instead of opening another pull request.

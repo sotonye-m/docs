@@ -3,55 +3,43 @@ title: "Welcome to Yativo"
 description: "Global payments infrastructure for businesses and developers"
 ---
 
-Yativo is a payments infrastructure platform built for businesses, fintechs, and developers who need reliable, programmable money movement across borders and across chains.
-
-## Two platforms, one API surface
+Yativo is a payments infrastructure platform built for businesses, fintechs, and developers who need reliable, programmable money movement across borders.
 
 <CardGroup cols={2}>
   <Card title="Yativo Fiat" icon="building-columns" href="/yativo-fiat/authentication">
     Multi-currency accounts, cross-border transfers, virtual accounts, beneficiary management, and subscription billing. Send and receive money in 50+ currencies.
   </Card>
-  <Card title="Yativo Crypto" icon="bitcoin" href="/yativo-crypto/introduction">
-    Multi-chain wallets, crypto-funded debit cards, IBAN accounts, token swaps, and a full B2B card issuer program. Build crypto-native financial products.
+  <Card title="Fiat API Reference" icon="code" href="/fiat-api-reference/introduction">
+    Complete fiat endpoint reference with an interactive playground.
   </Card>
 </CardGroup>
 
 ## Key capabilities
 
-| Capability | Platform | Description |
-|---|---|---|
-| Multi-currency accounts | Fiat | Hold and move money in 50+ currencies |
-| Cross-border transfers | Fiat | Send funds internationally via a single API call |
-| Virtual accounts | Fiat | Issue receiving accounts per customer or transaction |
-| Beneficiary management | Fiat | Store and reuse recipient bank details across countries |
-| Crypto wallets | Crypto | Multi-chain wallet infrastructure with automatic address generation |
-| Crypto-funded cards | Crypto | Issue debit cards funded from crypto balances |
-| IBAN accounts | Crypto | European bank accounts linked to crypto wallets |
-| Token swaps | Crypto | Cross-chain and same-chain token exchange |
-| Webhooks | Both | Real-time event notifications for all platform activity |
-| B2B customer management | Both | Create and manage sub-accounts for your own customers |
+| Capability | Description |
+|---|---|
+| Multi-currency accounts | Hold and move money in 50+ currencies |
+| Cross-border transfers | Send funds internationally via a single API call |
+| Virtual accounts | Issue receiving accounts per customer or transaction |
+| Beneficiary management | Store and reuse recipient bank details across countries |
+| Webhooks | Real-time event notifications for platform activity |
+| B2B customer management | Create and manage sub-accounts for your own customers |
 
 ## Authentication
 
-| Platform | How your servers authenticate |
-|---|---|
-| Yativo Fiat | Send `X-Api-Key` and `X-Api-Secret` on every request, from an IP on the key's whitelist. See [Authentication](/yativo-fiat/authentication). |
-| Yativo Crypto | Exchange your API key and secret for a Bearer token with `POST /v1/auth/token`, then send `Authorization: Bearer <token>`. See [Authentication](/yativo-crypto/authentication). |
+Send `X-Api-Key` and `X-Api-Secret` on every request, from an IP on the key's whitelist. See [Authentication](/yativo-fiat/authentication).
 
 ## Explore the docs
 
 <CardGroup cols={2}>
   <Card title="Fiat API Reference" icon="code" href="/fiat-api-reference/introduction">
-    Complete fiat endpoint reference with interactive playground.
+    Complete fiat endpoint reference with an interactive playground.
   </Card>
-  <Card title="Crypto API Reference" icon="code" href="/api-reference/introduction">
-    Complete crypto endpoint reference.
-  </Card>
-  <Card title="Guides" icon="book-open" href="/guides/overview">
+  <Card title="Platform guides" icon="book-open" href="/yativo-platform/introduction">
     Step-by-step tutorials for common integration patterns.
   </Card>
-  <Card title="Sandbox" icon="flask" href="/sandbox/overview">
-    Test your integration against live-like sandbox environments.
+  <Card title="Sandbox" icon="flask" href="/yativo-fiat/sandbox">
+    Test your integration against the fiat sandbox.
   </Card>
   <Card title="AI and MCP servers" icon="robot" href="/yativo/mcp">
     Connect Claude, Cursor or any MCP client to the docs or your fiat account.

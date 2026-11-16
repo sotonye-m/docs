@@ -115,13 +115,12 @@ Hosted KYC/KYB URLs and the KYC platform submit/update APIs require a signed ses
 
 | HTTP | Message | Cause | What to do |
 |---|---|---|---|
-| `401` | `This verification session is invalid or has expired.` | Missing, malformed or expired `X-Kyc-Session` (default lifetime **6 hours**) | `POST /customer/kyc-session` again and send the customer the new `url` |
+| `401` | `This verification session is invalid or has expired.` | Missing, malformed, expired, or already-used `X-Kyc-Session` (default lifetime **30 minutes**; also revoked on submit or when the tab is closed) | `POST /customer/kyc-session` again and send the customer the new `url` |
 | `401` | `Authentication required. Use X-Api-Key and X-Api-Secret, or a signed KYC session token.` | No session and no API key pair | Mint a session for browser/mobile, or send both API key headers from your server |
 | `401` | `A signed KYC session token is required.` | Session-only route with no token | Add `X-Kyc-Session` or `?session=` |
 | `401` | `This verification link is missing a valid session. Open the link from your Yativo dashboard.` | Hosted page opened without `?session=` | Don't build `https://kyc.yativo.com/individual/{id}` yourself. Use `data.url` from the session response |
 | `401` | `Both X-Api-Key and X-Api-Secret headers are required.` | Only one API key header on a server call to the KYC host | Send both |
 | `404` | `Customer not found.` | Token bound to a different customer than the URL or body | Mint a session for the customer you're submitting |
-| `503` | `KYC session signing is not configured.` | Transient platform issue on `POST /customer/kyc-session` | Retry later |
 
 ---
 

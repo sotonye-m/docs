@@ -4,7 +4,8 @@
 
 - Yativo's public developer docs, built on [Mintlify](https://mintlify.com) and published at docs.yativo.com
 - Pages are MDX files with YAML frontmatter. Configuration, navigation and redirects live in `docs.json`
-- Two products: **Yativo Fiat** (`yativo-fiat/`, `fiat-api-reference/`, `openapi-fiat.yaml`) and **Yativo Crypto** (`yativo-crypto/`, `api-reference/`, `guides/`, `sandbox/`, `sdks/`, `openapi-crypto.yaml`). Company pages and the changelog are in `yativo/`
+- Public product: **Yativo Fiat** (`yativo-fiat/`, `fiat-api-reference/`, `openapi-fiat.yaml`). Company pages and the changelog are in `yativo/`
+- **Yativo Crypto is unpublished.** `yativo-crypto/`, `api-reference/`, `sandbox/`, `sdks/`, `extensions/`, `openapi-crypto.yaml` and the crypto `guides/` files stay on disk and in `.mintignore`. Do not add them back to `docs.json` or link to them from public pages. See `nav-records/NAV-CHANGES.md`
 - Fiat reference pages render from `openapi-fiat.yaml` through `openapi:` frontmatter, so request and response shapes belong in the spec
 - `ai-knowledge-base/` is excluded from the site (`.mintignore`)
 
@@ -52,5 +53,5 @@ This repository is public. Document only what an integrator can see and call.
 - **No internal systems.** No databases, queues, hosting, servers, IP addresses, internal service names, admin tooling or descriptions of internal processing
 - **No security internals.** Don't describe enforcement switches, bypasses, risk-scoring weights, alerting, logging or past vulnerabilities. Document the errors and fields integrators receive
 - **No dashboard-only flows as API docs.** Account registration, sign-in, session refresh, passkeys and two-factor setup happen in the dashboard
-- **Crypto docs cover the crypto API only.** Don't document fiat features there (virtual accounts, IBANs, bank or cash withdrawals and payouts, or other features that only exist in the crypto app's UI). Point integrators to the Yativo Fiat API instead, for example `/yativo-fiat/virtual-accounts`
+- **Don't republish Yativo Crypto.** The crypto dashboard (crypto.yativo.com) and crypto API docs are not part of the public site. Don't add crypto pages, crypto.yativo.com links, or crypto API examples to Fiat or company docs
 - Field names must match what the API returns, even when they aren't ideal. Don't add commentary around them

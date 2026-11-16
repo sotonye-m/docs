@@ -39,7 +39,7 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/kyc-session' \
   "data": {
     "token": "YOUR_KYC_SESSION_TOKEN",
     "expires_at": "2026-11-16T23:33:00+00:00",
-    "expires_in": 21600,
+    "expires_in": 1800,
     "url": "https://kyc.yativo.com/individual/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN",
     "portal_url": null
   }
@@ -60,12 +60,12 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/kyc-session' \
 
 | Field | Description |
 |---|---|
-| `token` | Signed session JWT. Send it as `X-Kyc-Session` (or `?session=`) on KYC platform APIs. Bound to this customer and type |
-| `expires_at` | ISO 8601 expiry. Default lifetime is **6 hours** (`21600` seconds) |
+| `token` | Signed session JWT. Send it as `X-Kyc-Session` (or `?session=`) on KYC platform APIs. Bound to this customer and type. KYC-only — it cannot call the Yativo API |
+| `expires_at` | ISO 8601 expiry. Default lifetime is **30 minutes** (`1800` seconds). Submitting KYC or closing the hosted tab revokes it immediately |
 | `expires_in` | Lifetime in seconds |
 | `url` | Hosted KYC/KYB page with the session already on the query string. Redirect or iframe this. Don't build the URL yourself |
 | `portal_url` | Alternate portal link when one is configured for your account; otherwise `null` |
 
-Each call mints a **new** token. An older unused token stays valid until it expires. Mint again every time you email, redirect, or show a "Continue verification" button.
+Each call mints a **new** token. An older unused token stays valid until it expires, is used to submit KYC, or the customer closes the hosted verification tab. Mint again every time you email, redirect, or show a "Continue verification" button.
 
 See [KYC / KYB verification](/yativo-fiat/kyc#mint-a-session) for hosted vs API flows, and [Bans, blocks and access errors](/yativo-fiat/restrictions#kyc-sessions-and-hosted-pages) for `401`/`404` causes.

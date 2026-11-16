@@ -125,7 +125,7 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/kyc-session' \
   "data": {
     "token": "YOUR_KYC_SESSION_TOKEN",
     "expires_at": "2026-11-16T23:33:00+00:00",
-    "expires_in": 21600,
+    "expires_in": 1800,
     "url": "https://kyc.yativo.com/individual/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN",
     "portal_url": null
   }
@@ -134,11 +134,11 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/kyc-session' \
 
 | Field | Description |
 |---|---|
-| `token` | Session JWT. Send as `X-Kyc-Session` (also `X-KYC-Session`, `?session=`, body `kyc_session`, or `Authorization: Bearer`) on KYC platform APIs |
-| `expires_in` | Default **6 hours** (`21600` seconds) |
+| `token` | Session JWT. Send as `X-Kyc-Session` (also `X-KYC-Session`, `?session=`, or body `kyc_session`) on KYC platform APIs. It is KYC-only and cannot call the Yativo API |
+| `expires_in` | Default **30 minutes** (`1800` seconds). Submitting KYC or closing the hosted tab revokes the token |
 | `url` | Hosted page with the session already on the query string. Redirect, email or iframe this |
 
-Mint a new session every time you send a customer to KYC. If the form is left open past expiry, the next call returns `401 This verification session is invalid or has expired.`
+Mint a new session every time you send a customer to KYC. If the form is left open past expiry, or the tab is closed, the next call returns `401 This verification session is invalid or has expired.`
 
 **Browser / mobile:** mint on your server, send `data.token` to the client, and have the client call the KYC host with `X-Kyc-Session`. **Your backend:** call the KYC host with the same API key pair you use on the Yativo API. No session required.
 
@@ -1367,7 +1367,7 @@ The KYC platform returns validation errors in its own shape, with `422`:
 | `calling_code is invalid` | Must be `+` followed by 1–4 digits, e.g. `"+1"`, `"+234"` |
 | `identifying_information is required` | At least one ID document must be included |
 | `documents is required` | KYB requires at least one business document |
-| `This verification session is invalid or has expired.` (`401`) | Mint a new session with `POST /customer/kyc-session` |
+| `This verification session is invalid or has expired.` (`401`) | Session expired, already used to submit, or the tab was closed. Mint a new session with `POST /customer/kyc-session` |
 | `Submission rejected: the data contains placeholder, test, or otherwise invalid content...` (`422`) | Submit the customer's real identity. That `customer_id` is now flagged. See [Bans, blocks and access errors](/yativo-fiat/restrictions) |
 
 ---

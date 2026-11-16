@@ -54,7 +54,7 @@ async function createCustomer(customerData) {
 
 ### Step 3: Mint a session and redirect
 
-Mint the session on your **server** at the moment you send the customer to verification. Don't persist one token for days — the default lifetime is 6 hours.
+Mint the session on your **server** at the moment you send the customer to verification. Don't persist one token — the default lifetime is 30 minutes, and submitting KYC or closing the hosted tab revokes it immediately.
 
 ```javascript
 async function mintKycSession(customerId, customerType = 'individual') {
@@ -537,7 +537,7 @@ async function submitKYC(customerId, kycSessionToken, formData) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Kyc-Session': kycSessionToken, // minted on your server; never send API keys from the browser
+      'X-Kyc-Session': kycSessionToken, // minted on your server; KYC-only, 30 minutes, never send API keys from the browser
       'Idempotency-Key': `kyc-${customerId}-${Date.now()}`,
     },
     body: JSON.stringify(payload),
@@ -553,7 +553,7 @@ async function submitKYC(customerId, kycSessionToken, formData) {
 ```
 
 <Note>
-  The KYC submission endpoint is at `https://kyc.yativo.com`, not the main API. From a browser, send `X-Kyc-Session` from `POST /customer/kyc-session`. From your server, you can send `X-Api-Key` and `X-Api-Secret` instead. Don't submit documentation samples — placeholder names and `example.com` emails flag the customer. See [Bans, blocks and access errors](/yativo-fiat/restrictions).
+  The KYC submission endpoint is at `https://kyc.yativo.com`, not the main API. From a browser, send `X-Kyc-Session` from `POST /customer/kyc-session`. That token is KYC-only and cannot call the Yativo API; it lasts 30 minutes and is revoked when KYC is submitted or the hosted tab is closed. From your server, you can send `X-Api-Key` and `X-Api-Secret` instead. Don't submit documentation samples — placeholder names and `example.com` emails flag the customer. See [Bans, blocks and access errors](/yativo-fiat/restrictions).
 </Note>
 
 ---

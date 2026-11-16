@@ -21,8 +21,8 @@ The page files still exist and are still reachable by URL. Only the menu entry i
 |---|---|---|---|
 | 2026-11-06 | Platform guides → Authentication | `yativo-platform/authentication` (Team API Keys integration guide from `api-guide/team-api-keys-integration.md`) | Duplicate of Fiat auth docs; do not re-sync or republish unless the docs owner asks. Redirect `/yativo-platform/authentication` → `/yativo-fiat/authentication` |
 | 2026-11-06 | Fiat API References → Compliance RFIs | `POST /business/rfis/{id}/realtime/auth`, `fiat-api-reference/rfis/realtime-auth` | Admin workspace only; not for integrators. Redirect `/fiat-api-reference/rfis/realtime-auth` → `/yativo-fiat/rfis` |
-| 2026-10-21 | Yativo Crypto tab | The whole tab | Crypto docs disabled for now |
-| 2026-10-21 | Crypto API References tab | The whole tab | Crypto docs disabled for now |
+| 2026-10-21 | Yativo Crypto tab | The whole tab | Unpublished 2026-11-16. Do not restore |
+| 2026-10-21 | Crypto API References tab | The whole tab | Unpublished 2026-11-16. Do not restore |
 | 2026-10-21 | Fiat API References → Beneficiaries | Create, List, Get, Update, Delete, Archive and Unarchive Beneficiary (`fiat-api-reference/beneficiaries/{create,list,get,update,delete,archive,unarchive}`) | Beneficiaries are now just saved payment methods. Nothing links a payment method to a separate beneficiary record |
 | 2026-10-21 | Fiat API References → Wallets | Create Wallet (`fiat-api-reference/wallets/create`) | Not offered to integrators |
 
@@ -40,6 +40,7 @@ The page files still exist and are still reachable by URL. Only the menu entry i
 | 2026-10-26 | Add Transfer Purpose | `POST /sendmoney/purpose` | `/fiat-api-reference/payments/send-money-purpose` → `/fiat-api-reference/payments/payout` |
 | 2026-10-26 | Activate Customer for Virtual Cards | `POST /customer/virtual/cards/activate`. Issue a card with `POST /customer/virtual/cards/create` | `/fiat-api-reference/virtual-cards/activate` → `/fiat-api-reference/virtual-cards/create` |
 | 2026-11-09 | Create withdrawal link | `POST /card-checkout/customers/{customer_id}/withdrawal`. Integrators save payout details with `POST /card-checkout/customers/{id}/payout-methods` | `/fiat-api-reference/card-checkout/customers-withdrawal` → `/fiat-api-reference/card-checkout/payout-methods-create` |
+| 2026-11-16 | Yativo Crypto docs | Unpublished `yativo-crypto/`, `api-reference/`, `sandbox/`, `sdks/`, `extensions/`, `openapi-crypto.yaml`, and the crypto `guides/` pages (the crypto dashboard was crypto.yativo.com). Files kept on disk and excluded in `.mintignore`. Do not restore | `/yativo-crypto/:slug*` → `/yativo-fiat/introduction`, `/api-reference/:slug*` → `/yativo-fiat/introduction`, `/sandbox/:slug*` → `/yativo-fiat/sandbox`, `/sdks/:slug*` → `/yativo-fiat/sdks/overview`, `/extensions/:slug*` → `/yativo/introduction` |
 
 ## Renamed
 

@@ -70,9 +70,10 @@ components:
       in: header
       name: X-Kyc-Session
       description: >
-        Short-lived session JWT from POST /customer/kyc-session. Use this from a browser or
-        mobile app instead of your API key. Also accepted as `X-KYC-Session`, `?session=`,
-        body `kyc_session`, or `Authorization: Bearer` when the value is a three-part JWT.
+        Short-lived KYC-only session JWT from POST /customer/kyc-session (30 minutes;
+        revoked on submit or when the hosted tab is closed). It cannot call the Yativo API.
+        Use this from a browser or mobile app instead of your API key. Also accepted as
+        `X-KYC-Session`, `?session=`, or body `kyc_session`.
 
 
   parameters:
@@ -2095,8 +2096,9 @@ paths:
 
         A URL that is only `https://kyc.yativo.com/{customer_type}/{customer_id}` is rejected with
         `401`. Mint a session at the moment you send the customer to verification. Default lifetime
-        is 6 hours (`21600` seconds). Each call issues a new token; an older unused token stays
-        valid until it expires.
+        is 30 minutes (`1800` seconds). The token is KYC-only and cannot call the Yativo API.
+        Submitting KYC or closing the hosted verification tab revokes it immediately. Each call
+        issues a new token; an older unused token stays valid until it expires or is revoked.
 
         Call this from your server with your API key. Never put the API key in a browser.
         Production keys still need an IP whitelist; the customer's browser does not.
@@ -2143,7 +2145,7 @@ paths:
                     properties:
                       token:
                         type: string
-                        description: Signed session JWT. Send as `X-Kyc-Session` on KYC platform APIs.
+                        description: Signed KYC-only session JWT. Send as `X-Kyc-Session` on KYC platform APIs. Cannot call the Yativo API.
                         example: YOUR_KYC_SESSION_TOKEN
                       expires_at:
                         type: string
@@ -2151,8 +2153,8 @@ paths:
                         example: '2026-11-16T23:33:00+00:00'
                       expires_in:
                         type: integer
-                        description: Lifetime in seconds. Default 21600 (6 hours).
-                        example: 21600
+                        description: Lifetime in seconds. Default 1800 (30 minutes). Revoked on submit or when the hosted tab is closed.
+                        example: 1800
                       url:
                         type: string
                         format: uri
@@ -2175,12 +2177,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationError'
-        '503':
-          description: KYC session signing is not configured
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /customer/{customer_id}:
     get:
