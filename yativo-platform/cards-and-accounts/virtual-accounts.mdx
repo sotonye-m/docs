@@ -1,6 +1,6 @@
 ---
 title: "Virtual Accounts"
-description: "Issue dedicated bank account numbers in USD, EUR, GBP, MXN, COP, and NGN."
+description: "Issue dedicated bank account numbers in USD, EUR, GBP, MXN, COP, NGN, and NGNBASE."
 ---
 
 Yativo allows you to create dedicated virtual accounts in multiple currencies for your customers or business operations. Funds sent to these account numbers settle directly into your wallet.
@@ -26,7 +26,7 @@ POST /api/v1/business/virtual-account/create
   "data": {
     "account_id": "va_9a8b7c6",
     "currency": "USD",
-    "account_number": "1002938475",
+    "account_number": "9900123456",
     "routing_number": "021000021",
     "bank_name": "Evolve Bank & Trust",
     "bank_address": "6015 Primacy Pkwy, Memphis, TN",
@@ -46,7 +46,8 @@ POST /api/v1/business/virtual-account/create
 | **GBP** | Faster Payments / BACS | Account Number, Sort Code |
 | **MXN** | SPEI | CLABE (18 digits) |
 | **COP** | ACH Colombia | Account Number, Bank Name |
-| **NGN** | NIBSS Instant Payments | Account Number, Bank Name |
+| **NGN** | Local transfer (individuals) | Account Number, Bank Name |
+| **NGNBASE** | Local transfer (businesses) | Account Number, Bank Name |
 
 ---
 

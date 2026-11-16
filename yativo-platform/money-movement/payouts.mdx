@@ -96,8 +96,8 @@ Idempotency-Key: 3f1c2a1e-8b7d-4c1e-9f0a-6d2b5e7c9a10
 {
   "payment_method_id": 18096,
   "debit_wallet": "USD",
-  "customer_id": "d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d",
-  "quote_id": "756979af-784f-4933-9ac1-76bddbeb333d"
+  "customer_id": "11111111-2222-4333-8444-555555555555",
+  "quote_id": "33333333-4444-4555-8666-777777777777"
 }
 ```
 
@@ -109,7 +109,7 @@ If you are not using a pre-calculated quote, specify the `amount` directly:
 {
   "payment_method_id": 18096,
   "debit_wallet": "USD",
-  "customer_id": "d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d",
+  "customer_id": "11111111-2222-4333-8444-555555555555",
   "amount": 250.00
 }
 ```
@@ -122,7 +122,7 @@ If you are not using a pre-calculated quote, specify the `amount` directly:
 |-----------|------|----------|-------------|
 | `payment_method_id` | integer | **Yes** | The saved beneficiary payment method ID (e.g. `18096`). Also accepts legacy alias `beneficiary_details_id`. |
 | `debit_wallet` | string | **Yes** | Currency code of your wallet balance to debit (e.g. `"USD"`, `"EUR"`, `"USDC"`). |
-| `customer_id` | string (UUID) | **Yes** | The UUID of the customer associated with this payout (e.g. `"d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d"`). |
+| `customer_id` | string (UUID) | **Yes** | The UUID of the customer associated with this payout (e.g. `"11111111-2222-4333-8444-555555555555"`). |
 | `quote_id` | string (UUID) / int | Conditional | Locked quote ID. Required if `amount` is omitted. Guarantees rate and fees for 5 minutes. |
 | `amount` | number | Conditional | Amount to send from your debit wallet. Required if `quote_id` is omitted. |
 | `beneficiary_id` | integer | No | ID of the parent beneficiary entity. |
@@ -143,7 +143,7 @@ If you are not using a pre-calculated quote, specify the `amount` directly:
     "id": 1845,
     "transaction_id": "WD_672a9df28a",
     "payment_method_id": 18096,
-    "customer_id": "d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "debit_wallet": "USD",
     "amount": "250.00",
     "fee": "2.50",

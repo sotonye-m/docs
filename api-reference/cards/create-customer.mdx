@@ -58,7 +58,7 @@ const data = await response.json();
   "success": true,
   "message": "Customer card onboarding initiated. Verification code sent to customer email.",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a2b3c4d5e6f7a8b9c0d1e_1769031332068",
+    "yativo_card_id": "yativo_card_customer_8f9a2b3c4d5e6f7a8b9c0d1e_0000000000000",
     "customer_id": "6627f3a2c5d4e100123abcde",
     "external_customer_id": "usr_8821",
     "email_masked": "cu***@example.com",
@@ -102,7 +102,7 @@ const data = await response.json();
   "error_code": "CUSTOMER_CARD_ALREADY_ACTIVE",
   "message": "A customer card with this email already exists. Use the returned card ID to continue onboarding.",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a2b3c4d5e6f7a8b9c0d1e_1769031332068",
+    "yativo_card_id": "yativo_card_customer_8f9a2b3c4d5e6f7a8b9c0d1e_0000000000000",
     "flow_status": "otp_verified",
     "next_step": "kyc_link",
     "external_customer_id": "usr_8821"
@@ -116,7 +116,7 @@ const data = await response.json();
   "error_code": "CUSTOMER_CARD_ALREADY_ACTIVE",
   "message": "Customer card onboarding already in progress",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a2b3c4d5e6f7a8b9c0d1e_1769031332068",
+    "yativo_card_id": "yativo_card_customer_8f9a2b3c4d5e6f7a8b9c0d1e_0000000000000",
     "flow_status": "otp_requested",
     "next_step": "verify_otp"
   }
@@ -129,7 +129,7 @@ const data = await response.json();
   "error_code": "CUSTOMER_ALREADY_ONBOARDED",
   "message": "This customer has already completed card onboarding. No further action is needed.",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a2b3c4d5e6f7a8b9c0d1e_1769031332068",
+    "yativo_card_id": "yativo_card_customer_8f9a2b3c4d5e6f7a8b9c0d1e_0000000000000",
     "flow_status": "active",
     "external_customer_id": "usr_8821",
     "next_step": "none"

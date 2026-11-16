@@ -23,7 +23,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/kyc-link' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/kyc-link' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -34,7 +34,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
   "success": true,
   "message": "KYC link generated. Open the link to complete identity verification.",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "kyc_url": "https://verify.example.com/...",
     "next_step": "kyc_status",
     "instructions": "Open the KYC link to upload your government ID and complete liveness check"

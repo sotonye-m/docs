@@ -149,7 +149,7 @@ const { data } = await res.json();
   "status_code": 200,
   "message": "Request successful",
   "data": {
-    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "quote_id": "33333333-4444-4555-8666-777777777777",
     "from_currency": "USD",
     "to_currency": "USD",
     "rate": "1.00000000",
@@ -203,9 +203,9 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
   -H 'Idempotency-Key: payout-001' \
   -d '{
     "debit_wallet": "USD",
-    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "quote_id": "33333333-4444-4555-8666-777777777777",
     "payment_method_id": 555,
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
+    "customer_id": "11111111-2222-4333-8444-555555555555"
   }'
 ```
 
@@ -219,7 +219,7 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/deposits/new' \
   -H 'Idempotency-Key: deposit-001' \
   -d '{
     "gateway": 20,
-    "quote_id": "4a72ecf8-6c8a-4e38-9971-8aabe9f785ed",
+    "quote_id": "33333333-4444-4555-8666-777777777777",
     "currency": "USD",
     "redirect_url": "https://your-app.com/deposit/complete"
   }'
@@ -297,7 +297,7 @@ A quote fixes the rate and fees for 5 minutes, so you can show the exact debit b
         "quote_id": "9c1e5b2a-3f4d-4e6a-8b7c-2d1e0f9a8b7c",
         "payment_method_id": 555,
         "debit_wallet": "USD",
-        "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
+        "customer_id": "11111111-2222-4333-8444-555555555555"
       }'
     ```
 
@@ -318,7 +318,7 @@ curl -X POST 'https://api.yativo.com/api/v1/wallet/payout' \
     "amount_type": "receive",
     "payment_method_id": 555,
     "debit_wallet": "USD",
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2"
+    "customer_id": "11111111-2222-4333-8444-555555555555"
   }'
 ```
 

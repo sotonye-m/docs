@@ -90,7 +90,7 @@ GET /api/v1/customer/{customer_id}
   "status_code": 200,
   "message": "Request successful",
   "data": {
-    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "customer_name": "Alex Smith",
     "customer_email": "alex.smith@example.com",
     "customer_phone": "+15551234567",

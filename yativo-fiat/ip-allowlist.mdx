@@ -112,7 +112,7 @@ To check a server you haven't deployed yet, add `?ip=<address>`. `result` then d
 | HTTP | `data.error` | Fix |
 |---|---|---|
 | 401 | `This API key has no whitelisted IP addresses. ...` | Production request with no whitelist. Add at least one IP to the key. Sandbox allows this. |
-| 403 | `This IP address is not allowed to use this API key.` | Check your server's public IP and add it to the key. |
+| 403 | `This IP address is not allowed to use this API key.` / `Invalid credentials.` | Check your server's public IP and add it to the key **before** you deploy. Two unauthorized-IP attempts **revoke the key**. After that you get `401 Invalid or revoked API credentials.` and must create a new key |
 | 403 | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | Make the change in the dashboard. |
 
 ---
@@ -127,6 +127,6 @@ To check a server you haven't deployed yet, add `?ip=<address>`. `result` then d
     On sandbox, omit the whitelist to call from any IP. On production, every key needs at least one address, and ranges broader than `/16` (IPv4) or `/32` (IPv6) are rejected.
   </Accordion>
   <Accordion title="My key worked and now returns 401 or 403.">
-    A `401` with no whitelisted IPs means you called production without a whitelist. A `403` means your server's public IP isn't on the list — run the check endpoint and add the new `request_ip`.
+    A `401` with no whitelisted IPs means you called production without a whitelist. A `403` means your server's public IP isn't on the list — run the check endpoint and add the new `request_ip` **before** retrying. Two calls from a foreign IP revoke the key; after that you get `401 Invalid or revoked API credentials.` and need a new key. See [Bans, blocks and access errors](/yativo-fiat/restrictions#api-keys-and-ips).
   </Accordion>
 </AccordionGroup>

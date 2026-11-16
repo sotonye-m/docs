@@ -44,7 +44,7 @@ const { data } = await response.json();
   "success": true,
   "message": "Card onboarding initiated. Check your email for verification code.",
   "data": {
-    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_0000000000000",
     "email_masked": "yo***@example.com",
     "next_step": "verify_otp",
     "otp_expires_in_seconds": 600
@@ -66,7 +66,7 @@ const { data } = await response.json();
   "error_code": "CARD_ALREADY_ACTIVE",
   "message": "Card onboarding already in progress",
   "data": {
-    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_0000000000000",
     "flow_status": "otp_requested",
     "next_step": "verify_otp"
   }
@@ -79,7 +79,7 @@ const { data } = await response.json();
   "error_code": "JWT_EXPIRED",
   "message": "Session expired. Please re-authenticate.",
   "data": {
-    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_0000000000000",
     "needs_reauth": true,
     "flow_status": "kyc_initiated"
   }

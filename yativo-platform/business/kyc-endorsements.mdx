@@ -74,7 +74,7 @@ This applies to **individual** customers only, except `card_checkout`, which acc
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/customer/kyc/resubmit/c586066b-0f29-468f-b775-15483871a202/faster_payments' \
+curl -X POST 'https://api.yativo.com/api/v1/customer/kyc/resubmit/11111111-2222-4333-8444-555555555555/faster_payments' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Idempotency-Key: resubmit-fp-001'
@@ -97,7 +97,7 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/kyc/resubmit/c586066b-0f29-
   "status_code": 202,
   "message": "Card checkout access has been requested for this business. This request continues automatically once it is approved.",
   "data": {
-    "customer_id": "4f0c1e1a-0f29-468f-b775-15483871a202",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "endorsement_status": "pending",
     "awaiting_business_access": true
   }

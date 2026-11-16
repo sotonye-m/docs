@@ -28,7 +28,9 @@ GET https://kyc.yativo.com/api/kyc/regenerate/{customerId}/{service}
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://kyc.yativo.com/api/kyc/regenerate/c586066b-0f29-468f-b775-15483871a202/sepa' \
+curl -X GET 'https://kyc.yativo.com/api/kyc/regenerate/11111111-2222-4333-8444-555555555555/sepa' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
 ```
 </RequestExample>
 
@@ -38,9 +40,9 @@ curl -X GET 'https://kyc.yativo.com/api/kyc/regenerate/c586066b-0f29-468f-b775-1
   "success": true,
   "message": "Endorsement link regenerated successfully",
   "data": {
-    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "service": "sepa",
-    "link": "https://kyc.yativo.com/endorsement/sepa/c586066b-0f29-468f-b775-15483871a202?token=abc123xyz",
+    "link": "https://kyc.yativo.com/endorsement/sepa/11111111-2222-4333-8444-555555555555?token=abc123xyz",
     "expires_at": "2026-04-03T10:00:00.000000Z"
   }
 }

@@ -17,13 +17,13 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash Own Account
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/safe/deploy' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_0000000000000/safe/deploy' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json'
 ```
 
 ```bash B2B Customer
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/safe/deploy' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/safe/deploy' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json'
 ```
@@ -35,11 +35,11 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   "success": true,
   "message": "Safe deployment initiated. Deployment typically takes up to 1 minute.",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "deployment_accepted": true,
     "estimated_completion": "~1 minute",
     "next_step": "monitor_deployment",
-    "monitor_endpoint": "/api/yativo-card/yativo_card_customer_8f9a...abc_1769031332068/safe/deploy"
+    "monitor_endpoint": "/api/yativo-card/yativo_card_customer_demo_0000000000000/safe/deploy"
   }
 }
 ```
@@ -49,7 +49,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   "success": true,
   "message": "Safe is already deployed and ready",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "already_deployed": true,
     "safe_address": "0x7eA0940F469913c1167A2397eb5a3E9AE8DAC0dE",
     "token_symbol": "USDCe",
@@ -57,7 +57,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
     "account_status": 0,
     "account_status_meaning": "Ok",
     "is_ready": true,
-    "monitor_endpoint": "/api/yativo-card/yativo_card_customer_8f9a...abc_1769031332068/safe/deploy"
+    "monitor_endpoint": "/api/yativo-card/yativo_card_customer_demo_0000000000000/safe/deploy"
   }
 }
 ```

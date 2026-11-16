@@ -270,7 +270,7 @@ The path parameter is the IP address itself, for example
 | HTTP | `data.error` | Cause | Fix |
 |---|---|---|---|
 | 401 | `This API key has no whitelisted IP addresses. Add at least one allowed IP before using it.` | Production request, and the key has no effective whitelist. Sandbox allows this. | [Add IPs to the key](#change-a-keys-allowed-ips). |
-| 403 | `Invalid credentials.` | The request came from an IP that isn't whitelisted. | Check your egress IP and add it. |
+| 403 | `Invalid credentials.` | The request came from an IP that isn't whitelisted. Two such attempts **revoke the key**. | Add the egress IP *before* retrying, or create a new key if it was revoked. See [Bans, blocks and access errors](/yativo-fiat/restrictions#api-keys-and-ips). |
 | 403 | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | A whitelist change came from an API key or from outside the dashboard (since 15 October 2026). | Make the change in the dashboard. |
 | 422 | Validation errors on `allowed_ips` | Empty list, invalid IP or CIDR, range broader than /16 (IPv4) or /32 (IPv6), more than 50 entries, or duplicates. | Correct the entries. |
 | 422 | `This API key has been revoked.` | Tried to change a revoked key's IPs. | Create a new key. |

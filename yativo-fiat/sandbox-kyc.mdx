@@ -148,14 +148,13 @@ Submitting the form records the business details. It does not set `kyc_status` t
 
 `POST /customer` creates a customer record. That request does not submit identity documents and does not set the customer to approved.
 
-Customer verification uses the same hosted pages and submission API in sandbox and production, on a separate sandbox host:
+Customer verification uses the same hosted pages and submission API in sandbox and production, on a separate sandbox host. Mint the session on the **sandbox** API (`POST /customer/kyc-session`) and use `data.url` — don't concatenate the path yourself.
 
-- Individual: `https://kyc-sandbox.yativo.com/individual/{customer_id}`
-- Business: `https://kyc-sandbox.yativo.com/business/{customer_id}`
-- Submit: `POST https://kyc-sandbox.yativo.com/api/individual-kyc/submit` or `POST https://kyc-sandbox.yativo.com/api/business-kyc/submit`
-- Lookups: the same paths as production, on `https://kyc-sandbox.yativo.com/api`
+- Hosted page: `data.url` from the session (sandbox host is `https://kyc-sandbox.yativo.com`)
+- Submit: `POST https://kyc-sandbox.yativo.com/api/individual-kyc/submit` or `POST https://kyc-sandbox.yativo.com/api/business-kyc/submit` with `X-Kyc-Session` or your sandbox API key pair
+- Lookups: the same paths as production, on `https://kyc-sandbox.yativo.com/api` (no session needed)
 
-Production uses `https://kyc.yativo.com` with the same paths.
+Production uses `https://kyc.yativo.com` with the same paths. A production session is not accepted on the sandbox KYC host, and the reverse.
 
 The sandbox dashboard links to those same hosted pages. Track the result through the customer's endorsements: the `endorsement.updated` webhook, or the `endorsement` list on `GET /customer/{customer_id}` on the sandbox base URL. Each service is available when its endorsement is `approved`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
 
@@ -175,6 +174,6 @@ Sandbox also differs in these ways:
 
 - Every BVN validates, and `spei` is always approved.
 - The duplicate-person check is off, so you can submit the same person under any number of customers without a `409`.
-- Placeholder names are still blocked. A name containing `test`, `yativo` or `admin` permanently blocks the `customer_id`, so use realistic names.
+- Placeholder and test data are still blocked. A name containing `test`, `yativo` or `admin`, or other placeholder content such as `Jane Doe`, `Acme` or an `example.com` email, permanently flags the `customer_id`. Use realistic names. See [Bans, blocks and access errors](/yativo-fiat/restrictions#placeholder-and-test-kyc-data).
 
 Never use these values in production. See the [go-live checklist](/yativo-fiat/kyc#go-live-checklist).

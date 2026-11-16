@@ -1,0 +1,71 @@
+---
+title: "Mint KYC session"
+description: "Create a signed session for the hosted KYC/KYB page or the KYC platform APIs"
+openapi: "openapi-fiat.yaml POST /customer/kyc-session"
+---
+
+Mint a short-lived session bound to one customer you own. Use `data.url` to open the hosted KYC or KYB page. Use `data.token` as `X-Kyc-Session` when your own UI calls the KYC platform.
+
+A URL that is only `https://kyc.yativo.com/{customer_type}/{customer_id}` is rejected with `401`. Always mint a session at the moment you send the customer to verification.
+
+```
+POST /customer/kyc-session
+```
+
+<Note>
+  Call this from your **server** with your API key. Never put `X-Api-Key` / `X-Api-Secret` in a browser or app. Production keys still need an [IP whitelist](/yativo-fiat/ip-allowlist); the customer's browser does not.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://api.yativo.com/api/v1/customer/kyc-session' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET' \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customer_id": "11111111-2222-4333-8444-555555555555",
+    "customer_type": "individual"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": {
+    "token": "YOUR_KYC_SESSION_TOKEN",
+    "expires_at": "2026-11-16T23:33:00+00:00",
+    "expires_in": 21600,
+    "url": "https://kyc.yativo.com/individual/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN",
+    "portal_url": null
+  }
+}
+```
+
+```json Customer not found
+{
+  "status": "failed",
+  "status_code": 404,
+  "message": "Request failed.",
+  "data": {
+    "error": "Customer not found or does not belong to you."
+  }
+}
+```
+</ResponseExample>
+
+| Field | Description |
+|---|---|
+| `token` | Signed session JWT. Send it as `X-Kyc-Session` (or `?session=`) on KYC platform APIs. Bound to this customer and type |
+| `expires_at` | ISO 8601 expiry. Default lifetime is **6 hours** (`21600` seconds) |
+| `expires_in` | Lifetime in seconds |
+| `url` | Hosted KYC/KYB page with the session already on the query string. Redirect or iframe this. Don't build the URL yourself |
+| `portal_url` | Alternate portal link when one is configured for your account; otherwise `null` |
+
+Each call mints a **new** token. An older unused token stays valid until it expires. Mint again every time you email, redirect, or show a "Continue verification" button.
+
+See [KYC / KYB verification](/yativo-fiat/kyc#mint-a-session) for hosted vs API flows, and [Bans, blocks and access errors](/yativo-fiat/restrictions#kyc-sessions-and-hosted-pages) for `401`/`404` causes.

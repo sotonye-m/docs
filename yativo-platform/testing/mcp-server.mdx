@@ -426,7 +426,7 @@ curl -s https://api.yativo.com/api/v1/mcp/connections \
   "message": "Request successful",
   "data": [
     {
-      "client_id": "a2dcf5e2-ae51-4873-97b8-f294151b53ea",
+      "client_id": "66666666-7777-4888-8999-aaaaaaaaaaaa",
       "name": "Claude",
       "scopes": ["mcp:use"],
       "connected_at": "2026-09-29T16:20:11.000000Z",
@@ -444,7 +444,7 @@ unexpired access token or a refresh token that can still be used.
 `DELETE /mcp/connections/{client_id}`
 
 ```bash
-curl -s -X DELETE https://api.yativo.com/api/v1/mcp/connections/a2dcf5e2-ae51-4873-97b8-f294151b53ea \
+curl -s -X DELETE https://api.yativo.com/api/v1/mcp/connections/66666666-7777-4888-8999-aaaaaaaaaaaa \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -453,7 +453,7 @@ curl -s -X DELETE https://api.yativo.com/api/v1/mcp/connections/a2dcf5e2-ae51-48
   "status": "success",
   "status_code": 200,
   "message": "Connection revoked. The app can no longer access this account.",
-  "data": { "client_id": "a2dcf5e2-ae51-4873-97b8-f294151b53ea", "revoked": true }
+  "data": { "client_id": "66666666-7777-4888-8999-aaaaaaaaaaaa", "revoked": true }
 }
 ```
 

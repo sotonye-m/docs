@@ -81,7 +81,7 @@ POST /v1/yativo-card/customers/{yativoCardId}/cards/{cardId}/view-token
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/cards/afeb85fe-02f8-48da-b61e-84ad02704167/view-token' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/cards/afeb85fe-02f8-48da-b61e-84ad02704167/view-token' \
   -H 'Authorization: Bearer YOUR_ISSUER_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -228,7 +228,7 @@ Subscribe to `physical.card.pin.changed` on your webhook endpoint. Yativo update
   "event": "physical.card.pin.changed",
   "data": {
     "cardToken": "afeb85fe-02f8-48da-b61e-84ad02704167",
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068"
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000"
   }
 }
 ```

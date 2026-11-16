@@ -16,7 +16,7 @@ This guide walks you through integrating Yativo KYC (individual) and KYB (busine
 
 ## Option A: Hosted links (recommended)
 
-The simplest integration. You create a customer, then redirect them to Yativo's hosted verification flow at `https://kyc.yativo.com`.
+The simplest integration. You create a customer, mint a signed session from your server, then redirect them to `data.url` from that response. A URL that is only `https://kyc.yativo.com/individual/{customer_id}` is rejected with `401`.
 
 ### Step 1: Keep your API key on your backend
 
@@ -52,27 +52,41 @@ async function createCustomer(customerData) {
 }
 ```
 
-### Step 3: Redirect to hosted KYC
+### Step 3: Mint a session and redirect
+
+Mint the session on your **server** at the moment you send the customer to verification. Don't persist one token for days — the default lifetime is 6 hours.
 
 ```javascript
-function redirectToKYC(customerId) {
-  // Redirect individual customers
-  window.location.href = `https://kyc.yativo.com/individual/${customerId}`;
+async function mintKycSession(customerId, customerType = 'individual') {
+  const response = await fetch('https://api.yativo.com/api/v1/customer/kyc-session', {
+    method: 'POST',
+    headers: {
+      'X-Api-Key': process.env.YATIVO_API_KEY,
+      'X-Api-Secret': process.env.YATIVO_API_SECRET,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      customer_id: customerId,
+      customer_type: customerType, // 'individual' or 'business'
+    }),
+  });
+
+  const envelope = await response.json();
+  return envelope.data; // { token, url, expires_at, expires_in, portal_url }
 }
 
-function redirectToKYB(customerId) {
-  // Redirect business customers
-  window.location.href = `https://kyc.yativo.com/business/${customerId}`;
+function redirectToKYC(session) {
+  window.location.href = session.url;
 }
 ```
 
 ### Embedding in an iframe
 
-If you prefer to embed verification within your application instead of a full redirect:
+If you prefer to embed verification within your application instead of a full redirect, use `data.url` (it already includes `?session=`):
 
 ```html
 <iframe
-  src="https://kyc.yativo.com/individual/CUSTOMER_ID"
+  src="https://kyc.yativo.com/individual/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN"
   allow="camera; microphone"
   width="100%"
   height="700px"
@@ -497,7 +511,7 @@ function FinancialInfoStep({ onNext }) {
 ### Step 6: Submit to the KYC API
 
 ```javascript
-async function submitKYC(customerId, formData) {
+async function submitKYC(customerId, kycSessionToken, formData) {
   const payload = {
     customer_id: customerId,
     // Personal info
@@ -523,6 +537,7 @@ async function submitKYC(customerId, formData) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-Kyc-Session': kycSessionToken, // minted on your server; never send API keys from the browser
       'Idempotency-Key': `kyc-${customerId}-${Date.now()}`,
     },
     body: JSON.stringify(payload),
@@ -538,7 +553,7 @@ async function submitKYC(customerId, formData) {
 ```
 
 <Note>
-  The KYC submission endpoint is at `https://kyc.yativo.com`, not the main API. Send the same API key headers you use for every other request.
+  The KYC submission endpoint is at `https://kyc.yativo.com`, not the main API. From a browser, send `X-Kyc-Session` from `POST /customer/kyc-session`. From your server, you can send `X-Api-Key` and `X-Api-Secret` instead. Don't submit documentation samples — placeholder names and `example.com` emails flag the customer. See [Bans, blocks and access errors](/yativo-fiat/restrictions).
 </Note>
 
 ---

@@ -19,7 +19,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/verify-otp' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/verify-otp' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{"otp": "847291"}'
@@ -32,7 +32,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   "success": true,
   "message": "Email verified successfully",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "flow_status": "otp_verified",
     "next_step": "kyc_link"
   }

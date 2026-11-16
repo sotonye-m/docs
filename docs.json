@@ -100,6 +100,7 @@
               "yativo-fiat/kyc",
               "yativo-fiat/sandbox-kyc",
               "yativo-fiat/kyc-frontend-guide",
+              "yativo-fiat/restrictions",
               "yativo-fiat/rfis",
               "yativo-fiat/beneficiaries"
             ]
@@ -199,6 +200,7 @@
                 "pages": [
                   "yativo-platform/security/security-policy",
                   "yativo-platform/security/ip-whitelisting",
+                  "yativo-fiat/restrictions",
                   "yativo-platform/security/team-management",
                   "yativo-platform/security/login-history",
                   "yativo-platform/security/passkey-authentication"
@@ -228,6 +230,7 @@
             "group": "Customers",
             "pages": [
               "fiat-api-reference/customers/create",
+              "fiat-api-reference/customers/kyc-session",
               "fiat-api-reference/customers/list",
               "fiat-api-reference/customers/get",
               "fiat-api-reference/customers/update",

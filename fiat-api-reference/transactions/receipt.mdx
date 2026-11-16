@@ -12,13 +12,13 @@ GET https://api.yativo.com/api/v1/business/transaction/{transactionId}/{type}/re
 
 <RequestExample>
 ```bash cURL — PDF receipt
-curl -X GET 'https://api.yativo.com/api/v1/business/transaction/a0e9e50e-81be-4bd0-9941-0151e68b9e97/pdf/receipt' \
+curl -X GET 'https://api.yativo.com/api/v1/business/transaction/99999999-aaaa-4bbb-cccc-dddddddddddd/pdf/receipt' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```javascript Node.js
-const transactionId = 'a0e9e50e-81be-4bd0-9941-0151e68b9e97';
+const transactionId = '99999999-aaaa-4bbb-cccc-dddddddddddd';
 const type = 'pdf';
 
 const response = await fetch(

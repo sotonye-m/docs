@@ -35,6 +35,9 @@ info:
 
     **KYC endpoints** are hosted on a separate platform at `https://kyc.yativo.com`. They are
     documented here for completeness but use that base URL, not the main API base.
+    Lookup endpoints stay public. Submit, update, resubmit and regenerate require a signed
+    KYC session (`X-Kyc-Session`, from `POST /customer/kyc-session`) or your API key pair
+    from a server. Don't open `https://kyc.yativo.com/{type}/{customer_id}` without a session.
   version: 1.0.0
   contact:
     name: Yativo Support
@@ -62,6 +65,14 @@ components:
       in: header
       name: X-Api-Secret
       description: Your API secret (`yativo_sk_...`), shown once when the key is created.
+    kycSession:
+      type: apiKey
+      in: header
+      name: X-Kyc-Session
+      description: >
+        Short-lived session JWT from POST /customer/kyc-session. Use this from a browser or
+        mobile app instead of your API key. Also accepted as `X-KYC-Session`, `?session=`,
+        body `kyc_session`, or `Authorization: Bearer` when the value is a three-part JWT.
 
 
   parameters:
@@ -2074,6 +2085,103 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
 
+  /customer/kyc-session:
+    post:
+      tags: [Customers]
+      summary: Mint KYC session
+      description: |
+        Mint a short-lived session bound to one customer you own. Use `data.url` for the hosted
+        KYC/KYB page. Use `data.token` as `X-Kyc-Session` when your own UI calls the KYC platform.
+
+        A URL that is only `https://kyc.yativo.com/{customer_type}/{customer_id}` is rejected with
+        `401`. Mint a session at the moment you send the customer to verification. Default lifetime
+        is 6 hours (`21600` seconds). Each call issues a new token; an older unused token stays
+        valid until it expires.
+
+        Call this from your server with your API key. Never put the API key in a browser.
+        Production keys still need an IP whitelist; the customer's browser does not.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, customer_type]
+              properties:
+                customer_id:
+                  type: string
+                  format: uuid
+                  description: A customer you created with `POST /customer`. Must belong to the calling account.
+                  example: 11111111-2222-4333-8444-555555555555
+                customer_type:
+                  type: string
+                  enum: [individual, business]
+                  description: Must match the customer's type.
+                  example: individual
+            example:
+              customer_id: 11111111-2222-4333-8444-555555555555
+              customer_type: individual
+      responses:
+        '200':
+          description: Session minted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request successful
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        description: Signed session JWT. Send as `X-Kyc-Session` on KYC platform APIs.
+                        example: YOUR_KYC_SESSION_TOKEN
+                      expires_at:
+                        type: string
+                        format: date-time
+                        example: '2026-11-16T23:33:00+00:00'
+                      expires_in:
+                        type: integer
+                        description: Lifetime in seconds. Default 21600 (6 hours).
+                        example: 21600
+                      url:
+                        type: string
+                        format: uri
+                        description: Hosted KYC/KYB page with `?session=` already set. Redirect or iframe this.
+                        example: https://kyc.yativo.com/individual/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN
+                      portal_url:
+                        type: string
+                        nullable: true
+                        description: Alternate portal link when one is configured for your account; otherwise `null`.
+                        example: null
+        '404':
+          description: Customer not found or does not belong to you
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '503':
+          description: KYC session signing is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /customer/{customer_id}:
     get:
       tags: [Customers]
@@ -2324,12 +2432,19 @@ paths:
         Submit KYC data for an individual customer. The customer must already exist (via `POST /customer`).
         Status will be `submitted` then move to `approved` once review is complete.
         Requires an `Idempotency-Key` header.
+
+        Authenticate with a signed session (`X-Kyc-Session` from `POST /customer/kyc-session`) in a
+        browser, or with `X-Api-Key` and `X-Api-Secret` from your server. Don't submit placeholder
+        names, `example.com` emails or documentation samples — that flags the `customer_id`.
       servers:
         - url: https://kyc.yativo.com/api
           description: KYC Platform (production)
         - url: https://kyc-sandbox.yativo.com/api
           description: KYC Platform (sandbox)
-      security: []
+      security:
+        - apiKey: []
+          apiSecret: []
+        - kycSession: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -2533,12 +2648,19 @@ paths:
         Associated persons below `ownership_threshold` (default 25) are dropped, unless they're a director,
         signer or controller (`is_director`, `is_signer` or `has_control` true). At least one person must
         meet the threshold, and the combined ownership of persons with `has_ownership: true` can't exceed 100.
+
+        Authenticate with a signed session (`X-Kyc-Session` from `POST /customer/kyc-session`) in a
+        browser, or with `X-Api-Key` and `X-Api-Secret` from your server. A `tax_id` identifying-information
+        entry does not need `image_front`. Photo IDs still do.
       servers:
         - url: https://kyc.yativo.com/api
           description: KYC Platform (production)
         - url: https://kyc-sandbox.yativo.com/api
           description: KYC Platform (sandbox)
-      security: []
+      security:
+        - apiKey: []
+          apiSecret: []
+        - kycSession: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -3332,12 +3454,17 @@ paths:
         Change some fields of an individual KYC submission. Send only the fields you're changing,
         with the same names and rules as Submit Individual KYC. `state` and `postal_code` are checked
         against the country's subdivision and postal code formats.
+
+        Authenticate with `X-Kyc-Session` or your API key pair.
       servers:
         - url: https://kyc.yativo.com/api
           description: KYC Platform (production)
         - url: https://kyc-sandbox.yativo.com/api
           description: KYC Platform (sandbox)
-      security: []
+      security:
+        - apiKey: []
+          apiSecret: []
+        - kycSession: []
       parameters:
         - name: customerId
           in: path
@@ -3381,12 +3508,17 @@ paths:
 
         Change some fields of a KYB submission. Send only the fields you're changing, with the same
         names and rules as Submit Business KYB.
+
+        Authenticate with `X-Kyc-Session` or your API key pair.
       servers:
         - url: https://kyc.yativo.com/api
           description: KYC Platform (production)
         - url: https://kyc-sandbox.yativo.com/api
           description: KYC Platform (sandbox)
-      security: []
+      security:
+        - apiKey: []
+          apiSecret: []
+        - kycSession: []
       parameters:
         - name: customerId
           in: path
@@ -3401,7 +3533,7 @@ paths:
               description: Any fields from Submit Business KYB.
               additionalProperties: true
             example:
-              primary_website: https://acmepay.com
+              primary_website: https://northwind-trading.com
       responses:
         '200':
           description: Updated
@@ -3520,12 +3652,17 @@ paths:
         customers. The endorsement moves to `under_review` and its `errors` are cleared. If the data can't be
         submitted, it returns to its previous status and `errors.resubmission_failed` says why.
         Limited to 30 requests a minute.
+
+        Authenticate with `X-Kyc-Session` or your API key pair.
       servers:
         - url: https://kyc.yativo.com/api
           description: KYC Platform (production)
         - url: https://kyc-sandbox.yativo.com/api
           description: KYC Platform (sandbox)
-      security: []
+      security:
+        - apiKey: []
+          apiSecret: []
+        - kycSession: []
       parameters:
         - name: customerId
           in: path
@@ -3576,15 +3713,21 @@ paths:
 
         Generate a fresh verification link for an expired service endorsement.
         Share the new link with the customer to complete verification for the specific payment service.
+        Prefer minting a new hosted session with `POST /customer/kyc-session` for the full form.
 
         **Services:** `base`, `sepa`, `spei`, `brazil`, `eurde`, `usd_latam`, `eur_latam`,
         `virtual_card`, `asian`, `native`, `cobo_pobo`
+
+        Authenticate with `X-Kyc-Session` or your API key pair.
       servers:
         - url: https://kyc.yativo.com/api
           description: KYC Platform (production)
         - url: https://kyc-sandbox.yativo.com/api
           description: KYC Platform (sandbox)
-      security: []
+      security:
+        - apiKey: []
+          apiSecret: []
+        - kycSession: []
       parameters:
         - name: customerId
           in: path
@@ -4129,7 +4272,7 @@ paths:
                 customer_id:
                   type: string
                   description: The customer the payout method belongs to.
-                  example: da44a3e6-eb5d-429f-8d17-357aa5a6cdf2
+                  example: 11111111-2222-4333-8444-555555555555
                 quote_id:
                   type: string
                   format: uuid
@@ -4417,7 +4560,7 @@ paths:
           required: true
           schema:
             type: string
-          example: b3150e03-d27e-4de3-a0ff-16ebeb55683c
+          example: 44444444-5555-4666-8777-888888888888
           description: The deposit's `id` (`deposit_data.id` from Create Deposit, `payload.id` in `deposit.*` webhooks) or its `deposit_id` reference.
       responses:
         '200':
@@ -4487,7 +4630,7 @@ paths:
                 status_code: 200
                 message: Request successful
                 data:
-                  id: b3150e03-d27e-4de3-a0ff-16ebeb55683c
+                  id: 44444444-5555-4666-8777-888888888888
                   deposit_id: null
                   gateway: '22'
                   currency: CLP
@@ -4495,7 +4638,7 @@ paths:
                   amount: 10000
                   receive_amount: 9.36
                   status: success
-                  customer_id: 948a039f-9883-4b1c-88a6-2f1d3c4b5a69
+                  customer_id: 11111111-2222-4333-8444-555555555555
                   transaction_id: TXN-00123456
                   created_at: '2026-10-22T15:52:43.000000Z'
                   updated_at: '2026-10-22T15:58:10.000000Z'
@@ -6123,7 +6266,7 @@ paths:
                 customer_id:
                   type: string
                   description: The customer the payout is for. If the beneficiary belongs to a customer, it must be that customer.
-                  example: da44a3e6-eb5d-429f-8d17-357aa5a6cdf2
+                  example: 11111111-2222-4333-8444-555555555555
                 beneficiary_id:
                   type: string
                   description: Optional. The beneficiary that owns the payment method.
@@ -6915,7 +7058,7 @@ paths:
                     type: string
                   description: Required field values, keyed by `fld_…` ids. Never returned later.
                   example:
-                    fld_bank_account_number: "8825310472"
+                    fld_bank_account_number: "0001234567"
                     fld_bank_routing_number: "111000025"
                     fld_bank_account_type: checking
                 nickname:

@@ -256,7 +256,7 @@ Content-Type: application/json
   "success": true,
   "message": "Customer card onboarding initiated. Verification code sent to customer email.",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "customer_id": "6627f3a2c5d4e100123abcde",
     "external_customer_id": "usr_8821",
     "email_masked": "pr***@yourapp.com",
@@ -295,7 +295,7 @@ Content-Type: application/json
   "success": true,
   "message": "Email verified successfully",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "flow_status": "otp_verified",
     "next_step": "kyc_link"
   }
@@ -335,7 +335,7 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "KYC link retrieved",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "kyc_url": "https://kyc.yativo.com/verify?token=...",
     "next_step": "kyc_status"
   }
@@ -357,7 +357,7 @@ Authorization: Bearer YOUR_TOKEN
 {
   "success": true,
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "kyc_status": "approved",
     "flow_status": "kyc_completed",
     "terms_accepted": true,
@@ -526,7 +526,7 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "Virtual card created successfully",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
     "card_type": "virtual",
     "status": "active",
@@ -601,7 +601,7 @@ All fields are optional — send only the limits you want to change.
   "success": true,
   "message": "Customer card limits updated",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "card_limits": {
       "max_virtual": 2,
       "max_physical": 1,
@@ -742,7 +742,7 @@ Authorization: Bearer YOUR_TOKEN
   "data": {
     "customers": [
       {
-        "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+        "yativo_card_id": "yativo_card_customer_demo_0000000000000",
         "customer_id": "6627f3a2c5d4e100123abcde",
         "external_customer_id": "usr_8821",
         "email": "priya@yourapp.com",
@@ -785,7 +785,7 @@ Supported query parameters (pass exactly one):
 {
   "success": true,
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "external_id": "usr_8821",
     "email": "priya@yourapp.com",
     "flow_status": "card_created",
@@ -810,7 +810,7 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "Card frozen successfully",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
     "is_frozen": true,
     "frozen_at": "2026-04-25T19:07:14.917Z"
@@ -828,7 +828,7 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "Card unfrozen successfully",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
     "is_frozen": false,
     "unfrozen_at": "2026-04-25T19:07:20.065Z"
@@ -1115,7 +1115,7 @@ Authorization: Bearer YOUR_TOKEN
 {
   "success": true,
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "flow_status": "card_created",
     "current_step": 5,
     "progress_percentage": 100,
@@ -1161,8 +1161,8 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "Customer onboarding reset. Re-onboard this customer via POST /api/yativo-card/customers/onboard with a different email address.",
   "data": {
-    "deleted_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
-    "email_masked": "sa***@hotmail.com",
+    "deleted_card_id": "yativo_card_customer_demo_0000000000000",
+    "email_masked": "ja***@example.com",
     "external_customer_id": "usr_8821",
     "next_step": "POST /api/yativo-card/customers/onboard",
     "email_warning": "The email address used previously remains registered with the card network and cannot be reused. Use a different email address when re-onboarding this customer."
@@ -1325,7 +1325,7 @@ Authorization: Bearer YOUR_TOKEN
     "flow_status": "otp_requested",
     "next_step": "verify_otp",
     "action_taken": "otp_resent",
-    "email_masked": "sa***@truther.to",
+    "email_masked": "ja***@example.com",
     "otp_expires_in_seconds": 600,
     "days_since_created": 6
   }

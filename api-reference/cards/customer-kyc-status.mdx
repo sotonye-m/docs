@@ -22,7 +22,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/kyc-status' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/kyc-status' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -33,7 +33,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
   "success": true,
   "message": "KYC status retrieved",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "kyc_status": "approved",
     "verification_level": "STANDARD",
     "terms_accepted": true,
@@ -47,7 +47,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
   "success": true,
   "message": "KYC status retrieved",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "kyc_status": "pending",
     "verification_level": null,
     "terms_accepted": false,
@@ -61,7 +61,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_c
   "success": true,
   "message": "KYC status retrieved",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "kyc_status": "rejected",
     "rejection_reason": "Document not accepted",
     "next_step": "retry_kyc"

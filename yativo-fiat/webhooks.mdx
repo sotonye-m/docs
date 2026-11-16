@@ -532,7 +532,7 @@ A new RFI that already needs your action may send `rfi.created` and `rfi.respons
     "deadline": "2026-12-04T04:59:59+00:00",
     "requested_items": [
       {
-        "id": "2095d3da-2761-4d30-93e6-b46018bf576a",
+        "id": "55555555-6666-4777-8888-999999999999",
         "status": "requested",
         "content": "Source of Funds",
         "response_types": ["text", "free_text_explanation", "document_list"]
@@ -547,9 +547,9 @@ A new RFI that already needs your action may send `rfi.created` and `rfi.respons
       "type": "deposit",
       "id": "dep_abc123"
     },
-    "customer_id": "8127b2aa-30ed-4444-8ec2-cd1cc9bdd860",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "customer": {
-      "customer_id": "8127b2aa-30ed-4444-8ec2-cd1cc9bdd860",
+      "customer_id": "11111111-2222-4333-8444-555555555555",
       "customer_name": "Jane Doe",
       "customer_email": "jane@example.com",
       "customer_phone": "+15551234567",
@@ -589,7 +589,7 @@ One event for every change in a Card Checkout order. **Only `card_checkout.order
   "event.type": "card_checkout.order.paid",
   "payload": {
     "id": "cco_7wq2k9x0m3c8v1b5n6z4l2j8h0g4f6d1",
-    "customer_id": "4f0c1e1a-0f29-468f-b775-15483871a202",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "reference": "INV-10023",
     "description": "Pro plan — 1 month",
     "status": "paid",
@@ -826,8 +826,8 @@ After 2 failed charges, the card is frozen and you receive `virtualcard.deactiva
 {
   "event.type": "business_spend_card.transaction.approved",
   "payload": {
-    "transaction_id": "c234cf50-662c-4eed-8a34-27fbb1fd4294",
-    "card_id": "5e318920-0454-4a8d-bc91-d47cdb82645a",
+    "transaction_id": "77777777-8888-4999-aaaa-bbbbbbbbbbbb",
+    "card_id": "88888888-9999-4aaa-bbbb-cccccccccccc",
     "request_code": "PURCHASE",
     "amount": 99.95,
     "currency": "USD",

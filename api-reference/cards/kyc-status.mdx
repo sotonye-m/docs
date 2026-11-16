@@ -11,7 +11,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash
-curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068/kyc-status' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd1234EfGh5678IjKl9012_0000000000000/kyc-status' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -22,7 +22,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd
   "success": true,
   "message": "KYC status retrieved",
   "data": {
-    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_0000000000000",
     "kyc_status": "approved",
     "terms_accepted": true,
     "next_step": "create_card"
@@ -35,7 +35,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd
   "success": true,
   "message": "KYC status retrieved",
   "data": {
-    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_0000000000000",
     "kyc_status": "in_progress",
     "terms_accepted": false,
     "next_step": null
@@ -48,7 +48,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd
   "success": true,
   "message": "KYC status retrieved",
   "data": {
-    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_0000000000000",
     "kyc_status": "pending_review",
     "terms_accepted": false,
     "next_step": null
@@ -61,7 +61,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/yativo-card/yativo_card_0xAbCd
   "success": true,
   "message": "KYC status retrieved",
   "data": {
-    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_1769031332068",
+    "yativo_card_id": "yativo_card_0xAbCd1234EfGh5678IjKl9012_0000000000000",
     "kyc_status": "rejected",
     "rejection_reason": "Document not accepted",
     "terms_accepted": false,

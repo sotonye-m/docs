@@ -9,7 +9,7 @@ authMethod: "bearer"
   Bearer token: `Bearer YOUR_ACCESS_TOKEN`
 </ParamField>
 
-<ParamField query="yativo_card_id" type="string">Yativo's internal card customer ID (e.g. `yativo_card_customer_8f9a..._1769031332068`).</ParamField>
+<ParamField query="yativo_card_id" type="string">Yativo's internal card customer ID (e.g. `yativo_card_customer_demo_0000000000000`).</ParamField>
 
 <ParamField query="customer_id" type="string">Customer ID, or falls back to `yativo_card_id` lookup if not a valid customer ID.</ParamField>
 
@@ -32,7 +32,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?ex
 ```
 
 ```bash By yativo_card_id
-curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?yativo_card_id=yativo_card_customer_8f9a..._1769031332068' \
+curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?yativo_card_id=yativo_card_customer_demo_0000000000000' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
@@ -47,7 +47,7 @@ curl -X GET 'https://crypto-api.yativo.com/api/v1/card-issuer/lookup-customer?em
 {
   "success": true,
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "external_id": "usr_8821",
     "email": "priya@yourapp.com",
     "flow_status": "card_created",

@@ -13,7 +13,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash Submit answers
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/source-of-funds' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/source-of-funds' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -31,7 +31,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   "success": true,
   "message": "Source of Funds submitted successfully",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "status": "completed",
     "submitted_at": "2026-04-01T12:15:00.000Z",
     "next_step": "Verify phone number using POST /phone/request-verification"

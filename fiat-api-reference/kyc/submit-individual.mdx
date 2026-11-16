@@ -7,7 +7,7 @@ openapi: "openapi-fiat.yaml POST /individual-kyc/submit"
 Submit KYC data for an individual customer. The customer must already exist in your account (created via `POST /customer`). After submission the status will be `"submitted"` and will move to `"approved"` once review is complete.
 
 <Note>
-  This endpoint is hosted on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Include an `Idempotency-Key` header on every request.
+  This endpoint is hosted on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Include an `Idempotency-Key` header on every request. Authenticate with `X-Kyc-Session` (from [`POST /customer/kyc-session`](/fiat-api-reference/customers/kyc-session)) in a browser, or with your API key pair from a server. Don't submit placeholder names or `example.com` emails — that flags the `customer_id`. See [Bans, blocks and access errors](/yativo-fiat/restrictions).
 </Note>
 
 ```
@@ -18,12 +18,13 @@ POST https://kyc.yativo.com/api/individual-kyc/submit
 ```bash cURL
 curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
   -H 'Content-Type: application/json' \
+  -H 'X-Kyc-Session: YOUR_KYC_SESSION_TOKEN' \
   -H 'Idempotency-Key: kyc-ind-2026-001' \
   -d '{
-    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "first_name": "Alex",
-    "last_name": "Smith",
-    "email": "alex.smith@example.com",
+    "last_name": "Rivera",
+    "email": "alex.rivera@northwind-trading.com",
     "calling_code": "+1",
     "phone": "5551234567",
     "gender": "male",
@@ -32,7 +33,7 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
     "taxId": "998887766",
     "selfie_image": "https://storage.yativo.com/documents/abc/selfie.jpg",
     "residential_address": {
-      "street_line_1": "123 Maple Street",
+      "street_line_1": "88 Oak Avenue",
       "city": "Austin",
       "state": "TX",
       "postal_code": "78701",
@@ -43,7 +44,7 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
       {
         "type": "passport",
         "issuing_country": "US",
-        "number": "P12345678",
+        "number": "P00012345",
         "date_issued": "2019-06-01",
         "expiration_date": "2029-06-01",
         "image_front_file": "https://storage.yativo.com/documents/abc/passport-front.jpg"
@@ -69,13 +70,14 @@ const response = await fetch('https://kyc.yativo.com/api/individual-kyc/submit',
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
+    'X-Kyc-Session': kycSessionToken,
     'Idempotency-Key': `kyc-${customerId}-${Date.now()}`,
   },
   body: JSON.stringify({
     customer_id: customerId,
     first_name: 'Alex',
-    last_name: 'Smith',
-    email: 'alex.smith@example.com',
+    last_name: 'Rivera',
+    email: 'alex.rivera@northwind-trading.com',
     calling_code: '+1',
     phone: '5551234567',
     gender: 'male',
@@ -84,7 +86,7 @@ const response = await fetch('https://kyc.yativo.com/api/individual-kyc/submit',
     taxId: '998887766',
     selfie_image: selfieUrl,
     residential_address: {
-      street_line_1: '123 Maple Street',
+      street_line_1: '88 Oak Avenue',
       city: 'Austin',
       state: 'TX',
       postal_code: '78701',
@@ -94,7 +96,7 @@ const response = await fetch('https://kyc.yativo.com/api/individual-kyc/submit',
     identifying_information: [{
       type: 'passport',
       issuing_country: 'US',
-      number: 'P12345678',
+      number: 'P00012345',
       date_issued: '2019-06-01',
       expiration_date: '2029-06-01',
       image_front_file: passportFrontUrl,
@@ -118,13 +120,14 @@ response = requests.post(
     'https://kyc.yativo.com/api/individual-kyc/submit',
     headers={
         'Content-Type': 'application/json',
+        'X-Kyc-Session': kyc_session_token,
         'Idempotency-Key': f'kyc-{customer_id}-001',
     },
     json={
         'customer_id': customer_id,
         'first_name': 'Alex',
-        'last_name': 'Smith',
-        'email': 'alex.smith@example.com',
+        'last_name': 'Rivera',
+        'email': 'alex.rivera@northwind-trading.com',
         'calling_code': '+1',
         'phone': '5551234567',
         'gender': 'male',
@@ -133,7 +136,7 @@ response = requests.post(
         'taxId': '998887766',
         'selfie_image': selfie_url,
         'residential_address': {
-            'street_line_1': '123 Maple Street',
+            'street_line_1': '88 Oak Avenue',
             'city': 'Austin',
             'state': 'TX',
             'postal_code': '78701',
@@ -143,7 +146,7 @@ response = requests.post(
         'identifying_information': [{
             'type': 'passport',
             'issuing_country': 'US',
-            'number': 'P12345678',
+            'number': 'P00012345',
             'date_issued': '2019-06-01',
             'expiration_date': '2029-06-01',
             'image_front_file': passport_front_url,
@@ -166,12 +169,12 @@ response = requests.post(
   "success": true,
   "message": "KYC submitted successfully.",
   "data": {
-    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "type": "individual",
     "status": "submitted",
     "first_name": "Alex",
-    "last_name": "Smith",
-    "email": "alex.smith@example.com",
+    "last_name": "Rivera",
+    "email": "alex.rivera@northwind-trading.com",
     "submitted_at": "2026-10-20T10:00:00.000000Z"
   },
   "warnings": {

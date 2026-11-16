@@ -30,7 +30,7 @@ Phone verification is required before card creation. There are two endpoints:
 
 <RequestExample>
 ```bash Request OTP
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/phone/request-verification' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/phone/request-verification' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{"phoneNumber": "+14155552671"}'
@@ -43,7 +43,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   "success": true,
   "message": "Verification code sent to your phone",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "phone_number": "+14155****",
     "otp_requested_at": "2026-04-01T12:20:00.000Z",
     "next_step": "Verify OTP using POST /phone/verify"

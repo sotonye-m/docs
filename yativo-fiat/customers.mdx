@@ -5,6 +5,8 @@ description: "Create and manage end-customer profiles"
 
 Customers are end-users of your platform. Once created, customers can be assigned virtual accounts, attached to payins/payouts, and verified through KYC/KYB.
 
+Creating a customer does **not** start identity verification. When you are ready, mint a session with [`POST /customer/kyc-session`](/fiat-api-reference/customers/kyc-session) and send `data.url` to the customer. See [KYC / KYB](/yativo-fiat/kyc).
+
 <Accordion title="Type Definitions">
 ```typescript
 interface Customer {
@@ -82,7 +84,7 @@ curl -X POST 'https://api.yativo.com/api/v1/customer' \
   "status_code": 200,
   "message": "Request successful",
   "data": {
-    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "customer_name": "Jane Doe",
     "customer_email": "jane@example.com",
     "customer_phone": "+5511999999999",
@@ -119,19 +121,19 @@ GET /customer/{customer_id}
 
 <RequestExample>
 ```bash All relations
-curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx?include=all' \
+curl -X GET 'https://api.yativo.com/api/v1/customer/11111111-2222-4333-8444-555555555555?include=all' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```bash Specific relations
-curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx?include=deposits,virtualaccounts' \
+curl -X GET 'https://api.yativo.com/api/v1/customer/11111111-2222-4333-8444-555555555555?include=deposits,virtualaccounts' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```bash Profile only (no include)
-curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
+curl -X GET 'https://api.yativo.com/api/v1/customer/11111111-2222-4333-8444-555555555555' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
@@ -144,7 +146,7 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxx
   "status_code": 200,
   "message": "Customer retrieved successfully",
   "data": {
-    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "customer_name": "Jane Doe",
     "customer_email": "jane@example.com",
     "customer_phone": "+5511999999999",
@@ -178,7 +180,7 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxx
         "account_id": "va_xxxxxx",
         "currency": "BRL",
         "account_number": "BRLPIX0000000000000000000000000000000000",
-        "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx"
+        "customer_id": "11111111-2222-4333-8444-555555555555"
       }
     ],
     "customer_virtual_cards": [],
@@ -193,7 +195,7 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxx
   "status_code": 200,
   "message": "Customer retrieved successfully",
   "data": {
-    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "customer_name": "Jane Doe",
     "customer_email": "jane@example.com",
     "customer_phone": "+5511999999999",
@@ -238,7 +240,7 @@ curl -X GET 'https://api.yativo.com/api/v1/customer?page=1&per_page=15' \
   "message": "Records retrieved successfully",
   "data": [
     {
-      "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+      "customer_id": "11111111-2222-4333-8444-555555555555",
       "customer_name": "Jane Doe",
       "customer_email": "jane@example.com",
       "customer_phone": "+5511999999999",
@@ -270,7 +272,7 @@ PUT /customer/{customer_id}
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
+curl -X PUT 'https://api.yativo.com/api/v1/customer/11111111-2222-4333-8444-555555555555' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
@@ -288,7 +290,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxx
   "status_code": 200,
   "message": "Customer updated successfully",
   "data": {
-    "customer_id": "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "customer_name": "Jane Doe",
     "customer_phone": "+5511988887777",
     "updated_at": "2026-04-02T14:00:00.000000Z"
@@ -307,7 +309,7 @@ DELETE /customer/{customer_id}
 
 <RequestExample>
 ```bash cURL
-curl -X DELETE 'https://api.yativo.com/api/v1/customer/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx' \
+curl -X DELETE 'https://api.yativo.com/api/v1/customer/11111111-2222-4333-8444-555555555555' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```

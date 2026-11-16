@@ -315,8 +315,8 @@ Fix the exchange rate and fees via `POST /api/v1/exchange-rate` or `POST /api/v1
 {
   "payment_method_id": 18096,
   "debit_wallet": "USD",
-  "customer_id": "d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d",
-  "quote_id": "756979af-784f-4933-9ac1-76bddbeb333d"
+  "customer_id": "11111111-2222-4333-8444-555555555555",
+  "quote_id": "33333333-4444-4555-8666-777777777777"
 }
 ```
 
@@ -328,7 +328,7 @@ If you are not using a quote, provide the `amount` directly:
 {
   "payment_method_id": 18096,
   "debit_wallet": "USD",
-  "customer_id": "d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d",
+  "customer_id": "11111111-2222-4333-8444-555555555555",
   "amount": 250.00
 }
 ```
@@ -337,7 +337,7 @@ If you are not using a quote, provide the `amount` directly:
 |-------|----------|-------|
 | `payment_method_id` | yes | The beneficiary payout method id from step 3 (integer, e.g. `18096`). Also accepts legacy alias `beneficiary_details_id`. |
 | `debit_wallet` | yes | The wallet currency to debit, e.g. `USD`. |
-| `customer_id` | yes | The customer UUID the payout is for, e.g. `d1b380e2-cbbd-4b7f-a7a9-f2d14c42f33d`. |
+| `customer_id` | yes | The customer UUID the payout is for, e.g. `11111111-2222-4333-8444-555555555555`. |
 | `quote_id` | conditional | Locked quote ID (UUID or int). Required if `amount` is not provided. Locks exchange rate and fee. |
 | `amount` | conditional | Amount to send. Required if `quote_id` is not provided. |
 | `beneficiary_id` | no | The owning beneficiary ID. |

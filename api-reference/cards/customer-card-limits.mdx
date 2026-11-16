@@ -36,7 +36,7 @@ At least one field must be provided.
 
 <RequestExample>
 ```bash cURL
-curl -X PATCH 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a_abc_1769031332068/card-limits' \
+curl -X PATCH 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/card-limits' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -53,7 +53,7 @@ curl -X PATCH 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo
   "success": true,
   "message": "Customer card limits updated",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "card_limits": {
       "max_virtual": 2,
       "max_physical": 1,

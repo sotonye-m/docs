@@ -67,7 +67,7 @@ curl -G 'https://api.yativo.com/api/v1/business/rfis' \
         "deadline": "2026-12-04T04:59:59+00:00",
         "requested_items": [
           {
-            "id": "2095d3da-2761-4d30-93e6-b46018bf576a",
+            "id": "55555555-6666-4777-8888-999999999999",
             "status": "requested",
             "content": "Source of Funds",
             "response_types": ["text", "free_text_explanation", "document_list"]
@@ -80,9 +80,9 @@ curl -G 'https://api.yativo.com/api/v1/business/rfis' \
         "is_open": true,
         "response_required": true,
         "related_transaction": null,
-        "customer_id": "8127b2aa-30ed-4444-8ec2-cd1cc9bdd860",
+        "customer_id": "11111111-2222-4333-8444-555555555555",
         "customer": {
-          "customer_id": "8127b2aa-30ed-4444-8ec2-cd1cc9bdd860",
+          "customer_id": "11111111-2222-4333-8444-555555555555",
           "customer_name": "Jane Doe",
           "customer_email": "jane@example.com",
           "customer_phone": "+15551234567",
@@ -136,7 +136,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/business/rfis/42/draft-responses' \
   -H 'Idempotency-Key: rfi-reply-001' \
   -d '{
     "responses": {
-      "2095d3da-2761-4d30-93e6-b46018bf576a": {
+      "55555555-6666-4777-8888-999999999999": {
         "text": "E-commerce reseller",
         "free_text_explanation": "I sell consumer electronics on eBay to retail buyers.",
         "document_list": [

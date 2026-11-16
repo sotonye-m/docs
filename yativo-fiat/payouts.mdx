@@ -56,7 +56,7 @@ curl -X POST 'https://api.yativo.com/api/v1/payout/simple' \
     "debit_wallet": "USD",
     "amount": 250,
     "beneficiary_details_id": 42,
-    "customer_id": "da44a3e6-eb5d-429f-8d17-357aa5a6cdf2",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "reference": "INV-2026-0042"
   }'
 ```
@@ -74,7 +74,7 @@ const response = await fetch('https://api.yativo.com/api/v1/payout/simple', {
     debit_wallet: 'USD',
     amount: 250,
     beneficiary_details_id: 42,
-    customer_id: 'da44a3e6-eb5d-429f-8d17-357aa5a6cdf2',
+    customer_id: '11111111-2222-4333-8444-555555555555',
   }),
 });
 const data = await response.json();

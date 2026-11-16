@@ -23,7 +23,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/cards/b2dc97ab-03f9-49eb-c72f-95be13815278/void' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/cards/b2dc97ab-03f9-49eb-c72f-95be13815278/void' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json'
 ```
@@ -35,7 +35,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   "success": true,
   "message": "Card marked as void successfully",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
     "is_void": true,
     "voided_at": "2026-04-01T14:00:00.000Z"

@@ -14,19 +14,19 @@ GET /customer/{customer_id}
 
 <RequestExample>
 ```bash All relations
-curl -X GET 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-15483871a202?include=all' \
+curl -X GET 'https://api.yativo.com/api/v1/customer/11111111-2222-4333-8444-555555555555?include=all' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```bash Specific relations
-curl -X GET 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-15483871a202?include=deposits,virtualaccounts' \
+curl -X GET 'https://api.yativo.com/api/v1/customer/11111111-2222-4333-8444-555555555555?include=deposits,virtualaccounts' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
 
 ```bash Profile only
-curl -X GET 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-15483871a202' \
+curl -X GET 'https://api.yativo.com/api/v1/customer/11111111-2222-4333-8444-555555555555' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET'
 ```
@@ -39,7 +39,7 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-1548
   "status_code": 200,
   "message": "Request successful",
   "data": {
-    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "customer_name": "Alex Smith",
     "customer_email": "alex.smith@example.com",
     "customer_phone": "+15551234567",
@@ -89,7 +89,7 @@ curl -X GET 'https://api.yativo.com/api/v1/customer/c586066b-0f29-468f-b775-1548
   "status_code": 200,
   "message": "Request successful",
   "data": {
-    "customer_id": "c586066b-0f29-468f-b775-15483871a202",
+    "customer_id": "11111111-2222-4333-8444-555555555555",
     "customer_name": "Alex Smith",
     "customer_email": "alex.smith@example.com",
     "customer_phone": "+15551234567",

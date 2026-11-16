@@ -1,0 +1,180 @@
+---
+title: "Bans, blocks and access errors"
+description: "What suspends an account or customer, which errors you receive, and how to recover"
+---
+
+Yativo refuses some requests before the endpoint runs: a suspended account, a banned customer, a key used from the wrong IP, or a KYC payload that looks like test data. This page lists what can trigger a block, the exact error you receive, and what to do next.
+
+Related guides: [Authentication](/yativo-fiat/authentication), [IP whitelisting](/yativo-fiat/ip-allowlist), [KYC / KYB](/yativo-fiat/kyc), [API responses and errors](/yativo-platform/api-responses-and-errors).
+
+---
+
+## What can restrict access
+
+| Who is affected | Typical trigger | What happens |
+|---|---|---|
+| Your Yativo account | Repeated failed sign-in or API-key attempts | Account is suspended until support clears it |
+| An API key | Calls from an IP that isn't on the key's allow list | First calls return `403`. Repeated calls **revoke the key** |
+| Your server IP | Repeated invalid credentials from the same IP | Temporary `429`, then a block until support unblocks the IP |
+| A customer | Platform ban, compliance review, or placeholder KYC data | That `customer_id` can't transact (or, on review, can't move money) |
+| A KYC session | Expired or missing session token | Hosted page and KYC platform APIs return `401` until you mint a new session |
+| A file upload | Unsupported type, size, or a file that fails the malware check | `422` for type/size. A malware hit **blocks the IP and bans the customer** |
+
+A block is not a validation error you can retry with the same payload. Fix the cause, or contact [support](https://yativo.com/support) if the account, key, IP or customer is locked.
+
+---
+
+## Your account
+
+These apply to the business that owns the API key, not to an end customer.
+
+| HTTP | `data.error` | Cause | What to do |
+|---|---|---|---|
+| `403` | `Account has been blocked due to multiple failed login attempts. Please contact support or your account manager.` | Two failed access attempts on a known account (dashboard sign-in, passkey, or a wrong API secret on a known key) | Contact support. A new key will not work while the account is suspended |
+| `403` or `400` | `Account has been suspended. Please contact support or your account manager.` | The account is suspended (including after the auto-block above) | Contact support. Dashboard sessions are signed out |
+| `403` | `KYC is pending, please complete the KYC process to access this feature` | Your **business** verification isn't approved yet | Finish account verification. Profile, 2FA, passkey, OTP and team-invitation endpoints still work |
+| `400` | `You have no debit account. Please contact your administrator.` | The account is on a no-debit restriction | Contact support. Any request that carries an `amount` is refused |
+| `403` | `Yativo is not available in your location.` | The request comes from a location Yativo doesn't serve | Call from a supported location. Don't retry from a VPN to work around this |
+
+---
+
+## API keys and IPs
+
+Production keys must have at least one allowed IP. Sandbox keys may omit a whitelist; if you set one, it is still enforced. See [IP whitelisting](/yativo-fiat/ip-allowlist).
+
+| HTTP | `data.error` | Cause | What to do |
+|---|---|---|---|
+| `401` | `Both X-Api-Key and X-Api-Secret headers are required.` | Only one of the two headers was sent | Send both on every request |
+| `401` | `Invalid or revoked API credentials.` | Wrong key or secret, or the key was revoked | Create a new key in **Developers → API Keys**. Failed attempts on a **known** key count toward the account auto-block above |
+| `401` | `This API key has no whitelisted IP addresses. Add at least one allowed IP before using it.` | Production request with an empty allow list | Add at least one server IP to the key |
+| `403` | `Invalid credentials.` | Valid key pair from an IP that isn't on the allow list | Add the server's public IP, then retry. **Two unauthorized-IP attempts revoke the key.** After that you get `Invalid or revoked API credentials.` and must create a new key |
+| `403` | `Your IP address has been blocked due to suspicious activity.` | This IP is blocked | Contact support. Don't keep retrying from the same IP |
+| `403` | `Your IP address has been blocked due to persistent suspicious activity.` | Further attempts from an IP that was already throttled | Contact support |
+| `403` | `Your IP address has been blocked due to persistent invalid access attempts.` | About 10 invalid credential attempts from this IP | Contact support |
+| `429` | `Too many invalid access attempts. Please try again in N seconds.` | About 5 invalid credential attempts from this IP in 15 minutes | Wait for `N` seconds, then retry with the correct key from an allowed IP |
+| `404` | `Not Found` (body may be only that string) | A blocked IP can receive `404` on every route, including ones that exist | If every endpoint suddenly 404s from one server, contact support rather than treating it as a missing route |
+| `403` | `Bearer tokens are only accepted from the Yativo dashboard. Server-to-server requests must use X-Api-Key and X-Api-Secret from a whitelisted IP.` | A dashboard token was used from a script or server | Switch to an API key |
+
+<Warning>
+  Calling production from an IP that isn't on the key's allow list does more than return `403`. After two such attempts the key is revoked and later calls return `401 Invalid or revoked API credentials.` Add the new IP in **Developers → API Keys** *before* you deploy, or mint a new key after a revoke.
+</Warning>
+
+The customer's browser does **not** need to be on the IP allow list. Only the server that sends `X-Api-Key` / `X-Api-Secret` does — including when you [mint a KYC session](/fiat-api-reference/customers/kyc-session).
+
+---
+
+## Customers
+
+These checks look at `customer_id` on the request (JSON body or query). A banned customer is refused even if the rest of the payload is valid.
+
+| HTTP | `data.error` | Cause | What to do |
+|---|---|---|---|
+| `403` | `This customer has been banned from the platform.` | The customer is platform-banned | Stop using that `customer_id`. Contact support if you believe this is a mistake. Creating a new customer for the same person can hit the duplicate-person check |
+| `403` | `This customer is under review and cannot perform transactions.` | Compliance hold (`on_review`). Reads and KYC still work | Don't retry payouts, deposits, cards or other money movement until the hold is cleared. Contact support |
+| `403` | `This customer account is not permitted to perform transactions.` | The customer's name or email contains `test` | Use a customer whose name and email are real. Don't create customers named "Test User" |
+| `403` | `Customer not endorsed for this service` | The customer lacks an `approved` endorsement for that rail | Wait for [endorsement](/yativo-fiat/kyc#track-verification-with-endorsements) `approved`, or [resubmit](/yativo-fiat/kyc#resubmit-one-endorsement) |
+| `400` | `customer is not yet approved for this service/endpoint` | Virtual-account issuance before the customer is enabled for it | Check the endorsement for that currency first |
+
+On the KYC platform the same customer can also be refused with:
+
+| HTTP | Message | Cause | What to do |
+|---|---|---|---|
+| `422` | `Submission rejected: this customer ID has been flagged and suspended.` | That `customer_id` is already platform-banned | Don't retry. Contact support |
+| `422` | `Submission rejected: this customer ID has been flagged and suspended for submitting test or invalid data.` | Banned after a previous placeholder submission | Don't retry with the same `customer_id` |
+| `404` | `Customer not found.` | Unknown or malformed `customer_id`, or the session token is for a different customer | Use a customer you created with `POST /customer`, and a session minted for that same id |
+
+---
+
+## Placeholder and test KYC data
+
+KYC and KYB submissions must be the customer's real identity. A payload that looks like test or placeholder data is **rejected** and the `customer_id` is **permanently flagged**. Corrected data on the same id will not go through.
+
+This is separate from the older `403 Access denied.` rule for names that contain `test`, `yativo` or `admin`.
+
+| HTTP | Message | Cause |
+|---|---|---|
+| `422` | `Submission rejected: the data contains placeholder, test, or otherwise invalid content. Please provide accurate, real information.` | The body contains placeholder content |
+| `403` | `{"message": "Access denied."}` | A name or email contains `test`, `yativo` or `admin` (any case, including `"Tester"`) |
+
+**Don't submit documentation samples.** These patterns are refused (and flag the customer) if they appear anywhere in the POST body:
+
+- Placeholder people: `Jane Doe`, `John Doe`, `John Smith`
+- Placeholder companies: `Acme`, "my company", "company name"
+- Marker words: `test`, `demo`, `sample`, `dummy`, `sandbox`, `fake`, `lorem`
+- Emails on `example.com` / `example.net` / `example.org`
+- Addresses such as `123 Main Street`
+- Form labels submitted as values (`first name`, `your name`, `n/a`, `unknown`)
+
+Use the customer's legal name, a mailbox they own, and their real address. Sandbox still blocks placeholder names — it only substitutes Nigerian identity numbers. See [Sandbox KYC](/yativo-fiat/sandbox-kyc#sandbox-test-values).
+
+---
+
+## KYC sessions and hosted pages
+
+Hosted KYC/KYB URLs and the KYC platform submit/update APIs require a signed session (or your API key pair from a server). Lookup endpoints stay public. See [Mint a KYC session](/fiat-api-reference/customers/kyc-session).
+
+| HTTP | Message | Cause | What to do |
+|---|---|---|---|
+| `401` | `This verification session is invalid or has expired.` | Missing, malformed or expired `X-Kyc-Session` (default lifetime **6 hours**) | `POST /customer/kyc-session` again and send the customer the new `url` |
+| `401` | `Authentication required. Use X-Api-Key and X-Api-Secret, or a signed KYC session token.` | No session and no API key pair | Mint a session for browser/mobile, or send both API key headers from your server |
+| `401` | `A signed KYC session token is required.` | Session-only route with no token | Add `X-Kyc-Session` or `?session=` |
+| `401` | `This verification link is missing a valid session. Open the link from your Yativo dashboard.` | Hosted page opened without `?session=` | Don't build `https://kyc.yativo.com/individual/{id}` yourself. Use `data.url` from the session response |
+| `401` | `Both X-Api-Key and X-Api-Secret headers are required.` | Only one API key header on a server call to the KYC host | Send both |
+| `404` | `Customer not found.` | Token bound to a different customer than the URL or body | Mint a session for the customer you're submitting |
+| `503` | `KYC session signing is not configured.` | Transient platform issue on `POST /customer/kyc-session` | Retry later |
+
+---
+
+## File uploads
+
+Every KYC file must be PDF, JPG, JPEG, PNG, HEIC or TIF (ID images: PDF, JPG, JPEG, PNG only), and between **5 KB and 30 MB**. Every file is scanned.
+
+| HTTP | Message | Cause | What to do |
+|---|---|---|---|
+| `422` | `This file type is not supported. Please upload a JPG, PNG, PDF, HEIC or TIFF file.` | Wrong type (`gif`, `webp`, `bmp`, `heif`, …) | Convert to an allowed type |
+| `422` | `This file is too large. The maximum size is {N}.` / `must not be greater than 30.0 MB.` | Over 30 MB | Compress or crop |
+| `422` | `The {attribute} must be at least 5 KB.` | File too small after compression | Don't over-compress selfies or ID photos |
+| `403` | `Your access has been blocked because you sent a file that contains malware. If you believe this is a mistake, please contact support.` | The upload failed the malware check | The IP is blocked and the `customer_id` is banned. Contact support. Don't retry the same file |
+
+---
+
+## Emails Yativo won't accept
+
+| HTTP | Message | Cause | What to do |
+|---|---|---|---|
+| `422` | `This email address can't be used.` | The address is blocked or high-risk | Use a durable mailbox the customer owns |
+| `422` | `Temporary or disposable email addresses are not allowed. Please use a permanent email address.` | Disposable / temporary domain | Don't use throwaway inboxes for customers or for your own account |
+
+`customer_email` values with a `+` alias are also rejected on `POST /customer`.
+
+---
+
+## Employees
+
+Corporate-card employees have their own status. See [Corporate cards](/yativo-platform/cards-and-accounts/corporate-cards).
+
+| HTTP | Message | Cause | What to do |
+|---|---|---|---|
+| `403` | `Employee is suspended.` | You set the employee to `suspended` | Set status back to `active` |
+| `403` | `Employee is terminated.` | Termination can't be undone | Create a new employee if you still need a cardholder |
+| `403` | `Owning customer is banned from the platform.` / `Owning customer is banned.` | The customer's platform ban | Same as a customer ban |
+| `403` | `Owning user account is suspended.` | Your Yativo account is suspended | Contact support |
+
+---
+
+## How to recover
+
+<Steps>
+  <Step title="Read the exact `data.error` or `message`">
+    Match it to the tables above. A `422` on one field is usually a payload fix. A `403`/`401` about banned, blocked, suspended or revoked is not.
+  </Step>
+  <Step title="Stop retrying locks">
+    Don't loop on a banned customer, a revoked key, or a blocked IP. Retries can extend an IP throttle into a block.
+  </Step>
+  <Step title="Fix what you control">
+    Add the server IP before you deploy. Mint a fresh KYC session when the hosted page returns `401`. Submit real identity data, not documentation samples.
+  </Step>
+  <Step title="Contact support for locks you can't clear">
+    Suspended accounts, revoked keys you didn't revoke, blocked IPs, platform-banned customers, and malware blocks need support. Include the `customer_id`, the `request_id` from `error_details` if you have one, and the exact error string.
+  </Step>
+</Steps>

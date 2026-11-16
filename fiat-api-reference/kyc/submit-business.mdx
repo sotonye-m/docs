@@ -9,7 +9,7 @@ Submit KYB data for a business customer. The customer must already exist with `c
 A successful response means the data passed validation and was accepted. Verification runs afterwards, so the customer stays pending until [their status](/yativo-fiat/kyc#track-verification-with-endorsements) changes. Every problem is reported in one `422` response. See [KYC / KYB Verification](/yativo-fiat/kyc#error-handling) for the error shape.
 
 <Note>
-  This endpoint is on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Every file field accepts a hosted URL, a base64 data URI or a `multipart/form-data` upload. Files must be PDF, JPG, JPEG, PNG, HEIC or TIF, between 5 KB and 30 MB.
+  This endpoint is on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Authenticate with `X-Kyc-Session` or your API key pair. Every file field accepts a hosted URL, a base64 data URI or a `multipart/form-data` upload. Files must be PDF, JPG, JPEG, PNG, HEIC or TIF, between 5 KB and 30 MB. A `tax_id` identifying-information entry does not need `image_front`.
 </Note>
 
 ```
@@ -24,23 +24,24 @@ Optional business profile fields, such as `monthly_volume_usd`, `sender_geograph
 ```bash cURL
 curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: kyb-acme-2026-001' \
+  -H 'X-Kyc-Session: YOUR_KYC_SESSION_TOKEN' \
+  -H 'Idempotency-Key: kyb-northwind-2026-001' \
   -d '{
-    "customer_id": "d47f8a2b-1c3e-4f5a-9b8c-7d6e5f4a3b2c",
-    "business_legal_name": "Acme Payments LLC",
-    "business_trade_name": "Acme Pay",
-    "business_description": "Acme Pay builds invoicing and checkout software for small online retailers in the United States and Latin America, and collects card and bank payments for them.",
-    "email": "compliance@acmepay.com",
+    "customer_id": "22222222-3333-4444-8555-666666666666",
+    "business_legal_name": "Northwind Trading LLC",
+    "business_trade_name": "Northwind Pay",
+    "business_description": "Northwind Pay builds invoicing and checkout software for small online retailers in the United States and Latin America, and collects card and bank payments for them.",
+    "email": "compliance@northwind-trading.com",
     "business_type": "llc",
     "registration_number": "LLC-2018-00987",
     "incorporation_date": "2018-03-12",
     "incorporation_country": "US",
-    "tax_id": "471234567",
+    "tax_id": "998887766",
     "phone_calling_code": "+1",
     "phone_number": "3055551234",
-    "primary_website": "https://acmepay.com",
+    "primary_website": "https://northwind-trading.com",
     "registered_address": {
-      "street_line_1": "100 Brickell Ave",
+      "street_line_1": "200 Market Street",
       "city": "Miami",
       "state": "FL",
       "postal_code": "33131",
@@ -48,7 +49,7 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
       "proof_of_address_file": "https://storage.yativo.com/documents/abc/registered-address.pdf"
     },
     "physical_address": {
-      "street_line_1": "100 Brickell Ave",
+      "street_line_1": "200 Market Street",
       "city": "Miami",
       "state": "FL",
       "postal_code": "33131",
@@ -57,34 +58,34 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
     },
     "associated_persons": [
       {
-        "first_name": "Jane",
-        "last_name": "Doe",
+        "first_name": "Alex",
+        "last_name": "Rivera",
         "birth_date": "1978-07-22",
         "nationality": "US",
-        "email": "jane.doe@acmepay.com",
+        "email": "alex.rivera@northwind-trading.com",
         "title": "CEO",
         "ownership_percentage": 60,
         "relationship_established_at": "2018-03-12",
         "residential_address": {
-          "street_line_1": "456 Coral Way",
+          "street_line_1": "88 Oak Avenue",
           "city": "Miami",
           "state": "FL",
           "postal_code": "33133",
           "country": "US",
-          "proof_of_address_file": "https://storage.yativo.com/documents/abc/jane-utility-bill.pdf"
+          "proof_of_address_file": "https://storage.yativo.com/documents/abc/alex-utility-bill.pdf"
         },
         "identifying_information": [
           {
             "type": "passport",
             "issuing_country": "US",
-            "number": "P87654321",
+            "number": "P00012345",
             "expiration": "2030-01-10",
-            "image_front": "https://storage.yativo.com/documents/abc/jane-passport.jpg"
+            "image_front": "https://storage.yativo.com/documents/abc/alex-passport.jpg"
           },
           {
             "type": "tax_id",
             "issuing_country": "US",
-            "number": "123456789"
+            "number": "998887766"
           }
         ],
         "has_ownership": true,
@@ -129,8 +130,8 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
   "success": true,
   "message": "All data submitted successfully.",
   "business_data": {
-    "customer_id": "d47f8a2b-1c3e-4f5a-9b8c-7d6e5f4a3b2c",
-    "business_legal_name": "Acme Payments LLC",
+    "customer_id": "22222222-3333-4444-8555-666666666666",
+    "business_legal_name": "Northwind Trading LLC",
     "status": "submitted"
   }
 }

@@ -47,7 +47,7 @@ Content-Type: application/json
   "success": true,
   "message": "Card onboarding initiated. Check your email for verification code.",
   "data": {
-    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "yativo_card_id": "yativo_card_abc123_0000000000000",
     "email_masked": "yo***@example.com",
     "next_step": "verify_otp",
     "otp_expires_in_seconds": 600
@@ -80,7 +80,7 @@ Content-Type: application/json
   "success": true,
   "message": "Email verified successfully",
   "data": {
-    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "yativo_card_id": "yativo_card_abc123_0000000000000",
     "flow_status": "otp_verified",
     "next_step": "kyc_link"
   }
@@ -114,7 +114,7 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "KYC link generated. Open the link to complete identity verification.",
   "data": {
-    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "yativo_card_id": "yativo_card_abc123_0000000000000",
     "kyc_url": "https://kyc.yativo.com/verify?token=...",
     "next_step": "kyc_status",
     "instructions": "Open the KYC link to upload your government ID and complete liveness check"
@@ -138,7 +138,7 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "KYC status retrieved",
   "data": {
-    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "yativo_card_id": "yativo_card_abc123_0000000000000",
     "kyc_status": "approved",
     "verification_level": 1,
     "terms_accepted": true,
@@ -185,7 +185,7 @@ Authorization: Bearer YOUR_TOKEN
 {
   "success": true,
   "data": {
-    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "yativo_card_id": "yativo_card_abc123_0000000000000",
     "status": "questions_retrieved",
     "questions": [
       {
@@ -223,7 +223,7 @@ Content-Type: application/json
 {
   "success": true,
   "data": {
-    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "yativo_card_id": "yativo_card_abc123_0000000000000",
     "status": "completed",
     "next_step": "Verify phone number using POST /phone/request-verification"
   }
@@ -294,11 +294,11 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "Safe deployment initiated. Deployment typically takes up to 1 minute.",
   "data": {
-    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "yativo_card_id": "yativo_card_abc123_0000000000000",
     "deployment_accepted": true,
     "estimated_completion": "~1 minute",
     "next_step": "monitor_deployment",
-    "monitor_endpoint": "/api/yativo-card/yativo_card_abc123_1769031332068/safe/deploy"
+    "monitor_endpoint": "/api/yativo-card/yativo_card_abc123_0000000000000/safe/deploy"
   }
 }
 ```
@@ -315,7 +315,7 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "Safe deployment complete",
   "data": {
-    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "yativo_card_id": "yativo_card_abc123_0000000000000",
     "safe_config": {
       "address": "0xABCD1234...",
       "token_symbol": "EUR",
@@ -358,7 +358,7 @@ Authorization: Bearer YOUR_TOKEN
   "success": true,
   "message": "Virtual card created successfully",
   "data": {
-    "yativo_card_id": "yativo_card_abc123_1769031332068",
+    "yativo_card_id": "yativo_card_abc123_0000000000000",
     "card_id": "b2dc97ab-03f9-49eb-c72f-95be13815278",
     "card_type": "virtual",
     "status": "active",

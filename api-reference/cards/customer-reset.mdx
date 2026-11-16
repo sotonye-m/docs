@@ -27,7 +27,7 @@ Use this when a customer is stuck in a state that cannot be recovered — for ex
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a_abc_1769031332068/reset' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/reset' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 </RequestExample>
@@ -38,8 +38,8 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   "success": true,
   "message": "Customer onboarding reset. Re-onboard this customer via POST /api/yativo-card/customers/onboard with a different email address.",
   "data": {
-    "deleted_card_id": "yativo_card_customer_8f9a...abc_1769031332068",
-    "email_masked": "sa***@hotmail.com",
+    "deleted_card_id": "yativo_card_customer_demo_0000000000000",
+    "email_masked": "ja***@example.com",
     "external_customer_id": "usr_8821",
     "next_step": "POST /api/yativo-card/customers/onboard",
     "email_warning": "The email address used previously remains registered with the card network and cannot be reused. Use a different email address when re-onboarding this customer."

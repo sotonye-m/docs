@@ -23,7 +23,7 @@ authMethod: "bearer"
 
 <RequestExample>
 ```bash cURL
-curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_8f9a..._1769031332068/cards/afeb85fe-02f8-48da-b61e-84ad02704167/lost' \
+curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_card_customer_demo_0000000000000/cards/afeb85fe-02f8-48da-b61e-84ad02704167/lost' \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
   -H 'Content-Type: application/json'
 ```
@@ -35,7 +35,7 @@ curl -X POST 'https://crypto-api.yativo.com/api/v1/yativo-card/customers/yativo_
   "success": true,
   "message": "Card marked as lost successfully",
   "data": {
-    "yativo_card_id": "yativo_card_customer_8f9a..._1769031332068",
+    "yativo_card_id": "yativo_card_customer_demo_0000000000000",
     "card_id": "afeb85fe-02f8-48da-b61e-84ad02704167",
     "is_lost": true,
     "reported_at": "2026-06-23T10:00:00.000Z"

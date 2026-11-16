@@ -435,13 +435,15 @@ Server-to-server requests authenticate with an `X-Api-Key` / `X-Api-Secret` pair
 |---|---|---|
 | `401` | `Unauthenticated` | No credentials, or the bearer token is invalid or expired. Send valid API key headers |
 | `401` | `Both X-Api-Key and X-Api-Secret headers are required.` | Only one of the two headers was sent |
-| `401` | `Invalid or revoked API credentials.` | Wrong key or secret, or the key was revoked. Failed attempts are recorded against your account for security monitoring |
+| `401` | `Invalid or revoked API credentials.` | Wrong key or secret, or the key was revoked. Two failed attempts on a known key suspend the account. Two calls from an IP that isn't on the allow list also revoke the key |
 | `401` | `This API key's team has no owner account.` | The key's team is misconfigured. Contact support |
 | `401` | `Session expired due to inactivity. Please log in again.` | A dashboard bearer token went unused past the idle timeout (5 minutes by default) |
 | `401` | `Invalid OTP` | On 2FA-protected endpoints, the `otp` field is missing or wrong |
 | `401` | `{"message": "Your session has expired. Please log in again."}` (top-level `message`: `Session expired`) | A team-member session was invalidated. Sign in again |
 | `401` | `This API key has no whitelisted IP addresses. Add at least one allowed IP before using it.` | Production request with no allowed IPs. Sandbox allows a key with no whitelist. Add an allowed IP to the key in the dashboard |
-| `403` | `Invalid credentials.` | The calling IP isn't on the key's allow list |
+| `403` | `Invalid credentials.` | The calling IP isn't on the key's allow list. Two such attempts revoke the key |
+| `403` | `Your IP address has been blocked due to suspicious activity.` / `...persistent invalid access attempts.` | This IP is blocked after repeated invalid access. Contact support |
+| `429` | `Too many invalid access attempts. Please try again in N seconds.` | About 5 invalid credential attempts from this IP in 15 minutes |
 | `403` | `Unauthorized Request, IP not whitelisted` | The platform-wide IP allow list (when enabled) doesn't include your IP |
 | `403` | `Bearer tokens are only accepted from the Yativo dashboard. Server-to-server requests must use X-Api-Key and X-Api-Secret from a whitelisted IP.` | A dashboard token was used from a script or server. Switch to API keys. Enforced since **15 October 2026** |
 | `403` | `IP whitelists and API keys can only be managed from the Yativo dashboard.` | API-key and whitelist management endpoints were called with an API key or from outside the dashboard |
@@ -459,9 +461,11 @@ These checks run on every authenticated request, before the endpoint itself.
 | HTTP | `data.error` | When |
 |---|---|---|
 | `403` | `KYC is pending, please complete the KYC process to access this feature` | Your business KYC/KYB isn't approved yet. Onboarding, profile, 2FA/PIN/passkey, OTP and team-invitation endpoints remain available |
-| `400` | `Account has been suspended. Please contact support or your account manager.` | Your account is suspended. The session is also signed out |
+| `400` or `403` | `Account has been suspended. Please contact support or your account manager.` | Your account is suspended. The session is also signed out |
+| `403` | `Account has been blocked due to multiple failed login attempts. Please contact support or your account manager.` | Two failed sign-in or API-key attempts on a known account. Contact support |
 | `400` | `You have no debit account. Please contact your administrator.` | Your account is on a no-debit restriction, and any request carrying an `amount` is refused |
 | `403` | `This customer has been banned from the platform.` | Any request whose `customer_id` (in the body or query) belongs to a banned customer |
+| `403` | `This customer is under review and cannot perform transactions.` | Compliance hold. Reads and KYC still work; money movement does not |
 | `403` | `This customer account is not permitted to perform transactions.` | Any request whose `customer_id` belongs to a customer whose name or email contains `test` |
 | `400` | `customer is not yet approved for this service/endpoint` | Virtual-account issuance for a customer who isn't enabled for it |
 | `403` | `Customer not endorsed for this service` | The customer lacks the endorsement the endpoint requires |
@@ -471,6 +475,8 @@ These checks run on every authenticated request, before the endpoint itself.
 | `403` | `You do not have permission to perform this action.` | A team member's role lacks the permission the endpoint needs |
 
 Team members always act on behalf of the team owner's business. KYC and other account checks are evaluated against the **owner's** account, not the member's.
+
+For a full list of what can suspend an account, revoke a key, ban a customer, or reject a KYC payload — and how to recover — see [Bans, blocks and access errors](/yativo-fiat/restrictions).
 
 ---
 

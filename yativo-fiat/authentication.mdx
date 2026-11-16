@@ -109,6 +109,8 @@ Requests made with a key act on your business account. Some endpoints can't be c
 
 API keys and IP whitelists can only be managed in the dashboard. Requests from anywhere else, including with an API key, return `403 IP whitelists and API keys can only be managed from the Yativo dashboard.`
 
+Production keys must be used from an allowed IP. Two calls from an IP that isn't on the list revoke the key. Two failed sign-in or API-secret attempts on a known account suspend the account. See [Bans, blocks and access errors](/yativo-fiat/restrictions).
+
 ### Check your setup
 
 Call [`GET /ip-whitelist/check`](/fiat-api-reference/ip/check) from each server that uses the key. It confirms the key works and whether that server's IP is allowed.
