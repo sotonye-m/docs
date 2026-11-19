@@ -7,7 +7,7 @@ icon: "clock-rotate-left"
 
 What changed in the API and the docs. Filter by Fiat or Docs.
 
-<Update label="November 2026" description="KYC sessions, access restrictions, Card Checkout, billing, and webhooks" tags={["Fiat", "Docs"]}>
+<Update label="November 2026" description="KYC sessions, access restrictions, Card Checkout, and webhooks" tags={["Fiat", "Docs"]}>
 
 ### Yativo Fiat
 
@@ -19,12 +19,11 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 - **NGN virtual accounts:** individual customers use currency `NGN`; business customers use `NGNBASE` (`NGNM` is still accepted as an alias). Both need an approved `naira` endorsement. Get the codes your account can issue from `GET /business/virtual-account/currencies-and-endorsements`. See [Virtual accounts](/yativo-fiat/virtual-accounts)
 - **Card Checkout:** let your customers sell by debit and credit card on a Yativo-hosted checkout page. Verify each selling customer once with its `card_checkout` endorsement, create orders with `POST /card-checkout/orders`, and follow them with `card_checkout.order.*` webhooks. See [Card Checkout](/yativo-fiat/card-checkout). Request, response and playground pages are in Fiat API References, starting at [Request access](/fiat-api-reference/card-checkout/request-access)
 - **Card Checkout withdrawals:** a selling customer can withdraw only Yativo `available` (cleared) funds. Save a payout destination with `POST /card-checkout/customers/{id}/payout-methods` (field ids from `GET …/supported-payout-methods`), then `POST …/payouts`. Pending and reserved amounts cannot be withdrawn. See [Card Checkout](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales)
-- **Plans:** new `/business/subscription` endpoints to list plans, quote, subscribe, renew, cancel and read payment history. Pay a plan from your USD balance or by card with `payment_method: "card"`, which returns a `checkout_url`. The older `/business/plans` endpoints still work. See [Plans and billing](/yativo-fiat/plans)
-- **Service fees:** account maintenance and annual verification fees are billed as bills under `/business/billing`, separate from transactions. Pay outstanding bills by card with `POST /business/billing/card-payments`. See [Service fees](/yativo-fiat/plans#service-fees)
 - **Errors:** `message` now carries the error text (validation errors still say `Request failed.`), and every failed response includes an `error` object with `code`, `message` and `request_id`. Send an `X-Request-Id` header to have it used as the `request_id`. Successful responses always return HTTP `200`; `status_code` in the body can still be `201` or `202`. See [Error response format](/fiat-api-reference/introduction#error-response-format)
 
 ### Documentation
 
+- **Plans and billing:** removed the plans, subscriptions, and billing API sections; manage and pay for plans and service fees in the [Yativo dashboard](https://app.yativo.com) under **Settings → Billing**
 - **Bans, blocks and access errors:** new page listing what can suspend an account, revoke a key, ban a customer, or reject a KYC payload, with each error and its cause. See [Bans, blocks and access errors](/yativo-fiat/restrictions)
 - **Platform guides:** [Platform guides](/yativo-platform/introduction) now include full request and response samples from the integration guides — Card Checkout, webhooks, team API keys, corporate cards, revenue split, and more
 - **KYC resubmit:** `POST /customer/kyc/resubmit/{customerId}/card_checkout` is documented for individual and business customers, including `202` with `awaiting_business_access`. See [KYC / KYB](/yativo-fiat/kyc#resubmit-one-endorsement) and [KYC & endorsements](/yativo-platform/business/kyc-endorsements)

@@ -17,6 +17,23 @@
       }
     },
     {
+      "removed": "group",
+      "from": "Yativo Fiat",
+      "block": {
+        "group": "Products",
+        "pages": [
+          "yativo-fiat/plans"
+        ]
+      }
+    },
+    {
+      "removed": "pages",
+      "from": "Yativo Fiat > Platform guides > Business",
+      "pages": [
+        "yativo-platform/business/subscriptions"
+      ]
+    },
+    {
       "removed": "pages",
       "from": "Fiat API References > Card Checkout > Selling customers",
       "pages": [

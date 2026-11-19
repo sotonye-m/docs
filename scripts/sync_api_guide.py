@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Sync Yativo-gcloud/api-guide/*.md into Mintlify yativo-platform/*.mdx.
 
-Do NOT map team-api-keys-integration.md — that integration guide is intentionally
-omitted from the public site (use yativo-fiat/authentication and yativo-fiat/api-keys).
-Restore only if the docs owner explicitly asks.
+Do NOT map team-api-keys-integration.md or subscriptions.md — team API keys are
+covered in yativo-fiat/authentication and yativo-fiat/api-keys, and plans/billing
+are managed in the dashboard UI only. Restore only if the docs owner explicitly asks.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ MAPPING: dict[str, str | None] = {
     "revenue-split-api-integration.md": "business/revenue-split.mdx",
     "sandbox-testing.md": "testing/sandbox-testing.mdx",
     "SECURITY.md": "security/security-policy.mdx",
-    "subscriptions.md": "business/subscriptions.mdx",
+    # subscriptions.md — intentionally not synced (plans and billing are UI-only)
     # team-api-keys-integration.md — intentionally not synced (see module docstring)
     "virtual-card-integration.md": "cards-and-accounts/virtual-cards.mdx",
     "wallet-swap-integration.md": "money-movement/wallet-swaps.mdx",
@@ -57,7 +57,7 @@ LINK_MAP = {
     "individual-kyc-endorsement-resubmission.md": "/yativo-fiat/kyc#resubmit-one-endorsement",
     "api-responses-and-errors.md": "/yativo-platform/api-responses-and-errors",
     "fees.md": "/yativo-platform/money-movement/fees",
-    "subscriptions.md": "/yativo-platform/business/subscriptions",
+    "subscriptions.md": "/yativo-platform/money-movement/fees",
     "sandbox-testing.md": "/yativo-platform/testing/sandbox-testing",
     "employee-portal-integration.md": "/yativo-platform/business/employee-portal",
     "corporate-card-integration.md": "/yativo-platform/cards-and-accounts/corporate-cards",

@@ -112,12 +112,6 @@
             ]
           },
           {
-            "group": "Products",
-            "pages": [
-              "yativo-fiat/plans"
-            ]
-          },
-          {
             "group": "Developer Tools",
             "pages": [
               "yativo-fiat/developer",
@@ -180,7 +174,6 @@
                 "group": "Business",
                 "pages": [
                   "yativo-platform/business/revenue-split",
-                  "yativo-platform/business/subscriptions",
                   "yativo-platform/business/affiliate-program",
                   "yativo-platform/business/employee-portal",
                   "yativo-platform/business/kyc-endorsements",
@@ -705,7 +698,15 @@
     },
     {
       "source": "/yativo/subscriptions",
-      "destination": "/yativo-fiat/plans"
+      "destination": "/yativo-fiat/fees"
+    },
+    {
+      "source": "/yativo-fiat/plans",
+      "destination": "/yativo-fiat/fees"
+    },
+    {
+      "source": "/yativo-platform/business/subscriptions",
+      "destination": "/yativo-platform/money-movement/fees"
     },
     {
       "source": "/yativo/notifications",
