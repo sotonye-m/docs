@@ -4732,17 +4732,17 @@ paths:
           application/json:
             schema:
               type: object
-              required: [currency]
+              required: [currency, customer_id]
               properties:
                 currency:
                   type: string
                   description: |-
-                    Currency code for the virtual account, for example `USDBASE`, `EURBASE`, `MXN` or `BRL`. `GET /business/virtual-account/currencies-and-endorsements` returns every code your account can use and the endorsement each one needs.
-                  example: BRL
+                    Currency code for the virtual account, for example `USDBASE`, `EURBASE`, `MXN`, `BRL`, or `NGNBASE`. `GET /business/virtual-account/currencies-and-endorsements` returns every code your account can use and the endorsement each one needs.
+                  example: NGNBASE
                 customer_id:
                   type: string
                   format: uuid
-                  description: The UUID of the KYC-approved customer. **Required when currency is `USD`**; optional for other currencies.
+                  description: The UUID of the KYC-approved customer. Required for all currencies.
       responses:
         '201':
           description: Virtual account generated successfully

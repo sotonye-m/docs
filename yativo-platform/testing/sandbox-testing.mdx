@@ -118,12 +118,35 @@ POST /api/v1/business/virtual-account/create
 
 ```json
 {
-  "currency": "USD",
-  "customer_id": "cus_123"
+  "currency": "NGNBASE",
+  "customer_id": "cus_9f1c2a3b4d5e"
 }
 ```
 
-The response returns a full dummy account with routing number, bank address, and account number. You can immediately use this account's `account_id` or `account_number` to test deposits via the simulation endpoint below.
+**Response `201`**
+
+```json
+{
+  "status": "success",
+  "status_code": 201,
+  "message": "NGNBASE Virtual account generated successfully",
+  "data": {
+    "account_id": "vact_8a9f2c1e4b7d6031",
+    "currency": "NGNBASE",
+    "customer_id": "cus_9f1c2a3b4d5e",
+    "account_number": "9901234567",
+    "account_info": {
+      "currency": "NGN",
+      "account_number": "9901234567",
+      "account_name": "Acme Nigeria Limited",
+      "bank_name": "Providus Bank"
+    },
+    "created_at": "2026-11-27T05:42:00.000000Z"
+  }
+}
+```
+
+The response returns a full dummy account with banking details in `account_info` and `account_number`. You can immediately use this account's `account_id` or `account_number` to test deposits via the simulation endpoint below.
 
 ---
 
