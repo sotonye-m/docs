@@ -6265,7 +6265,7 @@ paths:
   /payout/simple:
     post:
       tags: [Payouts]
-      summary: Single Payout
+      summary: Create Payout
       description: |
         Send a single payment to a saved beneficiary. Debits your wallet immediately on submission.
         Requires an `Idempotency-Key` header.
