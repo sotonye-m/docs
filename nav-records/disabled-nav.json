@@ -92,6 +92,13 @@
     },
     {
       "removed": "pages",
+      "from": "Virtual Accounts > Guides & Guides > Platform Guides > Cards and accounts",
+      "pages": [
+        "yativo-platform/cards-and-accounts/virtual-accounts"
+      ]
+    },
+    {
+      "removed": "pages",
       "from": "API Reference > KYC / KYB > Shared",
       "pages": [
         "fiat-api-reference/kyc/upload"

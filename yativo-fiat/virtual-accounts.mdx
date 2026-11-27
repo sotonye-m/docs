@@ -11,22 +11,36 @@ Virtual accounts give each customer a unique local bank account number. When a p
 
 ## Supported Rails
 
-| Currency | Rail | Countries | Extra required fields |
-|----------|------|-----------|---|
-| `BRL` | PIX | Brazil | — |
-| `MXNBASE` / `MXN` | SPEI | Mexico | — |
-| `USDBASE` | ACH / Wire | United States | — |
-| `EURBASE` | SEPA | Europe | — |
-| `MXNUSD` | SPEI (USD-settled) | Mexico | — |
-| `ARS` | CVU/CBU | Argentina | `document_id`, `document_type` |
-| `NGNBASE` | Local transfer | Nigeria (individuals and businesses) | Approved `native` endorsement, Nigerian customer, 11-digit BVN (plus CAC registration number for businesses) |
+Call `GET /business/virtual-account/currencies-and-endorsements` for the live list enabled on your account.
+
+| Currency | Required endorsement | Rail / settlement | Region |
+|----------|----------------------|-------------------|--------|
+| `EURBASE` | `base` | SEPA | Europe |
+| `USDBASE` | `base` | ACH / Wire | United States |
+| `BRL` | `brazil` | PIX | Brazil |
+| `MXN` | None (`null`) | SPEI | Mexico |
+| `MXNBASE` | `spei` | SPEI | Mexico |
+| `USDLATAM` | `brazil` | USD Latin America | Latin America |
+| `USD` | `faster_payments` | ACH / Wire | United States |
+| `EUR` | `faster_payments` | SEPA | Europe |
+| `GBP` | `faster_payments` | Faster Payments / BACS | United Kingdom |
+| `MXNUSD` | `faster_payments` | SPEI (settles in USD) | Mexico |
+| `COPUSD` | `faster_payments` | Bre-B (settles in USD) | Colombia |
+| `USDCOBO` | `cobo_pobo` | COBO / POBO | USD |
+| `GBPCOBO` | `cobo_pobo` | COBO / POBO | GBP |
+| `SGDCOBO` | `cobo_pobo` | COBO / POBO | SGD |
+| `EURCOBO` | `cobo_pobo` | COBO / POBO | EUR |
+| `CADCOBO` | `cobo_pobo` | COBO / POBO | CAD |
+| `AUDCOBO` | `cobo_pobo` | COBO / POBO | AUD |
+| `DKKCOBO` | `cobo_pobo` | COBO / POBO | DKK |
+| `AEDCOBO` | `cobo_pobo` | COBO / POBO | AED |
+| `NGNCOBO` | `cobo_pobo` | COBO / POBO | NGN |
+| `PHPCOBO` | `cobo_pobo` | COBO / POBO | PHP |
+| `NGN` | `naira` | Local transfer | Nigeria |
+| `NGNBASE` | `native` | Local transfer (individuals and businesses) | Nigeria |
 
 <Note>
-  Argentina accounts require the customer's `document_id` and `document_type` (`"CUIT"`, `"CUIL"`, or `"CDI"`) in the create request. The customer must be an Argentine resident. See the [Regional Payouts guide](/guides/regional-payouts) for details.
-</Note>
-
-<Note>
-  Nigerian naira accounts: use `NGNBASE` to generate an NGN virtual account (available for both **individual** and **business** customers). `NGNBASE` is only used for generating NGN virtual accounts. The customer needs an approved `native` endorsement — see [NGNBASE (`native`) endorsement requirements](/yativo-fiat/kyc#ngnbase-native-endorsement-requirements). Get the codes your account can issue from `GET /business/virtual-account/currencies-and-endorsements`.
+  Nigerian naira accounts: use `NGNBASE` (requires an approved `native` endorsement — see [NGNBASE (`native`) endorsement requirements](/yativo-fiat/kyc#ngnbase-native-endorsement-requirements)) or `NGN` (requires an approved `naira` endorsement). Get the codes your account can issue from `GET /business/virtual-account/currencies-and-endorsements`.
 </Note>
 
 <Accordion title="Type Definitions">
@@ -41,16 +55,31 @@ interface VirtualAccount {
 }
 
 type SupportedCurrency =
-  | "USDBASE"   // USD (standard ACH/wire)
-  | "EURBASE"   // EUR (SEPA standard)
-  | "MXN"       // Mexican Peso via SPEI
-  | "MXNBASE"   // Mexican Peso via SPEI
-  | "MXNUSD"   // USD-settled via SPEI
-  | "BRL"       // Brazilian Real via PIX
-  | "NGNBASE";  // Nigerian naira virtual accounts (individual or business customers)
+  | "EURBASE"   // EUR (SEPA, base endorsement)
+  | "USDBASE"   // USD (ACH/Wire, base endorsement)
+  | "BRL"       // Brazilian Real via PIX (brazil endorsement)
+  | "MXN"       // Mexican Peso via SPEI (no endorsement required)
+  | "MXNBASE"   // Mexican Peso via SPEI (spei endorsement)
+  | "USDLATAM"  // USD Latin America (brazil endorsement)
+  | "USD"       // USD (faster_payments endorsement)
+  | "EUR"       // EUR (faster_payments endorsement)
+  | "GBP"       // GBP via Faster Payments (faster_payments endorsement)
+  | "MXNUSD"    // MXN via SPEI, USD-settled (faster_payments endorsement)
+  | "COPUSD"    // COP via Bre-B, USD-settled (faster_payments endorsement)
+  | "USDCOBO"   // USD COBO/POBO (cobo_pobo endorsement)
+  | "GBPCOBO"   // GBP COBO/POBO (cobo_pobo endorsement)
+  | "SGDCOBO"   // SGD COBO/POBO (cobo_pobo endorsement)
+  | "EURCOBO"   // EUR COBO/POBO (cobo_pobo endorsement)
+  | "CADCOBO"   // CAD COBO/POBO (cobo_pobo endorsement)
+  | "AUDCOBO"   // AUD COBO/POBO (cobo_pobo endorsement)
+  | "DKKCOBO"   // DKK COBO/POBO (cobo_pobo endorsement)
+  | "AEDCOBO"   // AED COBO/POBO (cobo_pobo endorsement)
+  | "NGNCOBO"   // NGN COBO/POBO (cobo_pobo endorsement)
+  | "PHPCOBO"   // PHP COBO/POBO (cobo_pobo endorsement)
+  | "NGN"       // Nigerian naira (naira endorsement)
+  | "NGNBASE";  // Nigerian naira (native endorsement — individuals and businesses)
 ```
 </Accordion>
-
 ---
 
 ## Create Virtual Account

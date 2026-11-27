@@ -5,3 +5,46 @@ openapi: "openapi-fiat.yaml GET /business/virtual-account/currencies-and-endorse
 ---
 
 Before issuing a virtual account, check that the customer's endorsement for the currency is `approved`. See [Track verification with endorsements](/yativo-fiat/kyc#track-verification-with-endorsements).
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://api.yativo.com/api/v1/business/virtual-account/currencies-and-endorsements' \
+  -H 'X-Api-Key: YOUR_API_KEY' \
+  -H 'X-Api-Secret: YOUR_API_SECRET'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "status": "success",
+  "status_code": 200,
+  "message": "Request successful",
+  "data": [
+    { "currency": "EURBASE", "endorsement": "base" },
+    { "currency": "USDBASE", "endorsement": "base" },
+    { "currency": "BRL", "endorsement": "brazil" },
+    { "currency": "MXN", "endorsement": null },
+    { "currency": "MXNBASE", "endorsement": "spei" },
+    { "currency": "USDLATAM", "endorsement": "brazil" },
+    { "currency": "USD", "endorsement": "faster_payments" },
+    { "currency": "EUR", "endorsement": "faster_payments" },
+    { "currency": "GBP", "endorsement": "faster_payments" },
+    { "currency": "MXNUSD", "endorsement": "faster_payments" },
+    { "currency": "USDCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "GBPCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "SGDCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "EURCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "CADCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "AUDCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "DKKCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "AEDCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "NGNCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "PHPCOBO", "endorsement": "cobo_pobo" },
+    { "currency": "NGN", "endorsement": "naira" },
+    { "currency": "COPUSD", "endorsement": "faster_payments" },
+    { "currency": "NGNBASE", "endorsement": "native" }
+  ]
+}
+```
+</ResponseExample>
