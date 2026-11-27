@@ -474,7 +474,7 @@ Each person's `identifying_information` needs at least one ID that isn't a tax I
 | `image_front` | Photo IDs | File. **Not required** when `type` is `tax_id`. Required for passport, national ID, driver's license and other photo IDs |
 | `image_back` | Except `passport` and `tax_id` | File |
 
-For a Naira account in the business's name, add a `bvn` entry (11-digit `number`, no image) for a Nigerian associated person. See `naira` in [What each endorsement needs](#what-each-endorsement-needs).
+For an `NGNBASE` Naira virtual account in the business's name, the primary associated person (highest `ownership_percentage` in `associated_persons`) must be Nigerian and have a valid 11-digit BVN. See [NGNBASE (`native`) endorsement requirements](#ngnbase-native-endorsement-requirements).
 
 #### Step 4 — Risk and purpose
 
@@ -827,7 +827,7 @@ You don't request endorsements directly. Which ones are attempted depends on you
 | `spei` | Always | Approved automatically: individuals once an ID front image and `selfie_image` are on file, businesses once KYB is submitted |
 | `faster_payments` | Individuals: always. Businesses: only with `gbp_virtual_account: true` | The fullest profile: basics, full address, occupation or industry, source of funds, account purpose, a photo ID (individual) or a `business_registration` document (business), and proof of address |
 | `cobo_pobo` | Always | A registration or incorporation document, proof of address on the registered or physical address, a phone with calling code, and an associated person with a photo ID |
-| `native` | Always | Name, tax ID, address and, for businesses, each associated person's name and `ownership_percentage` |
+| `native` | Required for `NGNBASE` virtual accounts (Nigerian individuals, or businesses with a Nigerian primary associated person) | See [NGNBASE (`native`) endorsement requirements](#ngnbase-native-endorsement-requirements) below |
 | `asian` | Individuals: only with an ID front image and a selfie | The customer's country (or the business's incorporation country) must be supported. Then email, name and address (individual), or legal name, registration number, incorporation date, phone and address (business) |
 | `brazil` | Always | Individuals: tax ID, full residential address, ID front image and selfie. Businesses: an associated person with a photo ID, plus an incorporation document and a tax ID document in `documents` or `extra_documents` |
 | `usd_latam`, `eur_latam` | Once `brazil` is approved | Nothing extra |
@@ -842,6 +842,28 @@ Three endorsements reject outright instead of waiting in `under_review`:
 - **`asian`**: the country isn't supported. This can also decline an endorsement that was approved before
 
 **BVN.** Any BVN you submit, for an individual or an associated person, must be 11 digits and match a real record. If it doesn't, every endorsement is declined, `spei` included, with `errors: ["Unable to verify customer information"]`.
+
+#### NGNBASE (`native`) endorsement requirements
+
+`NGNBASE` virtual accounts require an approved `native` endorsement. Make sure the customer's KYC/KYB submission includes all required fields below:
+
+**Individual customers**
+
+- **Nationality / country:** Must be Nigerian (`NG`, `NGA`, or `NIGERIA`).
+- **BVN:** Valid 11-digit BVN (supplied via `bvn`, `bvn_number`, `bvnNumber`, an `identifying_information` entry whose `type` contains `bvn`, or `customer_idType = bvn`).
+- **Identity fields:** `first_name`, `last_name`, and a valid date of birth (`birth_date`, `date_of_birth`, or `dob`).
+- **Contact fields:** `email` and `phone`.
+
+**Business customers**
+
+- **Primary associated person** (highest `ownership_percentage` in `associated_persons`):
+  - Must be present and Nigerian (`NG`, `NGA`, or `NIGERIA`).
+  - Valid 11-digit BVN.
+  - `first_name`, `last_name`, and a valid date of birth.
+- **Business details:**
+  - Business name (`business_legal_name`, `business_trade_name`, or `business_name`).
+  - CAC registration number (`business_registration_number`, `registration_number`, or `rc_number`).
+  - Contact fields: `email` and `phone` (from the business KYC or associated person).
 
 #### Endorsements that failed to start
 
@@ -1034,7 +1056,7 @@ Each endorsement unlocks one service. Its status is the verification result for 
 | `faster_payments` | UK Faster Payments |
 | `naira` | Nigerian naira accounts |
 | `asian` | Asian region payments |
-| `native` | Native payment rails |
+| `native` | Native payment rails and `NGNBASE` Nigerian naira virtual accounts |
 | `cobo_pobo` | Collection / payment-on-behalf-of. Also required for [corporate cards](/yativo-fiat/sandbox-corporate-cards) |
 | `card_checkout` | Card Checkout — accept card payments as a sub-merchant |
 

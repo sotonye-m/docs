@@ -19,14 +19,14 @@ Virtual accounts give each customer a unique local bank account number. When a p
 | `EURBASE` | SEPA | Europe | — |
 | `MXNUSD` | SPEI (USD-settled) | Mexico | — |
 | `ARS` | CVU/CBU | Argentina | `document_id`, `document_type` |
-| `NGNBASE` | Local transfer | Nigeria (individuals and businesses) | Approved `naira` endorsement, Nigerian customer, BVN |
+| `NGNBASE` | Local transfer | Nigeria (individuals and businesses) | Approved `native` endorsement, Nigerian customer, 11-digit BVN (plus CAC registration number for businesses) |
 
 <Note>
   Argentina accounts require the customer's `document_id` and `document_type` (`"CUIT"`, `"CUIL"`, or `"CDI"`) in the create request. The customer must be an Argentine resident. See the [Regional Payouts guide](/guides/regional-payouts) for details.
 </Note>
 
 <Note>
-  Nigerian naira accounts: use `NGNBASE` to generate an NGN virtual account (available for both **individual** and **business** customers). `NGNBASE` is only used for generating NGN virtual accounts. The customer needs an approved `naira` endorsement, must be Nigerian, and must have a BVN on file. Get the codes your account can issue from `GET /business/virtual-account/currencies-and-endorsements`.
+  Nigerian naira accounts: use `NGNBASE` to generate an NGN virtual account (available for both **individual** and **business** customers). `NGNBASE` is only used for generating NGN virtual accounts. The customer needs an approved `native` endorsement — see [NGNBASE (`native`) endorsement requirements](/yativo-fiat/kyc#ngnbase-native-endorsement-requirements). Get the codes your account can issue from `GET /business/virtual-account/currencies-and-endorsements`.
 </Note>
 
 <Accordion title="Type Definitions">

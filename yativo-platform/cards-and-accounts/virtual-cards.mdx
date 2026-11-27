@@ -5,7 +5,7 @@ description: "Virtual Account and Transactions Integration — integration guide
 
 This documentation covers:
 - Virtual account listing
-- Updating and expiring NGN virtual accounts
+- Expiring and deleting NGN virtual accounts
 - Virtual account transaction history
 - Transactions index
 - Transaction details for payins (payment links) and payouts
@@ -121,32 +121,11 @@ GET /api/v1/business/virtual-account
 
 ---
 
-## 1a) Update or Expire an NGN Virtual Account
+## 1a) Expire or Delete an NGN Virtual Account
 
-These two endpoints only work on **NGN** virtual accounts. Any other currency
-returns `422` (`Updating is not supported for this account` /
-`Expiring is not supported for this account`).
-
-### Update
-
-```http
-PUT /api/v1/business/virtual-account/update/{account_id}
-Content-Type: application/json
-
-{
-  "account_name": "ANONYMIZED BUSINESS LTD",
-  "expected_amount": 150000
-}
-```
-
-| Field | Required | Notes |
-|---|---|---|
-| `account_name` | no | New name on the account, up to 100 characters. |
-| `expected_amount` | no | Lock the account to accept only this exact NGN amount. Send `null` to remove the lock. |
-
-Send at least one of the two fields, otherwise the request returns `422`.
-The response is the updated virtual account record; the new values also
-appear in `account_info` (`account_name`, `expected_amount`).
+Virtual accounts cannot be updated after creation. The expire endpoint below
+only works on **NGN** virtual accounts; any other currency returns `422`
+(`Expiring is not supported for this account`).
 
 ### Expire
 
@@ -179,8 +158,8 @@ returns `404` (`Account with the provided ID does not exists`).
 | HTTP | `data.error` | Cause |
 |---|---|---|
 | 404 | `Invalid account ID supplied` | The account doesn't exist or isn't yours. |
-| 422 | `... is not supported for this account` | The account isn't an NGN account. |
-| 400 | `Unable to update virtual account, please try again later` / `Unable to expire virtual account, please try again later` | The change couldn't be applied. Retry later. |
+| 422 | `Expiring is not supported for this account` | The account isn't an NGN account. |
+| 400 | `Unable to expire virtual account, please try again later` | The change couldn't be applied. Retry later. |
 
 ---
 
