@@ -1081,19 +1081,56 @@ components:
       properties:
         account_id:
           type: string
-        account_number:
-          type: string
-        account_type:
-          type: string
+          example: vact_8a9f2c1e4b7d6031
+        user_id:
+          type: integer
+          example: 42
         currency:
           type: string
+          example: NGNBASE
         customer_id:
           type: string
+          nullable: true
+          example: cus_9f1c2a3b4d5e
+        account_number:
+          type: string
+          example: "9901234567"
+        account_info:
+          type: object
+          properties:
+            currency:
+              type: string
+              example: NGN
+            account_number:
+              type: string
+              example: "9901234567"
+            account_name:
+              type: string
+              example: Acme Nigeria Limited
+            bank_name:
+              type: string
+              example: Providus Bank
+            account_type:
+              type: string
+              nullable: true
+            routing_number:
+              type: string
+              nullable: true
+            bank_address:
+              type: string
+              nullable: true
+            bank_code:
+              type: string
+              nullable: true
+            country:
+              type: string
+              nullable: true
         status:
           type: string
         created_at:
           type: string
           format: date-time
+          example: "2026-11-27T05:42:00.000000Z"
 
     VirtualAccountHistory:
       type: object
@@ -4715,7 +4752,7 @@ paths:
                   description: The UUID of the KYC-approved customer. **Required when currency is `USD`**; optional for other currencies.
       responses:
         '201':
-          description: Virtual account creation in progress
+          description: Virtual account generated successfully
           content:
             application/json:
               schema:
@@ -4723,10 +4760,13 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: success
                   status_code:
                     type: integer
+                    example: 201
                   message:
                     type: string
+                    example: NGNBASE Virtual account generated successfully
                   data:
                     $ref: '#/components/schemas/VirtualAccount'
 
