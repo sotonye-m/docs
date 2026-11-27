@@ -11,6 +11,7 @@ What changed in the API and the docs. Filter by API or Docs.
 
 ### API
 
+- **Fee schedule:** `GET /fees` fee lines no longer include the `source` field. See [Fees](/yativo-fiat/fees)
 - **KYC sessions:** hosted KYC/KYB pages and the KYC platform submit/update APIs require a signed session. Call `POST /customer/kyc-session` from your server and use `data.url` (or `data.token` as `X-Kyc-Session`). Lookup endpoints stay public. Sessions last **30 minutes**, are KYC-only (they cannot call the Yativo API), and are revoked when KYC is submitted or the hosted tab is closed. See [KYC / KYB](/yativo-fiat/kyc#mint-a-session) and [Mint KYC session](/fiat-api-reference/customers/kyc-session)
 - **KYC file and birth-place fields:** file inputs accept files from 5 KB to 4 MiB as base64 data URIs or file URLs. For individual submissions, `place_of_birth.country` and `place_of_birth.city` are optional until 2027-01-01; send both together, and both are required from that date. See [KYC / KYB](/yativo-fiat/kyc)
 - **RFI replies:** submit a complete response with `POST /business/rfis/{id}/responses`; use `PUT /business/rfis/{id}/draft-responses` only to save a partial draft. A successful submission sets `merchant_responses_submitted_at` but does not itself change `status` or `response_required`. See [Compliance RFIs](/yativo-fiat/rfis)

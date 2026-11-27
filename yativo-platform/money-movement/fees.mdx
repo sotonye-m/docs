@@ -7,9 +7,9 @@ description: "Fee Schedule — integration guide for the Yativo API."
 
 The schedule is specific to your account:
 
-- If your account has **custom pricing** for a line, that line shows your custom fees and your custom minimum/maximum charge, with `source: "custom"`.
-- If your **plan** prices the line (for example a custom pricing plan built for your account), it shows the plan's fees, with `source: "plan"`. When both exist, Yativo decides which one applies to your account.
-- Otherwise the line shows the **default** rate for your plan, with `source: "default"`.
+- If your account has **custom pricing** for a line, that line shows your custom fees and your custom minimum/maximum charge.
+- If your **plan** prices the line (for example a custom pricing plan built for your account), it shows the plan's fees. When both exist, Yativo decides which one applies to your account.
+- Otherwise the line shows the **default** rate for your plan.
 
 Related guides:
 
@@ -52,8 +52,7 @@ API-key authentication works too. Team members need the **Billing → view** per
         "float_fee": 1.2,
         "min_charge": 1,
         "max_charge": 50,
-        "fee_currency": "USD",
-        "source": "custom"
+        "fee_currency": "USD"
       }
     ],
     "payout": [ { "gateway_id": 12, "method_name": "ACH", "...": "same fields as payin" } ],
@@ -66,12 +65,11 @@ API-key authentication works too. Team members need the **Billing → view** per
         "float_fee": 0.6,
         "min_charge": null,
         "max_charge": null,
-        "fee_currency": "USD",
-        "source": "default"
+        "fee_currency": "USD"
       }
     ],
     "virtual_card": [
-      { "action": "card_creation", "fixed_fee": 3, "float_fee": 0, "min_charge": null, "max_charge": null, "fee_currency": "USD", "source": "default" }
+      { "action": "card_creation", "fixed_fee": 3, "float_fee": 0, "min_charge": null, "max_charge": null, "fee_currency": "USD" }
     ],
     "employee_card": null
   }
@@ -99,7 +97,6 @@ API-key authentication works too. Team members need the **Billing → view** per
 | `max_charge` | The highest fee charged. `null` = no maximum. |
 | `waive_above` | `employee_card` only: the fee is waived when the transaction amount is above this value. `null` = never waived. |
 | `fee_currency` | Currency of `fixed_fee`, `min_charge` and `max_charge`. |
-| `source` | `custom` = pricing agreed for your account. `default` = your plan's standard rate. |
 
 ### How a fee is calculated
 

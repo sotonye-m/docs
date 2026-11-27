@@ -7,8 +7,8 @@ description: "See the fees your account is charged for payins, payouts, virtual 
 
 The schedule is specific to your account:
 
-- Where your account has **custom pricing** for a line, it shows your custom fees and your custom minimum and maximum charge, with `source: "custom"`.
-- Otherwise it shows the **default** rate for your plan, with `source: "default"`.
+- Where your account has **custom pricing** for a line, it shows your custom fees and your custom minimum and maximum charge.
+- Otherwise it shows the **default** rate for your plan.
 
 Quotes and transactions use these same fees. You can view and manage your plan in the [Yativo dashboard](https://app.yativo.com) under **Settings → Billing**.
 
@@ -59,8 +59,7 @@ Team members need the **Billing & Plans → view** permission.
         "float_fee": 1.2,
         "min_charge": 1,
         "max_charge": 50,
-        "fee_currency": "USD",
-        "source": "custom"
+        "fee_currency": "USD"
       }
     ],
     "payout": [
@@ -73,8 +72,7 @@ Team members need the **Billing & Plans → view** permission.
         "float_fee": 0.5,
         "min_charge": null,
         "max_charge": null,
-        "fee_currency": "USD",
-        "source": "default"
+        "fee_currency": "USD"
       }
     ],
     "virtual_account": [
@@ -86,8 +84,7 @@ Team members need the **Billing & Plans → view** permission.
         "float_fee": 0.6,
         "min_charge": null,
         "max_charge": null,
-        "fee_currency": "USD",
-        "source": "default"
+        "fee_currency": "USD"
       }
     ],
     "virtual_card": [
@@ -97,8 +94,7 @@ Team members need the **Billing & Plans → view** permission.
         "float_fee": 0,
         "min_charge": null,
         "max_charge": null,
-        "fee_currency": "USD",
-        "source": "default"
+        "fee_currency": "USD"
       }
     ],
     "employee_card": null
@@ -127,7 +123,6 @@ Team members need the **Billing & Plans → view** permission.
 | `max_charge` | The highest fee charged. `null` = no maximum. |
 | `waive_above` | `employee_card` only: the fee is waived when the transaction amount is above this value. `null` = never waived. |
 | `fee_currency` | Currency of `fixed_fee`, `min_charge` and `max_charge`. |
-| `source` | `custom` = pricing agreed for your account. `default` = your plan's standard rate. |
 
 ## How a fee is calculated
 

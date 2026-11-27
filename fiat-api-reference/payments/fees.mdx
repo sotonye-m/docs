@@ -4,7 +4,7 @@ description: "The fees your account is charged for every payin, payout, virtual 
 openapi: "openapi-fiat.yaml GET /fees"
 ---
 
-Returns your account's fees for every service it can use. Each line has a fixed fee, a percentage fee and an optional minimum and maximum charge. Where your account has custom pricing, the line shows it with `source: "custom"`. Otherwise it shows your plan's default rate with `source: "default"`.
+Returns your account's fees for every service it can use. Each line has a fixed fee, a percentage fee and an optional minimum and maximum charge. Where your account has custom pricing, the line shows your custom rate; otherwise it shows your plan's default rate.
 
 A fee is calculated as:
 

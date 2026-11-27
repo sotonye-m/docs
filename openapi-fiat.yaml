@@ -201,10 +201,6 @@ components:
         fee_currency:
           type: string
           example: USD
-        source:
-          type: string
-          enum: [custom, default]
-          description: custom = pricing agreed for your account. default = your plan's standard rate.
     MethodFeeLine:
       allOf:
         - type: object
@@ -4019,8 +4015,8 @@ paths:
       summary: Get Fee Schedule
       description: |
         The fees your account is charged for every service it can use. Each line shows the fixed fee,
-        the percentage fee and the minimum and maximum charge. Lines with custom pricing for your
-        account have `source: custom`; the rest show your plan's default rate (`source: default`).
+        the percentage fee and the minimum and maximum charge, reflecting any custom pricing agreed
+        for your account or your plan's default rate.
 
         Team members need the **Billing & Plans → view** permission.
       responses:
