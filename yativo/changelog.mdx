@@ -27,6 +27,7 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 - **Bans, blocks and access errors:** new page listing what can suspend an account, revoke a key, ban a customer, or reject a KYC payload, with each error and its cause. See [Bans, blocks and access errors](/yativo-fiat/restrictions)
 - **Platform guides:** [Platform guides](/yativo-platform/introduction) now include full request and response samples from the integration guides — Card Checkout, webhooks, team API keys, corporate cards, revenue split, and more
 - **KYC resubmit:** `POST /customer/kyc/resubmit/{customerId}/card_checkout` is documented for individual and business customers, including `202` with `awaiting_business_access`. See [KYC / KYB](/yativo-fiat/kyc#resubmit-one-endorsement) and [KYC & endorsements](/yativo-platform/business/kyc-endorsements)
+- **KYC file inputs:** custom KYC submissions accept base64 data URIs or file URLs directly. See [KYC / KYB](/yativo-fiat/kyc#upload-documents)
 - **RFIs:** expanded list, draft, submit, and document upload samples on [Compliance RFIs](/yativo-fiat/rfis)
 - **Webhooks:** `rfi.*` and `card_checkout.order.*` payload samples on [Webhooks](/yativo-fiat/webhooks)
 - **Yativo Crypto:** those docs are no longer published. Use [Yativo Fiat](/yativo-fiat/introduction) for the public API
@@ -91,7 +92,7 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 - Endpoints that change sign-in settings (passkeys, two-factor authentication, PIN, app secret) or delete the account now return `403` when called with an API key
 - `GET /ip-whitelist/check` now returns `api_key.label` (was `name`) and a `network.warning` when your request came through a proxy
 - **Try it on every endpoint:** every fiat API reference page now has an interactive playground
-- **More endpoints in the API reference:** corporate card employees, employee KYC submission, employee balances, cards, memos, the USDC funding address and card transactions, plus stablecoin deposit wallets, pay-in countries and currencies, `GET /currencies/all`, `GET /business/transaction/by-currency`, `POST /storage/upload` and `DELETE /customer/{customer_id}`. Each has a "Try it" playground. See [Corporate Cards](/fiat-api-reference/corporate-cards/employees-create)
+- **More endpoints in the API reference:** corporate card employees, employee KYC submission, employee balances, cards, memos, the USDC funding address and card transactions, plus stablecoin deposit wallets, pay-in countries and currencies, `GET /currencies/all`, `GET /business/transaction/by-currency` and `DELETE /customer/{customer_id}`. Each has a "Try it" playground. See [Corporate Cards](/fiat-api-reference/corporate-cards/employees-create)
 
 ## Docs
 

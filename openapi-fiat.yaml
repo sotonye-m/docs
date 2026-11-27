@@ -979,7 +979,7 @@ components:
           description: ISO 3166-1 alpha-2.
         proof_of_address_file:
           type: string
-          description: Hosted URL, base64 data URI or multipart file.
+          description: File URL or base64 data URI.
 
     KycValidationError:
       type: object
@@ -2518,7 +2518,7 @@ paths:
                   description: Tax identification number. Letters and digits only, up to 255 characters. Send `"123456789"`, not `"123-45-6789"`.
                 selfie_image:
                   type: string
-                  description: 'Selfie photo of the customer. Provide as a hosted URL (from `POST /storage/upload`) or a base64-encoded string. Accepted formats: PDF, JPG, JPEG, PNG, HEIC, TIF, between 5 KB and 30 MB.'
+                  description: 'Selfie photo of the customer. Provide as a file URL or a base64 data URI. Accepted formats: PDF, JPG, JPEG, PNG, HEIC, TIF, between 5 KB and 30 MB.'
                 bvn:
                   type: string
                   description: Bank Verification Number. **Required when `nationality` or `residential_address.country` is `"NG"`**. Exactly 11 digits.
@@ -11547,64 +11547,6 @@ paths:
                   pagination:
                     $ref: '#/components/schemas/Pagination'
       summary: List Transactions by Currency
-  /storage/upload:
-    post:
-      tags:
-      - KYC / KYB
-      description: 'Stores a file and returns its URL. Send it as `document`, or several as `documents[]`. Use the URL in KYC file fields such as `selfie_image` or `proof_of_address_file`.
-
-
-        Files must be PDF, JPG, JPEG, PNG, HEIC or TIF. See [file rules](/yativo-fiat/kyc#upload-documents) for size limits.'
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                document:
-                  type: string
-                  description: One file.
-                  format: binary
-                documents:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: Several files. Each URL comes back under the same key.
-      responses:
-        '200':
-          description: Request successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  status_code:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Request successful
-                  data:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    properties:
-                      document:
-                        type: string
-                        description: URL of the uploaded `document`.
-                        example: https://storage.yativo.com/documents/abc123/passport_front.jpg
-        '400':
-          description: The file type isn't allowed or the file couldn't be stored
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      summary: Upload File
   /business/rfis:
     get:
       tags:

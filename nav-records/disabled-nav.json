@@ -84,6 +84,37 @@
       ]
     },
     {
+      "removed": "pages",
+      "from": "Fiat API References > KYC / KYB > Shared",
+      "pages": [
+        "fiat-api-reference/kyc/upload"
+      ]
+    },
+    {
+      "removed": "tab label",
+      "from": "navigation.tabs[0].tab",
+      "block": {
+        "tab": "Yativo"
+      },
+      "renamed_to": "Company"
+    },
+    {
+      "removed": "tab label",
+      "from": "navigation.tabs[1].tab",
+      "block": {
+        "tab": "Yativo Fiat"
+      },
+      "renamed_to": "Guides"
+    },
+    {
+      "removed": "tab label",
+      "from": "navigation.tabs[2].tab",
+      "block": {
+        "tab": "Fiat API References"
+      },
+      "renamed_to": "API Reference"
+    },
+    {
       "removed": "tab",
       "tab": "Yativo Crypto",
       "position": 3,

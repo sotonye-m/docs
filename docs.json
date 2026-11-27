@@ -46,20 +46,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Yativo",
-        "groups": [
-          {
-            "group": "Company",
-            "pages": [
-              "yativo/introduction",
-              "yativo/mcp",
-              "yativo/changelog"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Yativo Fiat",
+        "tab": "Guides",
         "groups": [
           {
             "group": "Get Started",
@@ -143,7 +130,7 @@
             ]
           },
           {
-            "group": "Platform guides",
+            "group": "Platform Guides",
             "pages": [
               "yativo-platform/introduction",
               "yativo-platform/quickstart",
@@ -211,7 +198,7 @@
         ]
       },
       {
-        "tab": "Fiat API References",
+        "tab": "API Reference",
         "groups": [
           {
             "group": "Overview",
@@ -259,7 +246,6 @@
               {
                 "group": "Shared",
                 "pages": [
-                  "fiat-api-reference/kyc/upload",
                   "fiat-api-reference/kyc/update",
                   "fiat-api-reference/kyc/resubmit-endorsement",
                   "fiat-api-reference/kyc/resubmit-endorsement-platform",
@@ -570,6 +556,19 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Company",
+        "groups": [
+          {
+            "group": "Company Resources",
+            "pages": [
+              "yativo/introduction",
+              "yativo/mcp",
+              "yativo/changelog"
+            ]
+          }
+        ]
       }
     ],
     "global": {
@@ -608,6 +607,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/fiat-api-reference/kyc/upload",
+      "destination": "/yativo-fiat/kyc#upload-documents"
+    },
     {
       "source": "/fiat-api-reference/kyc/status",
       "destination": "/yativo-fiat/kyc"

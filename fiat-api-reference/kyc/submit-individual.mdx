@@ -7,7 +7,7 @@ openapi: "openapi-fiat.yaml POST /individual-kyc/submit"
 Submit KYC data for an individual customer. The customer must already exist in your account (created via `POST /customer`). After submission the status will be `"submitted"` and will move to `"approved"` once review is complete.
 
 <Note>
-  This endpoint is hosted on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Include an `Idempotency-Key` header on every request. Authenticate with `X-Kyc-Session` (from [`POST /customer/kyc-session`](/fiat-api-reference/customers/kyc-session)) in a browser, or with your API key pair from a server. Don't submit placeholder names or `example.com` emails — that flags the `customer_id`. See [Bans, blocks and access errors](/yativo-fiat/restrictions).
+  This endpoint is hosted on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Include an `Idempotency-Key` header on every request. Authenticate with `X-Kyc-Session` (from [`POST /customer/kyc-session`](/fiat-api-reference/customers/kyc-session)) in a browser, or with your API key pair from a server. File fields accept a file URL or a base64 data URI. Don't submit placeholder names or `example.com` emails — that flags the `customer_id`. See [Bans, blocks and access errors](/yativo-fiat/restrictions).
 </Note>
 
 ```
@@ -31,14 +31,14 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
     "birth_date": "1990-01-15",
     "nationality": "US",
     "taxId": "998887766",
-    "selfie_image": "https://storage.yativo.com/documents/abc/selfie.jpg",
+    "selfie_image": "https://files.example.com/selfie.jpg",
     "residential_address": {
       "street_line_1": "88 Oak Avenue",
       "city": "Austin",
       "state": "TX",
       "postal_code": "78701",
       "country": "US",
-      "proof_of_address_file": "https://storage.yativo.com/documents/abc/utility-bill.pdf"
+      "proof_of_address_file": "https://files.example.com/utility-bill.pdf"
     },
     "identifying_information": [
       {
@@ -47,7 +47,7 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
         "number": "P00012345",
         "date_issued": "2019-06-01",
         "expiration_date": "2029-06-01",
-        "image_front_file": "https://storage.yativo.com/documents/abc/passport-front.jpg"
+        "image_front_file": "https://files.example.com/passport-front.jpg"
       }
     ],
     "employment_status": "employed",
@@ -59,7 +59,7 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
     "uploaded_documents": [
       {
         "type": "bank_statement",
-        "file": "https://storage.yativo.com/documents/abc/bank-statement.pdf"
+        "file": "https://files.example.com/bank-statement.pdf"
       }
     ]
   }'

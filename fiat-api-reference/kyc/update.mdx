@@ -11,7 +11,7 @@ PUT https://api.yativo.com/api/v1/customer/kyc/update
 ```
 
 <Note>
-  Include an `Idempotency-Key` header on every request. Supply `customer_id` and `type`, then any fields you want to update. Fields not included are left unchanged.
+  Include an `Idempotency-Key` header on every request. Supply `customer_id` and `type`, then any fields you want to update. Fields not included are left unchanged. File fields accept a file URL or a base64 data URI.
 </Note>
 
 ## Request body
@@ -28,7 +28,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/kyc/update' \
   -d '{
     "customer_id": "11111111-2222-4333-8444-555555555555",
     "type": "individual",
-    "selfie_image": "https://storage.yativo.com/documents/abc/selfie-v2.jpg",
+    "selfie_image": "https://files.example.com/selfie-v2.jpg",
     "identifying_information": [
       {
         "type": "passport",
@@ -36,7 +36,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/kyc/update' \
         "number": "P00012345",
         "date_issued": "2020-01-01",
         "expiration_date": "2030-01-01",
-        "image_front_file": "https://storage.yativo.com/documents/abc/passport-front-hd.jpg"
+        "image_front_file": "https://files.example.com/passport-front-hd.jpg"
       }
     ]
   }'

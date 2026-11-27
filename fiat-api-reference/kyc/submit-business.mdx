@@ -9,7 +9,7 @@ Submit KYB data for a business customer. The customer must already exist with `c
 A successful response means the data passed validation and was accepted. Verification runs afterwards, so the customer stays pending until [their status](/yativo-fiat/kyc#track-verification-with-endorsements) changes. Every problem is reported in one `422` response. See [KYC / KYB Verification](/yativo-fiat/kyc#error-handling) for the error shape.
 
 <Note>
-  This endpoint is on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Authenticate with `X-Kyc-Session` or your API key pair. Every file field accepts a hosted URL, a base64 data URI or a `multipart/form-data` upload. Files must be PDF, JPG, JPEG, PNG, HEIC or TIF, between 5 KB and 30 MB. A `tax_id` identifying-information entry does not need `image_front`.
+  This endpoint is on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Authenticate with `X-Kyc-Session` or your API key pair. Every file field accepts a file URL or a base64 data URI. Files must be PDF, JPG, JPEG, PNG, HEIC or TIF, between 5 KB and 30 MB. A `tax_id` identifying-information entry does not need `image_front`.
 </Note>
 
 ```
@@ -46,7 +46,7 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
       "state": "FL",
       "postal_code": "33131",
       "country": "US",
-      "proof_of_address_file": "https://storage.yativo.com/documents/abc/registered-address.pdf"
+      "proof_of_address_file": "https://files.example.com/registered-address.pdf"
     },
     "physical_address": {
       "street_line_1": "200 Market Street",
@@ -54,7 +54,7 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
       "state": "FL",
       "postal_code": "33131",
       "country": "US",
-      "proof_of_address_file": "https://storage.yativo.com/documents/abc/lease.pdf"
+      "proof_of_address_file": "https://files.example.com/lease.pdf"
     },
     "associated_persons": [
       {
@@ -72,7 +72,7 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
           "state": "FL",
           "postal_code": "33133",
           "country": "US",
-          "proof_of_address_file": "https://storage.yativo.com/documents/abc/alex-utility-bill.pdf"
+          "proof_of_address_file": "https://files.example.com/alex-utility-bill.pdf"
         },
         "identifying_information": [
           {
@@ -80,7 +80,7 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
             "issuing_country": "US",
             "number": "P00012345",
             "expiration": "2030-01-10",
-            "image_front": "https://storage.yativo.com/documents/abc/alex-passport.jpg"
+            "image_front": "https://files.example.com/alex-passport.jpg"
           },
           {
             "type": "tax_id",
@@ -105,18 +105,18 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
       {
         "purpose": "business_registration",
         "description": "Certificate of Incorporation",
-        "file": "https://storage.yativo.com/documents/abc/certificate.pdf"
+        "file": "https://files.example.com/certificate.pdf"
       },
       {
         "purpose": "tax_documents",
         "description": "EIN confirmation letter",
-        "file": "https://storage.yativo.com/documents/abc/ein.pdf"
+        "file": "https://files.example.com/ein.pdf"
       }
     ],
     "extra_documents": [
       {
         "type": "shareholding_structure",
-        "file": "https://storage.yativo.com/documents/abc/cap-table.pdf"
+        "file": "https://files.example.com/cap-table.pdf"
       }
     ],
     "usd_virtual_account": true

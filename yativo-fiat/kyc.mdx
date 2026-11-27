@@ -79,8 +79,8 @@ If you collect KYC or KYB data in your own UI, fill every dropdown from the KYC 
   <Step title="Mint a session">
     Call [`POST /customer/kyc-session`](/fiat-api-reference/customers/kyc-session) from your server with that `customer_id` and `customer_type`. Use `data.url` for the hosted page, or `data.token` as `X-Kyc-Session` from your own UI. See [Mint a session](#mint-a-session).
   </Step>
-  <Step title="Upload documents (if using API)">
-    Use `POST /storage/upload` to upload files and receive back a hosted URL. Pass those URLs in the KYC payload. Alternatively, embed files as base64-encoded strings. Hosted-page users skip this — the form uploads for them.
+  <Step title="Prepare files (if using API)">
+    Pass each file directly in its KYC field as a base64 data URI or a file URL that Yativo can access.
   </Step>
   <Step title="Submit KYC or KYB">
     Redirect or iframe `data.url`, or POST to `https://kyc.yativo.com/api/individual-kyc/submit` or `https://kyc.yativo.com/api/business-kyc/submit` with the session (browser) or your API key pair (server).
@@ -148,39 +148,9 @@ If you currently concatenate `https://kyc.yativo.com/{customer_type}/{customer_i
 
 ## Upload documents
 
-Before submitting KYC, upload any document files you will reference.
+Pass each file directly in its KYC field as a base64 data URI (for example, `data:image/jpeg;base64,...`) or a file URL that Yativo can access. You do not need to upload files to a separate endpoint.
 
-Every file must be PDF, JPG, JPEG, PNG, HEIC or TIF, and between **5 KB and 30 MB**. ID document images (`image_front_file`, `image_back_file`, `uploaded_documents[*].file`) on individual KYC accept PDF, JPG, JPEG and PNG only. Each file field accepts a hosted URL, a base64 data URI (`data:image/jpeg;base64,...`) or a `multipart/form-data` upload. Every file is virus-scanned.
-
-```
-POST /storage/upload
-```
-
-Send the file as `multipart/form-data` with the field name `document`.
-
-<RequestExample>
-```bash cURL
-curl -X POST 'https://api.yativo.com/api/v1/storage/upload' \
-  -H 'X-Api-Key: YOUR_API_KEY' \
-  -H 'X-Api-Secret: YOUR_API_SECRET' \
-  -F 'document=@/path/to/passport_front.jpg'
-```
-</RequestExample>
-
-<ResponseExample>
-```json Success
-{
-  "status": "success",
-  "status_code": 200,
-  "message": "Request successful",
-  "data": {
-    "document": "https://storage.yativo.com/documents/abc123/passport_front.jpg"
-  }
-}
-```
-</ResponseExample>
-
-Use the returned `document` value in the `selfie_image`, `image_front_file`, `proof_of_address_file`, and similar fields below.
+Every file must be PDF, JPG, JPEG, PNG, HEIC or TIF, and between **5 KB and 30 MB**. ID document images (`image_front_file`, `image_back_file`, `uploaded_documents[*].file`) on individual KYC accept PDF, JPG, JPEG and PNG only.
 
 ---
 
@@ -318,14 +288,14 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
     "birth_date": "1990-01-15",
     "nationality": "US",
     "taxId": "998887766",
-    "selfie_image": "https://storage.yativo.com/documents/abc/selfie.jpg",
+    "selfie_image": "https://files.example.com/selfie.jpg",
     "residential_address": {
       "street_line_1": "88 Oak Avenue",
       "city": "Austin",
       "state": "TX",
       "postal_code": "78701",
       "country": "US",
-      "proof_of_address_file": "https://storage.yativo.com/documents/abc/utility-bill.pdf"
+      "proof_of_address_file": "https://files.example.com/utility-bill.pdf"
     },
     "identifying_information": [
       {
@@ -334,7 +304,7 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
         "number": "P00012345",
         "date_issued": "2019-06-01",
         "expiration_date": "2029-06-01",
-        "image_front_file": "https://storage.yativo.com/documents/abc/passport-front.jpg"
+        "image_front_file": "https://files.example.com/passport-front.jpg"
       }
     ],
     "employment_status": "employed",
@@ -346,7 +316,7 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
     "uploaded_documents": [
       {
         "type": "bank_statement",
-        "file": "https://storage.yativo.com/documents/abc/bank-statement.pdf"
+        "file": "https://files.example.com/bank-statement.pdf"
       }
     ]
   }'
@@ -371,7 +341,7 @@ const response = await fetch('https://kyc.yativo.com/api/individual-kyc/submit',
     birth_date: '1990-01-15',
     nationality: 'US',
     taxId: '998887766',
-    selfie_image: selfieUrl,          // URL from /storage/upload
+    selfie_image: selfieUrl,          // Base64 data URI or accessible file URL
     residential_address: {
       street_line_1: '88 Oak Avenue',
       city: 'Austin',
@@ -666,7 +636,7 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
       "state": "FL",
       "postal_code": "33131",
       "country": "US",
-      "proof_of_address_file": "https://storage.yativo.com/documents/abc/registered-address.pdf"
+      "proof_of_address_file": "https://files.example.com/registered-address.pdf"
     },
     "physical_address": {
       "street_line_1": "200 Market Street",
@@ -674,7 +644,7 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
       "state": "FL",
       "postal_code": "33131",
       "country": "US",
-      "proof_of_address_file": "https://storage.yativo.com/documents/abc/lease.pdf"
+      "proof_of_address_file": "https://files.example.com/lease.pdf"
     },
     "associated_persons": [
       {
@@ -692,7 +662,7 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
           "state": "FL",
           "postal_code": "33133",
           "country": "US",
-          "proof_of_address_file": "https://storage.yativo.com/documents/abc/alex-utility-bill.pdf"
+          "proof_of_address_file": "https://files.example.com/alex-utility-bill.pdf"
         },
         "identifying_information": [
           {
@@ -700,7 +670,7 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
             "issuing_country": "US",
             "number": "P00012345",
             "expiration": "2030-01-10",
-            "image_front": "https://storage.yativo.com/documents/abc/alex-passport.jpg"
+            "image_front": "https://files.example.com/alex-passport.jpg"
           },
           {
             "type": "tax_id",
@@ -725,18 +695,18 @@ curl -X POST 'https://kyc.yativo.com/api/business-kyc/submit' \
       {
         "purpose": "business_registration",
         "description": "Certificate of Incorporation",
-        "file": "https://storage.yativo.com/documents/abc/certificate.pdf"
+        "file": "https://files.example.com/certificate.pdf"
       },
       {
         "purpose": "tax_documents",
         "description": "EIN confirmation letter",
-        "file": "https://storage.yativo.com/documents/abc/ein.pdf"
+        "file": "https://files.example.com/ein.pdf"
       }
     ],
     "extra_documents": [
       {
         "type": "shareholding_structure",
-        "file": "https://storage.yativo.com/documents/abc/cap-table.pdf"
+        "file": "https://files.example.com/cap-table.pdf"
       }
     ],
     "usd_virtual_account": true
@@ -930,7 +900,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/kyc/update' \
   -H 'Idempotency-Key: kyc-update-2026-002' \
   -d '{
     "customer_id": "11111111-2222-4333-8444-555555555555",
-    "selfie_image": "https://storage.yativo.com/documents/abc/selfie-v2.jpg",
+    "selfie_image": "https://files.example.com/selfie-v2.jpg",
     "identifying_information": [
       {
         "type": "passport",
@@ -938,7 +908,7 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/kyc/update' \
         "number": "P00012345",
         "date_issued": "2019-06-01",
         "expiration_date": "2029-06-01",
-        "image_front_file": "https://storage.yativo.com/documents/abc/passport-front-hd.jpg"
+        "image_front_file": "https://files.example.com/passport-front-hd.jpg"
       }
     ]
   }'
@@ -1392,7 +1362,7 @@ Sandbox is forgiving. Production isn't. Before switching:
 
 - KYC review typically completes within **24 hours**. Complex cases may take longer.
 - Use `Idempotency-Key` on all POST and PUT requests to prevent duplicate submissions.
-- Files can be passed as hosted URLs (from `POST /storage/upload`) or base64-encoded strings — both are accepted.
+- Files can be passed as base64 data URIs or file URLs that Yativo can access.
 - For Nigerian nationals or residents (`nationality` or `residential_address.country` is `"NG"`), `bvn` and `nin` are mandatory regardless of which ID type is provided.
 - `state` accepts `"US-CA"` and `"CA"`. Send the bare code from the subdivisions lookup.
 - Use the `PATCH` endpoints in [Update a KYC submission](#update-a-kyc-submission) for small corrections instead of resubmitting everything.

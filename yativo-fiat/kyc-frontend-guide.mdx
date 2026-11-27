@@ -204,40 +204,9 @@ function PersonalInfoStep({ onNext }) {
   When `nationality` is `"NG"`, both `bvn` and `nin` (each exactly 11 digits) are required by the API. Show these fields conditionally based on the selected nationality.
 </Note>
 
-### Step 2: Upload files via Yativo storage
+### Step 2: Prepare file values
 
-Before submitting the KYC form, upload document images using Yativo's storage endpoint. This keeps payloads small and avoids base64 encoding large files.
-
-```javascript
-/**
- * Upload a file to Yativo storage and return a hosted URL
- * to pass into the KYC payload.
- */
-async function uploadDocument(file) {
-  const formData = new FormData();
-  formData.append('document', file); // field name must be "document"
-
-  const response = await fetch('https://api.yativo.com/api/v1/storage/upload', {
-    method: 'POST',
-    headers: {
-      'X-Api-Key': process.env.YATIVO_API_KEY,
-      'X-Api-Secret': process.env.YATIVO_API_SECRET,
-      // Do NOT set Content-Type — let the browser set it with the boundary
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.message || 'File upload failed');
-  }
-
-  const data = await response.json();
-  return data.data.document; // Pass this URL in the KYC payload
-}
-```
-
-You can also pass files as base64-encoded strings inline, but the hosted URL approach is recommended for files over ~500 KB.
+Pass each file directly in its KYC field as either a base64 data URL or a file URL that Yativo can access. You do not need to upload files to a separate endpoint.
 
 ```javascript
 function fileToBase64(file) {
@@ -262,18 +231,11 @@ function AddressStep({ onNext }) {
     country: '',
   });
   const [proofFile, setProofFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setUploading(true);
-    try {
-      const url = await uploadDocument(file);
-      setProofFile(url);
-    } finally {
-      setUploading(false);
-    }
+    setProofFile(await fileToBase64(file));
   };
 
   const handleSubmit = (e) => {
@@ -310,10 +272,9 @@ function AddressStep({ onNext }) {
       <label>
         Proof of Address (utility bill, bank statement, etc.)
         <input type="file" accept="image/*,.pdf" onChange={handleFileChange} required />
-        {uploading && <span>Uploading…</span>}
-        {proofFile && <p>✓ Uploaded</p>}
+        {proofFile && <p>✓ File ready</p>}
       </label>
-      <button type="submit" disabled={uploading || !proofFile}>
+      <button type="submit" disabled={!proofFile}>
         Next
       </button>
     </form>
@@ -338,8 +299,8 @@ function IdDocumentStep({ onNext }) {
   const handleFileUpload = (field) => async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const url = await uploadDocument(file);
-    setDoc((d) => ({ ...d, [field]: url }));
+    const dataUrl = await fileToBase64(file);
+    setDoc((d) => ({ ...d, [field]: dataUrl }));
   };
 
   const needsBack = doc.type !== 'passport';
@@ -381,13 +342,13 @@ function IdDocumentStep({ onNext }) {
       <label>
         Front of Document
         <input type="file" accept="image/*,.pdf" onChange={handleFileUpload('image_front_file')} required />
-        {doc.image_front_file && <p>✓ Front uploaded</p>}
+        {doc.image_front_file && <p>✓ Front file ready</p>}
       </label>
       {needsBack && (
         <label>
           Back of Document
           <input type="file" accept="image/*,.pdf" onChange={handleFileUpload('image_back_file')} required />
-          {doc.image_back_file && <p>✓ Back uploaded</p>}
+          {doc.image_back_file && <p>✓ Back file ready</p>}
         </label>
       )}
       <button type="submit">Next</button>
@@ -518,11 +479,11 @@ async function submitKYC(customerId, kycSessionToken, formData) {
     ...formData.personal,
     // Residential address (including proof_of_address_file URL)
     residential_address: formData.address,
-    // ID documents (array of document objects with uploaded URLs)
+    // ID documents (file fields can be base64 data URLs or accessible file URLs)
     identifying_information: formData.documents,
     // Financial & purpose
     ...formData.financial,
-    // Selfie image URL from storage upload
+    // Selfie file as a base64 data URL or accessible file URL
     selfie_image: formData.selfieUrl,
     // Supporting documents
     uploaded_documents: formData.supportingDocs,

@@ -42,11 +42,13 @@ The page files still exist and are still reachable by URL. Only the menu entry i
 | 2026-11-09 | Create withdrawal link | `POST /card-checkout/customers/{customer_id}/withdrawal`. Integrators save payout details with `POST /card-checkout/customers/{id}/payout-methods` | `/fiat-api-reference/card-checkout/customers-withdrawal` → `/fiat-api-reference/card-checkout/payout-methods-create` |
 | 2026-11-16 | Yativo Crypto docs | Unpublished `yativo-crypto/`, `api-reference/`, `sandbox/`, `sdks/`, `extensions/`, `openapi-crypto.yaml`, and the crypto `guides/` pages (the crypto dashboard was crypto.yativo.com). Files kept on disk and excluded in `.mintignore`. Do not restore | `/yativo-crypto/:slug*` → `/yativo-fiat/introduction`, `/api-reference/:slug*` → `/yativo-fiat/introduction`, `/sandbox/:slug*` → `/yativo-fiat/sandbox`, `/sdks/:slug*` → `/yativo-fiat/sdks/overview`, `/extensions/:slug*` → `/yativo/introduction` |
 | 2026-11-18 | Plans and billing (`yativo-fiat/plans`, `yativo-platform/business/subscriptions`) | `/business/subscription*`, `/business/billing/*`, and `/business/plans/*`. Plans, subscriptions, and billing are managed in the dashboard UI (**Settings → Billing**) only, not via API. Removed the **Products** group, **Business → Plans & Subscriptions**, fee-page links, and changelog API bullets | `/yativo-fiat/plans` → `/yativo-fiat/fees`, `/yativo/subscriptions` → `/yativo-fiat/fees`, `/yativo-platform/business/subscriptions` → `/yativo-platform/money-movement/fees` |
+| 2026-11-27 | Upload File | `POST /storage/upload`. KYC file fields accept base64 data URIs or file URLs directly; do not expose a separate upload option | `/fiat-api-reference/kyc/upload` → `/yativo-fiat/kyc#upload-documents` |
 
 ## Renamed
 
 | Date | Old | New |
 |---|---|---|
+| 2026-11-27 | Navigation tabs: `Yativo`, `Yativo Fiat`, `Fiat API References` | `Company`, `Guides`, `API Reference` |
 | 2026-10-21 | Fund or Withdraw Card Balance (`corporate-cards/balance-update`) | Fund Employee (`corporate-cards/employees-fund`) |
 | 2026-10-21 | Get Card Balance (`corporate-cards/balance-get`) | Get Employee Balance (`corporate-cards/employees-balance`) |
 | 2026-10-21 | Add / List / Get / Update / Delete Payment Method (`beneficiaries/payment-methods-*`) | Add Beneficiary, List Beneficiaries, Get Beneficiary, Update Beneficiary, Delete Beneficiary. Same pages and endpoints (`/beneficiaries/payment-methods…`). In the guides, saving a payment method is "adding a beneficiary", and `beneficiary_id` isn't used |
