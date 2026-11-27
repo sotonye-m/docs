@@ -51,7 +51,6 @@ curl -X POST 'https://api.yativo.com/api/v1/business/webhook' \
   "message": "Request successful",
   "data": {
     "id": "b1a7c6e0-4b2a-4c39-9c2e-3a2f6a8e9d10",
-    "user_id": 1024,
     "url": "https://your-app.com/webhooks/yativo",
     "secret": "<your-webhook-secret>",
     "events": "general",
@@ -658,7 +657,7 @@ When `is_customer` is `false`, the address belongs to your business and `custome
 
 Match a deposit to its on-chain transfer with `transaction_hash`. `transaction_id` is Yativo's reference and isn't always the hash. `transaction_hash` is `null` if the hash isn't available.
 
-The older `crypto_deposit` event has the same payload plus `user_id`. Handle both names.
+The older `crypto_deposit` event has the same payload. Handle both names.
 
 ---
 
@@ -914,7 +913,6 @@ GET https://api.yativo.com/api/v1/business/events/show/{eventId}
   "data": [
     {
       "id": 981,
-      "user_id": 1024,
       "url": "https://your-app.com/webhooks/yativo",
       "payload": { "event.type": "deposit.updated", "payload": { "...": "..." } },
       "status": "success",

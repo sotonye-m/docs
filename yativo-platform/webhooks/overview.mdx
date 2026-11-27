@@ -76,7 +76,6 @@ curl -X POST https://api.yativo.com/api/v1/business/webhook \
   "message": "Request successful",
   "data": {
     "id": "b1a7c6e0-4b2a-4c39-9c2e-3a2f6a8e9d10",
-    "user_id": 1024,
     "url": "https://example.com/webhooks/yativo",
     "secret": "<your-webhook-secret>",
     "events": "general",
@@ -727,7 +726,6 @@ Sent once, immediately, to your new URL after `POST /v1/business/webhook`, so yo
   "event.type": "webhook_updated",
   "payload": {
     "id": "b1a7c6e0-4b2a-4c39-9c2e-3a2f6a8e9d10",
-    "user_id": 1024,
     "url": "https://example.com/webhooks/yativo",
     "secret": "<your-webhook-secret>",
     "events": "general",
@@ -846,7 +844,7 @@ Sent when a crypto deposit lands. Listen for this one.
 
 ### `crypto_deposit`
 
-An older event name for a completed crypto deposit, still sent by some flows. It has the same payload as `crypto.deposit.completed`, plus `user_id`. Handle both names until you've confirmed you only receive the newer one.
+An older event name for a completed crypto deposit, still sent by some flows. It has the same payload as `crypto.deposit.completed`. Handle both names until you've confirmed you only receive the newer one.
 
 ---
 
@@ -1261,7 +1259,6 @@ Invoice uploads accept JPG, PNG or PDF up to 10 MB. Every file is virus-scanned;
   "message": "Request successful",
   "data": {
     "id": 14,
-    "user_id": 1024,
     "file_name": "receipt.pdf",
     "mime_type": "application/pdf",
     "size_bytes": 84213,
@@ -1356,7 +1353,6 @@ GET /v1/business/events/all?type=deposit.updated&transaction_id=TXN-00123456&sta
   "data": [
     {
       "id": 981,
-      "user_id": 1024,
       "url": "https://example.com/webhooks/yativo",
       "payload": { "event.type": "deposit.updated", "payload": { "...": "..." } },
       "status": "success",

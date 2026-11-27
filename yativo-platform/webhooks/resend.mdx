@@ -144,7 +144,6 @@ GET /v1/business/events/all?transaction_id=TXN-00123456&type=deposit&status=fail
   "data": [
     {
       "id": 981,
-      "user_id": 1024,
       "url": "https://example.com/webhooks/yativo",
       "payload": {
         "event.type": "deposit.updated",
@@ -202,7 +201,6 @@ When this delivery **is** a resend, or the original event was resent later, `res
 
 `ip` is the browser or server that clicked Resend, not a Cloudflare hop. `via` is `dashboard`, `api_key`, or `admin` — dashboard clicks are `dashboard`. Don't put this object in the outbound webhook body — it is only on our log. `user_agent` is never returned.
 
-`user_id` is the business account. Don't show it as a “customer” column in this UI.
 
 ---
 

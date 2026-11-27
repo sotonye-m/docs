@@ -59,7 +59,6 @@ GET /api/v1/business/virtual-account
   "data": [
     {
       "account_id": "VA_ACC_UUID_001",
-      "user_id": 999,
       "currency": "USD",
       "account_info": {
         "country": null,
@@ -96,7 +95,6 @@ GET /api/v1/business/virtual-account
 | message | string | Human-readable result message. |
 | data | array | List of virtual account records. |
 | data[].account_id | string | Internal virtual account identifier. |
-| data[].user_id | number | Owner user id. |
 | data[].currency | string | Virtual account currency. |
 | data[].account_info | object | Banking details for receiving funds. |
 | data[].account_info.country | string/null | Country when available. |
@@ -201,7 +199,6 @@ local currency, and `amount` shows the USD credited.
   "data": [
     {
       "id": 10001,
-      "user_id": "999",
       "deposit_id": "DEP_UUID_USD_001",
       "currency": "USD",
       "amount": "24.85",
@@ -246,7 +243,6 @@ local currency, and `amount` shows the USD credited.
   "data": [
     {
       "id": 10002,
-      "user_id": "999",
       "deposit_id": "DEP_UUID_EUR_001",
       "currency": "EUR",
       "amount": "7.99",
@@ -291,7 +287,6 @@ local currency, and `amount` shows the USD credited.
 | message | string | Human-readable status message. |
 | data | array | History entries for the specified virtual account. |
 | data[].id | number | History row id. |
-| data[].user_id | string/number | Owner user id. |
 | data[].deposit_id | string | Deposit transaction identifier. |
 | data[].currency | string | Wallet credit currency. |
 | data[].amount | string/number | Amount credited to wallet. |
@@ -451,7 +446,6 @@ Use this endpoint to fetch a single transaction in full detail.
 ```json
 {
   "id": 8008,
-  "user_id": "USER_ID",
   "transaction_beneficiary_id": "BENEFICIARY_ID",
   "transaction_id": "TRANSACTION_UUID",
   "transaction_amount": "5000",
@@ -499,7 +493,6 @@ Use this endpoint to fetch a single transaction in full detail.
   },
   "payment_info": {
     "id": "TRANSACTION_UUID",
-    "user_id": "USER_ID",
     "amount": 5000,
     "gateway": "22",
     "currency": "CLP",
@@ -542,7 +535,6 @@ Use this endpoint to fetch a single transaction in full detail.
 ```json
 {
   "id": 7944,
-  "user_id": 18,
   "transaction_beneficiary_id": "3321",
   "transaction_id": "9154",
   "idempotency_key": "IDEMPOTENCY_KEY_HEX",
@@ -553,7 +545,6 @@ Use this endpoint to fetch a single transaction in full detail.
   "transaction_purpose": "Withdrawal",
   "transaction_payout_details": {
     "payout_data": {
-      "user_id": 18,
       "amount": "300.00",
       "currency": "NGN",
       "beneficiary_id": 3321,
@@ -602,7 +593,6 @@ Use this endpoint to fetch a single transaction in full detail.
   "base_currency": "USD",
   "secondary_currency": "NGN",
   "payment_info": {
-    "user_id": 18,
     "amount": "300.00",
     "currency": "NGN",
     "beneficiary_id": 3321,
@@ -644,7 +634,6 @@ Use this endpoint to fetch a single transaction in full detail.
 | Key | Type | Description |
 |---|---|---|
 | id | number | Transaction row id. |
-| user_id | string/number | Owner user id. |
 | transaction_beneficiary_id | string | Beneficiary id attached to this transaction (if applicable). |
 | transaction_id | string | Public/reference transaction id. |
 | idempotency_key | string | Client idempotency hash for payout safety (payout flows). |

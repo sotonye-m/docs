@@ -92,7 +92,7 @@ the whole amount, and never anything from any other deposit.
   beneficiary endpoints).
 - **The sub-account must be a different Yativo account.** An
   `internal_wallet` split's `destination_user_id` cannot be your own
-  `user_id` — it's another Yativo platform account, not one of your own
+  account — it's another Yativo platform account, not one of your own
   `Customer` records.
 - **Percentage is capped platform-wide.** An admin sets a maximum
   `split_percentage` any single deposit is allowed to request (default
@@ -436,7 +436,6 @@ Authorization: Bearer <ACCESS_TOKEN>
   "data": [
     {
       "id": 231,
-      "user_id": 1001,
       "source_deposit_id": "3f9c1a2e-....-....-....-............",
       "withdraw_id": "9c2e4a10-....-....-....-............",
       "currency": "ARS",

@@ -1025,8 +1025,6 @@ components:
       properties:
         id:
           type: string
-        user_id:
-          type: string
         recipient_type:
           type: string
           enum: [individual, business]
@@ -1055,8 +1053,6 @@ components:
       properties:
         id:
           type: string
-        user_id:
-          type: string
         gateway_id:
           type: integer
         currency:
@@ -1082,9 +1078,6 @@ components:
         account_id:
           type: string
           example: vact_8a9f2c1e4b7d6031
-        user_id:
-          type: integer
-          example: 42
         currency:
           type: string
           example: NGNBASE
