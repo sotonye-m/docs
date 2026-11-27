@@ -85,6 +85,13 @@
     },
     {
       "removed": "pages",
+      "from": "Guides > Platform Guides > Security",
+      "pages": [
+        "yativo-platform/security/passkey-authentication"
+      ]
+    },
+    {
+      "removed": "pages",
       "from": "API Reference > KYC / KYB > Shared",
       "pages": [
         "fiat-api-reference/kyc/upload"

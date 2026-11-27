@@ -3696,7 +3696,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [base, sepa, eurde, spei, asian, virtual_card, naira, cobo_pobo, faster_payments, native, brazil, usd_latam, eur_latam]
+            enum: [base, sepa, spei, asian, virtual_card, naira, cobo_pobo, faster_payments, native, brazil, usd_latam, eur_latam]
         - name: X-Resubmit-Token
           in: header
           required: false
@@ -3738,7 +3738,7 @@ paths:
         Share the new link with the customer to complete verification for the specific payment service.
         Prefer minting a new hosted session with `POST /customer/kyc-session` for the full form.
 
-        **Services:** `base`, `sepa`, `spei`, `brazil`, `eurde`, `usd_latam`, `eur_latam`,
+        **Services:** `base`, `sepa`, `spei`, `brazil`, `usd_latam`, `eur_latam`,
         `virtual_card`, `asian`, `native`, `cobo_pobo`
 
         Authenticate with `X-Kyc-Session` or your API key pair.
@@ -3764,8 +3764,8 @@ paths:
           required: true
           schema:
             type: string
-            enum: [base, sepa, spei, brazil, eurde, usd_latam, eur_latam, virtual_card, asian, native, cobo_pobo]
-          description: 'The service endorsement to regenerate. One of: `base`, `sepa`, `spei`, `brazil`, `eurde`, `usd_latam`, `eur_latam`, `virtual_card`, `asian`, `native`, `cobo_pobo`.'
+            enum: [base, sepa, spei, brazil, usd_latam, eur_latam, virtual_card, asian, native, cobo_pobo]
+          description: 'The service endorsement to regenerate. One of: `base`, `sepa`, `spei`, `brazil`, `usd_latam`, `eur_latam`, `virtual_card`, `asian`, `native`, `cobo_pobo`.'
       responses:
         '200':
           description: Endorsement link regenerated

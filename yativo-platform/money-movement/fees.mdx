@@ -28,10 +28,11 @@ Related guides:
 
 ```http
 GET /v1/fees
-Authorization: Bearer <token>
+X-Api-Key: <YOUR_API_KEY>
+X-Api-Secret: <YOUR_API_SECRET>
 ```
 
-API-key authentication works too. Team members need the **Billing → view** permission (`team.billing.view`).
+Team members need the **Billing → view** permission (`team.billing.view`).
 
 ## Response
 

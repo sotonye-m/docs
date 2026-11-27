@@ -240,7 +240,6 @@ The API accepts unknown values for `employment_status`, `expected_monthly_paymen
 | `usd_virtual_account`, `eur_virtual_account` | Verify the customer for USD or EUR virtual accounts |
 | `gbp_virtual_account` | Can be combined with any other flag. May add a KYC fee |
 | `native_endorsement` | Can be combined with any other flag |
-| `eurde_virtual_account` | Not available to customers created on or after 2 September 2026. When `true`, `usd_virtual_account` and `eur_virtual_account` must be `false` |
 
 #### Rejections to handle
 
@@ -826,7 +825,6 @@ You don't request endorsements directly. Which ones are attempted depends on you
 |---|---|---|
 | `base`, `sepa` | Always | Approval happens on a hosted onboarding link sent after your submission |
 | `spei` | Always | Approved automatically: individuals once an ID front image and `selfie_image` are on file, businesses once KYB is submitted |
-| `eurde` | `eurde_virtual_account: true` | Full name, email, phone, a valid `birth_date` or `incorporation_date`, registration number or tax ID, and a complete address |
 | `faster_payments` | Individuals: always. Businesses: only with `gbp_virtual_account: true` | The fullest profile: basics, full address, occupation or industry, source of funds, account purpose, a photo ID (individual) or a `business_registration` document (business), and proof of address |
 | `cobo_pobo` | Always | A registration or incorporation document, proof of address on the registered or physical address, a phone with calling code, and an associated person with a photo ID |
 | `native` | Always | Name, tax ID, address and, for businesses, each associated person's name and `ownership_percentage` |
@@ -952,7 +950,7 @@ After a customer updates their ID document or selfie, re-run verification for on
 POST https://api.yativo.com/api/v1/customer/kyc/resubmit/{customer_id}/{endorsement}
 ```
 
-`endorsement` is one of `base`, `sepa`, `spei`, `faster_payments`, `naira`, `virtual_card`, `asian`, `brazil` or `card_checkout`. This works for **individual** customers only, except `card_checkout`, which also accepts **business** customers. For other endorsements (`cobo_pobo`, `native`, `eurde`, `usd_latam`, `eur_latam`), or to resubmit any endorsement for a business customer other than `card_checkout`, use the KYC platform endpoint below.
+`endorsement` is one of `base`, `sepa`, `spei`, `faster_payments`, `naira`, `virtual_card`, `asian`, `brazil` or `card_checkout`. This works for **individual** customers only, except `card_checkout`, which also accepts **business** customers. For other endorsements (`cobo_pobo`, `native`, `usd_latam`, `eur_latam`), or to resubmit any endorsement for a business customer other than `card_checkout`, use the KYC platform endpoint below.
 
 ```bash cURL
 curl -X POST 'https://api.yativo.com/api/v1/customer/kyc/resubmit/11111111-2222-4333-8444-555555555555/faster_payments' \
@@ -1006,7 +1004,7 @@ A `200` means the resubmission was queued, not that verification finished. For `
 POST https://kyc.yativo.com/api/kyc/endorsements/{customer_id}/{service}/resubmit
 ```
 
-Works for individual and business customers, for any endorsement: `base`, `sepa`, `eurde`, `spei`, `asian`, `virtual_card`, `naira`, `cobo_pobo`, `faster_payments`, `native`, `brazil`, `usd_latam` or `eur_latam`. The endorsement moves to `under_review` right away and its `errors` are cleared. If the stored data can't be submitted, it returns to its previous status and `errors.resubmission_failed` says why.
+Works for individual and business customers, for any endorsement: `base`, `sepa`, `spei`, `asian`, `virtual_card`, `naira`, `cobo_pobo`, `faster_payments`, `native`, `brazil`, `usd_latam` or `eur_latam`. The endorsement moves to `under_review` right away and its `errors` are cleared. If the stored data can't be submitted, it returns to its previous status and `errors.resubmission_failed` says why.
 
 | Status | Meaning |
 |---|---|
@@ -1030,7 +1028,6 @@ Each endorsement unlocks one service. Its status is the verification result for 
 | `sepa` | European SEPA transfers |
 | `spei` | Mexico SPEI transfers |
 | `brazil` | Brazilian payment rails |
-| `eurde` | EUR/DE virtual accounts |
 | `usd_latam` | USD Latin America transfers |
 | `eur_latam` | EUR Latin America transfers |
 | `virtual_card` | Virtual card issuance |

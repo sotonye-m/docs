@@ -177,8 +177,7 @@
                   "yativo-platform/security/ip-whitelisting",
                   "yativo-fiat/restrictions",
                   "yativo-platform/security/team-management",
-                  "yativo-platform/security/login-history",
-                  "yativo-platform/security/passkey-authentication"
+                  "yativo-platform/security/login-history"
                 ]
               },
               {
@@ -1054,6 +1053,10 @@
     {
       "source": "/fiat-api-reference/card-checkout/customers-withdrawal",
       "destination": "/fiat-api-reference/card-checkout/payout-methods-create"
+    },
+    {
+      "source": "/yativo-platform/security/passkey-authentication",
+      "destination": "/yativo-fiat/authentication"
     }
   ],
   "description": "Yativo developer docs: APIs and guides for cross-border fiat payments, payouts and virtual accounts."

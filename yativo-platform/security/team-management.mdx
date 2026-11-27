@@ -69,20 +69,6 @@ Teams create `X-Api-Key` / `X-Api-Secret` pairs for server-to-server use. A key 
 
 ## API reference
 
-
-### Auth (used by the portal's login/register)
-
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/v1/auth/register` | Create a business account. Required: `name`, `bussinessName`, `email`, `password`. |
-| `POST` | `/api/v1/auth/login/magic` | Send a one-time login code to `email` (`base_url` optional, used to build the email's link). |
-| `POST` | `/api/v1/auth/login/magic-login` | Exchange `{ email, token }` (the code) for a JWT. |
-| `POST` | `/api/v1/auth/passkeys/authenticate/options` | Passkey sign-in, step 1. See [Passkey Login](/yativo-platform/security/passkey-authentication). |
-| `POST` | `/api/v1/auth/passkeys/authenticate` | Passkey sign-in, step 2. Returns a JWT. |
-| `GET` | `/api/v1/profile` | Current user's profile. |
-
-`POST /api/v1/auth/login` (`account_id` + `app_secret`) is the deprecated legacy login; see [Authentication](/yativo-fiat/authentication#move-from-login-tokens-to-api-keys).
-
 ### Current user's teams
 
 | Method | Path | Auth | Description |

@@ -279,13 +279,8 @@ curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
 ### Virtual accounts (receive EUR via SEPA)
 
 ```bash
-# Standard EUR SEPA
 curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
   -d '{ "customer_id": "CUSTOMER_ID", "currency": "EURBASE" }'
-
-# Germany-specific EUR SEPA (EURDE)
-curl -X POST 'https://api.yativo.com/api/v1/business/virtual-account/create' \
-  -d '{ "customer_id": "CUSTOMER_ID", "currency": "EURDE" }'
 ```
 
 ---

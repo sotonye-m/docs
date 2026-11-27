@@ -16,10 +16,9 @@ Virtual accounts give each customer a unique local bank account number. When a p
 | `BRL` | PIX | Brazil | — |
 | `MXNBASE` / `MXN` | SPEI | Mexico | — |
 | `USDBASE` | ACH / Wire | United States | — |
-| `EURBASE` / `EURDE` | SEPA | Europe / Germany | — |
+| `EURBASE` | SEPA | Europe | — |
 | `MXNUSD` | SPEI (USD-settled) | Mexico | — |
 | `ARS` | CVU/CBU | Argentina | `document_id`, `document_type` |
-| `NGN` | Local transfer | Nigeria (individuals) | Approved `naira` endorsement, Nigerian customer, BVN |
 | `NGNBASE` | Local transfer | Nigeria (individuals and businesses) | Approved `naira` endorsement, Nigerian customer, BVN |
 
 <Note>
@@ -27,7 +26,7 @@ Virtual accounts give each customer a unique local bank account number. When a p
 </Note>
 
 <Note>
-  Nigerian naira accounts: `NGNBASE` is available for both **individual** and **business** customers. `NGN` is also available for individuals, and `NGNM` is accepted as an alias for `NGNBASE`. The customer needs an approved `naira` endorsement, must be Nigerian, and must have a BVN on file. Get the codes your account can issue from `GET /business/virtual-account/currencies-and-endorsements`.
+  Nigerian naira accounts: use `NGNBASE` to generate an NGN virtual account (available for both **individual** and **business** customers). `NGNBASE` is only used for generating NGN virtual accounts. The customer needs an approved `naira` endorsement, must be Nigerian, and must have a BVN on file. Get the codes your account can issue from `GET /business/virtual-account/currencies-and-endorsements`.
 </Note>
 
 <Accordion title="Type Definitions">
@@ -44,13 +43,11 @@ interface VirtualAccount {
 type SupportedCurrency =
   | "USDBASE"   // USD (standard ACH/wire)
   | "EURBASE"   // EUR (SEPA standard)
-  | "EURDE"     // EUR (Germany SEPA)
   | "MXN"       // Mexican Peso via SPEI
   | "MXNBASE"   // Mexican Peso via SPEI
   | "MXNUSD"   // USD-settled via SPEI
   | "BRL"       // Brazilian Real via PIX
-  | "NGN"       // Nigerian naira, individual customers
-  | "NGNBASE";  // Nigerian naira, individual or business customers
+  | "NGNBASE";  // Nigerian naira virtual accounts (individual or business customers)
 ```
 </Accordion>
 

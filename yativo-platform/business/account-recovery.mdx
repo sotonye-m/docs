@@ -50,7 +50,7 @@ This guide is for developers building the dashboard security settings.
   owner's. See [Team Functionality](/yativo-platform/security/team-management).
 - **A passkey is required for both resets.** A user with no passkey can't
   reset 2FA or the PIN themselves and gets `403`. Encourage users to add a
-  passkey ([Passkey Login](/yativo-platform/security/passkey-authentication)) when they turn on 2FA.
+  passkey when they turn on 2FA.
 - Both resets work while business KYC is still pending.
 - Responses use the standard envelope:
   `{ "status": "success" | "failed", "status_code": ..., "message": "...", "data": { ... } }`.
@@ -308,8 +308,7 @@ Both resets need a fresh passkey signature from the signed-in person.
    ```
 
 A challenge works once and expires after 60 seconds. If a reset request fails,
-get a new challenge before retrying. More detail:
-[Passkey Login → Confirming a sensitive action](/yativo-platform/security/passkey-authentication#confirming-a-sensitive-action).
+get a new challenge before retrying.
 
 ---
 

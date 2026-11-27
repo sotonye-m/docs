@@ -7,7 +7,7 @@ Onramp lets a customer pay by card or bank transfer and settle USDC or EURC
 to your Yativo wallet. It is a **standalone product** — it is not a payin
 method, and it is not created with `POST /v1/wallet/deposits/new`.
 
-Customer pays fiat → Circle’s Arc widget → USDC/EURC lands on the collection
+Customer pays fiat → hosted onramp checkout → USDC/EURC lands on the collection
 wallet → we credit **the amount received**. If they pay less than the
 checkout amount, the deposit is `incomplete` and the webhook says so.
 
@@ -58,7 +58,7 @@ POST /v1/onramp
       "send_amount": "100 USD",
       "receive_amount": "98 USD",
       "transaction_fee": "2 USD",
-      "settles_as": "USDC on Arc"
+      "settles_as": "USDC"
     }
   }
 }

@@ -54,7 +54,7 @@ An **endorsement** is one capability a customer can be verified for. These endor
 | `brazil` | Brazilian real transfers |
 | `card_checkout` | Selling by card through [Card Checkout](/yativo-platform/cards-and-accounts/card-checkout). Also accepts **business** customers. If your account doesn't have Card Checkout yet, access is requested for you and the customer waits (`202`, `awaiting_business_access: true`) until it's approved. |
 
-Other endorsement names exist on a customer's profile (for example `cobo_pobo`, `native`, `eurde`, `usd_latam`, `eur_latam`) but don't support resubmission through this endpoint yet. Calling it with one of those returns `422`.
+Other endorsement names exist on a customer's profile (for example `cobo_pobo`, `native`, `usd_latam`, `eur_latam`) but don't support resubmission through this endpoint yet. Calling it with one of those returns `422`.
 
 ## Resubmit an endorsement
 
@@ -187,7 +187,7 @@ console.log(endorsement.status);
 
 ## KYC platform resubmit (individual or business)
 
-For any endorsement, including `cobo_pobo`, `native`, `eurde`, and LATAM rails, use the KYC platform:
+For any endorsement, including `cobo_pobo`, `native`, and LATAM rails, use the KYC platform:
 
 ```
 POST https://kyc.yativo.com/api/kyc/endorsements/{customer_id}/{service}/resubmit

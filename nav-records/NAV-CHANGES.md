@@ -19,6 +19,7 @@ The page files still exist and are still reachable by URL. Only the menu entry i
 
 | Date | Menu | What's hidden | Why |
 |---|---|---|---|
+| 2026-11-27 | Guides → Platform Guides → Security | `yativo-platform/security/passkey-authentication` (Passkey Login Integration Guide) | Dashboard-only flow; public API authentication uses `X-Api-Key` and `X-Api-Secret` only. Redirect `/yativo-platform/security/passkey-authentication` → `/yativo-fiat/authentication` |
 | 2026-11-06 | Platform guides → Authentication | `yativo-platform/authentication` (Team API Keys integration guide from `api-guide/team-api-keys-integration.md`) | Duplicate of Fiat auth docs; do not re-sync or republish unless the docs owner asks. Redirect `/yativo-platform/authentication` → `/yativo-fiat/authentication` |
 | 2026-11-06 | API Reference → Compliance RFIs | `POST /business/rfis/{id}/realtime/auth`, `fiat-api-reference/rfis/realtime-auth` | Admin workspace only; not for integrators. Redirect `/fiat-api-reference/rfis/realtime-auth` → `/yativo-fiat/rfis` |
 | 2026-10-21 | Yativo Crypto tab | The whole tab | Unpublished 2026-11-16. Do not restore |

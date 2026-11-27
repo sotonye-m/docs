@@ -71,6 +71,10 @@ LINK_MAP = {
     "/webhooks/overview": "/yativo-platform/webhooks/overview",
 }
 
+TITLES: dict[str, str] = {
+    "cards-and-accounts/virtual-cards.mdx": "Virtual Account and Transactions Integration",
+}
+
 DESCRIPTIONS: dict[str, str] = {
     "authentication.mdx": "Authenticate server-to-server calls with team API keys and manage keys from the dashboard API.",
     "api-responses-and-errors.mdx": "Response envelopes, error_details, validation errors, retries, and rate limits.",
@@ -79,19 +83,6 @@ DESCRIPTIONS: dict[str, str] = {
     "security/team-management.mdx": "Invite team members, roles, permissions, and how members use the business API.",
     "business/kyc-endorsements.mdx": "Endorsement resubmission for individual and business customers.",
 }
-
-DROP_LINE_PATTERNS = [
-    re.compile(r"WHOP_PLATFORM"),
-    re.compile(r"`App\\Http\\Controllers"),
-    re.compile(r"`config/team-roles\.php`"),
-    re.compile(r"`ResolveTeamActingUser`"),
-    re.compile(r"`EnforceTeamRoutePermission`"),
-    re.compile(r"`config/team-legacy-route-permissions\.php`"),
-    re.compile(r"`IDENTITY_EXEMPT_PATHS`"),
-    re.compile(r"Spatie|Jetstream|tymon/jwt-auth"),
-    re.compile(r"Laravel's `api\.php`"),
-]
-
 
 def title_from_markdown(text: str) -> tuple[str, str]:
     lines = text.splitlines()
@@ -142,23 +133,6 @@ def sanitize(text: str, source_name: str) -> str:
     )
 
     if source_name == "card-checkout.md":
-        text = re.sub(
-            r"Each card payment lands on the \*\*selling customer's own\*\* connected business\naccount \(`biz_…` from card-checkout onboarding\) — not on Yativo's platform\n`WHOP_PLATFORM_COMPANY_ID`\. That platform id is reserved for \*\*Plans &\nSubscriptions Card Payment\*\* and for collecting Yativo's fee from sellers\.\n\n",
-            "Each card payment lands on the **selling customer's own** connected business account (`biz_…` from card-checkout onboarding).\n\n",
-            text,
-        )
-        text = text.replace(
-            "The customer's own money stays on their Whop account.",
-            "The customer's own money stays on their connected account.",
-        )
-        text = text.replace(
-            "The response includes `withdrawal_url` (Whop's hosted payouts portal). Send the\ncustomer there.",
-            "The response includes `withdrawal_url`. Send the customer there.",
-        )
-        text = text.replace(
-            "Opening it redirects\ninto Whop so the customer can manage payouts on their connected `biz_…` account.\nRenew it with `POST …/withdrawal` if you need a fresh Whop URL directly.",
-            "Opening it sends the customer to the payouts page for their connected `biz_…` account.\nRenew it with `POST …/withdrawal` if you need a fresh URL.",
-        )
         text = text.replace(
             '  -H "Authorization: Bearer $YATIVO_SECRET" \\',
             '  -H "X-Api-Key: $YATIVO_API_KEY" \\\n  -H "X-Api-Secret: $YATIVO_API_SECRET" \\',
@@ -184,24 +158,8 @@ def sanitize(text: str, source_name: str) -> str:
             text,
             flags=re.DOTALL,
         )
-        text = text.replace(
-            "Defined in `config/team-roles.php`. When a team is created, five default roles are seeded from this config",
-            "When a team is created, five default roles are seeded",
-        )
-        text = text.replace(
-            "Permissions are grouped for UI rendering (`config('team-roles.groups')`)",
-            "Permissions are grouped for UI rendering",
-        )
 
-    if source_name == "rfis.md":
-        text = text.replace("(Bridge, Noah, Tazapay, etc.)", "(payment partners)")
-
-    out_lines = []
-    for line in text.splitlines():
-        if any(p.search(line) for p in DROP_LINE_PATTERNS):
-            continue
-        out_lines.append(line)
-    return "\n".join(out_lines)
+    return text
 
 
 def to_mdx(rel_path: str, title: str, body: str) -> str:
@@ -226,6 +184,7 @@ def main() -> None:
             continue
         raw = src_path.read_text(encoding="utf-8")
         title, body = title_from_markdown(raw)
+        title = TITLES.get(dest, title)
         body = sanitize(body, source)
         out_path = DOCS / dest
         out_path.parent.mkdir(parents=True, exist_ok=True)

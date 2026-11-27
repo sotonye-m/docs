@@ -159,8 +159,8 @@ Every endpoint returns one of two shapes.
 
 > **Gotcha — decimal fields are strings.** `split_percentage`,
 > `source_amount`, `fixed_amount`, `split_amount`, `payout_fee_amount`,
-> `net_payout_amount` are MySQL `decimal` columns and are serialized as
-> strings (e.g. `"5.00"`), not JSON numbers. Run them through
+> `net_payout_amount` are serialized as strings (e.g. `"5.00"`), not JSON
+> numbers, to preserve exact decimal precision. Run them through
 > `parseFloat()` / `Number()` before doing arithmetic.
 
 ---

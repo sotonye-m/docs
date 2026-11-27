@@ -20,10 +20,11 @@ Rates are indicative market rates. They refresh about once a minute and do not i
 
 ```http
 GET /v1/exchange-rates?base=USD
-Authorization: Bearer <token>
+X-Api-Key: <YOUR_API_KEY>
+X-Api-Secret: <YOUR_API_SECRET>
 ```
 
-API-key authentication works too. Team members need the **Exchange → view** permission (`team.exchange.view`).
+Team members need the **Exchange → view** permission (`team.exchange.view`).
 
 | Query parameter | Required | Description |
 |---|---|---|

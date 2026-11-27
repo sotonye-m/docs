@@ -92,7 +92,7 @@ Every endpoint returns one of two shapes.
 > **Gotcha — decimal fields are strings.** `signup_bonus_amount`,
 > `percentage_rate`, `amount`, `basis_amount`, `rate_applied` are all
 > serialized as strings (e.g. `"5.50"`, `"10.00"`), not JSON numbers,
-> because they're MySQL `decimal` columns. Run them through
+> to preserve exact decimal precision. Run them through
 > `parseFloat()` / `Number()` before doing arithmetic or formatting.
 
 ---
