@@ -59,16 +59,6 @@
             ]
           },
           {
-            "group": "Core Guides",
-            "pages": [
-              "yativo-fiat/kyc",
-              "yativo-fiat/virtual-accounts",
-              "yativo-fiat/payouts",
-              "yativo-fiat/beneficiaries",
-              "yativo-fiat/virtual-cards"
-            ]
-          },
-          {
             "group": "Payments",
             "pages": [
               "yativo-fiat/accept-payments",
@@ -198,6 +188,61 @@
                   "yativo-platform/testing/mcp-server"
                 ]
               }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "KYC",
+        "groups": [
+          {
+            "group": "Guide",
+            "pages": [
+              "yativo-fiat/kyc"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Virtual Accounts",
+        "groups": [
+          {
+            "group": "Guide",
+            "pages": [
+              "yativo-fiat/virtual-accounts"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Payouts",
+        "groups": [
+          {
+            "group": "Guide",
+            "pages": [
+              "yativo-fiat/payouts"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Beneficiaries",
+        "groups": [
+          {
+            "group": "Guide",
+            "pages": [
+              "yativo-fiat/beneficiaries"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Virtual Cards",
+        "groups": [
+          {
+            "group": "Guide",
+            "pages": [
+              "yativo-fiat/virtual-cards"
             ]
           }
         ]
