@@ -47,7 +47,7 @@ POST /api/v1/business/virtual-account/create
 | **MXN** | SPEI | CLABE (18 digits) |
 | **COP** | ACH Colombia | Account Number, Bank Name |
 | **NGN** | Local transfer (individuals) | Account Number, Bank Name |
-| **NGNBASE** | Local transfer (businesses) | Account Number, Bank Name |
+| **NGNBASE** | Local transfer (individuals and businesses) | Account Number, Bank Name |
 
 ---
 
@@ -56,4 +56,3 @@ POST /api/v1/business/virtual-account/create
 When an external sender wires funds to a virtual account:
 1. Yativo automatically credits your corresponding currency wallet.
 2. A `virtual_account.deposit` webhook event is emitted with deposit metadata and the transaction reference.
-

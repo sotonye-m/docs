@@ -59,7 +59,7 @@ Wording rule for corporate cards: the employee is the cardholder. Cards are deno
 
 | Date | Menu | New layout |
 |---|---|---|
-| 2026-11-27 | Main navigation | Added top-level tabs for KYC, Virtual Accounts, Payouts, Beneficiaries and Virtual Cards; removed those pages from the Guides tab |
+| 2026-11-27 | Main navigation | Added top-level tabs for KYC, Virtual Accounts, Payouts, Beneficiaries and Virtual Cards, including each topic's related guides and API reference menus |
 | 2026-10-21 | API Reference → Corporate Cards | Subgroups: Funding, Employees, Employee Balance, Cards, Memos, Locations |
 | 2026-10-21 | API Reference → KYC / KYB | Subgroups: Individual, Business, Shared |
 | 2026-10-21 | API Reference → KYC Lookups | Subgroups: Individual, Business, Shared |

@@ -196,9 +196,87 @@
         "tab": "KYC",
         "groups": [
           {
-            "group": "Guide",
+            "group": "KYC guides",
             "pages": [
-              "yativo-fiat/kyc"
+              "yativo-fiat/kyc",
+              "yativo-fiat/sandbox-kyc",
+              "yativo-fiat/kyc-frontend-guide",
+              "yativo-fiat/restrictions",
+              "yativo-platform/business/kyc-endorsements"
+            ]
+          },
+          {
+            "group": "KYC / KYB API",
+            "pages": [
+              {
+                "group": "Individual",
+                "pages": [
+                  "fiat-api-reference/kyc/submit-individual",
+                  "fiat-api-reference/kyc/update-individual",
+                  "fiat-api-reference/kyc/occupation-codes"
+                ]
+              },
+              {
+                "group": "Business",
+                "pages": [
+                  "fiat-api-reference/kyc/submit-business",
+                  "fiat-api-reference/kyc/update-business"
+                ]
+              },
+              {
+                "group": "Shared",
+                "pages": [
+                  "fiat-api-reference/customers/kyc-session",
+                  "fiat-api-reference/kyc/update",
+                  "fiat-api-reference/kyc/resubmit-endorsement",
+                  "fiat-api-reference/kyc/resubmit-endorsement-platform",
+                  "fiat-api-reference/kyc/endorsement-regenerate",
+                  "fiat-api-reference/kyc/verification-locations"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Customer API",
+            "pages": [
+              "fiat-api-reference/customers/create",
+              "fiat-api-reference/customers/list",
+              "fiat-api-reference/customers/get",
+              "fiat-api-reference/customers/update",
+              "fiat-api-reference/customers/delete"
+            ]
+          },
+          {
+            "group": "KYC lookups",
+            "pages": [
+              {
+                "group": "Individual",
+                "pages": [
+                  "fiat-api-reference/kyc-lookups/occupations",
+                  "fiat-api-reference/kyc-lookups/individual-account-purposes",
+                  "fiat-api-reference/kyc-lookups/individual-source-of-funds",
+                  "fiat-api-reference/kyc-lookups/expected-monthly-payments"
+                ]
+              },
+              {
+                "group": "Business",
+                "pages": [
+                  "fiat-api-reference/kyc-lookups/business-industries",
+                  "fiat-api-reference/kyc-lookups/business-account-purposes",
+                  "fiat-api-reference/kyc-lookups/business-source-of-funds",
+                  "fiat-api-reference/kyc-lookups/transaction-currencies",
+                  "fiat-api-reference/kyc-lookups/transaction-countries"
+                ]
+              },
+              {
+                "group": "Shared",
+                "pages": [
+                  "fiat-api-reference/kyc-lookups/countries",
+                  "fiat-api-reference/kyc-lookups/subdivisions",
+                  "fiat-api-reference/kyc-lookups/postal-codes",
+                  "fiat-api-reference/kyc-lookups/identification-types"
+                ]
+              }
             ]
           }
         ]
@@ -207,9 +285,29 @@
         "tab": "Virtual Accounts",
         "groups": [
           {
-            "group": "Guide",
+            "group": "Guides",
             "pages": [
-              "yativo-fiat/virtual-accounts"
+              "yativo-fiat/virtual-accounts",
+              "yativo-platform/cards-and-accounts/virtual-accounts"
+            ]
+          },
+          {
+            "group": "Virtual Accounts API",
+            "pages": [
+              "fiat-api-reference/virtual-accounts/create",
+              "fiat-api-reference/virtual-accounts/currencies",
+              "fiat-api-reference/virtual-accounts/list",
+              "fiat-api-reference/virtual-accounts/get",
+              "fiat-api-reference/virtual-accounts/delete",
+              "fiat-api-reference/virtual-accounts/history",
+              "fiat-api-reference/virtual-accounts/all-histories",
+              "fiat-api-reference/virtual-accounts/customer-accounts"
+            ]
+          },
+          {
+            "group": "Sandbox",
+            "pages": [
+              "fiat-api-reference/sandbox/virtual-account-deposit"
             ]
           }
         ]
@@ -218,9 +316,31 @@
         "tab": "Payouts",
         "groups": [
           {
-            "group": "Guide",
+            "group": "Guides",
             "pages": [
-              "yativo-fiat/payouts"
+              "yativo-fiat/payouts",
+              "yativo-platform/money-movement/payouts",
+              "yativo-platform/money-movement/payout-receive-amount"
+            ]
+          },
+          {
+            "group": "Payouts API",
+            "pages": [
+              "fiat-api-reference/payouts/simple",
+              "fiat-api-reference/payouts/list",
+              "fiat-api-reference/payouts/get",
+              "fiat-api-reference/payments/payout"
+            ]
+          },
+          {
+            "group": "Quotes, fees and payment methods",
+            "pages": [
+              "fiat-api-reference/payments/exchange-rate",
+              "fiat-api-reference/payments/market-rates",
+              "fiat-api-reference/payments/fees",
+              "fiat-api-reference/payments/methods",
+              "fiat-api-reference/payments/countries",
+              "fiat-api-reference/payments/currencies"
             ]
           }
         ]
@@ -229,9 +349,19 @@
         "tab": "Beneficiaries",
         "groups": [
           {
-            "group": "Guide",
+            "group": "Guides",
             "pages": [
               "yativo-fiat/beneficiaries"
+            ]
+          },
+          {
+            "group": "Beneficiaries API",
+            "pages": [
+              "fiat-api-reference/beneficiaries/payment-methods-create",
+              "fiat-api-reference/beneficiaries/payment-methods-list",
+              "fiat-api-reference/beneficiaries/payment-methods-get",
+              "fiat-api-reference/beneficiaries/payment-methods-update",
+              "fiat-api-reference/beneficiaries/payment-methods-delete"
             ]
           }
         ]
@@ -240,9 +370,29 @@
         "tab": "Virtual Cards",
         "groups": [
           {
-            "group": "Guide",
+            "group": "Guides",
             "pages": [
-              "yativo-fiat/virtual-cards"
+              "yativo-fiat/virtual-cards",
+              "yativo-platform/cards-and-accounts/virtual-cards"
+            ]
+          },
+          {
+            "group": "Virtual Cards API",
+            "pages": [
+              "fiat-api-reference/virtual-cards/create",
+              "fiat-api-reference/virtual-cards/list",
+              "fiat-api-reference/virtual-cards/get",
+              "fiat-api-reference/virtual-cards/topup",
+              "fiat-api-reference/virtual-cards/update",
+              "fiat-api-reference/virtual-cards/transactions",
+              "fiat-api-reference/virtual-cards/withdraw",
+              "fiat-api-reference/virtual-cards/terminate"
+            ]
+          },
+          {
+            "group": "Sandbox",
+            "pages": [
+              "fiat-api-reference/sandbox/virtual-card"
             ]
           }
         ]
