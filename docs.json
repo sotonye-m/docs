@@ -59,16 +59,23 @@
             ]
           },
           {
+            "group": "Core Guides",
+            "pages": [
+              "yativo-fiat/kyc",
+              "yativo-fiat/virtual-accounts",
+              "yativo-fiat/payouts",
+              "yativo-fiat/beneficiaries",
+              "yativo-fiat/virtual-cards"
+            ]
+          },
+          {
             "group": "Payments",
             "pages": [
               "yativo-fiat/accept-payments",
               "yativo-fiat/card-checkout",
-              "yativo-fiat/payouts",
               "yativo-fiat/exchange-rates",
               "yativo-fiat/fees",
               "yativo-fiat/deposits",
-              "yativo-fiat/virtual-accounts",
-              "yativo-fiat/virtual-cards",
               "yativo-fiat/swap"
             ]
           },
@@ -84,12 +91,10 @@
             "group": "Customers & Compliance",
             "pages": [
               "yativo-fiat/customers",
-              "yativo-fiat/kyc",
               "yativo-fiat/sandbox-kyc",
               "yativo-fiat/kyc-frontend-guide",
               "yativo-fiat/restrictions",
-              "yativo-fiat/rfis",
-              "yativo-fiat/beneficiaries"
+              "yativo-fiat/rfis"
             ]
           },
           {
