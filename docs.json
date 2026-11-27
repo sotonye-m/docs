@@ -39,7 +39,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Get Started — Fiat",
+      "label": "Open Dashboard",
       "href": "https://app.yativo.com"
     }
   },
@@ -574,7 +574,7 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Fiat Dashboard",
+          "anchor": "Dashboard",
           "href": "https://app.yativo.com",
           "icon": "building-columns"
         },

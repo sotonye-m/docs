@@ -16,7 +16,7 @@ This guide walks you through integrating Yativo KYC (individual) and KYB (busine
 
 ## Option A: Hosted links (recommended)
 
-The simplest integration. You create a customer, mint a signed session from your server, then redirect them to `data.url` from that response. A URL that is only `https://kyc.yativo.com/individual/{customer_id}` is rejected with `401`.
+The simplest integration. You create a customer, mint a signed session from your server, then redirect them to `data.url` from that response. A URL without the session token is rejected with `401`.
 
 ### Step 1: Keep your API key on your backend
 
@@ -86,7 +86,7 @@ If you prefer to embed verification within your application instead of a full re
 
 ```html
 <iframe
-  src="https://kyc.yativo.com/individual/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN"
+  src="https://kyc.yativo.com/verify/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN"
   allow="camera; microphone"
   width="100%"
   height="700px"
@@ -125,6 +125,7 @@ function PersonalInfoStep({ onNext }) {
     calling_code: '+1',
     gender: '',
     birth_date: '',
+    place_of_birth: { country: '', city: '' },
     nationality: '',
     taxId: '',
     // Nigerian nationals only
@@ -134,6 +135,11 @@ function PersonalInfoStep({ onNext }) {
 
   const handleChange = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const handlePlaceOfBirthChange = (field) => (e) =>
+    setForm((prev) => ({
+      ...prev,
+      place_of_birth: { ...prev.place_of_birth, [field]: e.target.value },
+    }));
 
   const isNigerian = form.nationality === 'NG';
 
@@ -171,6 +177,16 @@ function PersonalInfoStep({ onNext }) {
         required
       />
       <input
+        placeholder="Place of Birth Country (ISO alpha-2)"
+        value={form.place_of_birth.country}
+        onChange={handlePlaceOfBirthChange('country')}
+      />
+      <input
+        placeholder="Place of Birth City"
+        value={form.place_of_birth.city}
+        onChange={handlePlaceOfBirthChange('city')}
+      />
+      <input
         placeholder="Nationality (ISO alpha-2, e.g. US)"
         value={form.nationality}
         onChange={handleChange('nationality')}
@@ -199,6 +215,10 @@ function PersonalInfoStep({ onNext }) {
   );
 }
 ```
+
+<Note>
+  `place_of_birth.country` and `place_of_birth.city` are optional until 2027-01-01. If you send one, send both. From that date, both fields are required for individual KYC.
+</Note>
 
 <Note>
   When `nationality` is `"NG"`, both `bvn` and `nin` (each exactly 11 digits) are required by the API. Show these fields conditionally based on the selected nationality.

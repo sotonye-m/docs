@@ -118,7 +118,7 @@ Hosted KYC/KYB URLs and the KYC platform submit/update APIs require a signed ses
 | `401` | `This verification session is invalid or has expired.` | Missing, malformed, expired, or already-used `X-Kyc-Session` (default lifetime **30 minutes**; also revoked on submit or when the tab is closed) | `POST /customer/kyc-session` again and send the customer the new `url` |
 | `401` | `Authentication required. Use X-Api-Key and X-Api-Secret, or a signed KYC session token.` | No session and no API key pair | Mint a session for browser/mobile, or send both API key headers from your server |
 | `401` | `A signed KYC session token is required.` | Session-only route with no token | Add `X-Kyc-Session` or `?session=` |
-| `401` | `This verification link is missing a valid session. Open the link from your Yativo dashboard.` | Hosted page opened without `?session=` | Don't build `https://kyc.yativo.com/individual/{id}` yourself. Use `data.url` from the session response |
+| `401` | `This verification link is missing a valid session. Open the link from your Yativo dashboard.` | Hosted page opened without `?session=` | Don't build the hosted URL yourself. Use `data.url` from the session response |
 | `401` | `Both X-Api-Key and X-Api-Secret headers are required.` | Only one API key header on a server call to the KYC host | Send both |
 | `404` | `Customer not found.` | Token bound to a different customer than the URL or body | Mint a session for the customer you're submitting |
 
@@ -126,13 +126,13 @@ Hosted KYC/KYB URLs and the KYC platform submit/update APIs require a signed ses
 
 ## File uploads
 
-Every KYC file must be PDF, JPG, JPEG, PNG, HEIC or TIF (ID images: PDF, JPG, JPEG, PNG only), and between **5 KB and 30 MB**. Every file is scanned.
+Every KYC file must be between **5 KB and 4 MiB**. Selfies and address proofs accept PDF, JPG, JPEG, PNG, HEIC or TIF. ID images accept PDF, JPG, JPEG or PNG only.
 
 | HTTP | Message | Cause | What to do |
 |---|---|---|---|
 | `422` | `This file type is not supported. Please upload a JPG, PNG, PDF, HEIC or TIFF file.` | Wrong type (`gif`, `webp`, `bmp`, `heif`, …) | Convert to an allowed type |
-| `422` | `This file is too large. The maximum size is {N}.` / `must not be greater than 30.0 MB.` | Over 30 MB | Compress or crop |
-| `422` | `The {attribute} must be at least 5 KB.` | File too small after compression | Don't over-compress selfies or ID photos |
+| `422` | `This file is too large. The maximum size is {N}.` | Over 4 MiB | Compress or crop |
+| `422` | `The {attribute} must be at least 5 KB.` | File too small after compression | Keep the file at least 5 KB. Some validation messages may state a 100 KB minimum, but the enforced minimum is 5 KB |
 | `403` | `Your access has been blocked because you sent a file that contains malware. If you believe this is a mistake, please contact support.` | The upload failed the malware check | The IP is blocked and the `customer_id` is banned. Contact support. Don't retry the same file |
 
 ---

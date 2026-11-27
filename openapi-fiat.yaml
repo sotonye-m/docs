@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Yativo Fiat API
+  title: Yativo API
   description: |
-    The Yativo Fiat API enables businesses to manage customers, run KYC/KYB, send and receive
+    The Yativo API enables businesses to manage customers, run KYC/KYB, send and receive
     cross-border payments, issue virtual accounts and virtual cards, accept card payments through
     Card Checkout, manage beneficiaries, and more.
 
@@ -810,6 +810,11 @@ components:
           type: string
           format: date-time
           nullable: true
+        merchant_responses_submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Time the complete response was submitted.
         deadline:
           type: string
           format: date-time
@@ -921,7 +926,7 @@ components:
           description: ISO 3166-1 alpha-2 country code.
         proof_of_address_file:
           type: string
-          description: Proof of address document (utility bill, bank statement, etc.). Hosted URL or base64. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB.
+          description: Proof of address document (utility bill, bank statement, etc.). File URL or base64 data URI. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–4 MiB.
 
     IdentifyingInformationItem:
       type: object
@@ -947,11 +952,11 @@ components:
           description: Expiration date in `YYYY-MM-DD` format. Must be after today.
         image_front_file:
           type: string
-          description: Front image of the document. Hosted URL or base64. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
+          description: Front image of the document. File URL or base64 data URI. PDF/JPG/JPEG/PNG, 5 KB–4 MiB.
         image_back_file:
           type: string
 
-          description: Back image of the document. Required for documents that have a reverse side (e.g. national ID cards). Hosted URL or base64. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
+          description: Back image of the document. Required for documents that have a reverse side (e.g. national ID cards). File URL or base64 data URI. PDF/JPG/JPEG/PNG, 5 KB–4 MiB.
     KybAddress:
       type: object
       required: [street_line_1, city, state, postal_code, country, proof_of_address_file]
@@ -1018,7 +1023,7 @@ components:
           type: string
 
     # ── Beneficiary ───────────────────────────────────────────────────────────
-          description: Hosted URL or base64-encoded file. PDF/JPG/JPEG/PNG, 5 KB–30 MB.
+          description: File URL or base64 data URI. PDF/JPG/JPEG/PNG, 5 KB–4 MiB.
     Beneficiary:
       type: object
       properties:
@@ -2159,7 +2164,7 @@ paths:
                         type: string
                         format: uri
                         description: Hosted KYC/KYB page with `?session=` already set. Redirect or iframe this.
-                        example: https://kyc.yativo.com/individual/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN
+                        example: https://kyc.yativo.com/verify/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN
                       portal_url:
                         type: string
                         nullable: true
@@ -2382,6 +2387,19 @@ paths:
                   type: string
                   enum: [individual, business]
                   description: '`"individual"` or `"business"` — must match the original submission type.'
+                place_of_birth:
+                  type: object
+                  description: Optional before 2027-01-01. If supplied, include both `country` and `city`. Both are required from 2027-01-01 for individual KYC.
+                  properties:
+                    country:
+                      type: string
+                      minLength: 2
+                      maxLength: 2
+                      description: ISO 3166-1 alpha-2 country code of birth.
+                    city:
+                      type: string
+                      maxLength: 256
+                      description: City of birth. Max 256 characters.
       responses:
         '200':
           description: KYC submission updated
@@ -2502,6 +2520,19 @@ paths:
                   type: string
                   format: date
                   description: Date of birth in `YYYY-MM-DD` format. The customer must be at least 18.
+                place_of_birth:
+                  type: object
+                  description: Optional before 2027-01-01. If supplied, include both `country` and `city`. Both are required from 2027-01-01.
+                  properties:
+                    country:
+                      type: string
+                      minLength: 2
+                      maxLength: 2
+                      description: ISO 3166-1 alpha-2 country code of birth.
+                    city:
+                      type: string
+                      maxLength: 256
+                      description: City of birth. Max 256 characters.
                 nationality:
                   type: string
                   description: ISO 3166-1 alpha-2 country code, e.g. `"US"`, `"NG"`, `"BR"`.
@@ -2518,7 +2549,7 @@ paths:
                   description: Tax identification number. Letters and digits only, up to 255 characters. Send `"123456789"`, not `"123-45-6789"`.
                 selfie_image:
                   type: string
-                  description: 'Selfie photo of the customer. Provide as a file URL or a base64 data URI. Accepted formats: PDF, JPG, JPEG, PNG, HEIC, TIF, between 5 KB and 30 MB.'
+                  description: 'Selfie photo of the customer. Provide as a file URL or a base64 data URI. Accepted formats: PDF, JPG, JPEG, PNG, HEIC, TIF, between 5 KB and 4 MiB.'
                 bvn:
                   type: string
                   description: Bank Verification Number. **Required when `nationality` or `residential_address.country` is `"NG"`**. Exactly 11 digits.
@@ -11612,13 +11643,9 @@ paths:
     put:
       tags:
       - RFIs
-      summary: Reply to RFI
+      summary: Save RFI Draft Response
       description: |
-        Submit a **complete** reply in one request. Every `requested_items[].id` must appear in
-        `responses` with valid fields for that item's `response_types`. Partial replies aren't
-        supported. After success, `responses_submitted_at` is set and the RFI can't be answered
-        again until Yativo reopens it (`response_required` becomes true). Yativo reviews before
-        anything is sent upstream. Same body and rules apply to `POST /business/rfis/{id}/responses`.
+        Save draft answers. Partial responses are allowed. This does not submit the RFI for review.
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
       - name: id
@@ -11634,13 +11661,50 @@ paths:
               $ref: '#/components/schemas/ProviderRfiDraftRequest'
       responses:
         '200':
-          description: Reply received
+          description: Draft saved
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProviderRfiResponse'
         '422':
-          description: RFI closed, reply already submitted, or incomplete responses
+          description: RFI is closed or the draft is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /business/rfis/{id}/responses:
+    post:
+      tags:
+      - RFIs
+      summary: Submit RFI Response
+      description: |
+        Submit a complete response in one request. Every `requested_items[].id` must appear in
+        `responses` with valid fields for that item's `response_types`. The response is recorded
+        for review. A successful response does not itself change the RFI's `status` or
+        `response_required` fields; use the returned data to confirm the submission.
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Yativo internal RFI id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderRfiDraftRequest'
+      responses:
+        '200':
+          description: Response received for review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderRfiResponse'
+        '422':
+          description: RFI is closed or the response is incomplete or invalid
           content:
             application/json:
               schema:
@@ -11691,4 +11755,4 @@ tags:
   - name: Developer
     description: Webhook event inspection.
   - name: RFIs
-    description: Compliance requests for information; save draft answers via API (not auto-submitted upstream).
+    description: Compliance requests for information; save draft answers or submit complete responses for review.

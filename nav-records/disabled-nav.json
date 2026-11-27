@@ -35,14 +35,14 @@
     },
     {
       "removed": "pages",
-      "from": "Fiat API References > Card Checkout > Selling customers",
+      "from": "API Reference > Card Checkout > Selling customers",
       "pages": [
         "fiat-api-reference/card-checkout/customers-withdrawal"
       ]
     },
     {
       "removed": "pages",
-      "from": "Fiat API References > Beneficiaries",
+      "from": "API Reference > Beneficiaries",
       "pages": [
         "fiat-api-reference/beneficiaries/create",
         "fiat-api-reference/beneficiaries/list",
@@ -55,7 +55,7 @@
     },
     {
       "removed": "pages",
-      "from": "Fiat API References > Wallets",
+      "from": "API Reference > Wallets",
       "pages": [
         "fiat-api-reference/wallets/create"
       ]
@@ -69,7 +69,7 @@
     },
     {
       "removed": "pages",
-      "from": "Fiat API References > Payments & Transfers",
+      "from": "API Reference > Payments & Transfers",
       "pages": [
         "fiat-api-reference/payments/send-money-quote",
         "fiat-api-reference/payments/send-money",
@@ -78,14 +78,14 @@
     },
     {
       "removed": "pages",
-      "from": "Fiat API References > Virtual Cards",
+      "from": "API Reference > Virtual Cards",
       "pages": [
         "fiat-api-reference/virtual-cards/activate"
       ]
     },
     {
       "removed": "pages",
-      "from": "Fiat API References > KYC / KYB > Shared",
+      "from": "API Reference > KYC / KYB > Shared",
       "pages": [
         "fiat-api-reference/kyc/upload"
       ]
@@ -105,14 +105,6 @@
         "tab": "Yativo Fiat"
       },
       "renamed_to": "Guides"
-    },
-    {
-      "removed": "tab label",
-      "from": "navigation.tabs[2].tab",
-      "block": {
-        "tab": "Fiat API References"
-      },
-      "renamed_to": "API Reference"
     },
     {
       "removed": "tab",

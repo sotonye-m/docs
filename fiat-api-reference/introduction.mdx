@@ -1,9 +1,9 @@
 ---
-title: "Fiat API References"
-description: "Complete API reference for the Yativo Fiat payment platform"
+title: "API Reference"
+description: "Complete reference for the Yativo API"
 ---
 
-The Yativo Fiat API enables you to send and receive money globally, manage virtual accounts, perform currency exchange, verify customer identities, and let your customers sell by card through Card Checkout. All endpoints return JSON responses.
+The Yativo API enables you to send and receive money globally, manage virtual accounts, perform currency exchange, verify customer identities, and let your customers sell by card through Card Checkout. All endpoints return JSON responses.
 
 ## Base URLs
 
@@ -180,6 +180,5 @@ Certain KYC submission endpoints are hosted on a separate platform:
 
 | Platform | Base URL |
 |---|---|
-| KYC API | `https://kyc.yativo.com` |
-| Individual KYC | `https://kyc.yativo.com/individual/{customer_id}` |
-| Business KYB | `https://kyc.yativo.com/business/{customer_id}` |
+| Hosted KYC/KYB | Use `data.url` from `POST /customer/kyc-session` |
+| KYC submission APIs | `https://kyc.yativo.com/api` |

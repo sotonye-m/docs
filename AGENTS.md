@@ -4,9 +4,9 @@
 
 - Yativo's public developer docs, built on [Mintlify](https://mintlify.com) and published at docs.yativo.com
 - Pages are MDX files with YAML frontmatter. Configuration, navigation and redirects live in `docs.json`
-- Public product: **Yativo Fiat** (`yativo-fiat/`, `fiat-api-reference/`, `openapi-fiat.yaml`). Company pages and the changelog are in `yativo/`
+- Public product: **Yativo** (`yativo-fiat/`, `fiat-api-reference/`, `openapi-fiat.yaml`). Company pages and the changelog are in `yativo/`
 - **Yativo Crypto is unpublished.** `yativo-crypto/`, `api-reference/`, `sandbox/`, `sdks/`, `extensions/`, `openapi-crypto.yaml` and the crypto `guides/` files stay on disk and in `.mintignore`. Do not add them back to `docs.json` or link to them from public pages. See `nav-records/NAV-CHANGES.md`
-- Fiat reference pages render from `openapi-fiat.yaml` through `openapi:` frontmatter, so request and response shapes belong in the spec
+- API reference pages render from `openapi-fiat.yaml` through `openapi:` frontmatter, so request and response shapes belong in the spec
 - `ai-knowledge-base/` is excluded from the site (`.mintignore`)
 
 ## Checks
@@ -32,9 +32,9 @@ npx -y mint@latest validate
 
 ## Terminology
 
-- **API key**: the `X-Api-Key` + `X-Api-Secret` pair fiat servers send on every request. Use "an API key"
+- **API key**: the `X-Api-Key` + `X-Api-Secret` pair Yativo API servers send on every request. Use "an API key"
 - **Legacy API keys**: the deprecated fiat Account ID + App Secret login (`POST /auth/login`)
-- **IP whitelist**: the server IPs allowed to use a fiat API key. Link to `/yativo-fiat/ip-allowlist`
+- **IP whitelist**: the server IPs allowed to use a Yativo API key. Link to `/yativo-fiat/ip-allowlist`
 - **Dashboard**: app.yativo.com. Write UI paths in bold with arrows: **Developers → API Keys**
 
 ## Style preferences

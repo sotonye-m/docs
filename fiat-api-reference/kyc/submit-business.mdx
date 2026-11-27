@@ -9,7 +9,7 @@ Submit KYB data for a business customer. The customer must already exist with `c
 A successful response means the data passed validation and was accepted. Verification runs afterwards, so the customer stays pending until [their status](/yativo-fiat/kyc#track-verification-with-endorsements) changes. Every problem is reported in one `422` response. See [KYC / KYB Verification](/yativo-fiat/kyc#error-handling) for the error shape.
 
 <Note>
-  This endpoint is on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Authenticate with `X-Kyc-Session` or your API key pair. Every file field accepts a file URL or a base64 data URI. Files must be PDF, JPG, JPEG, PNG, HEIC or TIF, between 5 KB and 30 MB. A `tax_id` identifying-information entry does not need `image_front`.
+  This endpoint is on the KYC platform at `https://kyc.yativo.com`, not the main API base URL. Authenticate with `X-Kyc-Session` or your API key pair. Every file field accepts a base64 data URI or a file URL that Yativo can fetch. Files must be between 5 KB and 4 MiB. A `tax_id` identifying-information entry does not need `image_front`.
 </Note>
 
 ```

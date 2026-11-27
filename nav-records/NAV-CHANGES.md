@@ -20,11 +20,11 @@ The page files still exist and are still reachable by URL. Only the menu entry i
 | Date | Menu | What's hidden | Why |
 |---|---|---|---|
 | 2026-11-06 | Platform guides → Authentication | `yativo-platform/authentication` (Team API Keys integration guide from `api-guide/team-api-keys-integration.md`) | Duplicate of Fiat auth docs; do not re-sync or republish unless the docs owner asks. Redirect `/yativo-platform/authentication` → `/yativo-fiat/authentication` |
-| 2026-11-06 | Fiat API References → Compliance RFIs | `POST /business/rfis/{id}/realtime/auth`, `fiat-api-reference/rfis/realtime-auth` | Admin workspace only; not for integrators. Redirect `/fiat-api-reference/rfis/realtime-auth` → `/yativo-fiat/rfis` |
+| 2026-11-06 | API Reference → Compliance RFIs | `POST /business/rfis/{id}/realtime/auth`, `fiat-api-reference/rfis/realtime-auth` | Admin workspace only; not for integrators. Redirect `/fiat-api-reference/rfis/realtime-auth` → `/yativo-fiat/rfis` |
 | 2026-10-21 | Yativo Crypto tab | The whole tab | Unpublished 2026-11-16. Do not restore |
 | 2026-10-21 | Crypto API References tab | The whole tab | Unpublished 2026-11-16. Do not restore |
-| 2026-10-21 | Fiat API References → Beneficiaries | Create, List, Get, Update, Delete, Archive and Unarchive Beneficiary (`fiat-api-reference/beneficiaries/{create,list,get,update,delete,archive,unarchive}`) | Beneficiaries are now just saved payment methods. Nothing links a payment method to a separate beneficiary record |
-| 2026-10-21 | Fiat API References → Wallets | Create Wallet (`fiat-api-reference/wallets/create`) | Not offered to integrators |
+| 2026-10-21 | API Reference → Beneficiaries | Create, List, Get, Update, Delete, Archive and Unarchive Beneficiary (`fiat-api-reference/beneficiaries/{create,list,get,update,delete,archive,unarchive}`) | Beneficiaries are now just saved payment methods. Nothing links a payment method to a separate beneficiary record |
+| 2026-10-21 | API Reference → Wallets | Create Wallet (`fiat-api-reference/wallets/create`) | Not offered to integrators |
 
 ## Removed (page, spec entry and guide sections deleted, redirect added)
 
@@ -48,7 +48,7 @@ The page files still exist and are still reachable by URL. Only the menu entry i
 
 | Date | Old | New |
 |---|---|---|
-| 2026-11-27 | Navigation tabs: `Yativo`, `Yativo Fiat`, `Fiat API References` | `Company`, `Guides`, `API Reference` |
+| 2026-11-27 | Navigation tabs: branded product names | `Guides`, `API Reference`, `Company` |
 | 2026-10-21 | Fund or Withdraw Card Balance (`corporate-cards/balance-update`) | Fund Employee (`corporate-cards/employees-fund`) |
 | 2026-10-21 | Get Card Balance (`corporate-cards/balance-get`) | Get Employee Balance (`corporate-cards/employees-balance`) |
 | 2026-10-21 | Add / List / Get / Update / Delete Payment Method (`beneficiaries/payment-methods-*`) | Add Beneficiary, List Beneficiaries, Get Beneficiary, Update Beneficiary, Delete Beneficiary. Same pages and endpoints (`/beneficiaries/payment-methods…`). In the guides, saving a payment method is "adding a beneficiary", and `beneficiary_id` isn't used |
@@ -59,9 +59,9 @@ Wording rule for corporate cards: the employee is the cardholder. Cards are deno
 
 | Date | Menu | New layout |
 |---|---|---|
-| 2026-10-21 | Fiat API References → Corporate Cards | Subgroups: Funding, Employees, Employee Balance, Cards, Memos, Locations |
-| 2026-10-21 | Fiat API References → KYC / KYB | Subgroups: Individual, Business, Shared |
-| 2026-10-21 | Fiat API References → KYC Lookups | Subgroups: Individual, Business, Shared |
+| 2026-10-21 | API Reference → Corporate Cards | Subgroups: Funding, Employees, Employee Balance, Cards, Memos, Locations |
+| 2026-10-21 | API Reference → KYC / KYB | Subgroups: Individual, Business, Shared |
+| 2026-10-21 | API Reference → KYC Lookups | Subgroups: Individual, Business, Shared |
 
 ## Adding to this record
 

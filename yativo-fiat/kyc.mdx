@@ -31,13 +31,9 @@ Yativo requires identity verification before customers can access payment servic
 | **Hosted KYC/KYB link** | Quick integration, iframe embed | Low |
 | **API submission** | Programmatic flow, native UI | High |
 
-Both approaches start the same way: create the customer, then [mint a session](#mint-a-session). Don't build `https://kyc.yativo.com/individual/{customer_id}` yourself. A URL without `?session=` returns `401`.
+Both approaches start the same way: create the customer, then [mint a session](#mint-a-session). Don't build the hosted URL yourself. A URL without `?session=` returns `401`.
 
-**Hosted URLs** (from `data.url` on the session response):
-- Individual: `https://kyc.yativo.com/individual/{customer_id}?session={token}`
-- Business: `https://kyc.yativo.com/business/{customer_id}?session={token}`
-
-On first load the KYC host stores the token in a first-party cookie and redirects to the same path without `?session=`, so the JWT is not left in history. A new browser or an expired cookie needs a freshly minted `url`.
+Use the `data.url` returned by `POST /customer/kyc-session` for both individual and business verification. Do not construct the URL yourself. On first load, the KYC host stores the token in a first-party cookie and removes it from the address bar. A new browser or an expired cookie needs a freshly minted `url`.
 
 On the hosted business form, the customer can click **Save draft** on any section to keep unfinished answers and come back later. Drafts aren't checked or sent for verification. The customer can't submit until each drafted section is saved with **Next**.
 
@@ -126,7 +122,7 @@ curl -X POST 'https://api.yativo.com/api/v1/customer/kyc-session' \
     "token": "YOUR_KYC_SESSION_TOKEN",
     "expires_at": "2026-11-16T23:33:00+00:00",
     "expires_in": 1800,
-    "url": "https://kyc.yativo.com/individual/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN",
+    "url": "https://kyc.yativo.com/verify/11111111-2222-4333-8444-555555555555?session=YOUR_KYC_SESSION_TOKEN",
     "portal_url": null
   }
 }
@@ -150,7 +146,7 @@ If you currently concatenate `https://kyc.yativo.com/{customer_type}/{customer_i
 
 Pass each file directly in its KYC field as a base64 data URI (for example, `data:image/jpeg;base64,...`) or a file URL that Yativo can access. You do not need to upload files to a separate endpoint.
 
-Every file must be PDF, JPG, JPEG, PNG, HEIC or TIF, and between **5 KB and 30 MB**. ID document images (`image_front_file`, `image_back_file`, `uploaded_documents[*].file`) on individual KYC accept PDF, JPG, JPEG and PNG only.
+Every file must be between **5 KB and 4 MiB**. Selfies and address proofs accept PDF, JPG, JPEG, PNG, HEIC or TIF. Individual ID document images (`image_front_file`, `image_back_file`, `uploaded_documents[*].file`) accept PDF, JPG, JPEG or PNG only.
 
 ---
 
@@ -178,10 +174,11 @@ A successful response means the submission passed validation and was accepted. I
 | `calling_code` | string | ✓ | Dial code, e.g. `"+1"`, `"+234"`. Must match `^\+\d{1,4}$` |
 | `phone` | string | ✓ | Digits only, 8–15 characters |
 | `birth_date` | string | ✓ | `YYYY-MM-DD`. The customer must be at least 18 |
+| `place_of_birth` | object | From 2027-01-01 | Include `country` (two-letter country code) and `city` (max 256 characters). Until then, it is optional; if you send one field, send both |
 | `nationality` | string | ✓ | ISO 3166-1 alpha-2 from [List Countries](/fiat-api-reference/kyc-lookups/countries), e.g. `"US"`, `"NG"`, `"BR"` |
 | `gender` | string | ✓ | `"male"` or `"female"` |
 | `taxId` | string | ✓ | Tax identification number. Letters and digits only, up to 255 characters. `"123-45-6789"` is rejected; send `"123456789"` |
-| `selfie_image` | file | ✓ | Selfie photo. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–30 MB |
+| `selfie_image` | file | ✓ | Selfie photo. PDF/JPG/JPEG/PNG/HEIC/TIF, 5 KB–4 MiB |
 | `bvn` | string | NG only | 11-digit Bank Verification Number. Required when `nationality` or `residential_address.country` is `"NG"` |
 | `nin` | string | NG only | 11-digit National ID Number. Required when `nationality` or `residential_address.country` is `"NG"` |
 | `usd_virtual_account`, `eur_virtual_account`, `gbp_virtual_account`, `native_endorsement` | boolean | | Services to verify the customer for. See [Virtual account flags](#virtual-account-flags) |
@@ -286,6 +283,10 @@ curl -X POST 'https://kyc.yativo.com/api/individual-kyc/submit' \
     "phone": "5551234567",
     "gender": "male",
     "birth_date": "1990-01-15",
+    "place_of_birth": {
+      "country": "US",
+      "city": "Austin"
+    },
     "nationality": "US",
     "taxId": "998887766",
     "selfie_image": "https://files.example.com/selfie.jpg",
@@ -1327,7 +1328,7 @@ The KYC platform returns validation errors in its own shape, with `422`:
 | `nationality must be 2 characters` | Use ISO 3166-1 alpha-2 (e.g. `"US"`, `"NG"`) |
 | `birth_date` must be a date before or equal to 18 years ago | The person must be at least 18 |
 | `Tax ID must contain only letters and digits, up to 255 characters.` | Remove dashes, spaces and dots |
-| File must not be smaller than 5 KB or greater than 30 MB | Resize the file |
+| File must not be smaller than 5 KB or greater than 4 MiB | Keep the file between 5 KB and 4 MiB. The validation message may display a 100 KB minimum, but the enforced minimum is 5 KB |
 | `Business with the provided Customer_ID not found.` (`404`) | Create the customer first with `POST /customer` |
 | `Upload a shareholding structure chart.` | Add an `extra_documents` entry with `type: "shareholding_structure"` |
 | `At least one non-tax-ID identifying document (e.g. passport, national ID) is required.` | Add a passport or national ID for that associated person |

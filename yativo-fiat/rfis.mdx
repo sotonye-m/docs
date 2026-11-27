@@ -75,7 +75,7 @@ curl -G 'https://api.yativo.com/api/v1/business/rfis' \
         ],
         "draft_responses": {},
         "draft_responses_at": null,
-        "responses_submitted_at": null,
+        "merchant_responses_submitted_at": null,
         "submitted_at": null,
         "is_open": true,
         "response_required": true,
@@ -102,7 +102,7 @@ curl -G 'https://api.yativo.com/api/v1/business/rfis' \
 | Value | Meaning |
 |---|---|
 | `action_required` | Yativo is waiting for your reply (`response_required` is `true`) |
-| `under_review` | Your reply was received (`responses_submitted_at` is set); Yativo is reviewing — you can't send another reply yet |
+| `under_review` | Yativo is reviewing the RFI |
 | `closed` | No further action |
 
 ---
@@ -119,17 +119,17 @@ GET /business/rfis/{id}
 
 ## Reply to RFI
 
-Send **one complete reply** per open period. Include every `requested_items[].id` in the JSON body. The same rules apply to `POST /business/rfis/{id}/responses`.
+Submit a complete reply with `POST /business/rfis/{id}/responses`. Include every `requested_items[].id` in the JSON body.
 
 ```
-PUT /business/rfis/{id}/draft-responses
+POST /business/rfis/{id}/responses
 ```
 
-After a successful reply, `responses_submitted_at` is set, `response_required` becomes `false`, and `status` moves to `under_review`. Further reply calls return `422` until Yativo reopens the RFI for another customer response.
+After a successful submission, `merchant_responses_submitted_at` is set. The call records your response for review, but does not itself change the RFI's `status` or `response_required` fields. Check the returned data for the submission timestamp.
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/business/rfis/42/draft-responses' \
+curl -X POST 'https://api.yativo.com/api/v1/business/rfis/42/responses' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
@@ -166,9 +166,9 @@ Keys must match `requested_items[].id`. Each item accepts only the field names l
 
 Within a single reply, each `document_list` entry must be included in that request (you can't upload documents in a follow-up call for the same open period).
 
-The response matches **Show RFI** with `draft_responses` populated, `responses_submitted_at` set, and `draft_responses_at` updated. Document bytes are not echoed on GET — only `file_attached` and `description`.
+The response matches **Show RFI** and includes `merchant_responses_submitted_at`. Document bytes are not echoed on GET — only `file_attached` and `description`.
 
-Returns `422` if any requested item is missing or incomplete, if the RFI is closed, or if you already replied and Yativo hasn't reopened the RFI.
+Returns `422` if any requested item is missing or incomplete, or if the RFI is closed. To save partial answers without submitting, use `PUT /business/rfis/{id}/draft-responses`; a draft does not submit the RFI for review.
 
 ---
 
@@ -178,4 +178,4 @@ Returns `422` if any requested item is missing or incomplete, if the RFI is clos
 |---|---|
 | [List RFIs](/fiat-api-reference/rfis/list) | `GET /business/rfis` |
 | [Get RFI](/fiat-api-reference/rfis/get) | `GET /business/rfis/{id}` |
-| [Reply to RFI](/fiat-api-reference/rfis/reply-to-rfi) | `PUT /business/rfis/{id}/draft-responses` |
+| [Reply to RFI](/fiat-api-reference/rfis/reply-to-rfi) | `POST /business/rfis/{id}/responses` |

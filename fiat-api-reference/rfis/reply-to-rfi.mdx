@@ -1,26 +1,26 @@
 ---
 title: "Reply to RFI"
-description: "Send a complete answer for an open RFI in one request"
-openapi: "openapi-fiat.yaml PUT /business/rfis/{id}/draft-responses"
+description: "Submit a complete answer for an open RFI in one request"
+openapi: "openapi-fiat.yaml POST /business/rfis/{id}/responses"
 ---
 
 Submit your answers for an open RFI in **one request**. The body must include **every** `requested_items[].id`, each with at least one valid field from that item's `response_types`.
 
 <Warning>
-  A reply is **final**. You can't send a partial reply or change answers later on the same open period. After a successful call, `responses_submitted_at` is set and `response_required` becomes `false` while Yativo reviews. To answer again, wait until Yativo reopens the RFI (`response_required` is `true` and `status` is `action_required` again).
+  A submission must include every requested item. A successful response records the submission for review, but does not itself change the RFI's `status` or `response_required` fields. Check the returned data for `merchant_responses_submitted_at`.
 </Warning>
 
-Yativo reviews your reply before anything is sent upstream.
+Yativo reviews your response before it is processed further.
 
 ```
-PUT https://api.yativo.com/api/v1/business/rfis/{id}/draft-responses
+POST https://api.yativo.com/api/v1/business/rfis/{id}/responses
 ```
 
-You can also use `POST /business/rfis/{id}/responses` with the same JSON body and the same rules.
+To save partial answers without submitting the RFI, use `PUT /business/rfis/{id}/draft-responses`. Saving a draft does not submit it for review.
 
 <RequestExample>
 ```bash cURL
-curl -X PUT 'https://api.yativo.com/api/v1/business/rfis/42/draft-responses' \
+curl -X POST 'https://api.yativo.com/api/v1/business/rfis/42/responses' \
   -H 'X-Api-Key: YOUR_API_KEY' \
   -H 'X-Api-Secret: YOUR_API_SECRET' \
   -H 'Content-Type: application/json' \
@@ -35,4 +35,4 @@ curl -X PUT 'https://api.yativo.com/api/v1/business/rfis/42/draft-responses' \
 ```
 </RequestExample>
 
-Returns `422` if the RFI is closed, if a reply was already submitted and Yativo hasn't reopened it, or if any requested item is missing or incomplete.
+Returns `422` if the RFI is closed or any requested item is missing or incomplete.

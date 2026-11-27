@@ -28,6 +28,10 @@ curl -X PUT 'https://api.yativo.com/api/v1/customer/kyc/update' \
   -d '{
     "customer_id": "11111111-2222-4333-8444-555555555555",
     "type": "individual",
+    "place_of_birth": {
+      "country": "US",
+      "city": "Austin"
+    },
     "selfie_image": "https://files.example.com/selfie-v2.jpg",
     "identifying_information": [
       {

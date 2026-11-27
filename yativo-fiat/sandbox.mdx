@@ -127,7 +127,7 @@ const { data: customer } = await fetch(`${BASE}/customer`, {
 }).then(r => r.json());
 
 console.log('Customer:', customer.customer_id);
-// Submit KYC at https://kyc-sandbox.yativo.com/individual/{customer_id}
+// Mint a KYC session and open the returned data.url. Do not construct the URL yourself.
 // Create a virtual account only after the customer's endorsement for the
 // currency is "approved" (endorsement.updated webhook or GET /customer/{customer_id}).
 ```

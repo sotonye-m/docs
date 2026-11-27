@@ -1,23 +1,25 @@
 ---
 title: "Changelog"
-description: "New endpoints, behavior changes, and docs updates for Yativo Fiat."
+description: "New endpoints, behavior changes, and documentation updates for Yativo."
 rss: true
 icon: "clock-rotate-left"
 ---
 
-What changed in the API and the docs. Filter by Fiat or Docs.
+What changed in the API and the docs. Filter by API or Docs.
 
-<Update label="November 2026" description="KYC sessions, access restrictions, Card Checkout, and webhooks" tags={["Fiat", "Docs"]}>
+<Update label="November 2026" description="KYC sessions, access restrictions, Card Checkout, and webhooks" tags={["API", "Docs"]}>
 
-### Yativo Fiat
+### API
 
-- **KYC sessions:** hosted KYC/KYB pages and the KYC platform submit/update APIs now require a signed session. Call `POST /customer/kyc-session` from your server and use `data.url` (or `data.token` as `X-Kyc-Session`). A URL that is only `/{customer_type}/{customer_id}` returns `401`. Lookup endpoints stay public. Sessions last **30 minutes**, are KYC-only (they cannot call the Yativo API), and are revoked when KYC is submitted or the hosted tab is closed. See [KYC / KYB](/yativo-fiat/kyc#mint-a-session) and [Mint KYC session](/fiat-api-reference/customers/kyc-session)
+- **KYC sessions:** hosted KYC/KYB pages and the KYC platform submit/update APIs require a signed session. Call `POST /customer/kyc-session` from your server and use `data.url` (or `data.token` as `X-Kyc-Session`). Lookup endpoints stay public. Sessions last **30 minutes**, are KYC-only (they cannot call the Yativo API), and are revoked when KYC is submitted or the hosted tab is closed. See [KYC / KYB](/yativo-fiat/kyc#mint-a-session) and [Mint KYC session](/fiat-api-reference/customers/kyc-session)
+- **KYC file and birth-place fields:** file inputs accept files from 5 KB to 4 MiB as base64 data URIs or file URLs. For individual submissions, `place_of_birth.country` and `place_of_birth.city` are optional until 2027-01-01; send both together, and both are required from that date. See [KYC / KYB](/yativo-fiat/kyc)
+- **RFI replies:** submit a complete response with `POST /business/rfis/{id}/responses`; use `PUT /business/rfis/{id}/draft-responses` only to save a partial draft. A successful submission sets `merchant_responses_submitted_at` but does not itself change `status` or `response_required`. See [Compliance RFIs](/yativo-fiat/rfis)
 - **KYC placeholder data:** submitting test or placeholder identity data (for example `Jane Doe`, `Acme`, `example.com` emails) returns `422` and permanently flags that `customer_id`. See [Bans, blocks and access errors](/yativo-fiat/restrictions#placeholder-and-test-kyc-data)
 - **KYB tax ID images:** a `tax_id` entry in an associated person's `identifying_information` no longer requires `image_front`. Photo IDs still do. See [Business KYB](/yativo-fiat/kyc#business-kyb)
 - **API keys:** two requests from an IP that isn't on the key's allow list revoke the key. Two failed sign-in or API-secret attempts on a known account suspend the account. See [Bans, blocks and access errors](/yativo-fiat/restrictions)
 - **Customers on review:** a customer on a compliance hold can't perform transactions (`403 This customer is under review and cannot perform transactions.`). Reads and KYC still work
 - **NGN virtual accounts:** individual customers use currency `NGN`; business customers use `NGNBASE` (`NGNM` is still accepted as an alias). Both need an approved `naira` endorsement. Get the codes your account can issue from `GET /business/virtual-account/currencies-and-endorsements`. See [Virtual accounts](/yativo-fiat/virtual-accounts)
-- **Card Checkout:** let your customers sell by debit and credit card on a Yativo-hosted checkout page. Verify each selling customer once with its `card_checkout` endorsement, create orders with `POST /card-checkout/orders`, and follow them with `card_checkout.order.*` webhooks. See [Card Checkout](/yativo-fiat/card-checkout). Request, response and playground pages are in Fiat API References, starting at [Request access](/fiat-api-reference/card-checkout/request-access)
+- **Card Checkout:** let your customers sell by debit and credit card on a Yativo-hosted checkout page. Verify each selling customer once with its `card_checkout` endorsement, create orders with `POST /card-checkout/orders`, and follow them with `card_checkout.order.*` webhooks. See [Card Checkout](/yativo-fiat/card-checkout). Request, response and playground pages are in the API Reference, starting at [Request access](/fiat-api-reference/card-checkout/request-access)
 - **Card Checkout withdrawals:** a selling customer can withdraw only Yativo `available` (cleared) funds. Save a payout destination with `POST /card-checkout/customers/{id}/payout-methods` (field ids from `GET …/supported-payout-methods`), then `POST …/payouts`. Pending and reserved amounts cannot be withdrawn. See [Card Checkout](/yativo-fiat/card-checkout#let-a-customer-withdraw-their-sales)
 - **Errors:** `message` now carries the error text (validation errors still say `Request failed.`), and every failed response includes an `error` object with `code`, `message` and `request_id`. Send an `X-Request-Id` header to have it used as the `request_id`. Successful responses always return HTTP `200`; `status_code` in the body can still be `201` or `202`. See [Error response format](/fiat-api-reference/introduction#error-response-format)
 
@@ -30,11 +32,11 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 - **KYC file inputs:** custom KYC submissions accept base64 data URIs or file URLs directly. See [KYC / KYB](/yativo-fiat/kyc#upload-documents)
 - **RFIs:** expanded list, draft, submit, and document upload samples on [Compliance RFIs](/yativo-fiat/rfis)
 - **Webhooks:** `rfi.*` and `card_checkout.order.*` payload samples on [Webhooks](/yativo-fiat/webhooks)
-- **Yativo Crypto:** those docs are no longer published. Use [Yativo Fiat](/yativo-fiat/introduction) for the public API
+- **Yativo Crypto:** those docs are no longer published. Use the [Yativo API](/fiat-api-reference/introduction) for the public API
 
 </Update>
 
-<Update label="October 2026" description="SDKs, currency swap, sandbox testing, and authentication changes" tags={["Fiat", "Crypto", "Docs"]}>
+<Update label="October 2026" description="SDKs, currency swap, sandbox testing, and authentication changes" tags={["API", "Crypto", "Docs"]}>
 
 ## Payments
 
@@ -74,7 +76,7 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 - **Endorsement resubmission:** `POST /customer/kyc/resubmit/{customer_id}/{endorsement}` re-runs verification for one endorsement. The `{endorsement}` path value is no longer case-sensitive. See [KYC / KYB](/yativo-fiat/kyc#resubmit-one-endorsement)
 - **KYC sandbox host:** sandbox customers use `https://kyc-sandbox.yativo.com`; production uses `https://kyc.yativo.com`. KYC platform endpoints don't need an API key. KYB business profile fields go in the `extra_business_info`, `collections_data` and `payouts_data` objects. See [KYC / KYB](/yativo-fiat/kyc)
 - **KYC lookups in the API reference:** countries, subdivisions, postal code formats, ID types, occupations, industries, account purposes, sources of funds and transaction currencies and countries, each with a "Try it" playground. See [KYC Lookups](/fiat-api-reference/kyc-lookups/countries)
-- **KYC rules documented:** duplicate-person `409` with `duplicate_of`, the permanent `403` for placeholder names, what each endorsement needs, sandbox test values, and a go-live checklist. Files can be 5 KB–30 MB; tax IDs take letters and digits only; KYB requires `primary_website`, proof of address for every address, `pep_status`, `third_party_msb_payments`, `expected_monthly_payments_usd` and a `shareholding_structure` extra document; associated persons below the ownership threshold (default 25%) are dropped; individual submissions return `warnings` for values verification is likely to reject. See [KYC / KYB](/yativo-fiat/kyc)
+- **KYC rules documented:** duplicate-person `409` with `duplicate_of`, the permanent `403` for placeholder names, what each endorsement needs, sandbox test values, and a go-live checklist. The guide covers accepted file inputs, tax IDs (letters and digits only), KYB requirements, associated-person thresholds, and individual submission warnings. See [KYC / KYB](/yativo-fiat/kyc)
 
 ## Sandbox
 
@@ -88,29 +90,29 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 - **Login tokens discontinued:** `POST /auth/login`, `GET /auth/refresh-token` and `Authorization: Bearer` tokens (legacy Account ID and App Secret) no longer work for API requests. Send `X-Api-Key` and `X-Api-Secret` on every request. See [Authentication](/yativo-fiat/authentication)
 - **Webhook payloads:** `user.updated`, `customer.created`, `customer.updated` and `deposit.*` now carry only their documented fields. `user.updated` is sent when your name, email, membership ID or KYC status changes, not when you sign in. `customer.updated` is sent when a profile field or the customer's KYC status changes. `endorsement.updated` no longer includes `_webhook_id`. The delivery log and resends show each payload with today's fields. See [Webhooks](/yativo-fiat/webhooks)
 - **Unified errors:** every failed response now includes `error_details`, with a stable `code`, `message`, `fields`, `retryable` and `retry_after`. See [Error response format](/fiat-api-reference/introduction#error-response-format)
-- **MCP server:** connect Claude, Cursor or any MCP client to your fiat account at `https://api.yativo.com/mcp` to check balances and deposits, and quote and send payouts with your approval. See [Fiat MCP server](/yativo-fiat/mcp-server)
+- **MCP server:** connect Claude, Cursor or any MCP client to your Yativo account at `https://api.yativo.com/mcp` to check balances and deposits, and quote and send payouts with your approval. See [MCP server](/yativo-fiat/mcp-server)
 - Endpoints that change sign-in settings (passkeys, two-factor authentication, PIN, app secret) or delete the account now return `403` when called with an API key
 - `GET /ip-whitelist/check` now returns `api_key.label` (was `name`) and a `network.warning` when your request came through a proxy
-- **Try it on every endpoint:** every fiat API reference page now has an interactive playground
+- **Try it on every endpoint:** every API reference page now has an interactive playground
 - **More endpoints in the API reference:** corporate card employees, employee KYC submission, employee balances, cards, memos, the USDC funding address and card transactions, plus stablecoin deposit wallets, pay-in countries and currencies, `GET /currencies/all`, `GET /business/transaction/by-currency` and `DELETE /customer/{customer_id}`. Each has a "Try it" playground. See [Corporate Cards](/fiat-api-reference/corporate-cards/employees-create)
 
 ## Docs
 
-- **Corrected:** the fiat webhook signature header is `Signature`, not `X-Yativo-Signature`. Webhooks time out after 3 seconds and are attempted up to 3 times. The [Webhooks](/yativo-fiat/webhooks) page now lists every event type, including virtual card and corporate card events
+- **Corrected:** the webhook signature header is `Signature`, not `X-Yativo-Signature`. Webhooks time out after 3 seconds and are attempted up to 3 times. The [Webhooks](/yativo-fiat/webhooks) page now lists every event type, including virtual card and corporate card events
 - **Corrected:** `POST /payout/simple` requires `debit_wallet` and `customer_id`. Insufficient balance returns `400`, not `402`. Idempotency keys are kept for 60 minutes, not 24 hours
 - **Corrected:** KYB `account_purpose` and `source_of_funds` use their own lists, separate from individual KYC. KYB associated persons send ID images as `image_front` and `image_back`
 - **Corrected:** `GET /payment-methods/payin/currency` takes a three-letter `country` (`BRA`, not `BR`), and `GET /payment-methods/payin/countries` returns `country`, `name`, `flag` and `currencies`. The `GET /corporate-card/wallet` balances are in USD, not cents
-- [AI and MCP servers](/yativo/mcp) compares the Docs, Fiat and Agentic Wallet MCP servers, and documents the Docs MCP server at `https://docs.yativo.com/mcp`
+- [AI and MCP servers](/yativo/mcp) compares the Docs, Yativo and Agentic Wallet MCP servers, and documents the Docs MCP server at `https://docs.yativo.com/mcp`
 
 ## Yativo Crypto
 
-- Card IBAN removed from the crypto docs. To receive money by bank transfer, use [Yativo Fiat virtual accounts](/yativo-fiat/virtual-accounts)
+- Card IBAN removed from the crypto docs. To receive money by bank transfer, use [Yativo virtual accounts](/yativo-fiat/virtual-accounts)
 
 </Update>
 
-<Update label="September 2026" description="API keys, IP whitelisting, and passkeys" tags={["Fiat", "Crypto"]}>
+<Update label="September 2026" description="API keys, IP whitelisting, and passkeys" tags={["API", "Crypto"]}>
 
-## Yativo Fiat
+## API
 
 - **API Keys:** servers now authenticate with `X-Api-Key` and `X-Api-Secret`. See [Authentication](/yativo-fiat/authentication)
 - **Deprecated:** legacy API keys (Account ID + App Secret, `POST /auth/login`). From 15 October 2026, its tokens only work inside the dashboard
@@ -127,7 +129,7 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 - Swap: `GET /swap/destinations` and `GET /swap/available-chains`
 - Deposit webhooks use the on-chain transaction hash as `transaction_id`; deposits below the minimum aren't credited
 - Secure card view: card data always renders light, and the view can be embedded on any website
-- Crypto docs now cover the crypto API only. Fiat features are documented under Yativo Fiat
+- Crypto docs now cover the crypto API only. Payment services are documented in the Yativo guides and API reference
 
 </Update>
 
@@ -135,9 +137,9 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 
 ## Docs
 
-- Comprehensive Yativo Fiat documentation with guides, API references, KYC/KYB docs
+- Comprehensive Yativo documentation with guides, API references, and KYC/KYB docs
 - Added HMAC SHA256 webhook signature verification examples in 7 languages
-- Docs reordered: Yativo → Yativo Fiat → Fiat API References → Yativo Crypto → Crypto API References
+- Docs navigation was reorganized into guides, API references, and company information
 - Changelog page added
 
 ## Monitoring
@@ -146,7 +148,7 @@ What changed in the API and the docs. Filter by Fiat or Docs.
   - [status.yativo.com](https://status.yativo.com) (primary)
   - [status2.yativo.com](https://status2.yativo.com) (backup)
 - Both pages show real-time uptime, incident history, and scheduled maintenance
-- Fiat backend health check endpoints added (`/api/health`, `/api/health/ping`)
+- API health check endpoints added (`/api/health`, `/api/health/ping`)
 
 ## Yativo Crypto SDK
 
@@ -161,7 +163,7 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 
 </Update>
 
-<Update label="March 2026" description="Auto-forwarding, receipts, and virtual cards" tags={["Fiat", "Crypto"]}>
+<Update label="March 2026" description="Auto-forwarding, receipts, and virtual cards" tags={["API", "Crypto"]}>
 
 ## Yativo Crypto
 
@@ -173,7 +175,7 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 - XSS sanitization added to all user-facing string inputs across crypto API
 - Browser extension hardened against XSS injection vectors
 
-## Yativo Fiat
+## API
 
 - Virtual card operations: create, topup, freeze, withdraw, terminate
 - Wallet creation API: `POST /wallet/create`
@@ -181,7 +183,7 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 
 </Update>
 
-<Update label="February 2026" description="SDKs, KYC platform, and virtual accounts" tags={["Fiat", "Crypto"]}>
+<Update label="February 2026" description="SDKs, KYC platform, and virtual accounts" tags={["API", "Crypto"]}>
 
 ## SDKs
 
@@ -198,7 +200,7 @@ What changed in the API and the docs. Filter by Fiat or Docs.
 - Hosted KYC links for no-code integration
 - Webhook notifications on KYC status changes
 
-## Yativo Fiat
+## API
 
 - Magic link passwordless authentication
 - API key generation with PIN protection
